@@ -1,0 +1,233 @@
+\section{Problem Setting}
+
+The automated testing framework alleviates the user's efforts from providing numerous unit test cases by using random test generators to produce these test cases automatically. However, the ``last mil'' problem is still critical, since the proper random test generators, which are non-deterministic programs, are hard to implement. This problem is more complicated for distributed systems testing tasks, which consist of two major differences from the normal automated testing tasks:
+
+\paragraph{Open System} The distributed systems are open systems, which cannot be executed simply with test inputs as in normal programs. Consider a storage system that consists of multiple servers, which requires clients to communicate with them consecutively (sending read and write requests), where these clients are expected to be test generators in this scenario. The main difference is that the normal test input generators are ``one-shot,'' while the clients need to \emph{interact} with the servers. Following this setting, the \emph{events} are divided into two distinct sets: \emph{request events} that are sent from clients to servers and \emph{response events} that are sent from servers to clients. The request events sent by clients may depend on the previous received response events, for example, a client would not send a \Code{withdraw} request in the future when it receives a response event from bank server indicating that the current balance is zero. This difference changes the correctness specification of test generators  fundamentally, since the response events are not solely control by the implementation of test generators themselves.
+
+\paragraph{Complex Configuration} The size setting, or we called \emph{configuration}, in the distributed system is more complicated, where test generators behave differently under different configurations. For normal test input generators, users typically would like to control the size of generated test inputs (e.g., the length of lists, the depth of trees). On the other hand, the distributed system may also limit the number of events that clients send to the servers. Moreover, the topological structure of the distributed system is not fixed, where the number of servers and clients can have various configurations, which should also be a part of the size setting. Some potential bugs can only be detected when multiple servers involves; meanwhile, if there is a bug with single server, the distributed system very likely has the same bug with multiple servers. Then, the desirable test framework would test the distributed system for server times, under different configurations and in some specific order.
+As a result, the users would like to control the way of testing distributed system under different configurations. Thus, the specifications should describe how multiple clients communicate with multiple servers which are parameterized by configurations (e.g., the numbers of clients and servers), which is hard to implement and understand.
+
+In the current \Code{P} language, the user needs to provide a client (test generator) parameterized by the configuration, as well as multiple configurations expected to test in a specific order. The client is a state machine that will consecutively send request events with respect to the response events from the servers under test. To reduce user efforts, we would like to synthesize these test harnesses automatically from the user-provided specifications.
+This goal can be specialized as two related problems:
+\begin{enumerate}
+    \item Define a proper specification language that allows users to describe both the expected \emph{event traces} between clients and servers and the expected configurations they want to test. Same as the setting of \Code{P} and \Code{HAT}, the our specifications choose event traces as abstraction to avoid describing implementation details.
+    \item Design an automated synthesizer that synthesizes the test generators as state machines from the specification.
+\end{enumerate}
+The difficulty of the second problem is decided by the first problem, i.e., the specification language should provide enough hints to the synthesizer.
+
+\paragraph{Challenge of open system} The difficulty of the specification language is mainly about the observable traces that contain response events which are not controlled by test generators at all. To prove a close system $S_{\Code{close}}$ with respect to the soundness specification $A$, we need to show
+\begin{align*}
+    \denotation{S_{\Code{close}}} \subseteq \denotation{A}
+\end{align*}\noindent
+which indicates the observed traces produced by the close system ($\denotation{S_{\Code{close}}}$) is included by the trace accepted by $A$ ($\denotation{A}$). However, an client $M_{\Code{client}}$ is a open system that cannot be executed by itself, so does the server $M_{\Code{server}}$. 
+\begin{align*}
+     Valid(M_{\Code{client}}) \doteq&
+    \forall M_{\Code{server}}. Valid(M_{\Code{server}}) \impl 
+    \denotation{M_{\Code{client}} \oplus M_{\Code{server}}} \subseteq  \denotation{A}
+    \\Valid(M_{\Code{server}}) \doteq&
+    \forall M_{\Code{client}}. Valid(M_{\Code{client}}) \impl 
+    \denotation{M_{\Code{client}} \oplus M_{\Code{server}}} \subseteq  \denotation{A}
+\end{align*}\noindent
+where the correctness predicate $Valid$ in terms of $A$ is mutual recursively defined over clients and servers. To build a more piratical algorithm, we can find that we find construct a random server machine $W$ that can non-deterministically simulate arbitrary valid servers:
+\begin{minted}[xleftmargin=-3pt, numbersep=4pt, fontsize = \footnotesize, escapeinside=!!]{C}
+machine W =
+  local trace = [];
+  state Init {
+    on event req = {
+        trace = trace ++ [req; choose(!\text{\textcolor{DeepGreen}{(* all possible response *)}}!)];
+        if (!\text{\textcolor{DeepGreen}{(* trace is rejected by A *)}}!) { raise error; }
+    } }
+\end{minted}
+where the machine $W$ has a single state, it records the current trace and random returns valid response that make the current trace not rejected by $A$. Then we can prove $Valid(M_{\Code{client}})$ by proving
+\begin{align*}
+    &\denotation{M_{\Code{client}} \oplus W} \subseteq  \denotation{A} \text{ since } \bigcup_{ Valid(M_{\Code{server}})} = W \text{ i.e., } 
+    \\&\forall M. \forall M_{\Code{server}}. Valid(M_{\Code{server}}) \impl  \denotation{M \oplus M_{\Code{server}}} \subseteq \denotation{M \oplus W}
+\end{align*}\noindent
+
+\paragraph{Challenge of coverage specifications} The open system setting extremely conflicts with \emph{coverage completeness} of the test generators. Note that, the algorithm we talked about only works soundness specification (overapproximation) instead of coverage specification (underapproximation). To prove a close system $S_{\Code{close}}$ with respect to the coverage specification $B$, we need to show
+\begin{align*}
+     \denotation{A} \subseteq \denotation{S_{\Code{close}}} 
+\end{align*}\noindent
+Under open system setting, similarly, we need to prove
+\begin{align*}
+ \\Valid(M_{\Code{server}}) \doteq&
+    \forall M_{\Code{client}}. \textcolor{red}{Valid(M_{\Code{client}})} \impl 
+    \denotation{A} \subseteq \textcolor{red}{\denotation{M_{\Code{client}} \oplus M_{\Code{server}}}}
+\end{align*}\noindent
+Notice that the $Valid$ predicate is in negative position of implication while now the reduction relation ($\hookrightarrow^*$) is in positive position, thus we cannot union them as a super server machine $\bigcup_{ Valid(M_{\Code{server}})}$.
+
+Consider the following example, where the client want to put key-value pair $\Code{(``Alice", 0)}$ and $\Code{(``Bob", 0)}$. One natural coverage property we want to guarantee is
+
+\textbf{$B:$ The client should be able first put $\Code{``Alice"}$ then $\Code{``Bob"}$, as well as $\Code{``Bob"}$ then $\Code{``Alice"}$}.
+
+\noindent We lists several possible traces below.
+{\small\begin{align*}
+    tr_1 \doteq &\evpc{putReq}{}{``Alice"\; 0};\evpc{putResp}{}{``Alice"\; 0\; true};\evpc{putReq}{}{``Bob"\; 0};\evpc{putResp}{}{``Bob"\; 0\; true};
+    \\tr_2 \doteq &\evpc{putReq}{}{``Alice"\; 0};\evpc{putResp}{}{``Alice"\; 0\; false};
+    \evpc{putReq}{}{``Alice"\; 0};\evpc{putResp}{}{``Alice"\; 0\; false};
+    \\&\evpc{putReq}{}{``Bob"\; 0};\evpc{putResp}{}{``Bob"\; 0\; true};
+    \\tr_3 \doteq &\evpc{putReq}{}{``Bob"\; 0};\evpc{putResp}{}{``Bob"\; 0\; true};
+    \evpc{putReq}{}{``Alice"\; 0};\evpc{putResp}{}{``Alice"\; 0\; true};
+\end{align*}}\noindent
+The trace $tr_1$ first puts $\Code{``Alice"}$ then puts $\Code{``Bob"}$, and trace $tr_3$ does it in an inverse order. On the other hand, the trace $tr_2$ is similar with $tr_1$, but repeats the put request over key $\Code{``Alice"}$ after fails at its first attempt and finally gives up. Then, A client can random generate a set of traces $\{tr_1; tr_3\}$ is coverage complete, so does $\{tr_2; tr_3\}$, but not $\{tr_1; tr_2\}$ where it always put $\Code{``Alice"}$ before $\Code{``Bob"}$. 
+
+On the one hand, we do want the client to \emph{cover} all expected requests (e.g., send \Code{put} request over all possible keys); on the other hand, we cannot and don't need to constrain the response events from servers to \emph{cover} all responses. Our framework expect the test generators satisfying two specifications:
+\begin{enumerate}
+    \item A \emph{global soundness specification}. The specification is called ``global'' since it constrains trace involve both request and response events. Moreover, it is interpreted as an overapproximation of behaviours of clients and servers. 
+    \item A \emph{client-side coverage specification}. The specification is only above the request events sent by clients. By contrast to global specification, the client specification is interpreted as an underapproximation of behaviours of clients.
+\end{enumerate}
+In the example above, the expected global and client specifications are shown below, where $\Code{\{``Alice"; ``Bob"\}}$ and $\Code{\{0\}}$ as key and value domain:
+{\small\begin{align*}
+A_{\Code{global}} \doteq&\text{\textcolor{DeepGreen}{(* The put request can be repeated iff the status of last attempt is false. *)}}
+    \\\forall \Code{key\;value}.&\globalA (\evp{putResp}{}{k\; v\; s}{k = \Code{key} \land v = \Code{value} \land s = \Code{true}} \impl  \neg \finalA \evp{putReq}{}{k\; v}{k = \Code{key} \land v = \Code{value}})
+\\A_{\Code{client}} \doteq&\text{\textcolor{DeepGreen}{(* The client never put the same key (besides interacting with servers). *)}}
+    \\\forall \Code{key}.&\globalA \neg (\evp{putReq}{}{k\; v}{k = \Code{key}} \land \nextA \evp{putReq}{}{k\; v}{k = \Code{key}})
+\end{align*}}\noindent
+Let's revisit the traces listed above with configuration indicates single server, single client, the global specification is OK; however, it is hard to say ``coverage completeness'' just with the observed traces above, even we filter out all response events that controlled by servers:
+{\small\begin{align*}
+    tr_1'\doteq &\evpc{putReq}{}{``Alice"\; 0};\evpc{putReq}{}{``Bob"\; 0};
+    \\tr_2' \doteq &\evpc{putReq}{}{``Alice"\; 0};\evpc{putReq}{}{``Alice"\; 0};\evpc{putReq}{}{``Bob"\; 0}
+    \\tr_3' \doteq &\evpc{putReq}{}{``Bob"\; 0};\evpc{putReq}{}{``Alice"\; 0};
+\end{align*}}\noindent
+where $tr_2'$ which should be valid to cover the order ``first $\Code{`Alice'}$ then $\Code{`Bob'}$'', it eventually fails since it repeats the requests. The second request is cause by the response from the server, which is still not controlled by the client machine. In order to distinguish a new request started by client sides instead of an interaction caused by some responses from servers, we believe it is the client's responsibility to label it with a special label ``$ ^\dagger$'':
+{\small\begin{align*}
+    tr_1 \doteq &\evpc{putReq^\dagger}{}{``Alice"\; 0};\evpc{putResp}{}{``Alice"\; 0\; true}; \evpc{putReq^\dagger}{}{``Bob"\; 0};\evpc{putResp}{}{``Bob"\; 0\; true};
+    \\tr_2 \doteq &\evpc{putReq^\dagger}{}{``Alice"\; 0};\evpc{putResp}{}{``Alice"\; 0\; false};
+    \evpc{putReq}{}{``Alice"\; 0};\evpc{putResp}{}{``Alice"\; 0\; false};
+    \\&\evpc{putReq^\dagger}{}{``Bob"\; 0};\evpc{putResp}{}{``Bob"\; 0\; true};
+    \\tr_3 \doteq &\evpc{putReq^\dagger}{}{``Bob"\; 0};\evpc{putResp}{}{``Bob"\; 0\; true};
+    \evpc{putReq^\dagger}{}{``Alice"\; 0};\evpc{putResp}{}{``Alice"\; 0\; true};
+\end{align*}}\noindent
+
+We would like to highlight that the notion of ``soundness and completeness'' in global/client specifications is orthogonal from the ``safety and liveness'' that expressed by linear temporal logic, where the first one is modeled over a \emph{set} of traces caused by non-deterministic execution, the second is modeled by a single trace consisting with multiple events. For example, the singleton set of trace contains $\{tr_1\}$ satisfies the global specification, as well as client specification with an overapproximate interpretation (since, indeed, it contains no same put events labeled with $^\dagger$); however, it misses the coverage of putting $``\Code{Bob}"$ before  $``\Code{Alice}"$. On the other hand, the global soundness specification, for example, are unlimited LTL formula that can express arbitrary safety and liveness properties. \footnote{These two specifications can be potentially unified into branching-time logic (e.g., Computation Tree Logic (CTL)) instead of LTL that is linear-time logic, however, it is somehow complicate our problem by omit the clear distinction between specifications work only on client-side and globally.}
+
+\paragraph{Challenge of specification language design} In \Code{HAT}, we have already introduced the \emph{universally quantified symbolic finite automata} (universally quantified SFA), which is a symbolic regular language equipped with quantified variables. Although this trace language is powerful enough to describe the sequence of events that consists of temporal and propositional qualifications, it still needs to be refined according to the following requirements from our problem.
+\begin{enumerate}
+    \item The trace language should fit different configurations (e.g., number of events and servers), which means a specification $A$ and a configuration $C$ can decide a set of traces expected to be generated.
+    \item As a compositional test framework, the specification should has ability to narrow down the events that are interesting to focus.
+    \item An automated verification procedure should verify (soundness and completeness) the candidate synthesized program against the trace specification.
+    \item The trace language should provide enough hints to the synthesizer on how the synthesized clients manipulate their local mutable variables. Note that, the SFA without quantified variables can be easily converted into a finite automaton that is a state machine without local mutable variables. However, although universally quantified SFA is able to express more complicated protocols, the corresponding state machines should have local variables to handle the quantified variables carefully. To alleviate the burden on the synthesizer, the specification language should be limited and designed for the later synthesis procedure.
+\end{enumerate}
+
+We have also explored potential solutions for these challenges. 
+\begin{enumerate}
+    \item For the first challenge, we don't want to directly parameterize the trace language with size bounds, as that will lose the good abstraction ability in the current trace language (e.g., the final modality $\finalA A$ doesn't indicate how many events happen before $A$ occurs). In some sense, we want to decompose the specification of clients (test generators) into two orthogonal parts: a configuration $C$ and a protocol $A$ that doesn't talk about any bounds. The key idea is we treat $A$ as a \emph{polymorphic automata} with top-level universal quantified type variable (e.g., $\Pi \Code{server}.A$), and the configuration $C$ is the assignment of type variables (e.g., maps $\Code{server}$ type into enum type $\{s_1; s_2; s_3\}$) to instantiate the polymorphic automata.
+    \item For the second challenge, we should like to add \emph{event scope} and framing rule. For example, if we have $\mathcal{E}(\{ev_i\}, A)$
+    which means that we should only consider the set of event $\{ev_i\}$ in the specification $A$, and other events can be omitted via frame rule. Then, the denotation of automata $A$ has a dynamic event scope (e.g., $\denotation{A}_{Ev}$), instead of the fixed event scope (i.e., all possible effect operators) in \Code{HAT}.
+    \item For the third challenge, we can adapt \Code{HAT} into the \Code{P} language -- there are three gaps: the \Code{P} language defines state machines that react according to input events, which is quite different from normal programs; the \Code{P} language has local mutable variables (that are not counted as events); the \Code{HAT} only verifying the soundness of the program instead of the completeness. However, following existing works, I think there could be a natural fit in converting \Code{HAT}'s type system into the \Code{P} language.
+    \item Finally, it is unclear what the actual synthesis strategy for the last challenge should be. As far as I can see, the current local variables in the user-provided generators are just sets or mappings recording all input/output events or states of other machines. I believe there can be some deductive synthesis rules just targeting the actual usage of local variables in the \Code{P} language, while other parts of the synthesis can exploit other methods (bottom-up enumeration, CEGAR, LLM, and so on). Again, the synthesis problem highly depends on our specification language design. In the worst case, as long as we decide on the specification language, we can implement the verification procedure and then do a naive enumerate-and-filter-based program synthesis.
+\end{enumerate}
+
+\paragraph{Contribution} In summary, I think this work should focus on the coverage and soundness correctness guarantee of test generators under open system setting with a trace-based view. In details, the corresponding contribution should be
+\begin{enumerate}
+    \item We formalize the correctness of test generators under the open system setting via a global soundness specification and a client-side coverage completeness specification.
+    \item We design a new trace-based specification language that extends the symbolic LTL$_f$ with the ability to narrow down into different event scopes as well as be concertized under different configurations, to enable a compositional and systematic test for distributed system.
+    \item We introduce a novel automated verification algorithm that verifies the messaging traces of state machines in actor model against both soundness and coverage completeness specification.
+    \item We develop a deductive program synthesis algorithm to synthesize test generator that are parameterised with input configuration in \Code{P} language, and provides guarantees the soundness and coverage completeness against the given specifications.
+\end{enumerate}
+
+\section{Language}
+
+\begin{figure}[t!]
+{\footnotesize
+{\small\begin{flalign*}
+ &\text{\textbf{Specification Syntax}} &
+\end{flalign*}}
+\vspace{-1.8em}
+{\small
+\begin{alignat*}{2}
+    \text{\textbf{Variables }}& \quad &\quad& x, y, z, f, \vnu, X, ... \\
+     \text{\textbf{Pure Operations}}& \quad & \primop ::= \quad & {+} ~|~ {-} ~|~ {==} ~|~ {<} ~|~ {\leq} ~|~ \Code{mod} ~|~ \Code{parent} ~|~ ...
+    \\ \text{\textbf{Value Literals}}& \quad & l ::= \quad & c ~|~ x ~|~ \primop\ \overline{l}
+    \\\text{\textbf{Base Types}}& \quad & b  ::= \quad & \textcolor{red}{ X ~|~ \Code{Enum}(\{\overline{c}\}) ~|~ \Code{server} } ~|~ \Code{unit} ~|~ \Code{bool} ~|~ \Code{int} ~|~ \Code{float} ~|~ ...
+    \\ \text{\textbf{Propositions}}& \quad & \phi ::= \quad & l ~|~ \bot ~|~ \top  ~|~ \neg \phi ~|~ \phi \land \phi ~|~ \phi \lor \phi ~|~ \phi \impl \phi
+    \\ \text{\textbf{Event Name }}& \quad & \mathbf{en} ::= \quad & \S{write} ~|~ \S{read} ~|~ \S{put} ~|~ \S{get} ~|~ ...
+    \\ \text{\textbf{Event Operator}}& \quad & \effop{} ::= \quad & \textcolor{red}{ \mathbf{en}^{req\dagger}~|~ \mathbf{en}^{req} ~|~ \mathbf{en}^{resp} }
+    \\ \text{\textbf{Specification}}& \quad &A,B  ::= \quad & \evp{\effop}{}{\overline{x}}{\phi} ~|~ \evparenth{\phi} ~|~ \negA A ~|~ A \landA A ~|~ A \lorA A ~|~ A \seqA A ~|~ \nextA A ~|~ A \untilA A ~|~ A^* ~|~
+    \\ & \quad &\quad & \textcolor{red}{\forall x{:}b.A ~|~ \mathcal{E}(\{\overline{\effop{}}\}, A) ~|~ A^l}
+    \\ \text{\textbf{Configuration}}& \quad &C  ::= \quad & \emptyset ~|~ X = \{\overline{c}\}, C ~|~ \Code{server} = \{\overline{c}\}, C
+  \end{alignat*}}
+\vspace{-1.8em}
+{\small\begin{flalign*}
+ &\text{\textbf{Specification Aliases}} &
+\end{flalign*}}
+\vspace{-1.8em}
+\begin{alignat*}{5}
+    \evop{\effop}{... {\sim}{\text{$v_x$}} ...}{\phi} &\doteq \evop{\effop}{... x ...}{\I{x} = v_x \land \phi}
+    \quad&\finalA A &\doteq \topA \untilA A
+    \quad& \globalA A &\doteq \negA \finalA \negA A
+    \quad& \zlet{x}{P}{A} &\doteq A[x\mapsto P]
+    \\ \exists x{:}b. A&\doteq \neg \forall x{:}b. \neg A
+    \quad& \lastA &\doteq \neg \nextA \topA
+    \quad& A :: A'& \doteq (\lastA \land A); A'
+  \end{alignat*}
+}
+\vspace{-.5cm}
+\caption{\langname{} types.}
+\label{fig:type-syntax}
+\vspace{-.2cm}
+\end{figure}
+
+\paragraph{Bound Operator} there are $3$ operators bound the traces accepted by the specifications, the denotation $\denotation{A}_{Ev}$ is a set of traces.
+\begin{align*}
+    &\text{\textcolor{DeepGreen}{Quantifier, $b$ can be an enum type}}
+    \\\denotation{\forall x{:}b.A}_{Ev} \doteq& \bigcap_{c : b} \denotation{A[x \mapsto c]}_{Ev}
+    \\&\text{\textcolor{DeepGreen}{Event scope, $Tr(Ev)$ indicates all well-formed traces with given event operators $Ev$}}
+    \\&\text{\textcolor{DeepGreen}{$filter(\alpha, Ev)$ only keeps events that have operators in $Ev$. }}
+    \\\denotation{\mathcal{E}(Ev', A)}_{Ev} \doteq& \{\alpha ~|~ \alpha \in Tr(Ev) \land filter(\alpha, Ev') \in \denotation{A}_{Ev'} \}
+    \\&\text{\textcolor{DeepGreen}{repeating operator}}
+    \\\denotation{A^c}_{Ev} \doteq& \denotation{\underbrace{A; ...;A}_\texttt{repeat for $c$ times}}_{Ev}
+\end{align*}
+
+\paragraph{Configuration} A configuration $C$ is just a mapping from a type variable or a special server type $\Code{server}$ into a set of assignments (enum type). The denotation $\denotation{A}^C$ is a set of traces.
+\begin{align*}
+     &\text{\textcolor{DeepGreen}{Traces initially works over all possible event operators}}
+    \\\denotation{A}^{\emptyset} \doteq& \denotation{A}_{\{\overline{\effop{}}\}}
+    \\&\text{\textcolor{DeepGreen}{Maps a type variable $X$ into an enum type}}
+    \\\denotation{A}^{X = \{\overline{c}\}, C} \doteq& \denotation{A[X \mapsto \Code{Enum}( \{\overline{c}\})]}^C
+    \\&\text{\textcolor{DeepGreen}{Maps server type into an enum type}}
+     \\\denotation{A}^{\Code{server} = \{\overline{c}\}, C} \doteq& \denotation{A[\Code{server} \mapsto \Code{Enum}( \{\overline{c}\})]}^C
+\end{align*}\noindent
+The default (abstract) configuration is $\overline{X_i \mapsto \Code{int}}, \Code{server = \Code{Enum}(\{0\})}$, which maps server type into a singleton enum type and all type variables into integer which is a finite sort.
+
+\section{Example: Two-Phase Commit}
+
+Here is an example of global specification, where we don't constrain the number of requests to send.
+{\small\begin{align*}
+        &\ \text{\textcolor{DeepGreen}{// all read/update request and response pairs.}}
+        \\A_\Code{op}(\Code{s}) \doteq&\ \evaptop{read^{req\dagger}}{\df{}{s}\;k}:: \evaptop{read^{resp}}{\df{}{s}\;k\;v\;st} :: \epsilon \lorA \evaptop{update^{req\dagger}}{\df{}{s}\;k\; v}:: \evaptop{update^{resp}}{\df{}{s}\;k\;v\;st} :: \epsilon
+       \\&\ \text{\textcolor{DeepGreen}{// the case read/update fails.}}
+        \\A_\Code{failure}(\Code{s}) \doteq&\ \evaptop{read^{resp}}{\df{}{s}\;k\;v\;\df{}{abort}} \lorA \evaptop{update^{resp}}{\df{}{s}\;k\;v\;\df{}{abort}}
+         \\&\ \text{\textcolor{DeepGreen}{// A valid transition is several request and response pairs + }}
+         \\&\ \text{\textcolor{DeepGreen}{// nothing (when read-only)/commit/rollback }}
+        \\A_\Code{trans}(\Code{s}) \doteq&\ A_\Code{op}(\Code{s})^*; (\epsilon \lorA \evaptop{commit^{req\dagger}}{\df{}{s}};\evaptop{commit^{resp}}{\df{}{s}\;st} \lorA \evaptop{rollback^{req\dagger}}{\df{}{s}})  \land
+        \\&\ \text{\textcolor{DeepGreen}{// When fails, rollback immediately; when no failure, don't rollback. }}
+        \\&\ \globalA (A_\Code{failure}(\Code{s})\impl\nextA \evaptop{rollback^{req\dagger}}{\df{}{s}}) \land (\globalA \neg A_\Code{failure}(\Code{s}))\impl 
+        (\globalA \neg \evaptop{rollback^{req\dagger}}{\df{}{s}}) \land
+        \\&\ \text{\textcolor{DeepGreen}{// Once there is at least one update, the transition is not read-only, thus needs commit/rollback. }}
+        \\&\ \finalA \evaptop{update^{rep\dagger}}{\df{}{s}\;k\;v} \implies \finalA (\evaptop{commit^{req\dagger}}{\df{}{s}} \lorA \evaptop{rollback^{req\dagger}}{\df{}{s}})
+         \\&\ \text{\textcolor{DeepGreen}{// Client produces multiple transactions, each transaction focus on only one server (router). }}
+        \\A_\Code{global} \doteq&\ \mathcal{E}( \Code{\{
+        read^{req\dagger}, read^{resp},
+        update^{req\dagger}, update^{resp}, 
+        commit^{req\dagger}, commit^{resp},
+        rollback^{req\dagger}
+        \}}, 
+        \\& \qquad (\exists \Code{s{:}server}. A_\Code{trans}(\Code{s}))^*)
+    \end{align*}}\noindent
+Here is an example of client specification.
+{\small\begin{align*}
+        &\ \text{\textcolor{DeepGreen}{// In a transaction, any trace includes $\Code{l_{ts}}$ read or update request need to be covered.}}
+        \\A_\Code{trans}(\Code{s, l_{ts}}) \doteq&\ (\lastA \land (\evaptop{read^{req\dagger}}{\df{}{s}\;k} \lorA \evaptop{update^{req\dagger}}{\df{}{s}\;k\; v}))^{\Code{l_{ts}}}
+         \\&\ \text{\textcolor{DeepGreen}{// Traces includes $\Code{n_{ts}}$ transactions should be covered }}
+        \\A_\Code{client} \doteq&\ \mathcal{E}( \Code{\{
+        read^{req\dagger},
+        update^{req\dagger}
+        \}}, ( \exists \Code{s{:}server}.\exists\Code{l_{ts}{:}Len_{Trans}}.\exists\Code{n_{ts}{:}Num_{Trans}}. A_\Code{trans}(\Code{s, l_{ts}}))^{\Code{n_{ts}}})
+    \end{align*}}\noindent
+Here is an example of configuration.
+{\small\begin{align*}
+C \doteq \Code{server = \{0, 1\}}, \Code{Key} = \{ ``a", ``b"\}, \Code{Value} = \{ 0, 1, 2, 3\}, \Code{Len_{Trans}} = \{ 1, 2, 3\}, \Code{Num_{Trans}} = \{ 1, 2\}
+\end{align*}}\noindent
+which indicates there are two servers, two keys, three values, the length of transaction is $1$ to $3$, and there are one or two transactions.
+

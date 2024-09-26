@@ -1,0 +1,181 @@
+\section{Overview}
+
+\begin{minted}[fontsize = \footnotesize, escapeinside=!!, xleftmargin=18pt, linenos]{ocaml}
+type account <: int
+
+!$\mykw{configuration}$! conf = {account = [|1;2;3|]}
+
+!$\mykw{event}$! withdrawReq = {a: account; amount: int}
+!$\mykw{event}$! withdrawResp = {a: account}
+!$\mykw{event}$! queryReq = {a: account}
+!$\mykw{event}$! queryResp = {a: account; amount: int}
+
+!$\mykw{global}$! global_pattern =
+  ((!$\mykw{ctx}$! [| queryReq withdrawReq |] !$\bullet$!); (!$\mykw{ctx}$! [| queryResp withdrawResp |] !$\bullet$!))!$^*$!
+
+!$\mykw{local}$! local_pattern = 
+  !$\forall x{:}\Code{account},$! 
+  !$\mykw{ctx}$! [| queryReq withdrawReq |] !$\neg (\finalA \langle \Code{withdrawReq} \;|\; \Code{\#a} = x\rangle;\finalA \langle \Code{withdrawReq} \;|\; \Code{\#a} = x\rangle)$!
+
+!$\mykw{local}$! local_safety = 
+  !$\mykw{ctx}$! [| queryReq withdrawReq |] !$\neg \finalA \evparenth{\Code{withdrawReq} \;|\; \Code{\#amount} \leq 0}$!
+
+!$\mykw{global}$! global_safety = 
+  !$\forall x{:}\Code{account},$!
+  !$\mykw{register}$! balance = 0 in
+  !$\globalA (\langle \Code{queryResp} \;|\; \Code{\#a} =x \;|\; \Code{balance} \leftarrow \Code{\#amount}\rangle \impl \finalA \neg \langle \Code{withdrawReq} \;|\; \Code{\#a} = x \land \Code{\#amount} \geq \Code{balance} \rangle)$!
+
+!$\mykw{machine}$! client =
+  !$\mykw{bind}$! conf in 
+  global_safety !$\land$! global_pattern !$\land$! local_safety !$\land$! local_pattern
+\end{minted}
+
+Consider bank example discussed in introduction section, where a client query current balance and withdraw money from a bank servers. The corresponding specifications and configurations are shown in code above. 
+
+We would like to let user control how many account to be tested in different test scenarios, these the specification is parameterized by different value domain for accounts. In our language, this feature is treated as an universal type and type-level instantiation. As shown in line $1$, the account is defined as an abstract type that is a subtype of $\Code{int}$; on the other hand, the configuration $\Code{conf}$ on line $3$ provides a concrete instantiation for the abstract type $\Code{account}$ as an type only has three integer inhabitants. The abstract type $\Code{account}$ can as be used in the following event type definition from line $5$ to $8$, which defines withdraw and query request and corresponding response. The requests are sent by clients (test generators) to servers, while the responses are sent from servers to clients. 
+
+The first specification on line $10$ - $11$ is a global specification that constraints both requests and responses, which is a protocol indicates the observed events should following ``one-request-one-response'' pattern. The specification is defined as regular expression with standard regex operators (e.g., concatenation $\Code{;}$ and Kleene star $\Code{^*}$); the context operation $\mykw{ctx}$ defines the alphabet of events we considering about, which interfaces the meaning of any operator ($\bullet$). 
+
+The second specification on line $13$ - $15$ is a local specification that only involves request events, where we also accept Linear Temporal Logic (LTL) style modalities (e.g., finally $\finalA$). This specification means there are cannot has two withdraw requests on an account. This specification is quantified by ``for all account $x$($\forall x{:}\Code{account}$)'', which will be interpreted as intersection of all inhabitants of concrete instantiation of abstract type $\Code{account}$ (e.g., $x$ would be equal to $1$, $2$, and $3$ for configuration $\Code{conf}$). The $\evparenth{\Code{name}~|~ \phi }$ defines an atomic predicates for an event \Code{name} whose fields are constrained by $\phi$, for example, $\Code{\#a}$ indicates the $\Code{a}$ field of a event in event type $\Code{withdrawReq}$. Similarly, the third specification (line $17$ - $18$) indicates the client cannot withdraw a non-positive amount. All these specification will be translated into Symbolic Finite Automata (SFA)\cite{SFA-Transducers}, which is variant of finite automata that allowing transitions labeled by logic predicates. 
+
+The fourth specification is still an global specification which is a little bit special where it defines an ``register'' \Code{balance} on line $22$, where the assignment of \Code{balance} will be updated by the query response from servers ($\Code{balance} \leftarrow \Code{\#amount}$) and treated as an amount upper for any further withdraw requests. This specification would be translated into Symbolic Regular Expression with Memory (SREM)\cite{SREM} and then Symbolic Register Automata (SRA)\cite{SRA}, which is an automata allowing \emph{finite} memory. Note that the $\Code{balance}$ register is under quantification of ``for all account $x$($\forall x{:}\Code{account}$)'', which means there exists multiple $\Code{balance}$ for different accounts. However, eventually corresponding configuration will only provide finite choose for accounts, thus all automata we consider are parameterised by some finite bound instead of a real finite domain.
+
+All local specifications will be translated into SFA and global specification will be translated into SRA, then they will be additionally translated into \Code{P} programs (test generators) parametric with configurations. The test scenarios can be built by binding test generators with user provided configuration, which expressed as $\mykw{bind} ... \mykw{in} ...$ syntax in our surface language.
+
+The difference is that SRA is strictly more powerful than SFA but not closed under complement, thus induces a more limited surface language; however, we find that it is straightforward to express the \emph{interaction} between clients and servers in global specification. Moreover, all SFA and SRA (and compiled \Code{P} programs) are closed under binary closure operators (e.g., intersection, union, concatenation), thus these underline automata can be easily composited. The details of translation will be discussed in the following subsection.
+
+\subsection{Formalization}
+
+\begin{figure}[t!]
+{\small
+\begin{alignat*}{2}
+    \text{\textbf{Variables }}& \quad &\quad& x, y, z, f, \vnu, t, ...
+    \\\text{\textbf{Pure Operations}}& \quad & \primop ::= \quad & {+} ~|~ {-} ~|~ {==} ~|~ {<} ~|~ {\leq} ~|~ \Code{mod} ~|~ \Code{tt} ~|~ \Code{nil} ~|~  \Code{cons} ~|~ \Code{None} ~|~ \Code{Some}...    
+    \\ \text{\textbf{Constants}}& \quad & c ::= \quad & \mathbb{Z} ~|~ \mathbb{B} ~|~ \primop\; \overline{c}
+    \\\text{\textbf{Base Types}}& \quad & b  ::= \quad &  t ~|~ \Code{unit} ~|~ \Code{bool} ~|~ \Code{int} ~|~ b\; \Code{list} ~|~ ...
+    % \\ \text{\textbf{Basic Types}}& \quad & s  ::= \quad & b ~|~ s \sarr s
+    \\ \text{\textbf{Value Literals}}& \quad & l ::= \quad & c ~|~ x ~|~ \primop\ \overline{l}   
+    \\ \text{\textbf{Propositions}}& \quad & \phi ::= \quad & l ~|~ \bot ~|~ \top  ~|~ \neg \phi ~|~ \phi \land \phi ~|~ \phi \lor \phi ~|~ \phi \impl \phi
+    \\ \text{\textbf{Event Name }}& \quad & \effop{} ::= \quad & \S{withdrawReq} ~|~ \S{queryResp} ~|~ ...
+    \\ \text{\textbf{Symbolic Regex}}& \quad &A  ::= \quad & \evp{\effop}{out}{\overline{x}}{\phi} ~|~ A \landA A ~|~ A \lorA A ~|~ A \seqA A ~|~ A^* ~|~ A \setminus A
+    \\ \text{\textbf{Symbolic Regex with Memory}}& \quad &R  ::= \quad & \evp{\effop}{in}{\overline{x}}{\phi ~|~ \overline{x \leftarrow x}} ~|~ \evp{\effop}{out}{\overline{x}}{\phi} ~|~ A \landA A ~|~ A \lorA A ~|~ A \seqA A ~|~ A^*
+    \\ & & & x \leftarrow c. R
+    \\ \text{\textbf{Quantified Symbolic Regex}}& \quad &Q  ::= \quad & A ~|~ R ~|~ \forall x{:}T.Q ~|~ \exists x{:}T.Q ~|~ \Pi t <: b.Q
+    \\ \text{\textbf{Configuration}}& \quad &C  ::= \quad & \emptyset ~|~ t{:}c, C ~|~ x = c, C 
+  \end{alignat*}}
+\caption{Specification syntax.}
+\label{fig:spec-syntax}
+\vspace{-.2cm}
+\end{figure}
+
+The core specification language is defined in \autoref{fig:spec-syntax}, where the first half of definition (from variables to propositions) are standard. The event names are labeled with $\Code{in}$ (input events from servers to clients) and $\Code{out}$ (output events from clients to servers), which would be omitted if it is clear in the context. The Symbolic atomic predicate in Symbolic regex ($\evp{\effop}{out}{\overline{x}}{\phi}$) consists of event name, arguments, and a logic qualifier. On the other hand, the atomic predicate of input events in Symbolic regex with Memory have an additional field ($\overline{x \leftarrow x}$) indicates updating registers with arguments of input events. Note that we only allow register updates happens in the input events, which induce a little bit more limited symbolic register automata from other works. The register should be initialized in the top-level ($x \leftarrow c. R$), which is guaranteed by additional well-formedness relations. Both of SRE and SREM allows intersection ($\land$), union ($\lor$), concatenation ($;$), and Kleene star ($^*$), although only SRE allows set minus ($\setminus$) that is equal to complement. The specifications are top-level quantified; variables can be universal and existential quantified, and abstract type $t$ is universal quantified (and constrained by a subtyping relation $t <: b$). The configuration will assign abstract type $t$ with concrete type with finite inhabitants, i.e., a constant with list type ($t:c$); and variables with concrete values ($x = c$).
+
+We also defined several syntax sugar, such as temporal modalities (e.g., $\globalA$), event scope ($\mykw{ctx}$), which can be easily defined from our core language.
+
+\newpage
+
+\subsection{Soundness and Completeness Guarantee}
+
+We define the events as $\effop^\kappa(\overline{c})$ that consists an event name $\effop$, corresponding payloads $\overline{c}$ (payloads includes meta information, e.g., the sender and receiver machine id), and a label $\kappa$ which is either $\Code{in}$ (input events) or $\Code{out}$ (output events). We also define a \emph{trace} $\alpha$ as a list of events. A language $L$ is just a set of traces. A machine $M$ is just a state machine that can send and events. A system $S$ is a collection of machines. We use notion $S \Downarrow (\Code{status}, \alpha)$ to indicates an execution of system $S$ with observable trace $\alpha$, where \Code{status} can be $\Code{Succ}$ or $\Code{Fail}$.
+
+Ideally, for a language $L$, soundness means a system never fails and all corresponding observable traces should be included by $L$:
+\begin{align*}
+    &\forall \Code{status}. \forall \alpha. S \Downarrow (\Code{status}, \alpha) \impl \Code{status = Succ} \land \alpha \in L
+\end{align*}\noindent
+On the other hand, completeness means a system is able (non-deterministically) produce all desirable traces:
+\begin{align*}
+    &\forall \alpha. \alpha \in L \impl S \Downarrow (\Code{Succ}, \alpha)
+\end{align*}\noindent
+However, both of them doesn't make sense for open system. For soundness, the client machine may encounter unexpected response from servers (which is not controlled) by client machine. Moreover, this unexpected response cannot be prevented by previous message output message from clients. Consider the following example:
+\begin{align*}
+    n \leftarrow 0.\evp{queryReq}{out}{()}{\top};\evp{queryResp}{int}{m}{m \geq 0 ~|~ n 
+    \leftarrow m}
+\end{align*}\noindent
+Even the client know the server may response an unexpected balance (e.g., $\minus 10$), it would still like to send the query requests, since the server may also return desirable balance which are cases we should explore. Similarly, the client itself cannot guarantee the absolutely completeness. Then, we define the \emph{prefix-soundness} and \emph{partial completeness} of a test generator.
+
+\paragraph{Prefix-soundness} In order to define the soundness, we define an operator to drop the last potential wrong response from the servers.
+
+\begin{definition}[Drop-Last-Out operation] For any trace $\alpha$, we define $\Code{Drop}(\alpha)$ as the trace satisfying $\exists \alpha'. \alpha = \Code{Drop}(\alpha) \listconcat \alpha'$ where $\alpha'$ only consists of output events.
+\end{definition}
+
+Then we define the soundness of clients as: even the system halts on \Code{Fail}, the current trace is somehow \emph{possibly be correct} -- if we drop the tail potential wrong response events and fill with correct tail traces.
+
+\begin{definition}[Prefix Soundness] For any client machine $M_C$, we define the prefix soundness as, for all possible server machine $M_S$, we have
+\begin{align*}
+    \forall \alpha. &(M_C, M_S) \Downarrow (\Code{Succ}, \alpha) \impl \alpha \in L \;\land 
+    \\&(M_C, M_S) \Downarrow (\Code{Fail}, \alpha) \impl \exists \alpha'. \Code{Drop}(\alpha) \listconcat \alpha' \in L
+\end{align*}
+\end{definition}
+
+\paragraph{Partial completeness}  In order to define the completeness, we define an operator to filter out all response events from servers; as well as traces that is ``possible be produced by given servers''.
+
+\begin{definition}[Filter-In operation] For any trace $\alpha$, we define $\Code{Filter}(\alpha)$ as a new trace that only keeps events labeled with $\Code{in}$ label.
+\end{definition}
+
+\begin{definition}[Producible traces] For given server $M_S$, the producible traces is a set $\Code{Prod}(M_S)$ where
+\begin{align*}
+    \Code{Prod}(M_S) \doteq \{\alpha ~|~ \exists M_C. (M_C, M_S) \Downarrow (\Code{Succ}, \alpha) \}
+\end{align*}
+\end{definition}
+
+Then we define the completeness of clients:
+
+\begin{definition}[Partial Completeness] For any client machine $M_C$, we define the partial completeness as, for all possible server machine $M_S$, we have
+\begin{align*}
+    \forall \alpha. &\alpha \in \Code{Prod}(M_S) \land \Code{Filter}(\alpha) \in L \impl (M_C, M_S) \Downarrow (\Code{Succ}, \alpha)
+\end{align*}
+\end{definition}
+
+\newpage
+
+\subsection{Translation}
+
+The translation from Symbolic regex (with memory) into corresponding automata can follow the existing works, while translating these quantified automata into \Code{P} state machines are challenging. As we discussed above, the universal quantifier and existential quantifiers are always work over finite domain, that can be treated as huge intersections of union of automata, although the these finite domain can only be decided dynamically. For example, universal quantified SFA $\forall x{:}\Code{account}.A$ can be compiled into a \Code{P} state machines with local variable $m{:}\Code{account}^S$ that is a mapping from account to states, where the state $m[a]$ indicates the state of automata $A[x\mapsto a]$, that is the automata which instantiating $x$ into an account $a$. As shown in following code, the state machine will update this mapping $m$ at each time it send or receive events; when all states in the map $m$ are belong to final states, the client is ready to terminate. We allow the user to control the sampling with some strategies (e.g., the length bound of traces).
+
+\begin{minted}[fontsize = \footnotesize, escapeinside=!!, xleftmargin=18pt, linenos]{C}
+type state = int
+type eventName = string
+machine localPattern = {
+  var m: map[account, state]
+  var initial_state: int
+  var final_states: seq[int]
+  var transition_mapping: map[state, seq[eventName * prop * state]]
+  
+  state initial {
+    entry (accountDomain: int list) = {
+        foreach (a in accountDomain) m[a] = initial_state;
+    }
+    ...
+    goto loop; // goto a loop derivied by automata 
+  }
+
+  state loop () {
+    entry () {
+        bool can_termincate = true;
+        foreach ((_, state) in m) {
+            if (not (state in final_states)) can_termincate = false;
+        }
+        sampling_strategy(can_termincate); // terminate by sampling strategy
+        ...
+        goto loop;
+    }
+    on event queryResp (a: account, amount: int) {
+        ... // update state mapping m according to transitions of automata
+    }
+  }
+}
+\end{minted}
+
+We guarantee our compiled code is prefix-sound and partial complete.
+
+\subsection{Progress}
+
+I have finished a frontend for quantified SRE (with other syntax sugar) and configurations. I am also able to compile SRE into SFA. I have manually written \Code{P} programs in the template shown above which is supposed to compiled into. I also manually set a length-based sampling strategy. I have evaluated the manually written clients again naive random clients, and validate the former can generate more desirable test cases.
+
+The remaining parts are:
+\begin{enumerate}
+    \item The frontend for SRE with memory and compile it into SRA. Since these two automata is very similar, some of code can be reused.
+    \item Translate quantified automata into \Code{P} state machines.
+    \item Try different sampling strategies.
+    \item Apply it to benchmarks: $4$ tutorials, three protocols (chain replication, Raft, Paxos), and several S3 benchmarks (still put/get requests).
+\end{enumerate}

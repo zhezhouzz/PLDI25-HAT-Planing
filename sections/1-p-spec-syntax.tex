@@ -1,0 +1,99 @@
+\section{Syntax}
+
+\begin{figure}[t!]
+{\footnotesize
+{\small\begin{flalign*}
+ &\text{\textbf{Specification Syntax}} &
+\end{flalign*}}
+\vspace{-1.8em}
+{\small
+\begin{alignat*}{2}
+    \text{\textbf{Variables }}& \quad &\quad& x, y, z, f, \vnu, ... \\
+     \text{\textbf{Pure Operations}}& \quad & \primop ::= \quad & {+} ~|~ {-} ~|~ {==} ~|~ {<} ~|~ {\leq} ~|~ \Code{mod} ~|~ \Code{parent} ~|~ ...
+    \\\text{\textbf{Base Types}}& \quad & b  ::= \quad &  \Code{unit} ~|~ \Code{bool} ~|~ \Code{int} ~|~ \Code{float} ~|~ ...
+    % \\ \text{\textbf{Basic Types}}& \quad & s  ::= \quad & b ~|~ s \sarr s
+    \\ \text{\textbf{Value Literals}}& \quad & l ::= \quad & c ~|~ x ~|~ \primop\ \overline{l}
+\\ \text{\textbf{Propositions}}& \quad & \phi ::= \quad & l ~|~ \bot ~|~ \top  ~|~ \neg \phi ~|~ \phi \land \phi ~|~ \phi \lor \phi ~|~ \phi \impl \phi ~|~ \forall x{:}b.\, \phi
+    % \\ \text{\textbf{Refinement Types}}& \quad &t ::= \quad & \nuot{\textit{b}}{\phi} ~|~ x{:}t\sarr\tau  ~|~ x{:}b\garr t
+    % \\ \text{\textbf{Regular Expression}}& \quad &P  ::= \quad & \bullet ~|~ x ~|~ \negA P ~|~ P \landA P ~|~ P \lorA P ~|~ P \seqA P ~|~ P^*
+    \\ \text{\textbf{Event Name }}& \quad & \effop{} ::= \quad & \S{withDrawReq} ~|~ \S{withDrawResp} ~|~ \S{writeTransReq} ~|~ \S{writeTransResp} ~|~ ...
+    \\ \text{\textbf{Abstract Specification}}& \quad &A,B  ::= \quad & \evp{\effop}{x}{\overline{x}}{\phi} ~|~ \evparenth{\phi} ~|~ \negA A ~|~ A \landA A ~|~ A \lorA A ~|~ A \seqA A ~|~ \nextA A ~|~ A \untilA A ~|~ A^* ~|~ [A]
+    \\ \text{\textbf{Configuration}}& \quad &C  ::= \quad & \{\Code{Events_{out}}:\primop^2,\Code{Events_{in}}:\primop^2, \Code{Servers}:\textbf{Variables }^{\mathbb{N}}, \Code{TraceBound}: \mathbb{N}\}
+    \\ \text{\textbf{Concrete Specification}}& \quad &P  ::= \quad & \ (\Code{A_{client}},\Code{A_{manner}}, C)
+    % \epsilon ~|~
+    % \\ \text{\textbf{Hoare Automata Triple}}& \quad & H  ::= \quad &
+    % \htriple{A}{t}{A}
+    % ~|~ H \landB H
+    % \\ \text{\textbf{Hoare Automata Types}}& \quad &\tau  ::= \quad & t ~|~ \rawgatLR{s}{H}
+    % \\ \text{\textbf{Hoare Automata Types}}& \quad & \tau  ::= \quad &
+    % \htriple{A}{t}{A} ~|~ \tau \interty \tau
+    % ~|~ H \landB H
+    % \\ \text{\textbf{Hoare Automata Types}}& \quad &\tau  ::= \quad & t ~|~ \rawgatLR{s}{H}
+    % \\\text{\textbf{Type Contexts}}& \quad &\Gamma ::= \quad  &\emptyset ~|~ x{:}t, \Gamma
+  \end{alignat*}}
+\vspace{-1.8em}
+{\small\begin{flalign*}
+ &\text{\textbf{Specification Aliases}} &
+\end{flalign*}}
+\vspace{-1.8em}
+\begin{alignat*}{5}
+    \evop{\effop}{... {\sim}{\text{$v_x$}} ...}{\phi} &\doteq \evop{\effop}{... x ...}{\I{x} = v_x \land \phi}
+    \quad&\finalA A &\doteq \topA \untilA A
+    \quad& \globalA A &\doteq \negA \finalA \negA A
+    \quad& \zlet{x}{P}{A} &\doteq A[x \mapsto P]
+    % \quad&  \lastA &\doteq \neg \nextA \topA
+    % \quad& b &\doteq \rawnuot{b}{\top}
+  \end{alignat*}
+}
+\vspace{-.5cm}
+\caption{\langname{} types.}
+\label{fig:type-syntax}
+\vspace{-.2cm}
+\end{figure}
+
+Consider the specification syntax shown in \autoref{fig:type-syntax}, which includes standard variables, primitive operators, base types, literals, and propositions (qualifiers). The interesting part is about our \emph{abstract specification}, where a (symbolic) event $\evp{\effop}{x}{\overline{x}}{\phi}$ consists of $4$ components: the event name $\effop$, the (symbolic) identifier $\Code{x}$ of the target machine, a list of parameters $\overline{x}$ of the events, and a qualifier that constrains the assignment of these parameters. Besides standard temporal logic modalities and regular expression operations, we introduce a new operation $[A]$ called a trace block, which indicates that the specification described by $A$ will be generalized into a multi-server setting. The trace block syntax enables users to control the way a client communicates with multiple servers. To instantiate the abstract specification into a concrete one, the user needs to provide the \emph{configuration}, which includes the set of events we focus on, the number of server machines, and the maximum bound of the trace we are considering.
+
+A concrete specification $(\Code{A_{client}}, \Code{A_{manner}}, C)$ consists of three parts: a client specification $\Code{A_{client}}$ that limits the in/out events of the clients when there is only one server, a multi-server manner specification $\Code{A_{manner}}$ that limits how clients communicate with multiple servers, and a configuration $C$. Note that we disallow the trace block operator $[...]$ in $\Code{A_{manner}}$.
+
+\begin{example} Here we show a symbolic event and a concrete event that is consistent with it.
+\begin{align*}
+    \text{A symbolic event:}&\ \evp{withDrawReq}{server}{account\; amount}{amount > 0}
+    \\\text{A concrete event:}&\ \evpc{withDrawReq}{server_3}{``Alice"\; 30}
+\end{align*}\noindent
+There are two differences. The target machine ($\Code{x}$) in the symbolic event is also symbolic, which should be instantiated as a specific machine ($\Code{server_3}$) in the concrete event. Similarly, the parameters of the symbolic events should be replaced by valid arguments with respect to the qualifiers in the concrete events. The instantiation process from an abstract specification into a concrete trace is similar, besides the special trace block operator. 
+Now assume we only consider $\mathbf{withDrawReq}$ as the single output event and no input event; there are only $3$ servers, and we expect the number of out event in the trace is not greater than $6$ (input events do not count), which can be express as a configuration, $(\{\mathbf{withDrawReq}\}, \emptyset, \{\Code{server}\mapsto3\}, 6)$. Then, the abstract specification and a concrete trace are shown below:
+{\small
+\begin{align*}
+    &\text{A client specification:}\ [\evp{withDrawReq}{server}{account\; amount}{amount > 0}]^*
+    \\&\text{A concrete trace:}\ 
+    \\ &\ \evpc{withDrawReq}{server_1}{``Alice"\; 10};\evpc{withDrawReq}{server_2}{``Bob"\; 30};\evpc{withDrawReq}{server_3}{``Alice"\; 20};
+    \\ &\ \evpc{withDrawReq}{server_2}{``Bob"\; 30};
+\end{align*}}\noindent
+All concrete events in the trace are consistent with the symbolic event in the abstract specification; moreover, the default multi-server manner is send the trace to each server \emph{at most once} literately ($\Code{server_1;server_2;server_3}$ and $\Code{server_2}$). Since the message won't be dropped in P language, we don't allow manners that send events multiple times to the same server (e.g., $\Code{server_1;server_2;server_3;server_1}$).
+
+Now, consider a new configuration $(\{\mathbf{withDrawReq}\}, \{\mathbf{withDrawResp}\}, \{\Code{server}\mapsto3\}, 6)$, where we additionally consider an input event $\mathbf{withDrawResp}$ indicates the response from the server. With the same client specification, we introduce a new client specification.
+{\small
+\begin{align*}
+    &\text{A client specification:}\ [\evp{withDrawReq}{server}{account\; amount}{amount > 0}]^* \land 
+    \\&\quad \forall \Code{a{:}account}\;\Code{b{:}int}.\globalA \neg (\evp{withDrawResp}{server}{{\sim}\Code{a}\;{\sim}\Code{b}}{\top};\finalA \evp{withDrawReq}{server}{{\sim}\Code{a}\; amount}{amount > \Code{b}})
+    \\&\text{A valid concrete trace:}\ 
+    \\ &\ \evpc{withDrawReq}{server_1}{``Alice"\; 10};\evpc{withDrawResp}{server_1}{``Alice"\; 40};
+    \\ &\ \evpc{withDrawReq}{server_2}{``Bob"\; 30};\evpc{withDrawReq}{server_1}{``Alice"\; 10}
+    \\&\text{An invalid concrete trace:}\ 
+    \\ &\ \evpc{withDrawReq}{server_1}{``Alice"\; 10};\evpc{withDrawResp}{server_2}{``Bob"\; \textcolor{red}{10}};
+    \\ &\ \evpc{withDrawReq}{server_2}{``Bob"\; \textcolor{red}{30}};\evpc{withDrawReq}{server_1}{``Alice"\; 10}
+\end{align*}}\noindent
+The new client specification has a conjuncture $\forall \Code{a{:}account}\;\Code{b{:}int}...$ which means that the client cannot withdraw an amount that is greater than the response from the server. Note that the input events may appear arbitrary times at arbitrary place in the trace.
+
+Now, consider a new configuration $(\{\mathbf{withDrawReq}\}, \{\mathbf{serverShutDown}\}, \{\Code{server}\mapsto3\}, 6)$, where we additionally consider an input event $\mathbf{serverShutDown}$ indicates a server should be disabled. With the same client specification, we introduce a new manner specification:
+{\small
+\begin{align*}
+    &\text{A manner specification:}\ \forall \Code{m\ m'{:}server}.\globalA \neg (\evp{serverShutDown}{m}{}{\top};\finalA \evp{withDrawReq}{m'}{account\; amount}{\top})
+    \\&\text{A valid concrete trace:}\ 
+    \\ &\ \evpc{withDrawReq}{server_1}{``Alice"\; 10};\evpc{serverShutDown}{\textcolor{red}{server_1}}{};\evpc{serverShutDown}{\textcolor{red}{server_2}}{};
+    \\&\text{An invalid concrete trace:}\ 
+    \\ &\ \evpc{withDrawReq}{server_1}{``Alice"\; 10};\evpc{serverShutDown}{\textcolor{red}{server_3}}{};
+    \\ &\ \evpc{withDrawReq}{\textcolor{red}{server_2}}{``Bob"\; 30};\evpc{withDrawReq}{\textcolor{red}{server_3}}{``Alice"\; 20};
+\end{align*}}\noindent
+The manner $\forall \Code{m\ m'{:}server}.\globalA \neg (\evp{serverShutDown}{m}{}{\top};\finalA \evp{withDrawReq}{m'}{account\; amount}{\top})$ indicates that, if a server $\Code{m}$ has been shut down ($\evp{serverShutDown}{m}{}{\top}$), the client should not send $\mathbf{withDrawReq} $event anymore. This specification works globally (which means that inter-blocks). Note that the manner specification can distinguish different servers (e.g., $m$ and $m'$ can be assigned as $\Code{server_1}$ and $\Code{server_2}$), the quantified $m$ can be easily instantiate with a configuration in hand.
+\end{example}

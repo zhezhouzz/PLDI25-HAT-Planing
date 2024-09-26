@@ -1,0 +1,26 @@
+\section{Rely-Guarantee Style Adversarial Testing}
+
+\paragraph{Intro} Message-passing system (e.g., distributed system) are hard to reason about because of its concurrent and asynchronous nature, as well as its complex implementation that involves thousand lines of code. Then, we reasonable assume that
+\begin{enumerate}
+    \item The implementation of message-passing system is blackbox, which suggests we should do automated testing instead of fully verification.
+    \item The actual state of message-passing system is hidden, we can only observe the passing messages instead of concrete representation of states.
+\end{enumerate}
+However, naive random test doesn't work here. Most of bugs in distributed system are caused by some specific message interleaving order involving multiple users and servers, which is hard to find and recover. Following the idea of adversarial testing approach, we try to build a property specific scheduler that adversarial choose the message interleaving order more likely to trigger a violation of given property. This adversarial scheduling needs the knowledge of how these messages are related with respect to satisfying or violating the property; it is exactly aligns with the rely-guarantee style reasoning, which each thread is relying the behaviours of others threads, and also provide guarantee to other threads.
+
+\paragraph{Problem Setting} We formalize the asynchronous message-passing system as multiple message handlers, i.e., a function that is always waked up by a new \emph{received} message, then \emph{send} new messages and sleeps itself again for receiving another message. For given correctness property $A$ and with Rely-Guarantee style specifications $\phi$, our tool first proves $\phi \models A$, then specifies the default scheduler into an adversarial scheduler trying violate $A$ with the help of $\phi$.
+
+\paragraph{Contribution} We have the following contributions.
+
+\begin{enumerate}
+    \item We adapt Rely-Guarantee style proof technique into this asynchronous message-passing system in a trace-based view. A message handler $\Code{handler}_m$ is constrained by RG style specification $[R_m]\{A_{m}\}\Code{handler}_m[G_m]$, where $R_m$ and $G_m$ are rely and guarantee \emph{message-based interference specification}, where they are represented as (multi-)sets of \emph{pending messages} instead of bi-state predicates. The $A_{m}$ is the trace-based precondition (i.e., in LTL) of this handler, we don't have postcondition since the handler doesn't have return value (it just sleeps itself). These specification for handlers need 1) be sufficient to prove a trace-based correctness property $A$ which involves all possible messages 2) all interference specification (i.e., all $R_m$ and $G_m$) are consistent.
+    \item We provide a automated verification algorithm to prove both correctness property $A$ and the consistency of interference specifications from given specification of handlers. We use Symbolic Finite Automata (SFA) to present all possible execution orders of the concurrent system -- in our setting, are receiving orders of pending messages.
+    \item We provide a trace-based adversarial testing approach to test the handler implementation against correctness property $A$, that is building an adversarial scheduler $S$ that try to make the implementation violate $A$. The scheduler control the receiving order of pending messages, as well as \emph{environmental messages} (e.g., initial requests from outside users). The intuition is, since we know the proof of $A$ with assumption $[R_m]\{A_{m}\}\Code{handler}_m[G_m]$, then the rely and guarantee relation can guide us to violate $A$ step by step. For example, we know the correctness property is depends on guarantee $G_m$ of $\Code{handler}_m$, then the scheduler try to adversarially make $\Code{handler}_m$ goes wrong by violating the rely $R_m$ of $\Code{handler}_m$, whose correctness are depends on other interference specifications. Eventually, the scheduler will follow the dependency relation reach to initial environmental messages that are fully controlled by scheduler. The scheduler is represented a special SFA that has two classes of transitions, some of them belong to the blackbox implementation, some of them belong to scheduler, which adversarial guide the execution to violate given correctness property.
+\end{enumerate}
+
+\paragraph{Meta-Theory} $[R_m]\{A_{m}\}\Code{handler}_m[G_m]$ means the handler $\Code{handler}_m$ can only be safely called under precondition $A_m$ -- an automata accepting received (historical) traces. Then the messages sent by $\Code{handler}_m$ are \textbf{guarantee} overapproximated by $G_m$, moreover, \textbf{relying} on when these massages are received, there are no massages in $R_m$ are received. For example, an exclusive write request handler says
+\begin{align*}
+    &[\text{no pending writeResp can be received}]
+    \\&\{\text{no received write request from other users yet}\}
+    \\&\Code{writeReq}
+    \\&[\text{send a new pending writeResp}]
+\end{align*}

@@ -1,0 +1,532 @@
+\section{Language}
+
+\begin{figure}[t!]
+  \vspace{-.3cm}
+{\footnotesize
+{\small
+  \begin{alignat*}{2}
+    \text{\textbf{Variables }}& \quad &\quad& x, y, z, X, Y, Z, f, \vnu, ... \\
+    \text{\textbf{Component Identifier}}& \quad &\quad& \iota ... \\
+    \text{\textbf{Base Types}}& \quad & b  ::= \quad &  \Code{unit} ~|~ \Code{bool} ~|~ \Code{nat} ~|~ \Code{int} ~|~ ... \\
+    \text{\textbf{Pure Operations}}& \quad & \primop ::= \quad & {+} ~|~ {-} ~|~ {==} ~|~ {<} ~|~ {\leq} ~|~ \Code{not} ~|~ \Code{Random}(b) ~|~ ...\\
+    \text{\textbf{Effectful Operations }}& \quad & \eff{op} ::= \quad & \eff{readReq} ~|~ \eff{readRsp} ~|~  ...
+    \\ \text{\textbf{Constants }}& \quad &c ::= \quad & \mathbb{1} ~|~ \mathbb{B} ~|~ \mathbb{Z} ~|~ \iota
+    \\ \text{\textbf{Values }}& \quad  & v ::= \quad & v ~|~ x
+    \\ \text{\textbf{Expressions}}& \quad & e ::=\quad & v
+    % ~|~ \zrand{x}{e}
+    ~|~ \zlet{x}{\primop\ \overline{v}}{e}
+    \\ &\quad&\quad& ~|~ \zgen{op}{\overline{v}}{e} ~|~ \zobs{\overline{x}}{op}{e}
+    \\ &\quad&\quad& ~|~ e;e ~|~ e \oplus e ~|~ \zassume{v}{e}
+    % ~|~ \zloop{e}
+    \\\text{\textbf{Traces}}& \quad &\alpha,\beta ::= \quad &
+    \emptr ~|~ \zevent{op}{\overline{v}} \;{::}\; \alpha
+  \end{alignat*}}
+{\small\begin{flalign*}
+ &\text{\textbf{Syntax Sugar}} &
+\end{flalign*}}
+\vspace{-1.8em}
+\begin{alignat*}{3}
+    % e \oplus e &\doteq \zlet{x}{\genbool\;()}{\zif{x}{e}{e}} 
+    % e_1;e_2 &\doteq \zlet{\_}{e_1}{e_2}
+    \zassume{\phi}{e} &\doteq ...
+    \\\zlet{x}{\zrandom{\rawnuot{b}{\phi}}}{e} &\doteq \zlet{x}{\Code{random}(b)\;()}{\zassume{\phi}{e}}
+    % \quad& \zassume{v}{e} &\doteq \zif{v}{e}{\err}
+    \\ \zif{v}{e_1}{e_2} &\doteq (\zassume{v}{e_1}) \oplus 
+    (\zlet{x}{\Code{not}\; v}{\zassume{x}{e_2}})
+    \\ \zobsPhi{\overline{x}}{op}{\phi}{e} &\doteq \zobs{\overline{x}}{op}{\zassume{\phi}{e}}
+    % \quad& \err &\doteq \zassume{\Code{false}}{()}
+  \end{alignat*}
+  }
+\caption{Expression and Trace Syntax. }
+\label{fig:term-syntax}
+\end{figure}
+
+\paragraph{Syntax} The syntax is shown in \autoref{fig:term-syntax}. We use $\iota$ as components identifiers, we assume we can check equivalence between two components (one possible encoding is just natural number). We also assume the environment components has id $\envI$. When the context is clear, we can omit these components ids.
+It is in standard ANF style, which only contains first-order function (pure and effectful operators) and conditional expression \ZZ{Shall we add loop? It is an underapproximation, may be we should not}.
+The environment can \emph{generate} new messages (i.e., $\zgen{op}{\envI\;\iota\;\overline{v}}{e}$) to component $\iota$ into the system, or \emph{observe} messages (i.e., $\zobs{i\;j\;\overline{x}}{op}{e}$) from component $i$ to component $j$ with payload $\overline{x}$ in the system. The trace is also defined normally, an event $\zevent{op}{\srcI\;\dstI\;\overline{c}}$ indicates a message $\eff{op}$ from component $\srcI$ to component $\dstI$ with payload $\overline{c}$.
+
+\paragraph{Message Buffer} Following the standard message-passing semantics, the system keep a message buffer (i.e., trace). The empty buffer is $\empQ$. We also define the following auxiliary functions:
+\begin{align*}
+    \dst{\zevent{op}{\srcI\;\dstI\;\overline{c}}} &\doteq \dstI \\
+    \src{\zevent{op}{\srcI\;\dstI\;\overline{c}}} &\doteq \srcI \\
+    % \select{\buf, ev, \buf'} = \buf' &\doteq \exists \buf_1 \listconcat [ev] \listconcat \buf_2 = \buf \land \buf_1 \listconcat \buf_2 = \buf'
+    % \\\mapOn{\alpha, \iota, f} = \alpha' &\iff \forall i. \dst{\alpha[i]} = \dstI \impl (f\; \alpha) \land \dst{\alpha[i]} \not= \dstI \impl (f\; \alpha)
+    % \\\enqueue{\buf, \iota, ev} = \buf' &\iff \forall i. (i = \iota \impl (\buf'\;i) = (\buf\;i)\listconcat [ev]) \land (i \not= \iota \impl (\buf'\;i) = (\buf\;i))
+    % \\\dequeue{\buf, \iota} = (\buf', ev) &\iff \forall i. (i = \iota \impl ev \cons (\buf'\;i) = (\buf\;i)) \land (i \not= \iota \impl (\buf'\;i) = (\buf\;i))
+\end{align*}
+
+\paragraph{Operational Semantics} A system state is a triple $(\buf, e)$. The small-step reduction $\steptr{\alpha}{(\buf, e)}{\alpha'}{(\buf, e')}$ means a program state $(\buf, e)$ will reduce to another program state $(\buf', e')$ under context $\alpha$ and generate new effect $\alpha'$.
+% \begin{enumerate}
+%     \item $\alpha$ is ``the trace of all happened (received) events''.
+%     \item $\buf$ is ``a buffer for all pending messages to receive''.
+%     \item $e$ is the current term.
+% \end{enumerate}
+The small-step reduction is shown in \autoref{fig:semantics}. The environment $e$ can generate trace $\alpha$ iff existing a program state $(\buf, v)$ such that $\msteptr{[]}{(\empQ, e)}{\alpha}{(\buf, v)}$.
+
+\begin{figure}[h!]
+{\footnotesize
+{\small\begin{flalign*}
+ &\text{\textbf{Auxiliary Operational Semantics }} & \fbox{$\primop\ \overline{v} \Downarrow v_x  \quad \alpha, \beta \vDash \zevent{op}{\overline{c}} \Downarrow \beta$}
+\end{flalign*}}
+{\small
+\begin{flalign*}
+        &\text{\textbf{Operational Semantics }} & \fbox{$\steptr{\alpha}{(\buf, e)}{\alpha}{(\buf, e)}$}
+\end{flalign*}}
+\begin{prooftree}
+      \hypo{\primop\ \overline{v} \Downarrow v_x }
+      \infer1[\textsc{\small StOp}]{
+        \steptr{\alpha}{(\buf, \zlet{x}{\primop\ \overline{v}}{e})}{[]}{(\buf, e[x\mapsto v_x])}
+      }
+\end{prooftree}
+    \\ \ \\ \ \\
+    % \begin{prooftree}
+    %   \hypo{ \src{\zevent{op}{v}} = \envI }
+    %   \infer1[\textsc{\small StGen}]{
+    %     \steptr{\alpha}{(\buf, \zgen{op}{\overline{v}}{e})}{[]}{(\buf \listconcat [\zevent{op}{v}], e)}
+    %   }
+    % \end{prooftree}
+    \begin{prooftree}
+      \hypo{ \src{\zevent{op}{v}} = \envI \quad \alpha, \beta \vDash \zevent{op}{\overline{v}} \Downarrow \beta'}
+      \infer1[\textsc{\small StGen}]{
+        \steptr{\alpha}{(\buf', \zgen{op}{\overline{v}}{e})}{[\zevent{op}{\overline{v}}]}{(\buf', e)}
+      }
+    \end{prooftree}
+    \\ \ \\ \ \\    
+    \begin{prooftree}
+    \mhypo{70mm}
+    {$\buf = [\zevent{op}{\overline{v}}] \listconcat \buf'$ \quad
+    $\alpha, \buf' \vDash \zevent{op}{\overline{v}} \Downarrow \beta''$ \quad
+    % $\select{\buf, \zevent{op}{\overline{v}}, \buf'} $ \quad
+     $e' = e[\overline{x \mapsto v}]$
+     }
+      \infer1[\textsc{\small StObserve}]{
+        \steptr{\alpha}{(\buf, \zobs{\overline{x}}{op}{e})}{[\zevent{op}{\overline{v}}]}{(\beta'', e')}
+      }
+    \end{prooftree}
+    \\ \ \\ \ \\
+    \mprooftr{35mm}{}{StChoice1}{
+    $\steptr{\alpha}{(\buf, e_1 \oplus e_2)}{[]}{(\buf, e_1)}$
+    }\quad
+    \mprooftr{35mm}{}{StChoice2}{
+    $\steptr{\alpha}{(\buf, e_1 \oplus e_2)}{[]}{(\buf, e_2)}$
+    }
+    \\ \ \\ \ \\
+    \mprooftr{50mm}{}{StAssert}{
+    $\steptr{\alpha}{(\buf, \zassume{\Code{true}}{e})}{[]}{(\buf, e)}$
+    }
+    % \begin{prooftree}
+    %   \hypo{ }
+    %   \infer1[\textsc{\small StIf2}]{
+    %     \step{(\alpha, q, \zif{\Code{false}}{e_1}{e_2})}{(\alpha, q, e_2)}
+    %   }
+    % \end{prooftree}
+    % \\ \ \\ \ \\
+    % \begin{prooftree}
+    %   \hypo{ }
+    %   \infer1[\textsc{\small StIf1}]{
+    %     \step{(\alpha, q, \zif{\Code{true}}{e_1}{e_2})}{(\alpha, q, e_1)}
+    %   }
+    % \end{prooftree}\quad
+    % \begin{prooftree}
+    %   \hypo{ }
+    %   \infer1[\textsc{\small StIf2}]{
+    %     \step{(\alpha, q, \zif{\Code{false}}{e_1}{e_2})}{(\alpha, q, e_2)}
+    %   }
+    % \end{prooftree}
+  }
+  \caption{Operational Semantics}
+  \label{fig:semantics}
+\end{figure}
+
+\section{Typing}
+
+\begin{figure}[t!]
+{\footnotesize
+{\small\begin{flalign*}
+ &\text{\textbf{Type Syntax}} &
+\end{flalign*}}
+\vspace{-1.8em}
+{\small
+\begin{alignat*}{2}
+    \text{\textbf{Basic Types}}& \quad & s  ::= \quad & b ~|~ s \sarr s
+\\ \text{\textbf{Qualifiers}}& \quad & \phi ::= \quad & v ~|~ \bot ~|~ \top  ~|~ \neg \phi ~|~ \phi \land \phi ~|~ \phi \lor \phi ~|~ \phi \impl \phi ~|~ \forall x{:}b.\, \phi
+     \\ \text{\textbf{Symbolic Events}}& \quad &\se  ::= \quad & \msgB{op}{\overline{x}}{\phi} ~|~ \se \cup \se ~|~ \msgG{\phi}
+    \\ \text{\textbf{Symbolic Regular Expression (SFA)}}& \quad &A,B  ::= \quad & se ~|~ \emptyset ~|~ \epsilon ~|~ \anyA ~|~ A \lorA A ~|~ A \seqA A ~|~ A^*
+    \\ \text{\emph{LTL Syntax Sugar}}& \quad &\quad & ~|~ A \land A ~|~ \neg A ~|~ \nextA A ~|~ \finalA A ~|~ \globalA A
+    % \\ \text{\textbf{Buffer Types}}& \quad & \Omega  ::= \quad  &\emptyset ~|~ \iota{:}A, \Omega
+    % ~|~ \scope{se} A ~|~ \femp ~|~ \boxed{A}
+    \\ \text{\textbf{Refinement Base Types}}& \quad & t  ::= \quad & \rawnuot{b}{\phi} ~|~ \rawnuut{b}{\phi}
+    \\ \text{\textbf{Hoare Automata Types}}& \quad & \tau  ::= \quad &
+    \rg{H}{A}{F} ~|~
+    % \astate{B}{t} ~|~
+    % \hfive{A}{B}{t}{B'}{A'} ~|~ \hfour{A}{B}{se}{B'}
+    % \hfive{A}{B}{t}{B'}{A'} 
+    \\ & & & ~|~ \tau \interty \tau  ~|~ x{:}t\sarr \tau ~|~ x{:}t\garr \tau
+    \\\text{\textbf{Type Contexts}}& \quad &\Gamma ::= \quad  &\emptyset ~|~ x{:}t, \Gamma
+  \end{alignat*}}
+\vspace{-1.8em}
+{\small\begin{flalign*}
+ &\text{\textbf{Type Aliases}} &
+\end{flalign*}}
+\vspace{-1.8em}
+\begin{alignat*}{3}
+    \msg{op}{\phi(\overline{\# x})} &\doteq \msgB{op}{\overline{x}}{\phi}
+    \quad& b &\doteq \rawnuot{b}{\top}
+    % \\\hfour{A}{B}{se}{B'} &\doteq \hfive{A}{B\seqA se}{\Code{unit}}{B'}{se}
+    % \\\hpair{A \rhd B \rhd se}{B'} &\doteq \hfive{A}{ B\seqA se \seqA \anyA^*}{\Code{unit}}{se \rhd (B \seqA {\anyA^*} \seqA B')}
+    % \\ t &\doteq X{:}\anyA^* \garr Y{:}\anyA^* \garr \htriple{X\rhd Y}{t}{X\rhd Y}
+  \end{alignat*}
+}
+\vspace{-.5cm}
+\caption{\langname{} types.}
+\label{fig:type-syntax}
+\vspace{-.2cm}
+\end{figure}
+
+\paragraph{Idea} The asynchronous semantics is just a semantics that allows a term $e$ to ``predict'' what happens in the future. For example, assume a term $e$ sends messages $\beta$, it means this term ``requires'' these messages have to be received in the future. In other words, the continuation of $e$ needs to receive these messages (produce these events).
+Consider a type $e : \rg{H}{A}{F}$ where 
+\begin{enumerate}
+    \item $H$ is the history automata, indicates the reduction of $e$ \emph{rely} on the the previous happened traces accepted by $H$, just like precondition automata in HAT.
+    \item $A$ is the appending (new adding) automata, indicates the reduction of $e$ generate new traces accepted by $A$.
+    \item $F$ is the future (prophecy) automata, indicates the reduction of $e$ \emph{guarantee} the trace happens in the future must be accepted by $F$.
+\end{enumerate}
+For a term $e;e_k$, where $e_k$ is the continuation of $e$. Term $e;e_k$ can reach to empty message buffer $([], v)$ iff the continuation $e_k$ can produce traces in $F$.
+
+\paragraph{Synthesis task} $\Gamma \vdash \rg{\epsilon}{A}{\anyA^*} \termsyn e$.
+
+\paragraph{Examples} The types of interfaces are shown below
+
+{\footnotesize\begin{align*}
+    \Code{ReadReq}:& \rg{\anyA^*}{\msg{ReadReq}{\top}}{\anyA^* \mix \msg{GetReq}{\top}}
+    \\\Code{GetReq}:&  x{:}\hasnty{int}\garr\rg{\finalA \msg{putReq}{\fld[v] = x} \seqA \finalA \msg{Commit}{\top}}{\msg{GetReq}{\top}}{\anyA^* \mix \msg{ReadRsp}{ \fld[v] = x}}
+    \\&\interty  \rg{\neg\finalA \msg{Commit}{\top}}{\msg{GetReq}{\top}}{\anyA^* \mix \msg{ReadRsp}{ \Code{\#v = 0}}}
+    \\\Code{ReadRsp}:& \rg{\anyA^*}{\msg{ReadRsp}{\top}}{\anyA^*}
+    \\
+    \\\Code{WriteReq}:&  x\hasnty{int} \sarr \rg{\anyA^*}{\msg{WriteReq}{\fld[v] = x}}{\anyA^* \mix \msg{PutReq}{\fld[v] = x}}
+    \\\Code{PutReq}:&  x\hasnty{int} \sarr \rg{\anyA^*}{\msg{PutReq}{\fld[v] = x}}{\anyA^* \mix \msg{PutRsp}{\fld[v] = x} }
+    \\\Code{PutRsp}:&  x\hasnty{int} \sarr s{:}\nuot{bool}{\vnu = \true} \sarr 
+    \\&\quad \rg{\anyA^*}{\msg{PutRsp}{\fld[v] = x \land \fld[stat] = s}}{\anyA^* \mix \msg{Commit}{\top} \mix \msg{WriteRsp}{\fld{v} = x \land \fld[stat] = s}}
+    \\&  \interty x\hasnty{int} \sarr s{:}\nuot{bool}{\vnu = \false} \sarr 
+    \\&\quad \rg{\anyA^*}{\msg{PutRsp}{\fld[v] = x \land \fld[stat] = s}}{\anyA^* \mix \msg{Abort}{\top} \mix \msg{WriteRsp}{\fld{v} = x \land \fld[stat] = s}}
+    \\\Code{WriteRsp}:& x\hasnty{int} \sarr s\hasnty{bool} \sarr \rg{\anyA^*}{\msg{WriteRsp}{\fld[v] = x \land \fld[stat] = s}}{\anyA^*}
+\end{align*}}
+
+\paragraph{Typing and Synthesis}
+
+\begin{figure}[!t]
+{\footnotesize
+{\small
+\begin{flalign*}
+ &\text{\textbf{Typing}} & \fbox{$\Gamma \vdash \primop : \tau \quad \Gamma \vdash \eff{op} : \tau \quad \Gamma \vdash \tau \termsyn e$}
+\end{flalign*}
+}
+\\ \
+\mprooftr{55mm}
+{$\Gamma \vdash \rg{H}{A_1}{A_2 \seqA F} \termsyn e_1$ \quad
+ $\Gamma \vdash \rg{H\seqA A_1}{A_2}{F} \termsyn e_2$}
+{TConcat}
+{$\Gamma \vdash \rg{H}{A_1 \seqA A_2}{F} \termsyn e_1 ; e_2$}
+\quad
+\mprooftr{50mm}
+{$\Gamma \vdash \rg{H}{A_1}{F} \termsyn e_1$ \quad
+$\Gamma \vdash \rg{H}{A_2}{F} \termsyn e_2$}
+{TUnion}
+{$\Gamma \vdash \rg{H}{A_1 \lorA A_2}{F} \termsyn e_1 \oplus e_2$}
+\\ \ \\ \ \\
+\mprooftr{32mm}
+{$\Gamma \vdash \rg{H}{\epsilon}{F} \termsyn e$}
+{TStar1}
+{$\Gamma \vdash \rg{H}{A^*}{F} \termsyn e$}
+\quad
+\mprooftr{35mm}
+{$\Gamma \vdash \rg{H}{A \seqA A^*}{F} \termsyn e$}
+{TStar2}
+{$\Gamma \vdash \rg{H}{A^*}{F} \termsyn e$}
+\quad
+\mprooftr{33mm}
+{$\Gamma \vdash e : t$}
+{TEps}
+{$\Gamma \vdash \rg{\anyA^*}{\epsilon}{\anyA^*} \termsyn e$}
+\\ \ \\ \ \\
+\mprooftr{28mm}
+{$\Gamma \vdash \tau \termsyn e \quad \Gamma \vdash \tau <: \tau'$}
+{TSub}
+{$\Gamma \vdash \tau' \termsyn e$}
+\quad
+\mprooftr{28mm}
+{$\Gamma,  x{:}\rawnuut{b} \vdash \tau \termsyn e$}
+{TGhost}
+{$\Gamma \vdash x{:}\rawnuut{b}{\phi}\garr \tau \termsyn e$}
+\quad
+\mprooftr{35mm}
+{ $\Gamma, x{:}\rawnuut{b}{\phi} \vdash \tau \termsyn e$}
+{TVar}
+{$\Gamma \vdash \tau \termsyn \zlet{x}{\zrandom{b}}{e}$}
+\\ \ \\ \ \\ 
+\mprooftr{80mm}
+{$\Gamma \vdash \tau \termsyn e$ \quad
+$\Gamma \vdash \phi$}
+{TAssert}
+{$\Gamma \vdash \tau \termsyn \zassume{\phi}{e}$}
+\\ \ \\ \ \\ 
+\mprooftr{70mm}
+{
+$\Gamma \vdash \eff{op} : \overline{x{:}t}\sarr \rg{H}{\msgB{op}{\overline{y}}{\bigwedge \overline{y = v}}}{F}$ 
+\quad
+ $\Gamma \vdash \rg{H \seqA \msgB{op}{\overline{y}}{\bigwedge \overline{y = v}}}{A}{F} \termsyn e$}
+{TGen}
+{$\Gamma \vdash \rg{H}{\msgB{op}{\overline{y}}{\bigwedge \overline{y = v}} \seqA A}{F}  \termsyn \zgen{op}{\overline{v}}{e}$}
+\\ \ \\ \ \\ 
+\mprooftr{105mm}
+{
+$\Gamma \vdash \eff{op} : \overline{x{:}t}\sarr \rg{H}{\msgB{op}{\overline{y}}{\phi}}{A \seqA F}$ 
+\quad
+ $\Gamma, \overline{x{:}t} \vdash \rg{H \seqA \msgB{op}{\overline{x}}{\phi}}{A}{F} \termsyn e$}
+{TObs}
+{$\Gamma \vdash \rg{H}{\msgB{op}{\overline{x}}{\phi} \seqA A}{F} \termsyn \zobs{\overline{x}}{op}{e}$}
+\\ \ 
+{\small
+\begin{flalign*}
+ &\text{\textbf{Auxiliary Typing}} & \fbox{$\Gamma \vdash \tau <: \tau \quad \Gamma \vdash v : t$}
+\end{flalign*}
+}
+\\ \
+\mprooftr{80mm}
+{$\Gamma \vdash H_2 \subseteq H_1$ \quad
+$\Gamma \vdash A_1 \subseteq A_2$ \quad
+$\Gamma \vdash F_1 \subseteq F_2$ \quad}
+{SubHAT}
+{$\Gamma \vdash \rg{H_1}{A_1}{F_1} <: \rg{H_2}{A_2}{F_2}$}
+}
+\vspace*{-.1in}
+\caption{Selected typing rules. All typing judgements (i.e.,
+  {\small$\Gamma \vdash e : t$} and {\small$\Gamma \vdash e : \tau$})
+  assume the corresponding basic type judgement
+  ({\small$\eraserf{\Gamma} \basicvdash e : \eraserf{t}$} holds).% \footnote{It means that terms that are well-typed
+    % under a type refinement are also well-typed under the STLC typing
+    % rules after erasing all refinement's qualifications. The basic
+    % typing rules $\eraserf{\Gamma} \basicvdash e : s$ are included in
+    % the supplemental material. }.
+}
+\label{fig:selected-typing-rules}
+\vspace*{-.2in}
+\end{figure}
+
+\paragraph{Synthesis Example} Assume the correctness property is ``the read value should be equal to the last success write result.'' Its negation is
+{\footnotesize\begin{align*}
+    &\exArw \doteq \anyA^* \seqA \msg{WriteRsp}{\fld[v] = x \land \fld[stat] = \true} \seqA (\anyA \setminus \msg{WriteRsp}{\fld[stat] = \true})^* \seqA  \msg{ReadRsp}{\fld[v] = y \land y \not= x}
+    \\&\tau = x\hasuty{int}{\top}\garr y\hasuty{int}{\vnu \not = x}\garr \exArw
+\end{align*}}\noindent
+Now we convert it into the following synthesis judgement
+\begin{align*}
+    \emptyset \vdash x\hasuty{int}{\top}\garr y\hasuty{int}{\vnu \not = x}\garr \rg{\epsilon}{\exArw}{\anyA^*} \termsyn e
+\end{align*}\noindent
+We apply subsumption rule to specialize it:
+
+{\footnotesize\mprooftr{90mm}
+{$\Gamma \vdash x\hasuty{int}{\vnu \not= 0}\garr x\hasuty{int}{\vnu =  0}\garr \rg{\epsilon}{\exArw}{\anyA^*} \termsyn e$ \quad 
+ $\Gamma \vdash x\hasuty{int}{\vnu \not= 0}\garr x\hasuty{int}{\vnu =  0}\garr \rg{\epsilon}{\exArw}{\anyA^*} <: x\hasuty{int}{\top}\garr y\hasuty{int}{\vnu \not = x}\garr \rg{\epsilon}{\exArw}{\anyA^*}$}
+{TSub}
+{$\Gamma \vdash x\hasuty{int}{\top}\garr y\hasuty{int}{\vnu \not = x}\garr \rg{\epsilon}{\exArw}{\anyA^*} \termsyn e$}}
+\\ \ 
+
+The desirable synthesis result is
+
+\begin{minted}[xleftmargin=5pt, numbersep=4pt, linenos = true, fontsize = \footnotesize, escapeinside=??]{OCaml}
+let (x: int) = ?$\mykw{random}\;\nuot{int}{\vnu \not= 0}$? in
+?$\mykw{generate}$? WriteReq x in
+let (y1: int) = ?$\mykw{observe}$? PutReq ?$(y_1 = x)$? in
+let (y2: int), (s1: bool) = ?$\mykw{observe}$? PutRsp ?$(y_2 = x \land s_1 = \true)$? in
+let (y3: int), (s2: bool) = ?$\mykw{observe}$? WriteRsp ?$(y_3 = x \land s_2 = \true)$? in
+?$\mykw{generate}$? ReadReq in
+let () = ?$\mykw{observe}$? GetReq in
+let (y4: int) = ?$\mykw{observe}$? GetRsp ?$(y_4 = 0)$? in
+let () = ?$\mykw{observe}$? Commit ?$\top$? in
+let (y5: int) = ?$\mykw{observe}$? ReadRsp ?$(y_5 = y_4)$? in
+()
+\end{minted}
+
+\paragraph{Typing Example} Consider the following synthesis judgement
+\begin{align*}
+    \emptyset \vdash x\hasuty{int}{\top}\garr y\hasuty{int}{\vnu \not = x}\garr \rg{\epsilon}{\exArw}{\anyA^*} \termsyn e
+\end{align*}\noindent
+We apply subsumption rule to specialize it:
+
+{\footnotesize\mprooftr{110mm}
+{$\Gamma \vdash x\hasuty{int}{\vnu \not= 0}\garr \rg{\epsilon}{\exArw[y \mapsto 0]}{\anyA^*} \termsyn e$ \quad 
+ $\Gamma \vdash x\hasuty{int}{\vnu \not= 0}\garr \rg{\epsilon}{\exArw[y \mapsto 0]}{\anyA^*} <: x\hasuty{int}{\top}\garr y\hasuty{int}{\vnu \not = x}\garr \rg{\epsilon}{\exArw}{\anyA^*}$}
+{TSub}
+{$\Gamma \vdash x\hasuty{int}{\top}\garr y\hasuty{int}{\vnu \not = x}\garr \rg{\epsilon}{\exArw}{\anyA^*} \termsyn e$}}
+\\ \ 
+
+Then apply \textsc{TGhost}, \textsc{TVar}, and \textsc{TAssume} to instantiate variable $x$. 
+
+{\footnotesize\mprooftr{110mm}{ $x\hasuty{int}{\vnu \not= 0} \vdash \rg{\epsilon}{\exArw[y \mapsto 0]}{\anyA^*} \termsyn e$}
+{TGhost, TVar, TAssume}
+{$\emptyset \vdash x\hasuty{int}{\vnu \not= 0}\garr \rg{\epsilon}{\exArw[y \mapsto 0]}{\anyA^*} \termsyn e \termsyn \zlet{x}{\zrandom{\Code{int}}}{\zassume{x \not= 0}{e}}$}}
+\\ \ 
+
+The automata $\exArw$ is already a sequential style, we just choose the last symbolic event. In order to locate this position, we apply the \textsc{TConcat}.
+
+{\footnotesize\mprooftr{100mm}
+{$\Gamma \vdash \rg{H}{A_1}{A_2 \seqA F} \termsyn e_1$ \quad
+ $\Gamma \vdash \rg{H\seqA A_1}{A_2}{F} \termsyn e_2$ \quad
+ $A_1 = \anyA^* \seqA \msg{WriteRsp}{\fld[v] = x \land \fld[stat] = \true} \seqA (\anyA \setminus \msg{WriteRsp}{\fld[stat] = \true})^*$\quad
+ $A_2 = \msg{ReadRsp}{\fld[v] \not= x} \quad H = \epsilon \quad  F = \anyA^*$
+ }
+{TConcat}
+{$\Gamma \vdash \rg{H}{A_1 \seqA A_2}{\anyA^*} \termsyn e_1;e_2$}}
+\\ \ 
+
+Now we focus on the synthesis of $e_2$, that is $\Gamma \vdash \rg{H\seqA A_1}{\msg{ReadRsp}{\fld[v] \not= x}}{F} \termsyn e_2$, which can easily be derived rule \textsc{TObs} and \textsc{TEps}.
+
+{\footnotesize\mprooftr{105mm}
+{
+$\Gamma \vdash \eff{op} : \rg{ H\seqA A_1 }{\exGetReq}{\epsilon \seqA \anyA^*}$ 
+\quad
+ $\Gamma \vdash \rg{H\seqA A_1 \seqA \exGetReq}{\epsilon}{\anyA^*} \termsyn ()$}
+{TObs}
+{$\Gamma \vdash \rg{H\seqA A_1}{\exGetReq \seqA \epsilon}{\anyA^*} \termsyn \zobs{\overline{x}}{ReadRsp}{e}$}}
+\\ \ 
+
+A more interesting case is the inference of $e_1$, that is 
+\begin{align*}
+   x\hasuty{int}{\vnu \not= 0} \vdash \rg{H}{A_1}{\msg{ReadRsp}{\fld[v] = 0} \seqA F} \termsyn e_1
+\end{align*}\noindent
+where we expect ``in the future'', we can see an event $\msg{ReadRsp}{\fld[v] \not= x}$ to be received -- which means it should be sent now. Consider a special form of \textsc{TObs}:
+
+{\footnotesize\mprooftr{105mm}
+{
+$\Gamma \vdash \eff{op} : \overline{x{:}t}\sarr \rg{H}{\msgB{op_1}{\overline{x}}{\phi_1}}{A \seqA F_1 \seqA \msgB{op_2}{\overline{y}}{\phi_2} \seqA F_2}$ 
+\quad
+ $\Gamma, \overline{x{:}t} \vdash \rg{H \seqA \msgB{op_1}{\overline{x}}{\phi_1}}{A}{F} \termsyn e$}
+{TObs'}
+{$\Gamma \vdash \rg{H}{\msgB{op_1}{\overline{x}}{\phi_1} \seqA A}{F_1 \seqA \msgB{op_2}{\overline{y}}{\phi_2} \seqA F_2} \termsyn \zobs{\overline{x}}{op}{e}$}}
+\\ \ 
+
+where the synthesis is guided by a prophecy that ``event $\eff{op_2}$ will be received in the future''. In an algorithmic view, the normal \textsc{TObs} can be called as an observe rule (\textsc{TReceive}); this one can be called as \textsc{TSend}.
+
+Note that $\eff{ReadRsp}$ can only be generated by $\eff{GetReq}$. It indicates we should apply rule \textsc{TConcat} and \textsc{TObs} with proper type of $\eff{GetReq}$. We choose the second one in the intersection type and apply subtyping rules:
+
+{\footnotesize\mprooftr{130mm}
+{$\Gamma \vdash H_2 \subseteq H_1$ \quad
+$\Gamma \vdash A_1 \subseteq A_2$ \quad
+$\Gamma \vdash F_1 \subseteq F_2$ \quad
+$H_{getreq} = \compA{\exCommit}^* \seqA \msg{WriteRsp}{\fld[v] = x \land \fld[stat] = \true} \seqA \compA{ \msg{WriteRsp}{\fld[stat] = \true}\cup\exCommit }^*$ \quad 
+$F_{getreq} = \exReadRsp{\fld[v] = 0} \seqA \anyA^*$}
+{SubHAT}
+{
+$\Gamma \vdash \rg{\neg\finalA \exCommit}{\msg{GetReq}{\top}}{\anyA^* \mix \exReadRsp{\fld[v] = 0} } <:  \rg{ H_{getreq} }{\exGetReq}{F_{getreq}} $}}
+\\ \ 
+
+The subtyping rule need to make $H_{getreq} \seqA \exGetReq \seqA F_{getreq}$ to be consistent with $\exArw$ (all types has the same ``global view''). Then we apply the \textsc{TObs} (and subsumption rule).
+
+{\footnotesize\mprooftr{105mm}
+{
+$\Gamma \vdash \eff{op} : \rg{H}{\exGetReq}{\epsilon \seqA \epsilon \seqA \exReadRsp{\fld[v] = 0} \seqA \anyA^*}$ 
+\quad
+ $\Gamma \vdash \rg{H \seqA \exGetReq}{\epsilon}{\epsilon \seqA \exReadRsp{\fld[v] = 0} \seqA \anyA^*} \termsyn ()$}
+{TObs'}
+{$\Gamma \vdash \rg{H}{\exGetReq \seqA \epsilon}{\epsilon \seqA \exReadRsp{\fld[v] = 0} \seqA \anyA^*} \termsyn \zobs{\overline{x}}{op}{()}$}}
+\\ \ 
+
+Similarly, the event $\eff{GetReq}$ relies on $\eff{ReadReq}$, these relation induces an backward synthesis, we can make it until we face the event can be directly generated by environment. 
+
+{\footnotesize\mprooftr{130mm}
+{
+$\Gamma \vdash \eff{op} : \overline{x{:}t}\sarr \rg{H}{\exReadReq}{\epsilon\seqA\epsilon\seqA\exGetReq\seqA\exReadRsp{\fld[v] = 0} \seqA \anyA^*}$ 
+\quad
+$H = \compA{\exCommit}^* \seqA \msg{WriteRsp}{\fld[v] = x \land \fld[stat] = \true} \seqA \compA{ \msg{WriteRsp}{\fld[stat] = \true}\cup\exCommit }^*$ \quad 
+ $\Gamma \vdash \rg{...}{\epsilon}{...} \termsyn ()$}
+{TGen}
+{$\Gamma \vdash \rg{H}{\exReadReq \seqA \epsilon}{ \epsilon\seqA\exGetReq\seqA\exReadRsp{\fld[v] = 0} \seqA \anyA^*}  \termsyn \zgen{ReadReq}{}{()}$}}
+\\ \ 
+
+Besides the message-passing order of read $\effBlue{ReadReq} \to \effBlue{GetReq} \to \effBlue{GetRsp} \to \effBlue{ReadRsp}$, there it also an order for write: 
+\begin{align*}
+    \effRed{WriteReq} \to \effRed{PutReq} \to \effRed{PutRsp} &\to \effRed{WriteRsp}
+    \\&\searrow \effRed{Commit}
+\end{align*}\noindent
+The correctness property $\exArw$ indicates $\eff{WriteRsp}$ must happens before $\eff{ReadRsp}$, Moreover, the refinement types indicates $\eff{Commit}$ cannot happen before $\eff{GetReq}$. Thus, the complete interleaving of these events is
+\begin{align*}
+    (\effRed{WriteReq} \seqA \effRed{PutReq} \seqA \effRed{PutRsp} \parallel \effBlue{ReadReq}) \seqA
+    (\effRed{WriteRsp} \parallel \effBlue{GetReq}) \seqA (\effBlue{GetRsp} \seqA  \parallel \effRed{Commit}) \seqA \effBlue{ReadRsp}
+\end{align*}\noindent
+
+\paragraph{Typing Algorithm}
+The declarative typing rule will smartly figure it our, however, this relation can be derived by automata intersection. Assume we do inference for $\eff{WriteRsp}$ and  $\eff{ReadRsp}$ separately can then merge them together:
+
+{\footnotesize\mprooftr{110mm}
+{
+$\Gamma \vdash \rg{H_1}{A_1 \seqA \msg{op_1}{\phi}}{F_1} \termsyn e_1$ 
+\quad
+$\Gamma \vdash \rg{H_2}{A_2 \seqA \msg{op_2}{\phi}}{F_2} \termsyn e_2$}
+{TParallel}
+{$\Gamma \vdash \rg{H_1 \land H_2}{(A_1 \parallel A_2) \seqA \msg{op_1}{\phi_1} \seqA \msg{op_2}{\phi_2}}{F_1 \land F_2} \termsyn e_1 \parallel e_2$}}
+\\ \ 
+
+
+\paragraph{Type Denotation}
+
+\begin{figure}[t!]
+\footnotesize{
+{\small
+\begin{flalign*}
+ &\text{\textbf{Well-Formed Trace}} & \fbox{$\wfvdash \zevent{op}{\overline{c}} \quad \wfvdash \alpha$}
+\end{flalign*}
+\begin{flalign*}
+ &\text{\textbf{Trace Language}} & \fbox{$\denot{se} \in \pset{ev} \quad  \denot{A} \in \pset{\alpha}$}
+\end{flalign*}}
+\vspace{-1em}
+\begin{flalign*}
+    % \\ \mathit{Tr}^\textbf{WF} &\doteq \{\alpha ~|~ \forall (\pevapp{\effop}{\overline{v_i}}{v}) \in \alpha. \emptyset \basicvdash \effop : \overline{b_i}\sarr b \land (\forall i.\emptyset \basicvdash v_i : b_i) \land \emptyset \basicvdash v : b  \}
+    \denot{\msgB{op}{x}{\phi}}&\doteq \{ \zevent{op}{\overline{c}} ~|~ \wfvdash \zevent{op}{\overline{c}} \land  \phi[\overline{x\mapsto c}]\}
+    \\\denot{ \msgG{\top}} &\doteq \{\alpha ~|~ \wfvdash \alpha \} \quad \denot{ \msgG{\bot}} \doteq \emptyset
+\end{flalign*}
+\vspace{-1.5em}
+{\small
+\begin{flalign*}
+  &\text{\textbf{Type Denotation}}
+  & \fbox{$\denot{t} \in \mathcal{P}(c)
+    \quad \denot{\tau} \in \mathcal{P}(e)$}
+\end{flalign*}}
+\vspace{-1.5em}
+\begin{align*}
+  &\denot{ \rawnuot{b}{\phi} } &&\doteq \{ c ~|~ \emptyset
+                                       \basicvdash c : b \land
+                                       \phi[\nu\mapsto v] \}
+  \\ &\denot{ x{:}t\sarr\tau } &&\doteq \{ e ~|~ \emptyset \basicvdash e : \eraserf{x{:}t\sarr\tau} \land
+                                           \forall c \in \denot{ t }.\, e\ c \in  \denot{ \tau[x\mapsto c ] } \}
+  \\ &\denot{ x{:}t\garr\tau } &&\doteq \{ e ~|~ 
+    \emptyset \basicvdash e : \eraserf{\tau} \land 
+    \forall c \in \denot{t}. e \in  \denot{ \tau[x\mapsto c ] } \}
+  % \\ &\denot{ X{:}A\garr\tau } &&\doteq \{ e ~|~ 
+  %   \emptyset \basicvdash e : \eraserf{\tau} \land 
+  %   \forall \alpha \in \denot{A}. e \in \denot{ \tau[X\mapsto \alpha] } \}
+  % \\ &\denot{\hfive{A}{B}{t}{B'}{A'}} &&\doteq \{e ~|~ \emptyset \basicvdash e : \eraserf{t} \land \forall \alpha\in\denot{A}\; \beta\in\denot{B}\; \alpha'\, \beta'\,v. 
+  % \\&&& \qquad \qquad(\alpha, \beta, e) \hookrightarrow^* (\alpha \listconcat \alpha', \beta', c) \impl \alpha'\in\denot{A'} \land \beta'\in\denot{B'} \land c \in \denot{t} \}
+  \\ &\denot{\rg{H}{A}{F}} &&\doteq \{e ~|~ \emptyset \basicvdash e : \eraserf{t} \land \forall e_H\; \alpha_H\; e_F\; \alpha_F\; v\; \beta_H\;\beta. \alpha_H \in \denot{H} \impl
+  \\&&& \qquad\qquad [] \vDash ([], e_H;e;e_F) \mharr{\alpha_H} (\beta_H, e;e_F) \mharr{\alpha} (\beta, e_F) \mharr{\alpha_F} ([], v) \impl \alpha\in\denot{A} \land \alpha_F\in\denot{F} \}
+  %  \\ &\denot{\hfive{A}{B}{t}{B'}{A'}} &&\doteq \{e ~|~ \emptyset \basicvdash e : \eraserf{t} \land \forall \alpha\in\denot{A}\; \beta\in\denot{B}\;\alpha'\, \beta'\,v. 
+  % \\&&& \qquad \qquad \steptr{\alpha}{(\beta, e)}{\alpha'}{(\beta', c)} \impl \alpha'\in\denot{A'} \land \beta'\in\denot{B'} \land c \in \denot{t} \}
+  % \\ &\denot{\hfour{A}{B}{\msgB{op}{\overline{x}}{\phi}}{B'}} &&\doteq \{\eff{op} ~|~ \forall \alpha\in\denot{A}\; \beta\in\denot{B}\; \beta'\, \overline{v_x}. \;\phi[\overline{x \mapsto v_x}] \impl
+  % \\&&& \qquad \qquad \alpha, \beta \vDash \zevent{op}{\overline{v_x}} \Downarrow \beta' \impl \beta'\in\denot{B'} \}
+  \\ &\denot{ \tau_1 \interty \tau_2 } &&\doteq \denot{\tau_1} \cap \denot{\tau_2}
+\end{align*}
+\vspace{-1.5em}
+{\small
+\begin{flalign*}
+  &\text{\textbf{Type Context Denotation}}
+  & \fbox{$\denot{\Gamma} \in \mathcal{P}(\sigma)$}
+\end{flalign*}}
+\vspace{-1.2em}
+\begin{flalign*}
+    \denot{ \emptyset } &\doteq \{ \emptyset \} \qquad\qquad\qquad\qquad&
+    \denot{ x{:}t, \Gamma } &\doteq \{ \sigma[x\mapsto v] ~|~ v\in \denot{t}, \sigma \in \denot{\Gamma[x\mapsto v]} \}
+\end{flalign*}
+}
+\vspace{-0.4cm}
+\caption{Type denotations in \langname{}}
+\label{fig:type-denotation}
+\vspace{-.4cm}
+\end{figure}

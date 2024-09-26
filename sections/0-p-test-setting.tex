@@ -1,0 +1,44 @@
+\section{P Test setting}
+
+A closed system that is available for testing consists of the following components:
+\begin{enumerate}
+    \item $M_{server}$: A set of machines under test, we always assume we are testing servers.
+    \item $M_{gen}$: A set of test generator machines that communicates with these machines to generate random events. We always assume these generators are simulating the behaviours of real clients.
+    \item $M_{moniter}$: A set of monitor machines that are specifications indicating the expected correctness properties of observable events.
+\end{enumerate}
+All of above consisting a module, the whole test procedures would test multiple modules individually.
+
+In current $\mathtt{P}$, the user actually provides:
+\begin{enumerate}
+    \item $M_{server}(\mathtt{config})$: A setting up function of $M_{server}$ (also contains the implementations of these machines) parameterized with configuration $\mathtt{config}$.
+    \item $M_{gen}(\mathtt{config})$: A setting up function of $M_{gen}$ (also contains the implementations of these machines) parameterized with configuration $\mathtt{config}$.
+    \item $M_{moniter}$: It seems that $M_{moniter}$ doesn't not care about how many clients and servers are created.
+    \item $C$: A set of configurations which may form a lattice (user can only provide ranges for fields of the configurations). The configuration includes number of clients and servers, number of events, etc.
+\end{enumerate}
+
+We want to automate this procedure by infer the a setting up function $M_{gen}(\mathtt{config})$ from a \emph{client specification} $\Phi$. Formally, we what a synthesizer $\Code{Syn}:\Phi \sarr (\mathtt{config} \sarr  M_{gen})$. For the same specification, translate it into different machines under different configurations.
+
+\paragraph{Semantics of client specification language} We consider the desirable semantics of client specification $\Phi$. Precisely, the semantics (language) of $\Phi$ is denoted as $\langA{\Phi}^c$, which indicates a set of traces under a configuration $c$. The sound synthesizer $\Code{Syn}:\Phi \sarr (\mathtt{config} \sarr  M_{gen})$ should be consistent with this semantics -- the behaviours of the synthesized generator setting $M_{gen}$ (a set of test generator machines) can non-deterministically produce these traces. 
+
+We want the semantics of client specification language has the following features:
+\begin{enumerate}
+    \item The specification $\Phi$ doesn't indicate the actual bound (number of clients, number of servers, number of events), which be totally controlled by the configurations. It means that the $\Phi$ can use Kleene star $^*$ or other modalities, and we specialize the $\Phi$ as a finite set of traces according to a specific configuration latter.
+    \item The specification $\Phi$ doesn't care about how many clients are involving. To simulate the behaviours of the real clients, we believe the clients are absolutely independent (one client cannot know another client). The clients execute in parallel, and the generated traces will be interleaved with arbitrary order. Thus, the specification $\Phi$ can always assume there is a single client. The synthesizer $\Code{Syn}:\Phi \sarr (\mathtt{config} \sarr  M_{gen})$ will synthesize different generator setting according to the input $\mathtt{config}$. 
+    \item The specification $\Phi$ can control how the client communicate with multiple servers, e.g., polling, randomly pick one, repeating message to one machine, and so on. It fit the actual behaviours of the clients -- one client don't know how many clients are existing, but do know how many servers here, and can communicate with them with any manner. These manner should have nice abstraction -- we don't specify the actual number of servers here, we should use $\forall$ (or other modality) for instead.
+    \item The specification $\Phi$ can be interpreted as a protocol for a single client and a single server, which is simplest case, and also the way how user understand the problem. In some sense, the $\Phi$ can be decompose and $\phi$ (a protocol of a single client and a single server) times $\gamma$ (a protocol of how to deal with multiple servers for each event send by client).
+\end{enumerate}
+
+I have a idea about the specification language, which is a temporal logic with atomic block. For example, the specification with atomic block $\{...\}$
+\begin{align*}
+    \textcolor{red}{\{\Code{Send\;1}\}}; \textcolor{blue}{\{\Code{Send\;2;Send\;3}\}}
+\end{align*}\noindent
+under configuration indicating there are two servers $m_1$ and $m_2$, which accept the trace:
+\begin{align*}
+     \textcolor{red}{\Code{Send\;m_1\;1};\Code{Send\;m_2\;1}}; \textcolor{blue}{\Code{Send\;m_1\;2};\Code{Send\;m_1\;3};\Code{Send\;m_2\;2};\Code{Send\;m_2\;3}};
+\end{align*}\noindent
+where in each atomic block $\{...\}$, we repeat the action to both servers $m_1$ and $m_2$. The actually manner can be indicated for each block, e.g.,
+\begin{align*}
+    \{\Code{Send\;1}\}^{\Code{polling}}; \{\Code{Send\;2;Send\;3}\}^{\Code{polling}}
+\end{align*}\noindent
+where $\Code{polling}$ can also be some complicate protocol expressed in temporal logic. By erasing these $\Code{polling}$, we reduce to a protocol for a single client and single server.
+
