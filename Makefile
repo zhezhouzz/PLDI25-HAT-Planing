@@ -1,19 +1,17 @@
 # create pdf
 
-.PHONY: marple
+.PHONY: clouseau
 
-all: marple
+all: clouseau
 
-marple: main.tex sections/intro.tex sections/overview.tex sections/lang.tex \
-	sections/typing.tex sections/algo.tex sections/evaluation.tex \
-	sections/related.tex sections/conclusion.tex \
+clouseau: main.tex \
 	commands.sty refinementtydef.sty
-	pdflatex -jobname="marple" -shell-escape main
-	bibtex marple
+	pdflatex -jobname="clouseau" -shell-escape main
+	bibtex clouseau
 	clear
-	pdflatex -jobname="marple" -shell-escape main
+	pdflatex -jobname="clouseau" -shell-escape main
 	clear
-	pdflatex -jobname="marple" -shell-escape main
+	pdflatex -jobname="clouseau" -shell-escape main
 
 # create pdf without bibs (fast)
 haste:
