@@ -1,9 +1,6 @@
 \section{Problem Setup}
 
-We assume a set of communicating components (actors) that interact
-with each other.  These components may be user-defined (e.g.,
-components that model an application that implements a distributed
-protocol over a set of processes) or provided as an external entity
+We assume a set of communicating components (i.e., actors, or \Code{P} machines) that interact with each other. These components may be user-defined (e.g., components that model an application that implements a distributed protocol over a set of processes) or provided as an external entity
 available to the application (e.g., a storage system or database).
 Each component, regardless of whether they are user-defined or
 system-provided, is equipped with a specification that governs its
@@ -12,8 +9,7 @@ language we used in our PLDI'24 paper (i.e., LTL$_f$) that has a
 natural representation as symbolic finite automata (SFA).  We have
 refined our specification language so that they are now additionally
 equipped with predicates that model the system's overall asynchronous
-semantics.  For example, a read request performed by a client actor
-may not be immediately serviced by the database.
+semantics.  For example, a read request performed by a client component may not be immediately serviced by the server components.
 
 \paragraph{Axioms and Specification} As a result of the inherently asynchronous
 semantics of the systems we're modeling, component specifications must
@@ -31,41 +27,45 @@ contains the same value. These relationships are referred to as axioms
 and are represented as individual temporal specifications for each
 kind of message. For example, the specification $\phi_{\eff{ReadReq}}$
 defined above, specifies that when the coordinator handles a
-$\eff{ReadReq}$, it will send a $\eff{GetReq}$ to the database.
+$\eff{ReadReq}$, it will send a $\eff{GetReq}$ to the database. 
 
-LTL$_f$ specifications for the 2PC coordinator and all participating
-processes can be automatically extracted from their corresponding P
-implementations, while specifications for the database or other
-external components are provided manually.
+LTL$_f$ specifications for a simplified 2PC coordinator and all participating processes can be mechanically extracted from their corresponding \Code{P} implementations. For example, the relation between $\eff{GetRsp}$ and $\eff{ReadRsp}$ shown above can be extracted from the following \Code{P} code.
+
+\begin{minted}[xleftmargin=5pt, numbersep=4pt, linenos = true, fontsize = \footnotesize, escapeinside=??]{C}
+on GetRsp do (input: ...) {
+    /* code that handles read request is omitted */
+    
+    // handler always ends up with message sending
+    send client, ReadRsp, (v = input.v,); // feild v of ReadReq's payload is equal to GetReq's
+}
+\end{minted}
+
 
 \paragraph{Problem Setting}
 
 Our tool takes a set of axioms $\Phi$ as described above and a
 correctness property $A$ as input, and \emph{synthesizes} a program
-$P$ that simulates a full test environment, generating requests to the
-program under test, handling responses, and defining a linearizable
-schedule among the actors comprising the system.  By removing ordering
+$P$ that simulates a full test environment, generating requests to the server (i.e., program under test), handling responses, and defining a linearizable schedule among the components comprising the system. By removing ordering
 constraints on message communication among components that are
-explicit in the synthesized program, we essentially get a test
-generator that relies on an external scheduler, similar to the
+explicit in the synthesized program, we essentially get a mock client (test
+generator) that relies on an external scheduler, similar to the
 existing setup that uses the native $\Code{P}$ scheduler and monitor
-to manage client process interactions, but which fully controls the
-interaction between clients and external components.
+to manage interaction between components.
 
 \section{Motivating Example}
 
 \begin{figure}[ht!]
     \centering
     \includegraphics[width=0.75\linewidth]{figures/typed-guided-planing-example.drawio.png}
-    \caption{A simple two-phase commit model.}
+    \caption{A simplified two-phase commit model.}
     \label{fig:ex-2pc}
 \end{figure}
 
 Following the above, we present a simplified two-phase commit model to
 motivate our approach, as depicted in \autoref{fig:ex-2pc}. This model
-comprises four components (machines):
+comprises four components (\Code{P} machines):
 \begin{enumerate} 
-    \item The generator simulates user behaviors, enabling the sending
+    \item The client (generator) simulates user behaviors, enabling the sending
       and receiving of $\eff{Read/Write}$ messages for reading and
       writing values (specifically, the field $\Code{v}$ in the
       payloads). Furthermore, the response message (i.e., messages end
@@ -80,9 +80,8 @@ comprises four components (machines):
       this data and determines whether the updated information should
       be made persistent through $\eff{Commit}$ or $\eff{Abort}$
       messages.
-    \item A scheduler determines the specific ordering of events
-      produced by the generator.
-    \item A monitor that determines that events observed by the
+    \item A scheduler determines the specific receiving ordering of messages produced by the components.
+    \item A monitor that determines that messages observed by the
       coordinator and database are consistent with a global
       correctness property.
 \end{enumerate}
@@ -94,8 +93,7 @@ which signifies strong consistency.\\[-.8em]
 $\exArw$: \textit{Any read result (i.e., the $\Code{v}$ field of
   $\eff{ReadRsp}$) must equal the most recent successfully written
   value (i.e., when the $\Code{stat}$ field of $\eff{WriteRsp}$ is
-  \Code{true}), which must hold for any write action that precedes
-  a completed $\eff{Commit}$ action.}\\[-.8em]
+  \Code{true}).}\\[-.8em]
 
 The correctness property $\exArw$ can be formulated as a symbolic LTL
 (Linear Temporal Logic) formula. However, the implementation may not
@@ -131,37 +129,37 @@ payload does not match the payload of the $\eff{WriteReq}$.  An
 example of a program that manifests this behavior, denoted as $e$, is
 provided below. For simplicity, we assume there is only one
 coordinator and one database, and therefore the source and destination
-components (machines) of the messages are omitted.
+components (\Code{P} machines) of the messages are omitted.
 
 \begin{minted}[xleftmargin=5pt, numbersep=4pt, linenos = true, fontsize = \footnotesize, escapeinside=??]{OCaml}
-let (x: int) = ?$\mykw{random}$?(int) in
-?$\mykw{assert}$? (x != -1) in
+let (x: int) in
+?$\mykw{assume}$? (x != -1) in
 ?$\mykw{generate}$? WriteReq x in
 (* let (y1: int) = ?$\mykwCmt{observe}$? PutReq in *)
-(* ?$\mykwCmt{assert}$? (y1 == x) in *)
+(* ?$\mykwCmt{assume}$? (y1 == x) in *)
 (* let (y2: int), (s1: bool) = ?$\mykwCmt{observe}$? PutRsp in *)
-(* ?$\mykwCmt{assert}$? (y2 == x && s1 == true) in *)
+(* ?$\mykwCmt{assume}$? (y2 == x && s1 == true) in *)
 let (y3: int), (s2: bool) = ?$\mykw{observe}$? WriteRsp in
-(* ?$\mykwCmt{assert}$? (y3 == x && s2 == true) in *)
+(* ?$\mykwCmt{assume}$? (y3 == x && s2 == true) in *)
 ?$\mykw{generate}$? ReadReq in
 (* let () = ?$\mykwCmt{observe}$? GetReq in *)
 (* let (y4: int) = ?$\mykwCmt{observe}$? GetRsp in *)
-(* ?$\mykwCmt{assert}$? (y4 == -1) in *)
+(* ?$\mykwCmt{assume}$? (y4 == -1) in *)
 (* let () = ?$\mykwCmt{observe}$? Commit in *)
 let (y5: int) = ?$\mykw{observe}$? ReadRsp in
-(* ?$\mykwCmt{assert}$? (y5 == y4 && y5 != x) in *)
+(* ?$\mykwCmt{assume}$? (y5 == y4 && y5 != x) in *)
 ()
 \end{minted}
 This program can be considered as playing three distinct roles: as a
-generator, a scheduler, and a monitor. Without the commented code, $e$
-acts as a generator that  sends messages to the coordinator (on
+generator, a scheduler, and a monitor. Without the commented code, $e$ acts as a generator that  sends messages to the coordinator (on
 lines $3$ and $10$) and receive responses (on lines $10$ and
 $15$). This behavior is analogous to the following \Code{P} code.
 
 \begin{minted}[xleftmargin=5pt, numbersep=4pt, linenos = true, fontsize = \footnotesize, escapeinside=??]{C}
 var x: int;
-value = choose(int);
-assert(x != -1);
+while (x != -1) {
+    x = choose(int);
+}
 send coordinator, WriteReq, (source = this, v = x);
 receive {
     case WriteRsp: ((y3: int, s2: bool)) {}
@@ -172,27 +170,23 @@ receive {
 }
 \end{minted}
 
-We distinguish messages sent by the generator from other messages. The
-former are ``announced'' using the $\mykw{generate}$ keyword, and it
-is the responsibility of the execution environment in which this
+\noindent We distinguish messages sent by the generator from other messages. The former are ``announced'' using the $\mykw{generate}$ keyword, and it is the responsibility of the execution environment in which this
 program runs to provide the concrete payload of the message.  On the
 other hand, the environment can also $\mykw{observe}$ other messages
 and store the corresponding payload into variables (e.g., $y_3$ on
 line $8$).
 
-Moreover, if we include the commented code, the program gains a global
-view (i.e., visibility of all events) and additionally functions as a
-scheduler, dictating the order in which messages are received. For
-instance, the $\eff{Commit}$ message (line $14$) is received after the
-$\eff{GetRsp}$ message (line $12$), which is why the read value
-remains the default value (i.e., $-1$) rather than the value that was
-successfully written. The assertions in the commented code serve as a
-monitor to ensure that the execution indeed produces a trace that
-violates the correctness property $\exArw$.
+The synthesized program, without the commented code, can integrate with the native $\Code{P}$ framework. Moreover, if we include the commented code, the program gains a global view (i.e., visibility of all events) and additionally functions as a scheduler, dictating the order in which messages are received.
+For instance, the $\eff{Commit}$ message (line $14$) is received after the $\eff{GetRsp}$ message (line $12$), which is why the read value remains the default value (i.e., $-1$) rather than the value that was successfully written.  It's important to note that, aside from scheduling, the behaviors of components can also be non-deterministic. For example, the database might send a $\eff{WriteRsp}$ with a $\false$ status (line $9$). In this context, the $\mykw{assume}$ keyword in the commented code acts as a monitor, ensuring that the execution indeed produces a trace that violates the correctness property $\exArw$.
 
-The underlying intuition is that having a ``global view'' can lead to
-more effective testing. Therefore, we first synthesize an environment
-that acts as both a generator and a scheduler. Even if we later
-``erase'' the invisible messages (i.e., those not sent or received by
-the generator), the test remains more efficient.
+\paragraph{Why our approach works} The underlying intuition is that having a ``global view'' can lead to more effective testing. Therefore, we first synthesize an environment that acts as both a generator and a scheduler. Even if we later ``erase'' the invisible messages (i.e., those not sent or received by the generator), the test remains more efficient.
 
+Additionally, we can optimize the ``guess and filter'' loop found on lines $1$ to $4$ of the analogous \Code{P} code shown earlier by implementing a more efficient approach. This can be achieved by repeatedly querying an SMT solver (e.g., $\Code{z3}$) to provide different values that satisfy the $\mykw{assume}$ constraint (e.g., $x \not= -1$). This approach is especially useful when dealing with complex constraints.
+
+\section{Progress and Plan}
+
+We have recently adapted our prior work from PLDI '24 to formalize this problem as a deductive synthesis task. Similar to other deductive synthesis approaches, we have defined a set of declarative derivation rules as the theoretical foundation, ensuring soundness for our approach.
+
+However, during deductive synthesis, there are often multiple applicable declarative rules, and only by selecting the appropriate ones can we successfully derive the synthesized programs. This selection process involves non-trivial searching in a large search space of possible rule application orders. To address this challenge, we are designing a synthesis algorithm that applies these rules in a more deterministic and efficient manner. This algorithm will essentially formalize the heuristic strategies developed during our previous internship. 
+
+Our goal is to complete this algorithm by mid-October, leaving us with about a month before PLDI's submission deadline (November 14th) to run experiments and finalize the paper.
