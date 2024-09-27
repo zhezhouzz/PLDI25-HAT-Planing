@@ -60,7 +60,7 @@ server (i.e., program under test), handling responses, and defining a
 linearizable schedule among the components comprising the system.  By
 removing ordering constraints on message communication among
 components that are explicit in the synthesized program, we instead
-get a most-general client (test generator) that relies on an external
+get a specification-driven client (test generator) that relies on an external
 scheduler, similar to the existing setup that uses the native
 $\Code{P}$ scheduler and monitor to manage interaction between
 components.
@@ -136,8 +136,7 @@ Although there are potentially infinitely many environment programs
 that can be generated, we are particularly interested in identifying
 those that result in the execution of the program under test to
 violate the correctness property $\exArw$. This can occur when a
-$\eff{ReadReq}$ message is generated, on a key that matches that of a
-previous issued $\eff{WriteReq}$, which in turn precedes a generated
+$\eff{ReadReq}$ message is generated after previous issued $\eff{WriteReq}$, which in turn precedes a generated
 $\eff{Commit}$ message by the coordinator, but whose return value
 payload does not match the payload of the $\eff{WriteReq}$.  An
 example of a program that manifests this behavior, denoted as $e$, is
@@ -146,23 +145,22 @@ coordinator and one database, and therefore the source and destination
 components (\Code{P} machines) of the messages are omitted.
 
 \begin{minted}[xleftmargin=5pt, numbersep=4pt, linenos = true, fontsize = \footnotesize, escapeinside=??]{OCaml}
-let (x: int) in
-?$\mykw{assume}$? (x != -1) in
-?$\mykw{generate}$? WriteReq x in
-(* let (y1: int) = ?$\mykwCmt{observe}$? PutReq in *)
-(* ?$\mykwCmt{assume}$? (y1 == x) in *)
-(* let (y2: int), (s1: bool) = ?$\mykwCmt{observe}$? PutRsp in *)
-(* ?$\mykwCmt{assume}$? (y2 == x && s1 == true) in *)
-let (y3: int), (s2: bool) = ?$\mykw{observe}$? WriteRsp in
-(* ?$\mykwCmt{assume}$? (y3 == x && s2 == true) in *)
-?$\mykw{generate}$? ReadReq in
-(* let () = ?$\mykwCmt{observe}$? GetReq in *)
-(* let (y4: int) = ?$\mykwCmt{observe}$? GetRsp in *)
-(* ?$\mykwCmt{assume}$? (y4 == -1) in *)
-(* let () = ?$\mykwCmt{observe}$? Commit in *)
-let (y5: int) = ?$\mykw{observe}$? ReadRsp in
-(* ?$\mykwCmt{assume}$? (y5 == y4 && y5 != x) in *)
-()
+let (x: int);
+?$\mykw{assume}$? (x != -1);
+?$\mykw{generate}$? WriteReq x;
+(* let (y1: int) = ?$\mykwCmt{observe}$? PutReq; *)
+(* ?$\mykwCmt{assume}$? (y1 == x); *)
+(* let (y2: int), (s1: bool) = ?$\mykwCmt{observe}$? PutRsp; *)
+(* ?$\mykwCmt{assume}$? (y2 == x && s1 == true); *)
+let (y3: int), (s2: bool) = ?$\mykw{observe}$? WriteRsp;
+(* ?$\mykwCmt{assume}$? (y3 == x && s2 == true); *)
+?$\mykw{generate}$? ReadReq;
+(* let () = ?$\mykwCmt{observe}$? GetReq; *)
+(* let (y4: int) = ?$\mykwCmt{observe}$? GetRsp; *)
+(* ?$\mykwCmt{assume}$? (y4 == -1); *)
+(* let () = ?$\mykwCmt{observe}$? Commit; *)
+let (y5: int) = ?$\mykw{observe}$? ReadRsp;
+(* ?$\mykwCmt{assume}$? (y5 == y4 && y5 != x); *)
 \end{minted}
 This program can be considered as playing three distinct roles, corresponding
 to the three distinct elements that make up an environment: as a
