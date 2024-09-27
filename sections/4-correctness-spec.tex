@@ -1,0 +1,191 @@
+\section{2PC-Commit}
+
+Some common definition and specifications.
+
+\begin{minted}[fontsize = \footnotesize, escapeinside=!!, xleftmargin=18pt, linenos]{ocaml}
+type gid !$\mykw{allowing}$! = (* global id for a txn *)
+type shard !$\mykw{allowing}$! = (* shard machine id *)
+type router !$\mykw{allowing}$! = (* router machine id *)
+type time !$\mykw{allowing}$! = < (* time, can be compare*)
+type key !$\mykw{allowing}$! = (* time, can be compare*)
+type value !$\mykw{allowing}$! = (* time, can be compare*)
+type status = Error | Active | Committed | Aborted
+type cmd_status = Ok | Abort | Unknown
+
+(* rounter --> client *)
+!$\mykw{event}$! startTxnRsp = {router: router; gid: gid; start_time: time}
+!$\mykw{event}$! updateRsp = {router: router; gid: gid; k: key; v: value; stat: cmd_status}
+!$\mykw{event}$! readRsp = {router: router; gid: gid; k: key; v: value; stat: cmd_status}
+!$\mykw{event}$! RouterTxnStatus = {gid: gid; participants: set[shard]; stat: status; commit_time: time}
+!$\mykw{event}$! commitTxnRsp = {gid: gid; stat: status}
+
+(* rounter --> client *)
+!$\mykw{event}$! shardPrepareRsp = {shard: shard; gid: gid; isOk: bool; prepare_time: time}
+
+(* rounter --> shard *)
+!$\mykw{event}$! shardAbortTxn = {gid: gid;}
+!$\mykw{event}$! shardCommitTxn = {gid: gid; commit_time: time}
+
+(* shard --> rounter *)
+!$\mykw{event}$! shardPrepareRsp = {shard: shard; gid: gid; isOk: bool; prepare_time: time}
+
+!$\mykw{global}$! linear_commitTxnRsp =
+  !$\forall$!id: gid. !$\globalA$!(commitTxnRsp(#gid = id)!$\impl \nextA \neg\finalA$!commitTxnRsp(#gid = id))
+
+!$\mykw{global}$! linear_RouterTxnStatus =
+  !$\forall$!id: gid. !$\globalA$!(RouterTxnStatus(#gid = id)!$\impl \nextA \neg\finalA$!RouterTxnStatus(#gid = id))
+
+!$\mykw{global}$! linear_shardPrepareRsp =
+  !$\forall$!id: gid. !$\forall$!s: shard. 
+  !$\globalA$!(shardPrepareRsp(#gid = id && #shard = s)!$\impl \nextA \neg\finalA$!RouterTxnStatus(#gid = id && #shard = s))
+
+!$\mykw{global}$! commitTxnRsp_commit_or_abort = !$\globalA\neg$! commitTxnRsp(#stat = Error || #stat = Active)
+
+\end{minted}
+
+\subsection{2PC-Commit: Atomicity}
+
+\begin{minted}[fontsize = \footnotesize, escapeinside=!!, xleftmargin=18pt, linenos]{ocaml}
+
+(*  A1. If a txn is reported as committed to a client, then the router committed the txn.
+    A2. If a txn is reported as aborted to a client, then the router aborted the txn. *)
+!$\mykw{global}$! atomicity_1 =
+  !$\forall$!id: gid. !$\forall$!stat: status.
+  !$\neg$! (!$\neg$!routerTxnStatus(#gid = id && #stat = stat)!$\untilA$!commitTxnRsp(#gid = id && #stat = stat))
+
+(*  A3. If a txn is committed by the router, then it was agreed on by all relevant shards. *)
+!$\mykw{global}$! atomicity_2 =
+  !$\forall$!id: gid. !$\forall$!s: shard.
+  !$\neg$! (!$\neg$!shardPrepareRsp(#gid = id && #shard = s && #isOk)!$\untilA$!
+            routerTxnStatus(#gid = id && #stat = Committed && s !$\in$! #participants))
+
+(*  A4. If a txn is committed at a shard, then router has committed the txn. *)
+!$\mykw{global}$! atomicity_3 =
+  !$\forall$!id: gid. !$\neg$! (!$\neg$!routerTxnStatus(#gid = id && #stat = Committed)!$\untilA$!shardCommitTxn(#gid = id))
+
+(*  A5. If a txn is aborted at a shard, then router has aborted the txn. *)
+!$\mykw{global}$! atomicity_4 =
+  !$\forall$!id: gid. !$\neg$! (!$\neg$!routerTxnStatus(#gid = id && #stat = Abortted)!$\untilA$!shardAbortTxn(#gid = id))
+\end{minted}
+
+\subsection{2PC-Commit: ReadVisibility}
+
+\begin{minted}[fontsize = \footnotesize, escapeinside=!!, xleftmargin=18pt, linenos]{ocaml}
+
+!$\mykw{predicate}$! has_update (id: gid, k: key) =
+  !$\anyA^*$!;updateRsp(#gid = id && #k = k);!$\anyA^*$!
+
+(* last update within given txn id*)
+!$\mykw{predicate}$! last_update (id: gid, k: key, v: value) =
+  !$\anyA^*$!;updateRsp(#gid = id && #k = k && #v = v);(!$\neg$!updateRsp(#gid = id))!$^*;$!
+
+(* R1. The successfully read response to the client should either
+        a. return the write_buff value in the active txn if key exists in write_buff *)
+!$\mykw{global}$! read_active = !$\forall$!id:gid. !$\forall$!k:key. !$\forall$!v:value. 
+!$\neg$! (last_update(id, k, v); readRsp(#stat = Ok && #gid = id && #k = k && #v !$\not=$! v);!$\anyA^*$!)
+
+!$\mykw{predicate}$! last_version_time (t1: time, t2: time, k: key, v: value) =
+  !$\exists$!id:gid. last_update(id, k, v) &&
+  (!$\neg$!RouterTxnStatus(t1 < #commit_time < t2))!$^*;$!
+  ;RouterTxnStatus(#gid = id && #stat = Committed && #commit_time = t1);
+  (!$\neg$!RouterTxnStatus(t1 < #commit_time < t2))!$^*;$!
+
+!$\mykw{predicate}$! last_version_conflict (t: time, k: key, v: value) =
+  !$\exists$!id:gid.!$\anyA^*$!;startTxnRsp(#gid = id && #start_time = t)!$^*;$!!$\anyA^*$!
+  readRsp(#stat = Ok && #gid = id && #k = k && #v !$\not=$! v);!$\anyA^*$!
+
+(*        b. or else return the committed value whose commit time 
+             is the latest time less than the snapshot time. *)
+!$\mykw{global}$! read_non_active =
+  !$\forall$!t1: time. !$\forall$!t2: time. !$\forall$!k:key. !$\forall$!v:value.
+  last_version_time(t1, t2, k, v) !$\impl$! last_version_conflict(t2, k, v)
+
+!$\mykw{predicate}$! committed_txn (id: gid, t: time) =
+  !$\anyA^*$!;RouterTxnStatus(#stat = Committed && #gid = id && #commit_time t);!$\anyA^*$!
+
+!$\mykw{predicate}$! updated_key (id: gid, k: key) = !$\anyA^*$!;updateRsp(#gid = id && #k = k);!$\anyA^*$!
+
+(* R2. If the router commits a txn, there should not be any already committed version 
+       whose commit time is greater than or equal to this txn's commit time.*)
+!$\mykw{global}$! commit_time_increasing =
+  !$\forall$!id1: gid.!$\forall$!id2: gid.!$\forall$!k: key.!$\forall$!t: time.
+  (committed_txn(id1, t) && updated_key (id1, k)); updated_key (id2, k) !$\impl$!
+  (RouterTxnStatus(#stat = Committed && #gid = id2 && #commit_time < t))!$^*$!
+
+(* R3. Commit time of a txn is higher than all shard prepare times of that txn.*)
+!$\mykw{global}$! shard_time_safety =
+  !$\forall$!id: gid.!$\forall$!t: time. !$\neg$!(!$\anyA^*;$!shardPrepareRsp(#gid = id && #isOk && #prepare_time > t)!$\anyA^*;$!
+                         routerTxnStatus(#gid = id && #commit_time = t)!$\anyA^*;$!)
+\end{minted}
+
+\subsection{2PC-Commit: Basic Functional Correctness}
+
+Consider the correctness specifications above, most of them are consistent with the events send by servers -- even intermediate events between server nodes. In some sense, the behaviours of the clients are independent from the correctness specifications, which are not true. The missing piece here are some basic functional correctness properties:
+\begin{enumerate}
+    \item Values dependency: if a server return a value or a key, then the clients must send this key or value as requests (the server won't create values or keys).
+    \item Reaction specifications: If the server returns a response, the there must have a previous requests. A new txn (e.g., gid) is created by the start txn request.
+    \item On Read-only Txn: if current temporal requests don't have update request, the commit or abort will be ignored by router (no routerTxnStatus event).
+\end{enumerate}
+Note that
+\begin{enumerate}
+    \item These functional correctness specifications are not guaranteed to be correct (e.g., the server may return random value with key is missing); thus, we need to first test these functional correctness specifications, then use them as assumption to test others.
+    \item For a specification $\phi$ (e.g., read-active) needs to explore server traces to reach error states:
+\begin{minted}[fontsize = \footnotesize, escapeinside=!!, xleftmargin=18pt, linenos]{ocaml}
+...;updateRsp(#gid = id && #k = k);updateRsp(!$\neg$!(#gid = id && #k = k));
+    readRsp(#stat=Ok && #gid = id && #k = k && #v !$\not=$! v);...
+\end{minted}
+
+Then, in order to have these tree response above, we need at least $2$ update requests and $1$ read request. Moreover, in order to get $\#gid$, we need to have corresponding start txn request and response. As find these out, our test generator need to be biased on these shape of inputs. 
+    \item On the other hand, the ``value dependency'' can also provide hints about the interpretation of abstract type -- for example, since there are $\Code{\#v = v}$ and $\Code{\#v \not= v}$, thus there must at least have two values.
+\end{enumerate}
+
+\subsection{Tutorial: Client Server}
+
+\begin{minted}[fontsize = \footnotesize, escapeinside=!!, xleftmargin=18pt, linenos]{ocaml}
+type account <: int
+
+!$\mykw{event}$! withdrawReq = {a: account; rId: int; amount: int;}
+!$\mykw{event}$! withdrawResp = {a: account; rId: int; balance: int; status: bool; }
+
+(* response of withdraws are consistent with hidden store. *)
+(* response of withdraws may success or fail. *)
+!$\mykw{global}$! balance_correctness =
+  !$\forall$!a: account. 
+  !$\mykw{register}$! balance = random({v:int | v >= 0}) in
+  !$\forall$!id: int. 
+  !$\mykw{register}$! pendingAmount = None in
+  ( withdrawReq(#a = a !$\land$! #rId = id)[pendingAmount = #amount] |
+    withdrawReq(!$\neg$(!#a = a !$\land$! #rId = id)) |
+    withdrawResp(#a = a !$\land$! #rId = id !$\land$! #status !$\impl$! #balance = balance - pendingAmount)
+      [balance = #balance] |
+    withdrawResp(#a = a !$\land$! #rId = id !$\land$! !$\neg$! #status !$\impl$! #balance = balance) |
+    withdrawResp(!$\neg$(!#a = a !$\land$! #rId = id)) )!$^*$!
+
+(* if resquest an amount less than current balance, it should not fail. *)
+!$\mykw{global}$! succ_status =
+  !$\forall$!a: account. 
+  !$\mykw{register}$! local_balance = random({v:int | v >= 0}) in
+  ( withdrawReq(#a = a !$\land$! #amount + 10 < balance)[local_balance = local_balance - #amount] |
+    withdrawReq(!$\neg$!#a = a) | withdrawResp(#a = a !$\impl$! #status))!$^*$!
+
+(* the resquest id always increasing. *)
+!$\mykw{global}$! increasing_id =
+  !$\mykw{register}$! last_id = None in
+  ( withdrawReq(#rId > last_id)[last_id = #rId] | withdrawResp(!$\top$!))!$^*$!
+
+(* liveness: one resquest id can exactly be response for once. *)
+!$\mykw{global}$! liveness =
+  !$\forall$!id: int.
+  let r = (withdrawReq(#rId !$\not=$! id) | withdrawResp(#rId !$\not=$! id))!$^*$! in
+  (r ; withdrawReq(#rId = id); r ; withdrawResp(#rId = id); r) | r
+
+(* only withdraw valid amount and check balance correctness. *)
+!$\mykw{senario}$! test1 =
+  !$\mykw{bind}$! account = [1; 2] in
+  succ_status !$\land$! increasing_id !$\land$! liveness !$\impl$! balance_correctness
+
+(* Assume local stored balance is equal to balance in server, check status. *)
+!$\mykw{senario}$! test2 =
+  !$\mykw{bind}$! account = [1; 2] in
+  balance_correctness !$\land$! increasing_id !$\land$! liveness !$\impl$! succ_status
+\end{minted}

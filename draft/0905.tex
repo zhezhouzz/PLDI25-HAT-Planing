@@ -1,0 +1,54 @@
+\section{Liveness Verification}
+
+The liveness property is an underapproximation-style property, which tries to prove some reachability property. However, \emph{verifying} liveness property is indeed a correctness-style reasoning instead of an incorrectness-style reasoning. Note that, there are both underapproximation and overapproximation comes in -- on the one hand, we need to do underapproximation by continuing narrow down all possible executions into one reachability witness; on the other hand, we still want to hide some annoying details of the program implementation, i.e., proving that even an overapproximation of the code is correct. 
+
+The statement above seems not self-consistent at the first glance since a program cannot be both overapproximated and underapproximated, however, there is indeed not a single program. When we talk about liveness property, we are treating to avoid non-fairness, racing, deadlock -- which is not caused by a single piece of code. The problem setting is about multiple participants with a scheduler or global clock to coordinate them. For example, when we try to prove the liveness property about any request will eventually get response, we cannot assume the scheduler always invoking the sender node instead of the receiver, although it \emph{may} happen in the reality. Alternatively, we should using an underapproximation-style thinking here, the scheduler \emph{must} guarantee the receiver will be invoke. On the other hand, we don't really care about the actual value returned by the receiver, thus it is just OK to do an overapproximation on the receiver code. The verification task actually says, ``although we allow more than the receiver code \emph{may} do, but whatever what is allowed, there \emph{must} exist an scheduling order to make liveness property hold''.
+
+You may get confused about why it works, why this kind of code is different from other applications. I think it is because the asynchronous system has a relative deterministic program and relative non-deterministic scheduler. You can understand it from different perspective, the real execution (also executing of \Code{P} language) is like random testing, where randomness comes from the scheduler/message ordering. Following our workshop paper about incorrectness, the coverage property of test generator is aiming to show the soundness of testing (testing is complete), which additionally show the correctness of the program under test. The asynchronous system mixes the test generator and program under test together in a interactive style -- the program and scheduler are executed alternatively. Thus, our reasoning and verification can also merge both underapproximation and overapproximation.
+
+In the theory, there is indeed kind of automata allowing both overapproximation and underapproximation, that is the ``Alternative Finite Automata (AFA)''. The normal NFA can be treated as a special case of AFA only have ``exists transitions'', where we just need to show acceptance by proving ``there \emph{exists} transition from current state reaching some final states''. The AFA also has ``forall transitions'', which need to show acceptance by proving ``\emph{for all} transition from current state reaching some final states''. In our setting, the whole executions can be summarized as a AFA, where the scheduler uses \emph{exists} transitions and underapproximation, the program uses \emph{forall} transition and overapproximation. Luckly, AFA has the same expressive power as NFA (and DFA); Loris D’Antoni have a paper discussed about the decision procedure of AFA equivalence check, which is PSpace-hard.
+
+Technically, assume the liveness property is an automata $A_{L}$, and the program and scheduler are encoded as an s-AFA $A$, then we try to prove $\bullet^*;A \subseteq A_{L}$. It means that during execution, there exists an trace accepted by $A$ make the liveness property holds -- it is OK that the real execution doesn't go through our expectation (i.e. what $A$ says) in the future, but it just goes back $\bullet^*$ again, and we still guarantee the execution has chance to make $A_{L}$ holds. When the verification fails, it may be caused by a bad over-approximation of $A$, then we do testing to find a concrete execution violate $A_{L}$ (maybe need some cycle check).
+
+I provide an (very functional instead of imperative) example in OCaml to show my idea, where we don't care about the precise behaviours of \Code{receiver} (i.e., \textcolor{red}{someValue} on line $16$); however, we do need to make underapproximation on the behaviours of the \textcolor{blue}{randomSelect} in \Code{scheduler} (line $19-29$) to prove reachablity.
+
+\begin{minted}[xleftmargin=5pt, numbersep=4pt, linenos = true, fontsize = \footnotesize, escapeinside=??]{OCaml}
+type msg = 
+    | Wakeup 
+    | Req of {source: int} 
+    | Resp of { value: int}
+
+let recieverId = 2
+
+let sender (selfId: int) (msg: msg) =
+    (match msg with
+     | Wakeup -> send recieverId (Req {source = selfId})
+     | Resp _ -> ());
+    scheduler ()
+and receiver (selfId: int) (msg: msg) =
+    (match msg with
+     | Wakeup -> ()
+     | Req {source} -> send source (Resp {value = ?$\textcolor{red}{someValue}$? ()}));
+    scheduler ()
+
+and scheduler () =
+    MutableSet.merge [(0, Wakeup); (1, Wakeup); (2, Wakeup)];
+    let (dest, msg) = MutableSet.?$\textcolor{blue}{randomSelect}$? s in
+    flying_msg := flying_msg'; delive dest msg
+and send (dest: int) (msg: msg) = flying_msg := Set.insert msg !flying_msg
+and delive dest msg =
+    match dest with
+    | 2 -> receiver 2 msg
+    | _ -> sender rest msg
+
+let (flying_msg: (int * msg) MutableSet.t) = MutableSet.empty
+\end{minted}
+
+% \section{Typing}
+
+% \begin{align*}
+%     &\Code{get} : \Code{k{:}Key.t}\sarr \htriple{A{:}\Code{Stored(k)}}{x{:}\nuot{Val.t}{\top}}{(A \land \Code{StoredV(k, x)}); put(k, x)}
+%     \\&\Code{exists} : \Code{k{:}Key.t}\sarr \htriple{A{:}\Code{\bullet^*}}{x{:}\nuot{bool}{\top}}{(A; <exists| k, x>) \land P}
+%     \\&\Code{send} : x:\Code{event} \sarr \htriple{A{:}\Code{\bullet^*}}{\Code{unit}}{A; Ev(x)}
+%     \\&\Code{recieve} : \Code{unit}\sarr \htriple{A:A_{inv}}{x:\Code{event}}{A;Ev(x) \land A_{inv}}
+% \end{align*}

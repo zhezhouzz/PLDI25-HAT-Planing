@@ -1,0 +1,11 @@
+*.aux
+*.bbl
+*blg
+*.log
+*.out
+/main.pdf
+/marple.pdf
+/_minted-marple/
+_minted-main/
+sections/auto/
+sections/_region_.tex

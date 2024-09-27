@@ -1,0 +1,44 @@
+\section{Benchmarks}
+
+We consider the following existing applications of \Code{P} language, all of them contain user-defined test generators.
+\begin{enumerate}
+    \item \Code{ARBootcamp}. The project contains multiple simple tutorials for using \Code{P} language to do automated verification over a key-value store server. There are two kinds of clients (test generators) in this projects.
+    \begin{enumerate}
+        \item \Code{MicroS3}. There are multiple \Code{Client}s that send $\efont{put}$ and $\efont{get}$ requests alternatively to a single server; the client should always \emph{wait} the response from the server until sending the next request.
+        {\small\begin{align*}
+        A_\Code{client} \doteq&\ [\evaptop{putReq}{\df{}{``k_1"}\;\df{}{10}};\evaptop{putResp}{k\;val\;status}; \evaptop{getReq}{\df{}{``k_1"}};\evaptop{getResp}{k\;val\;status}]
+    \end{align*}}\noindent
+        \item \Code{MicroS3\_ABetterClient}. There are multiple \Code{Client}s that randomly send $\efont{put}$ and $\efont{get}$ requests to a single server; the client should always \emph{wait} the response from the server until sending the next request.
+        {\small\begin{align*}
+        A_\Code{client} \doteq&\ \forall \Code{k}.[\evap{putReq}{k\;val}{k =\Code{k}};\evap{putResp}{k\;val\;status}{k =\Code{k}} \lorA \evaptop{getReq}{k};\evaptop{getResp}{k\;val\;status}]^*
+    \end{align*}}\noindent
+    where the $[...]$ indicate a transaction that is a grouped messages to the same server. Thus, we always omit the source and destination of messages, where we always focus on one client and the target servers are in charged of additional destination specification (we have it in the next example).
+    \end{enumerate}
+    % \item \Code{EC2PG-TheNestPModel}. This package defines the formal model for The Nest, a distributed state allocation and tracking application service for packet processors. The framework has been used by S3 Index (S3 Index is a metadata store that maps user key names to actual object locations in storage) to validate its strong consistency guarantees.
+    \item \Code{Kermit2PCModel}. A generalized two-phase commits model, the client can send $\efont{read}$/$\efont{update}$ requests (grouped as transactions) to the routers (coordinators), then $\efont{commit}$ or $\efont{rollback}$. With in transaction, the client should only communicate with the same router; when the router returns error response or the router is disconnected, the transaction ends automatically.
+{\small
+    \begin{align*}
+        &\ \text{\textcolor{DeepGreen}{// all read/update request and response pairs.}}
+        \\A_\Code{op} \doteq&\ \evaptop{readReq}{k};\evaptop{readResp}{k\;val\;status}\lorA \evaptop{updateReq}{k\; val};\evaptop{updateResp}{k\;val\;status}
+       \\&\ \text{\textcolor{DeepGreen}{// the case read/update fails.}}
+        \\A_\Code{failure} \doteq&\ \evaptop{readResp}{k\;val\;\df{}{abort}} \lorA \evaptop{updateResp}{k\;val\;\df{}{abort}}
+         \\&\ \text{\textcolor{DeepGreen}{// A valid transition is several request and response pairs + nothing (when read-only)/commit/rollback }}
+        \\A_\Code{trans} \doteq&\ (A_\Code{op})^*; (\epsilon \lorA \evaptop{commitReq}{};\evaptop{commitResp}{s} \lorA \evaptop{rollback}{()})  \land
+        \\&\ \text{\textcolor{DeepGreen}{// When fails, rollback immediately; when no failure, don't rollback. }}
+        \\&\ \globalA (A_\Code{failure}\impl\nextA \evaptop{rollback}{()}) \land (\globalA \neg A_\Code{failure})\impl 
+        (\globalA \neg \evaptop{rollback}{()}) \land
+        \\&\ \text{\textcolor{DeepGreen}{// Once there is at least one update, the transition is not read-only, thus needs commit/rollback. }}
+        \\&\ (\finalA \evaptop{updateReq}{k\;val}) \implies \lastA (\evaptop{commitResp}{s} \lorA \evaptop{rollback}{()})
+         \\&\ \text{\textcolor{DeepGreen}{// Client produces multiple transactions, each transaction focus on only one server (router). }}
+        \\A_\Code{client} \doteq&\ ([A_\Code{trans}]_{\{\lastA \bullet\}})^*
+    \end{align*}}\noindent
+    where $B$ in $A_{B}$ is the destination specification for all transactions in automata $A$; $\lastA \bullet$ means we repeat $A$ only for once (last modality) and $\bullet$ means this server can be arbitrary (random) one. We have configuration contains $\Code{Routers}, \Code{TraceLength}, \Code{Keys}, \Code{Values}$.
+    \item \Code{MemoryDBCRRConflictResolutionModel}. This project seems not interesting, where the clients just sent commands.
+    \item \Code{S3IndexBrickManagerPModels}. A KFC Client that interacts with the BM by pumping in random get, put, delete, and list requests. There are two challenges for this client: 
+    \begin{enumerate}
+        \item Before sending any request, the client need to get the current snapshot using Lock/Unlock events.
+        \item The client should continue listening to the servers until it received responses with success status of all sent requests, there pairing relation is out of expressive power of Symbolic Finite Automata (SFA), on the other hand, it can be expressed by Symbolic Visible Push-down Automata (\href{https://www.cis.upenn.edu/~alur/Cav14.pdf}{SVPA}) which is also decidable. We don't have this concern in previous examples since they are blocked (client cannot send new request before it receive response). Although the SVPA can be our intermediate language, it is not user-friendly to write. I suggest still using LTL, and then additionally define the ``paring relation'' (e.g., $ \evaptop{readReq}{k} \longrightarrow \evap{readResp}{k\;val\;status}{status = \Code{Success}}$). One concern is that, it is really necessary to check this pairing relation, since it seems only interfere when the client should halt itself (it first send all requests and then receiving responses, thus missing responses don't interfere the sent requests -- or if there is a situation that the asynchronized responses do interfere the future sending requests?).
+    \end{enumerate}
+    \item \Code{EC2PG-TheNestPModel}. This is a client that sending request to chain replicate, which highly depends on timers. I am not quite sure if I understand the behaviours of the client correctly -- it seems that the client will only send new request when it find there is duplicate response.
+    \item \Code{FSI-PACE-P-MODELING}. The client looks just send and receive message step by step, I don't find any challenge in this repo.
+\end{enumerate}

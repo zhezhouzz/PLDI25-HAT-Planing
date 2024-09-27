@@ -1,0 +1,41 @@
+\section{Introduction}
+
+Reactive system that consists of \emph{agents} consecutively interacting with their \emph{environment} has been studied for more than fifty years. The desirable executions in reactive system are specified by specifications (e.g., LTL formulae), which constraints the potential infinite trace corresponding the interaction between agents and environment. For given specification, one well-known task called reactive synthesis\cite{ReactiveSynthesis} introduced by Alonzo Church is finding an implementation (strategy) for such agents whatever how environment reacts, makes corresponding trace satisfies the specification. The problem goes harder when multiple agents involve, where the environment may schedule these agents in arbitrary order.
+
+Indeed, the reactive synthesis tells us \emph{what} a desirable strategy should be, it doesn't tell us \emph{why} and \emph{how} such a strategy is desirable. Assume we do have a strategy in hand, we would like to know how this strategy would work in some special cases -- in this sense, we would like to find a trace that consistent with both strategy and given specification describing such cases. 
+
+\begin{example} Consider a concurrent system where processes using shared resource in some strategy. With such strategy in hand, we would like to when multiple processes are applying the same resource, how the strategy will solve the conflict. 
+\begin{align*}
+    &\exists i{:}\Code{pid}.\exists j{:}\nuut{pid}{\vnu \not=i}. \exists v_i{:}\Code{int}.\exists v_j\nuut{int}{\vnu \not= v_i}.\exists v{:}\nuut{int}{\vnu = v_i \lor \vnu = v_k}.
+    \\&\finalA (\Code{process\;i\;write\;v_i});\finalA (\Code{process\;j\;write\;v_j});\finalA(\Code{process\;i\;read\;v});(\Code{process\;j\;read\;v})
+\end{align*}\noindent
+This specification says two threads try to a shared variable with different values, and we expect eventually these two processes will read the same value. Then with strategy of processes (e.g., using mutex lock) in hand,
+
+\begin{minted}[xleftmargin=5pt, numbersep=4pt, linenos = true, fontsize = \footnotesize, escapeinside=??]{OCaml}
+fun threadSafeRead (pid: pid) =
+    let _ = lock pid in
+    let x = read pid in
+    let _ = unlock pid in x
+
+fun threadSafeWrite (pid: pid) (v: int) =
+    let _ = lock pid in
+    let _ = write pid v in
+    let _ = unlock pid in ()
+\end{minted}
+
+we would like to know how is be solved -- a trace realize the specification above and also consistent with the strategy (all read and write are surrounding with lock and unlock). 
+{\footnotesize\begin{align*}
+    &\Code{threadSafeRead} : \forall v{:}\Code{int}.\Code{p{:}pid}\sarr\hpair{\msg{lock}{\Code{pid = p}};\msg{read}{\Code{pid = p} \land \vnu = v};\msg{unlock}{\Code{pid = p}}}{\anyA^*}
+    \\&\Code{threadSafeWrite} : \Code{p{:}pid}\sarr\Code{v{:}int}\sarr\hpair{\msg{lock}{\Code{pid = p}};\msg{write}{\Code{pid = p} \land \vnu = \Code{v}};\msg{unlock}{\Code{pid = p}}}{\anyA^*}
+\end{align*}}\noindent
+\ZZ{Unlike HAT, I omit the return type of functions, since the environment calls these functions and environment doesn't care about the return value. }
+Note that the environment can choose when to invoke these two functions and make the execution of these two functions be mixed together in arbitrary way that preserves the program order (e.g., $\Code{lock}$ within the same thread happen before \Code{read} and \Code{write}).
+\end{example}
+
+\begin{example} More naturally, it can be also applied into asynchronous situation. Consider a two-phase commit protocol, when we know the strategy of coordinator and participants, we would like to know when the read and write request coming at the same time, how the protocol solve this situation. \ZZ{I omitted the concrete example here, we have talked about it a lot. Both synchronous and asynchronous allowing the outside events be inserted into the pending events, the difference is that message-passing semantics treated all APIs (e.g., \Code{threadSafeRead}) and effect operators (e.g., \Code{lock}) the same -- it means each time asynchronous will consume an event when handing an API. However, in HAT, when wen call \Code{threadSafeRead}, we don't consume anything. The synchronous and asynchronous semantics can be easily unified in a trace-based view and in our system. }
+\end{example}
+
+Unlike reactive synthesis that treats environments \emph{may} make all possible actions then find desirable strategy for agent within infinite traces, these problems focusing a given strategy to find existing actions environments \emph{must} make in a finite trace. As the other side of the coin, we call it reactive planing. This shifting make reactive planing precisely consider the behaviours of the environment, especially when these environment are non-deterministic, i.e., random scheduling of processes or arbitrary messages order in distributed system.
+The difficulty of reactive planing comes from corresponding reachability reasoning in a large searching space caused by non-deterministic assumption of environment, which cannot simply be solved by naive enumeration.
+
+Besides help people understand how strategy works in special case, the reactive planing can facilitate testing in an adversarial way. Where we can use reactive planing to specialize the corner cases and unusual behaviours of the environment (e.g., a sent message that has not been received for a long time). When the specialized planing trace, we can derive an environment for adversarial testing.

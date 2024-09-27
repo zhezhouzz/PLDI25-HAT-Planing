@@ -1,0 +1,215 @@
+\section{Language}
+\begin{figure}[t!]
+  \vspace{-.3cm}
+{\footnotesize
+{\small
+  \begin{alignat*}{2}
+    \\ \text{\textbf{Variables }}& \quad &\quad& x, y, z, \vnu, f, ...
+    \\ \text{\textbf{Effect Operations}}& \quad & \mathbf{op} ::= \quad & \mathbf{read} ~|~ \mathbf{write} ~|~  ...
+    \\ \text{\textbf{Constants }}& \quad &c ::= \quad & \mathbb{1} ~|~ \mathbb{B} ~|~ \mathbb{Z} ~|~ ...
+    \\ \text{\textbf{Planing Expression }}& \quad &e ::= \quad & c ~|~ f ~|~ e\;c ~|~ e;e
+    \\ \text{\textbf{Event }}& \quad &ev ::= \quad & \eventC{op}{\overline{c}}
+    % \\ \text{\textbf{Frame Index }}& \quad &n ::= \quad & \mathbb{N}
+    \\\text{\textbf{Traces}}& \quad &\alpha ::= \quad &
+    \emptr ~|~ ev \;{::}\; \alpha ~|~ \alpha \seqA \alpha ~|~ \femp ~|~ \boxed{\alpha}
+  \end{alignat*}}}
+\caption{Expression and Trace syntax. }
+\label{fig:trace-syntax}
+\vspace*{-.17in}
+\end{figure}
+
+\paragraph{Operational Semantics} The operational semantics is defined as:
+
+\begin{prooftree}
+\hypo{ \alpha \vDash f\;\overline{v} \Downarrow \beta }
+\infer1[\textsc{StApp}]{
+(\alpha, (f\;\overline{v});e) \hookrightarrow^* (\alpha \cdot \beta, e)
+}
+\end{prooftree}
+
+\paragraph{Trace Inject} We call the trace contains $\femp$ or $\boxed{\alpha}$ as \emph{framed trace}. We define trace injection operator $\inj$ over framed trace. Consider the following examples:
+\begin{align*}
+    &\boxed{[ev_1;ev_2]} \inj  [ev_0] \cdot \femp \cdot [ev_4]  = [ev_0 ; ev_1;ev_2 ; ev_4]
+    \\&\boxed{[ev_1;]} \seqA \boxed{[ev_1;ev_2]} \seqA \boxed{[ev_4]} \inj \femp \cdot \femp \cdot \femp = [ev_0 ; ev_1;ev_2 ; ev_4]
+\end{align*}\noindent
+The $\femp$ and $\boxed{\alpha}$ can be nested:
+\begin{align*}
+    &\boxed{[ev_1;\femp]} \inj  [ev_0] \cdot \femp \cdot [ev_4]  = [ev_0 ; ev_1] \cdot \femp \cdot [ev_4]
+    \\&\boxed{\boxed{[ev_1]} \cdot \boxed{[ev_2]}} \inj \boxed{[ev_0]} \cdot \femp \cdot \boxed{[ev_4]}  = \boxed{[ev_0]} \cdot \boxed{[ev_1]} \cdot \boxed{[ev_2]} \cdot \boxed{[ev_3]}
+\end{align*}\noindent
+The well-formed framed trace need to guarantee:
+\begin{enumerate}
+    \item The $i$ nested boxed trace can only concatenate with $i$ nested boxed trace.
+\end{enumerate}
+The inject relation need to guarantee two input trace are disjointed, i.e., 
+\begin{align*}
+    \alpha_1 \inj \alpha_2 = \alpha_3 \impl \footp{\alpha_1} \cap \footp{\alpha_2} = \emptyset
+\end{align*}
+
+\paragraph{Footprint of trace} The definition shows below:
+\begin{align*}
+    \footp{[]} &\doteq \emptyset
+    \\\footp{ev \cons \alpha } &\doteq \{ev\} \cup \footp{\alpha } 
+    \\\footp{\alpha_1 \cdot \alpha_2 } &\doteq \footp{\alpha_1 } \cup \footp{\alpha_2 } 
+    \\\footp{\femp } &\doteq \emptyset
+    \\\footp{\boxed{\alpha} } &\doteq \footp{\alpha } 
+\end{align*}
+
+
+\begin{figure}[t!]
+{\footnotesize
+{\small\begin{flalign*}
+ &\text{\textbf{Type Syntax}} &
+\end{flalign*}}
+\vspace{-1.8em}
+{\small
+\begin{alignat*}{2}
+    \text{\textbf{Base Types}}& \quad & b  ::= \quad &  \Code{unit} ~|~ \Code{bool} ~|~ \Code{nat} ~|~ \Code{int} ~|~ ...
+    \\ \text{\textbf{Basic Types}}& \quad & s  ::= \quad & b ~|~ s \sarr s
+    \\ \text{\textbf{Pure Operations}}& \quad & \primop ::= \quad & {+} ~|~ {-} ~|~ {==} ~|~ {<} ~|~ {\leq} ~|~ \Code{mod} ~|~ \Code{parent} ~|~ ...
+    \\ \text{\textbf{Value Literals}}& \quad & l ::= \quad & c ~|~ x ~|~ \primop\ \overline{l}
+\\ \text{\textbf{Qualifiers}}& \quad & \phi ::= \quad & l ~|~ \bot ~|~ \top  ~|~ \neg \phi ~|~ \phi \land \phi ~|~ \phi \lor \phi ~|~ \phi \impl \phi ~|~ \forall x{:}b.\, \phi
+     \\ \text{\textbf{Symbolic Events}}& \quad &\se  ::= \quad & \msgB{op}{\overline{x}}{\phi} ~|~ \se \cup \se 
+    \\ \text{\textbf{SFA}}& \quad &A,B  ::= \quad & se ~|~ \neg A ~|~ A \land A ~|~ A \lorA A ~|~ A \seqA A ~|~ A^* ~|~ \neg A ~|~ \msgG{\phi} ~|~ \scope{se} A ~|~ \femp ~|~ \boxed{A}
+    \\ \text{\textbf{Refinement Base Types}}& \quad & t  ::= \quad & \nuot{\textit{b}}{\phi}
+    \\ \text{\textbf{Hoare Automata Types}}& \quad & \tau  ::= \quad &
+    \hpair{A}{A} ~|~ \tau \interty \tau  ~|~ x{:}t\sarr \tau ~|~ x{:}t\garr \tau
+    \\\text{\textbf{Type Contexts}}& \quad &\Gamma ::= \quad  &\emptyset ~|~ x{:}t, \Gamma
+  \end{alignat*}}
+\vspace{-1.8em}
+{\small\begin{flalign*}
+ &\text{\textbf{Type Aliases}} &
+\end{flalign*}}
+\vspace{-1.8em}
+\begin{alignat*}{5}
+    \msg{op}{\phi(\overline{\# x})} &\doteq \msgB{op}{\overline{x}}{\phi}
+    \quad& b &\doteq \rawnuot{b}{\top}
+  \end{alignat*}
+}
+\vspace{-.5cm}
+\caption{\langname{} types.}
+\label{fig:type-syntax}
+\vspace{-.2cm}
+\end{figure}
+
+\paragraph{Type Denotation}
+
+\begin{figure}[t!]
+\footnotesize{
+{\small
+\begin{flalign*}
+ &\text{\textbf{Trace Language}} & \fbox{$\denotation{se} \in \pset{ev} \quad  \denotation{A} \in \pset{\alpha}$}
+\end{flalign*}}
+\vspace{-1em}
+\begin{flalign*}
+    \langA{S, \msgG{\top}} &\doteq \{[ev] ~|~ ev \in S \} \quad \langA{S, \msgG{\bot}} \doteq \emptyset
+    \\\langA{S, \scope{se}{A}} &\doteq \langA{\denotation{se}, A}
+    \\\langA{S, \femp} &\doteq \{\femp\} \quad \langA{Tr, \boxed{A}} \doteq \{\boxed{\alpha} ~|~ \alpha \in \langA{Tr, A} \}
+    \\\denotation{A} &\doteq \langA{\emptyset, A}
+\end{flalign*}
+\vspace{-1.5em}
+{\small
+\begin{flalign*}
+  &\text{\textbf{Type Denotation}}
+  & \fbox{$\denotation{t} \in \mathcal{P}(e)
+    \quad \denotation{\tau} \in \mathcal{P}(e)$}
+\end{flalign*}}
+\vspace{-1.5em}
+\begin{align*}
+  &\denotation{ \rawnuot{b}{\phi} } &&\doteq \{ c ~|~ \emptyset
+                                       \basicvdash c : b \land
+                                       \phi[\nu\mapsto v] \}
+  \\ &\denotation{ x{:}t\sarr{}\tau } &&\doteq \{ e ~|~ \emptyset \basicvdash e : \eraserf{x{:}t\sarr{}\tau} \land
+                                           \forall c \in \denotation{ t }.\, e\ c \in  \denotation{ \tau[x\mapsto c ] } \}
+  \\ &\denotation{ x{:}b\garr{}\tau } &&\doteq \{ e ~|~ \emptyset \basicvdash e : \eraserf{\tau} \land
+                                           \forall c. \emptyset \basicvdash c : b \impl e \in  \denotation{ \tau[x\mapsto c ] } \}
+  \\ &\denotation{ \hpair{A}{B}} &&\doteq \{e ~|~ \emptyset \basicvdash e : \Code{unit} \land \forall \alpha\, \alpha'\, v.\; \alpha \in \denotation{A} \land (\alpha, e) \hookrightarrow^* (\alpha \cdot \alpha', ()) \impl \alpha \listconcat \alpha' \in \denotation{B} \}
+  \\ &\denotation{ \tau_1 \interty \tau_2 } &&\doteq \denotation{\tau_1} \cap \denotation{\tau_2}
+\end{align*}
+\vspace{-1.5em}
+{\small
+\begin{flalign*}
+  &\text{\textbf{Type Context Denotation}}
+  & \fbox{$\denotation{\Gamma} \in \mathcal{P}(\sigma)$}
+\end{flalign*}}
+\vspace{-1.2em}
+\begin{flalign*}
+    \denotation{ \emptyset } &\doteq \{ \emptyset \} \qquad\qquad\qquad\qquad&
+    \denotation{ x{:}t, \Gamma } &\doteq \{ \sigma[x\mapsto v] ~|~ v\in \denotation{t}, \sigma \in \denotation{\Gamma[x\mapsto v]} \}
+\end{flalign*}
+}
+\vspace{-0.4cm}
+\caption{Type denotations in \langname{}}
+\label{fig:type-denotation}
+\vspace{-.4cm}
+\end{figure}
+
+\paragraph{Automata Inject} Similar with traces:
+\begin{align*}
+    \denotation{A \inj B} \doteq \{\alpha \inj \beta ~|~ \alpha \in A, \beta \in B\}
+\end{align*}
+on need to guarantee two automata are disjointed, i.e., 
+\begin{align*}
+    A \inj B = C \impl \footp{A} \cap \footp{A} = \emptyset
+\end{align*}
+
+\paragraph{Footprint of automata} The definition shows below:
+\begin{align*}
+    \footp{A} &\doteq \bigcup_{\alpha \in \denotation{A}} \footp{\alpha}
+\end{align*}
+
+\paragraph{Problem Setting} Given a type context $\Delta$ contains the types of APIs, and a correctness property $\exists \overline{x{:}t}. A$, try to synthesize a planing expression $e$ such that $\Delta \vdash e : \overline{x{:}t}\garr \hpair{\epsilon}{A}$.
+
+\paragraph{Soundness} For an operational semantics $\alpha \vDash f\;\overline{v} \Downarrow \beta$, if $\Delta$ is consistent with this semantics. Then for all $e$ where $\Delta \vdash e : \overline{x{:}t}\garr \hpair{\epsilon}{A}$. then
+\begin{align*}
+    \forall \alpha. ([], e) \hookrightarrow^* (\alpha, e) \impl \exists \overline{c}. \alpha \in \denotation{A[\overline{x \mapsto c}]}
+\end{align*}
+
+\begin{example}Consider the simple example:
+
+\begin{minted}[xleftmargin=5pt, numbersep=4pt, linenos = true, fontsize = \footnotesize, escapeinside=??]{OCaml}
+fun threadSafeRead (pid: pid) =
+    let x = read pid in
+
+fun threadSafeWrite (pid: pid) (v: int) =
+    let _ = lock pid in
+    let _ = write pid v in
+    let _ = unlock pid in ()
+\end{minted}
+
+We have
+{\footnotesize\begin{align*}
+    &\Code{threadSafeRead} : v{:}\Code{int}\garr \Code{p{:}pid}\sarr\hpair{\scope{\Code{write}} \anyA^*}{\boxed{\msg{read}{\Code{pid = p} \land \vnu = v}}}
+    \\&\Code{threadSafeWrite} : \Code{p{:}pid}\sarr\Code{v{:}int}\sarr
+    \\&\quad \hpair{\scope{\Code{lock},\Code{unlock}} \anyA^*}{\boxed{\msg{lock}{\Code{pid = p}}} \cdot \boxed{\msg{write}{\Code{pid = p} \land \vnu = \Code{v}}} \cdot \boxed{\msg{unlock}{\Code{pid = p}}}}
+\end{align*}}
+
+For a specification:
+
+\begin{alignat*}{5}
+\text{\textbf{Scratch Planing Expression }}& \quad &e ::= \quad & c ~|~ A ~|~ f ~|~ e\;c ~|~ e;e
+  \end{alignat*}
+
+{\footnotesize\begin{align*}
+    &A; (\Code{threadSafeWrite}\;a\;b); B
+\end{align*}}\noindent
+apply frame rule
+{\footnotesize\begin{align*}
+    &(A \inj A'); (\Code{threadSafeWrite}\;a\;b); (B \inj B')
+\end{align*}}\noindent
+where
+{\footnotesize\begin{align*}
+    &\footp{A'} \cap \Code{lock},\Code{unlock} = \emptyset
+    \\&\footp{B'} \cap \Code{lock},\Code{unlock},\Code{write} = \emptyset
+\end{align*}}\noindent
+
+{\small
+\begin{prooftree}
+\hypo{ A; (\Code{threadSafeWrite}\;a\;b); B \longrightarrow  C; (\Code{threadSafeWrite}\;a\;b); D }
+\infer1[\textsc{TFrame}]{
+(A \inj A'); (\Code{threadSafeWrite}\;a\;b); (B \inj B') \longrightarrow 
+(C \inj A'); (\Code{threadSafeWrite}\;a\;b); (D \inj B')
+}
+\end{prooftree}}
+
+\end{example}

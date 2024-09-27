@@ -1,0 +1,50 @@
+\section{Abstract}
+
+The APIs of an effectful libraries are interrelated, since every API call may change some hidden states then interfaces other APIs calls. The same reason, the specification of one API is always imprecise or incomplete -- it needs the specification of other APIs to describe its pre- and post- hidden states. When the global and total specification involving all APIs are missing and we only have an incomplete specification in hand, it hard to reason about effectful libraries with blackbox implementation, whatever testing APIs against incomplete specification or synthesizing the missing global and total specification from incomplete one. The specification synthesis needs testing to validate, and testing has very low efficiency without total specification.
+In this paper, we introduce the over- and under-approximation reasoning technical to do synthesis and testing alternatively, where we treat specification synthesis as finding \emph{overapproximation} of blackbox implementation, specification testing as finding \emph{underapproximated} test generator to falsify the specification more efficiently. In order to smartly switch between synthesis and validation, we introduce a new approach called \emph{bidirectional dynamic reasoning} which guides specification synthesis and specification validation by actual dependency relation between these specifications.
+
+\section{Introduction}
+
+It is hard to control the automated blackbox testing over effectful libraries that provide APIs to manipulated hidden states, since the test input of these API calls need to contain effects (i.e., hidden states) whose representation is unknown. A trace-based view (i.e., HAT) that treats the hidden states as traces consisting of events directly, somehow solve this problem by simplifying these events as API invocations. Consider the filesystem example,
+\begin{minted}[xleftmargin=5pt, numbersep=4pt, linenos = true, fontsize = \footnotesize, escapeinside=??]{OCaml}
+let addDir (parent: Path.t) (p: Path.t): unit =  (* add dir "p" under path "parent" *)
+let deleteDir (parent: Path.t) (p: Path.t): unit = (* delete dir "p" under path "parent" *)
+let existsPath (p: Path.t): bool = (* chech if path "p" exists *)
+\end{minted}
+\noindent
+The property we want to test is\\
+
+$\mathbf{\phi_{del}} : $\emph{After we delete a path using \Code{deleteDir}, this path indeed doesn't exists. }\\
+
+\noindent A trace $\Code{addDir(``/a", ``/a/c");addDir(``/b", ``/b/d")}$ does represent the tree-like structure of filesystem, although the concrete representation of filesystem in effectful libraries is unknown. In this setting, the test generator just need to provide a set of traces as input to the API \Code{deleteDir} and check if the output of \Code{existsPath} is consistent with the specification $\phi_{del}$.
+
+Note that, we assume the test inputs (e.g., traces above) are \emph{fully controlled} by test generator, however, it is not the case how effectful library works. For example, the filesystem may disallow creating directory under an non-existing path, thus the trace $\Code{addDir(``/a", ``/a/c");addDir(``/b", ``/b/d")}$ may make the hidden state identical since these ``illegal'' actions are rejected by the filesystem. The real world library would not reject the invocation from caller silently, where it may return \emph{response} to tell the caller if the given \emph{request} is succeed or not.
+\begin{minted}[xleftmargin=5pt, numbersep=4pt, linenos = true, fontsize = \footnotesize, escapeinside=??]{OCaml}
+type status = Succ | Fail
+let addDir (parent: Path.t) (p: Path.t): status = ...
+let deleteDir (parent: Path.t) (p: Path.t): status = ...
+let existsPath (p: Path.t): bool = ...
+\end{minted}
+\noindent 
+Then the trace will be like:
+\begin{align*}
+    \alpha \doteq \Code{addDir(``/a", ``/a/c")=Fail;addDir(``/b", ``/b/d") = Fail}
+\end{align*}\noindent
+where an event contains both response (i.e., $\Code{``/a", ``/a/c"}$) and response (i.e., $\Code{Fail}$) and is only partially controlled by the test generator. The test generator can still feed the API impelementation set of traces, however, these traces are no longer always realizable since the status are returned by library. Considering how likely a trace has all $\Code{addDir}$ invoked correctly (return $\Code{Succ}$) with an random trace generator, it is obviously that the testing is very inefficient.
+Indeed, the effect and hidden states are caused by both caller and library implementation; during execution they are invoked alternatively -- even encoding the effect as traces, the complexity doesn't disappeared.
+
+One can treat the ``bad trace'' above as an execution that misuses the these APIs and violates the safety property explicitly believed by blackbox implementation. For example,\\
+
+$\mathbf{\phi_{add}:} $\emph{If the first argument (i.e., parent path) doesn't exists, the \Code{addDir} will return \Code{Fail}. }\\
+
+This specification can help us not to explore bad trace like $\alpha$ above, however, when happens about other traces that contain \Code{deleteDir}? The explicitly safety property needs to understand that if we delete a directory, this directory is not exists anymore -- it is exactly the what specification $\phi_{del}$ says, they are interrelated.
+
+The point is that, there are multiple specification (e.g., $\phi_{add}$ and $\phi_{del}$) about effectful library where they are interrelated -- just like the APIs (e.g., \Code{addDir} and \Code{deleteDir}) can be combined in arbitrary order, these specification are totally mixed together. With only assuming one, the test generator cannot have precise abstract of the effectful library to efficiently building effects as test inputs. On the other hand, it is no way to ask users to provide every piece of these interrelated specifications -- in some sense, it is a very precise representation invariant (i.e., a specification makes all APIs return \Code{Succ} status). They are too many, some of them are specialized to the implementation. For example, an implementation specific specification can be\\
+
+$\mathbf{\phi_{init}:} $\emph{The filesystem must be initialized first by calling $\Code{fs\_init}$ with success status, otherwise all requests will be rejected. }\\
+
+A nature solution is try to infer this explicitly safety property $\phi_{del}$ by sampling (i.e., Elrond). Elrond faces a similar situations (multi-abduction), but there are just multiple specifications, they are not interrelated. Thus Elrond can just sampling each APIs by providing concrete datatype inputs without consider other APIs. In our case, if the test generator doesn't know $\phi_{add}$, it cannot efficiently generate traces to test or sampling $\phi_{del}$, and vice versa.
+
+\paragraph{Solution and Contribution} We introducing the over- and under-approximation reasoning technical, where we treat specification synthesis as to find an \emph{overapproximation} of dynamic sampling result and specification testing as to find an \emph{underapproximated} test generator to falsify the specification more efficiently. The idea is, with the overapproximated abstraction of the API implementation (e.g., explicitly safety property $\phi_{add}$), we can build better underapproximation (e.g., a specialized test generator that only explores traces satisfying $\phi_{add}$) to validate specification under test, which is another overapproximated abstraction (e.g., $\phi_{del}$). On the other hand, to avoid overapproximating too much, we need automated testing to validate the synthesized result. Then dynamic execution involving test generator and blackbox implementation can be treated as both an sampling (for specification synthesis) and testing (for specification validation). In order to smartly switch between synthesis and validation, we introduce a new approach called \emph{bidirectional dynamic reasoning} which guides specification synthesis and specification validation by actual dependency relation between these specifications. Our approach can be treated as both specification inference and specification validation.
+
+\paragraph{Relate to my internship project} I already use the word \emph{request} and \emph{response} above, the AWS database code just using an asynchronous semantics instead of synchronous semantics. My test generator synthesis is building an underapproximation of the random test generator, in order to do this, I find that I need some axioms which are exactly the overapproximation of the code under test. I did one-shot over- and under-approximation, there is no bidirectional switch -- but I think this switch is the interesting point we should explore.

@@ -1,0 +1,68 @@
+\section{Problem Setting}
+
+Reasoning over an effectful, asynchronous, and potential infinite program is hard. Some bug can only happens under specific effect context and specific execution order. For example, assume we what to reasoning a program $P$ (e.g., a program implements two-phase commit) that communicate with users and underlying storage nodes against consistency property. Some bugs can only happens when underlying storage nodes disagree with each others, moreover, two write/read requests from different users on the same key are coming simultaneously. However, A plain automated testing (e.g., P) just let all the things random, doesn't achieve good performance. It waste time on some uninteresting cases, where I summarize as four reasons.
+\begin{enumerate}
+    \item Other nodes doesn't provide interesting inputs for program under test. For example, the users don't write the same key, the storage nodes always agree with each others.
+    \item The schedule doesn't explore interesting interleaving of events. For example, the schedule don't make requests from different users received by the program at the same time.
+    \item The ``outside runtime'' doesn't do interesting action. For example, the runtime doesn't crash server nodes in the middle of chain replication.
+    \item Even the explored trace is reasonable, not all part of traces are reasonable. For example, many protocol are relying on timer or clock, which lead testing may need to wait the timer/clock indeed timeout with a large time bound (e.g., $10000$ clock ticks) -- although the system may already get stuck and nothing interesting happens in the rest of $9900$ clock ticks.
+\end{enumerate}
+
+In order to build a better automated testing framework, we need to control the all the things above instead of leaving it totally random. Indeed, there are two distinct randomness we need to consider. On is the randomness about other nodes (timer, failure injector can also be treated as nodes), one is what requests will be sent by users and the behaviours of underlying storage nodes; another is the randomness from the scheduling. In order to do more efficient test, we should first enlarge the power of test framework to control scheduling. In another word, our test framework will not only build mock nodes communicating with the program under test, but also a mock scheduler; this approach will change the semantics from asynchronous into synchronous, which is easier to reasoning about. Formally, our test framework unify all the things besides the program under test (other nodes, scheduler, timer, clock, failure injector...) as an \emph{environment}. During testing, the program under test will execute with environment in a synchronously style -- the environment call the program under test as library functions. The disordering of execution is explicitly encoded in the environment.
+
+Now I talk a bit more about this new synchronously style semantics. The environment is represent as an automata accepting traces in a ``global view'' (similar assumption as P Monitor) by assuming there is global clock can order all events when they are \emph{received}.
+The execution of this automata is similar with traverse this automata, but with a \emph{set} of ``flying messages'' (the messages are sent but not received yet). Consider a leader election example where the leader are sending heartbeat messages to other nodes, and other nodes return acknowledgement. Assume the environment automata code is
+\begin{align*}
+    &\Code{ClockEnd(\#nodeId = 0);} 
+    \\&\Code{HeartBeat(\#leaderId = 0 \land \#participantId = 1)};
+    \\&\Code{HeartBeat(\#leaderId = 0 \land \#participantId \not= 0 \land \#participantId \not= 1)};
+    \\&\Code{Ack(\#leaderId = 0 \land \#participantId \not= 0 \land \#participantId \not= 1)};
+    \\&\Code{Ack(\#leaderId = 0 \land \#participantId = 1)}
+\end{align*}
+The environment first simulate the timer to invoke the leader, also simulate the scheduler to reorder the messages. The ``$\Code{ClockEnd(\#nodeId = 0);}$'' works like a function call to invoke the leader node; in another word, the environment record ``$\Code{ClockEnd(\#nodeId = 0);}$'' when the leader node receives it. Then, the leader node handlers the $\Code{ClockEnd}$ event and sends two ``flying messages''.
+\begin{align*}
+    \longrightarrow (&\textcolor{blue}{\{\Code{HeartBeat(0, 1)}, \Code{HeartBeat(0, 2)}\}}, 
+    \\&\Code{HeartBeat(\#leaderId = 0 \land \#participantId = 1)};
+    \\&\Code{HeartBeat(\#leaderId = 0 \land \#participantId \not= 0 \land \#participantId \not= 1)};
+    \\&\Code{Ack(\#leaderId = 0 \land \#participantId \not= 0 \land \#participantId \not= 1)};
+    \\&\Code{Ack(\#leaderId = 0 \land \#participantId = 1)}
+\end{align*}
+The flying messages can be reordered, thus it forms as a set instead of a trace. Then, the environment automata decides when these two massages are received by participants. In this case, the participant $1$ receive it first and consume one event (i.e., $\Code{HeartBeat(0, 1)}$); the participant $1$ will generate new event into the ``flying messages''.
+\begin{align*}
+    \longrightarrow (&\textcolor{blue}{\{\Code{HeartBeat(0, 2)}, \Code{Ack(0, 1)}\}},
+    \\&\Code{HeartBeat(\#leaderId = 0 \land \#participantId \not= 0 \land \#participantId \not= 1)};
+    \\&\Code{Ack(\#leaderId = 0 \land \#participantId \not= 0 \land \#participantId \not= 1)};
+    \\&\Code{Ack(\#leaderId = 0 \land \#participantId = 1)}
+\end{align*}\noindent
+The reduction will continue where the environment automata matches events in the ``flying messages'', then invoke effect functions to consume can generate new events.
+\begin{align*}
+    \longrightarrow (&\textcolor{blue}{\{\Code{Ack(0, 1), \Code{Ack(0, 2)}\}}},
+    \\&\Code{Ack(\#leaderId = 0 \land \#participantId \not= 0 \land \#participantId \not= 1)};
+    \\&\Code{Ack(\#leaderId = 0 \land \#participantId = 1)}
+    \\\longrightarrow (&\textcolor{blue}{\{\Code{Ack(0, 1)}\}},
+    \\&\Code{Ack(\#leaderId = 0 \land \#participantId = 1)}
+    \\\longrightarrow (&\textcolor{blue}{\emptyset}, \Code{\epsilon})
+\end{align*}
+In some sense, the ``flying messages'' indicates any possible interleaving caused by program under test, and the environment automata simulates scheduler and biases on some interesting interleaving.
+
+After changing the semantics, we want to derive more efficient environments than random one. It is not as simple as using a more efficient test generator to simulate the users in traditional PBT framework. To make the implementation robust, the effectful and asynchronous program will always assume the environment do something bad. For example, a normal-style merge function more look like this:
+\begin{minted}[xleftmargin=5pt, numbersep=4pt, linenos = true, fontsize = \footnotesize]{OCaml}
+let rec merge (l1: int list) (l2: int list): int list =
+    match (l1, l2) with
+    | [], _ -> l2
+    | _, [] -> l1
+    | ...
+\end{minted}
+On the other hand, in our case, it more like
+\begin{minted}[xleftmargin=5pt, numbersep=4pt, linenos = true, fontsize = \footnotesize]{OCaml}
+type status = Fail | Succ
+let rec merge (l1: int list) (l2: int list): (status * int list) =
+    if not (sorted l1 && sorted l2) then (Fail, []) 
+    match (l1, l2) with
+    | [], _ -> (Succ, l2)
+    | _, [] -> (Succ, l1)
+    | ...
+\end{minted}
+When facing unexpected input, the program just return with failure. Notice that, the specification we want to test against always require the program doesn't return with failure status, thus it implicitly requires precondition that need to be satisfied by environment. In order to recover it, we do lifting on the program under test to get specification of these naive situations, and make the environment not to explore it.
+
+In summary, we want to automatically test a program $P$ communicating with the environment $E$ (scheduler, timer, failure injector, and group of nodes) against some property $\phi$. We need to know some basic assumption about $E$ (e.g., the underlying storage node is consistent) to avoid exploring totally invalid cases; we also need to know the ``trivial cases'' about $P$ to avoid it just returning failure status. These two assumption are defined as property $\phi'$. Then a mock environment $E'$ is an automata satisfies $\phi'$ and violates $\phi$. We run $P$ with $E'$ in synchronous semantics to underapproximate the running of $P$ and $E$ in asynchronous semantics.

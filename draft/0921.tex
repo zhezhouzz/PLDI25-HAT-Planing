@@ -1,0 +1,358 @@
+\section{Language}
+
+\newcommand{\envI}{\iota_{\Code{env}}}
+\newcommand{\srcI}{\iota_{\I{s}}}
+\newcommand{\dstI}{\iota_{\I{d}}}
+\newcommand{\pushQ}[3]{\Code{update}(#1,#2,#3)}
+\newcommand{\dst}[1]{\Code{dst}(#1)}
+\newcommand{\src}[1]{\Code{src}(#1)}
+\newcommand{\mapOn}[1]{\Code{mapOn}(#1)}
+\newcommand{\select}[1]{\Code{select}(#1)}
+\newcommand{\enqueue}[1]{\Code{enqueue}(#1)}
+\newcommand{\dequeue}[1]{\Code{dequeue}(#1)}
+\newcommand{\empQ}{\epsilon}
+\newcommand{\buf}{\beta}
+\newcommand{\mhypo}[2]{\hypo{\parbox{#1}{\center{#2}}}}
+\newcommand{\mprooftr}[4]{
+    \begin{prooftree}
+    \mhypo{#1}{#2}
+    \infer1[\textsc{#3}]{\parbox{#1}{\center{#4}}}
+    \end{prooftree}}
+\newcommand{\termsyn}{\ddagger}
+% \newcommand{\seqA}{{\cdot}}
+% \newcommand{\mhypoI}[2]{\mhypo{#1}{$#2$}}
+% \newcommand{\mhypoII}[3]{\mhypo{#1}{$#2$ \quad $#3$}}
+% \newcommand{\mhypoIII}[4]{\mhypo{#1}{$#2$ \quad $#3$ \quad $#4$}}
+% \newcommand{\mhypoIV}[5]{\mhypo{#1}{$#2$ \quad $#3$ \quad $#4$ \quad $#5$}}
+% \newcommand{\mhypoV}[6]{\mhypo{#1}{$#2$ \quad $#3$ \quad $#4$ \quad $#5$ \quad $#6$}}
+
+\begin{figure}[t!]
+  \vspace{-.3cm}
+{\footnotesize
+{\small
+  \begin{alignat*}{2}
+    \text{\textbf{Variables }}& \quad &\quad& x, y, z, X, Y, Z, f, \vnu, ... \\
+    \text{\textbf{Component Identifier}}& \quad &\quad& \iota ... \\
+    \text{\textbf{Base Types}}& \quad & b  ::= \quad &  \Code{unit} ~|~ \Code{bool} ~|~ \Code{nat} ~|~ \Code{int} ~|~ ... \\
+    \text{\textbf{Pure Operations}}& \quad & \primop ::= \quad & {+} ~|~ {-} ~|~ {==} ~|~ {<} ~|~ {\leq} ~|~ \Code{not} ~|~ ...\\
+    \text{\textbf{Effectful Operations }}& \quad & \eff{op} ::= \quad & \eff{readReq} ~|~ \eff{readRsp} ~|~  ...
+    \\ \text{\textbf{Constants }}& \quad &c ::= \quad & \mathbb{1} ~|~ \mathbb{B} ~|~ \mathbb{Z} ~|~ \iota
+    \\ \text{\textbf{Values }}& \quad  & v ::= \quad & c ~|~ x
+    \\ \text{\textbf{Expressions}}& \quad & e ::=\quad & v
+    % ~|~ \zrand{x}{e}
+    ~|~ \zlet{x}{e}{e} ~|~ \zlet{x}{\primop\ \overline{v}}{e}
+    \\ &\quad&\quad& ~|~ \zgen{op}{\overline{v}}{e} ~|~ \zobs{\overline{x}}{op}{e}
+    \\ &\quad&\quad& ~|~ \zrandom{b} ~|~ e \oplus e ~|~ \zassume{v}{e}
+    % ~|~ \zloop{e}
+    \\\text{\textbf{Traces}}& \quad &\alpha,\beta ::= \quad &
+    \emptr ~|~ \zevent{op}{\overline{v}} \;{::}\; \alpha
+  \end{alignat*}}
+{\small\begin{flalign*}
+ &\text{\textbf{Syntax Sugar}} &
+\end{flalign*}}
+\vspace{-1.8em}
+\begin{alignat*}{3}
+    % e \oplus e &\doteq \zlet{x}{\genbool\;()}{\zif{x}{e}{e}} 
+    e_1;e_2 &\doteq \zlet{\_}{e_1}{e_2}
+    % \quad& \zassume{v}{e} &\doteq \zif{v}{e}{\err}
+    \quad& \zif{v}{e_1}{e_2} &\doteq (\zassume{v}{e_1}) \oplus 
+    (\zlet{x}{\Code{not}\; v}{\zassume{x}{e_2}})
+    % \quad& \err &\doteq \zassume{\Code{false}}{()}
+  \end{alignat*}
+  }
+\caption{Expression and Trace Syntax. }
+\label{fig:term-syntax}
+\end{figure}
+
+\paragraph{Syntax} The syntax is shown in \autoref{fig:term-syntax}. We use $\iota$ as components identifiers, we assume we can check equivalence between two components (one possible encoding is just natural number). We also assume the environment components has id $\envI$. When the context is clear, we can omit these components ids.
+It is in standard ANF style, which only contains first-order function (pure and effectful operators) and conditional expression \ZZ{Shall we add loop? It is an underapproximation, may be we should not}.
+The environment can \emph{generate} new messages (i.e., $\zgen{op}{\envI\;\iota\;\overline{v}}{e}$) to component $\iota$ into the system, or \emph{observe} messages (i.e., $\zobs{i\;j\;\overline{x}}{op}{e}$) from component $i$ to component $j$ with payload $\overline{x}$ in the system. The trace is also defined normally, an event $\zevent{op}{\srcI\;\dstI\;\overline{c}}$ indicates a message $\eff{op}$ from component $\srcI$ to component $\dstI$ with payload $\overline{c}$.
+
+\paragraph{Message Buffer} Following the standard message-passing semantics, the system keep a message buffer (i.e., trace). The empty buffer is $\empQ$. We also define the following auxiliary functions:
+\begin{align*}
+    \dst{\zevent{op}{\srcI\;\dstI\;\overline{c}}} &\doteq \dstI \\
+    \src{\zevent{op}{\srcI\;\dstI\;\overline{c}}} &\doteq \srcI \\
+    % \select{\buf, ev, \buf'} = \buf' &\doteq \exists \buf_1 \listconcat [ev] \listconcat \buf_2 = \buf \land \buf_1 \listconcat \buf_2 = \buf'
+    % \\\mapOn{\alpha, \iota, f} = \alpha' &\iff \forall i. \dst{\alpha[i]} = \dstI \impl (f\; \alpha) \land \dst{\alpha[i]} \not= \dstI \impl (f\; \alpha)
+    % \\\enqueue{\buf, \iota, ev} = \buf' &\iff \forall i. (i = \iota \impl (\buf'\;i) = (\buf\;i)\listconcat [ev]) \land (i \not= \iota \impl (\buf'\;i) = (\buf\;i))
+    % \\\dequeue{\buf, \iota} = (\buf', ev) &\iff \forall i. (i = \iota \impl ev \cons (\buf'\;i) = (\buf\;i)) \land (i \not= \iota \impl (\buf'\;i) = (\buf\;i))
+\end{align*}
+
+\paragraph{Operational Semantics} A system state is a triple $(\buf, e)$. The small-step reduction $\steptr{\alpha}{(\buf, e)}{\alpha'}{(\buf, e')}$ means a program state $(\buf, e)$ will reduce to another program state $(\buf', e')$ under context $\alpha$ and generate new effect $\alpha'$.
+% \begin{enumerate}
+%     \item $\alpha$ is ``the trace of all happened (received) events''.
+%     \item $\buf$ is ``a buffer for all pending messages to receive''.
+%     \item $e$ is the current term.
+% \end{enumerate}
+The small-step reduction is shown in \autoref{fig:semantics}. The environment $e$ can generate trace $\alpha$ iff existing a program state $(\buf, v)$ such that $\msteptr{[]}{(\empQ, e)}{\alpha}{(\buf, v)}$.
+
+\begin{figure}[h!]
+{\footnotesize
+{\small\begin{flalign*}
+ &\text{\textbf{Auxiliary Operational Semantics }} & \fbox{$\primop\ \overline{v} \Downarrow v_x  \quad \alpha, \beta \vDash \zevent{op}{\overline{c}} \Downarrow \beta$}
+\end{flalign*}}
+{\small
+\begin{flalign*}
+        &\text{\textbf{Operational Semantics }} & \fbox{$\steptr{\alpha}{(\buf, e)}{\alpha}{(\buf, e)}$}
+\end{flalign*}}
+\begin{prooftree}
+      \hypo{\primop\ \overline{v} \Downarrow v_x }
+      \infer1[\textsc{\small StOp}]{
+        \steptr{\alpha}{(\buf, \zlet{x}{\primop\ \overline{v}}{e})}{[]}{(\buf, e[x\mapsto v_x])}
+      }
+\end{prooftree}
+    \\ \ \\ \ \\
+    \begin{prooftree}
+      \hypo{ \src{\zevent{op}{v}} = \envI }
+      \infer1[\textsc{\small StGen}]{
+        \steptr{\alpha}{(\buf, \zgen{op}{\overline{v}}{e})}{[]}{(\buf \listconcat [\zevent{op}{v}], e)}
+      }
+    \end{prooftree}
+    \\ \ \\ \ \\    
+    \begin{prooftree}
+    \mhypo{70mm}
+    {$\buf = \buf_1 \listconcat [\zevent{op}{\overline{v}}] \listconcat \buf_2$ \quad
+    $\alpha, \beta_1 \vDash \zevent{op}{\overline{v}} \Downarrow \beta''$ \quad
+    % $\select{\buf, \zevent{op}{\overline{v}}, \buf'} $ \quad
+     $e' = e[\overline{x \mapsto v}]$
+     }
+      \infer1[\textsc{\small StObserve}]{
+        \steptr{\alpha}{(\buf, \zobs{\overline{x}}{op}{e})}{[\zevent{op}{\overline{v}}]}{(\buf_1 \listconcat \buf_2 \listconcat \beta'', e')}
+      }
+    \end{prooftree}
+    \\ \ \\ \ \\
+    \mprooftr{35mm}{}{StChoice1}{
+    $\steptr{\alpha}{(\buf, e_1 \oplus e_2)}{[]}{(\buf, e_1)}$
+    }\quad
+    \mprooftr{35mm}{}{StChoice2}{
+    $\steptr{\alpha}{(\buf, e_1 \oplus e_2)}{[]}{(\buf, e_2)}$
+    }
+    \\ \ \\ \ \\
+    \mprooftr{50mm}{}{StAssert}{
+    $\steptr{\alpha}{(\buf, \zassume{\Code{true}}{e})}{[]}{(\buf, e)}$
+    }
+    % \begin{prooftree}
+    %   \hypo{ }
+    %   \infer1[\textsc{\small StIf2}]{
+    %     \step{(\alpha, q, \zif{\Code{false}}{e_1}{e_2})}{(\alpha, q, e_2)}
+    %   }
+    % \end{prooftree}
+    % \\ \ \\ \ \\
+    % \begin{prooftree}
+    %   \hypo{ }
+    %   \infer1[\textsc{\small StIf1}]{
+    %     \step{(\alpha, q, \zif{\Code{true}}{e_1}{e_2})}{(\alpha, q, e_1)}
+    %   }
+    % \end{prooftree}\quad
+    % \begin{prooftree}
+    %   \hypo{ }
+    %   \infer1[\textsc{\small StIf2}]{
+    %     \step{(\alpha, q, \zif{\Code{false}}{e_1}{e_2})}{(\alpha, q, e_2)}
+    %   }
+    % \end{prooftree}
+  }
+  \caption{Operational Semantics}
+  \label{fig:semantics}
+\end{figure}
+
+\section{Typing}
+
+\begin{figure}[t!]
+{\footnotesize
+{\small\begin{flalign*}
+ &\text{\textbf{Type Syntax}} &
+\end{flalign*}}
+\vspace{-1.8em}
+{\small
+\begin{alignat*}{2}
+    \text{\textbf{Basic Types}}& \quad & s  ::= \quad & b ~|~ s \sarr s
+\\ \text{\textbf{Qualifiers}}& \quad & \phi ::= \quad & v ~|~ \bot ~|~ \top  ~|~ \neg \phi ~|~ \phi \land \phi ~|~ \phi \lor \phi ~|~ \phi \impl \phi ~|~ \forall x{:}b.\, \phi
+     \\ \text{\textbf{Symbolic Events}}& \quad &\se  ::= \quad & \msgB{op}{\overline{x}}{\phi} ~|~ \se \cup \se ~|~ \msgG{\phi}
+    \\ \text{\textbf{Symbolic Regular Expression (SFA)}}& \quad &A,B  ::= \quad & se ~|~ \emptyset ~|~ \epsilon ~|~ \anyA ~|~ A \lorA A ~|~ A \seqA A ~|~ A^*
+    \\ \text{\emph{LTL Syntax Sugar}}& \quad &\quad & ~|~ A \land A ~|~ \neg A ~|~ \nextA A ~|~ \finalA A ~|~ \globalA A
+    % \\ \text{\textbf{Buffer Types}}& \quad & \Omega  ::= \quad  &\emptyset ~|~ \iota{:}A, \Omega
+    % ~|~ \scope{se} A ~|~ \femp ~|~ \boxed{A}
+    \\ \text{\textbf{Refinement Base Types}}& \quad & t  ::= \quad & \nuot{\textit{b}}{\phi}
+    \\ \text{\textbf{Hoare Automata Types}}& \quad & \tau  ::= \quad &
+    \hfive{A}{B}{t}{B'}{A'} ~|~ \hfour{A}{B}{se}{B'}
+    % \hfive{A}{B}{t}{B'}{A'} 
+    \\ & & & ~|~ \tau \interty \tau  ~|~ x{:}t\sarr \tau ~|~ x{:}t\garr \tau
+    \\\text{\textbf{Type Contexts}}& \quad &\Gamma ::= \quad  &\emptyset ~|~ x{:}t, \Gamma
+  \end{alignat*}}
+\vspace{-1.8em}
+{\small\begin{flalign*}
+ &\text{\textbf{Type Aliases}} &
+\end{flalign*}}
+\vspace{-1.8em}
+\begin{alignat*}{3}
+    \msg{op}{\phi(\overline{\# x})} &\doteq \msgB{op}{\overline{x}}{\phi}
+    \quad& b &\doteq \rawnuot{b}{\top}
+    % \\\hfour{A}{B}{se}{B'} &\doteq \hfive{A}{B\seqA se}{\Code{unit}}{B'}{se}
+    % \\\hpair{A \rhd B \rhd se}{B'} &\doteq \hfive{A}{ B\seqA se \seqA \anyA^*}{\Code{unit}}{se \rhd (B \seqA {\anyA^*} \seqA B')}
+    % \\ t &\doteq X{:}\anyA^* \garr Y{:}\anyA^* \garr \htriple{X\rhd Y}{t}{X\rhd Y}
+  \end{alignat*}
+}
+\vspace{-.5cm}
+\caption{\langname{} types.}
+\label{fig:type-syntax}
+\vspace{-.2cm}
+\end{figure}
+
+\paragraph{Type Denotation}
+
+\begin{figure}[t!]
+\footnotesize{
+{\small
+\begin{flalign*}
+ &\text{\textbf{Well-Formed Trace}} & \fbox{$\wfvdash \zevent{op}{\overline{c}} \quad \wfvdash \alpha$}
+\end{flalign*}
+\begin{flalign*}
+ &\text{\textbf{Trace Language}} & \fbox{$\denot{se} \in \pset{ev} \quad  \denot{A} \in \pset{\alpha}$}
+\end{flalign*}}
+\vspace{-1em}
+\begin{flalign*}
+    % \\ \mathit{Tr}^\textbf{WF} &\doteq \{\alpha ~|~ \forall (\pevapp{\effop}{\overline{v_i}}{v}) \in \alpha. \emptyset \basicvdash \effop : \overline{b_i}\sarr b \land (\forall i.\emptyset \basicvdash v_i : b_i) \land \emptyset \basicvdash v : b  \}
+    \denot{\msgB{op}{x}{\phi}}&\doteq \{ \zevent{op}{\overline{c}} ~|~ \wfvdash \zevent{op}{\overline{c}} \land  \phi[\overline{x\mapsto c}]\}
+    \\\denot{ \msgG{\top}} &\doteq \{\alpha ~|~ \wfvdash \alpha \} \quad \denot{ \msgG{\bot}} \doteq \emptyset
+\end{flalign*}
+\vspace{-1.5em}
+{\small
+\begin{flalign*}
+  &\text{\textbf{Type Denotation}}
+  & \fbox{$\denot{t} \in \mathcal{P}(c)
+    \quad \denot{\tau} \in \mathcal{P}(e)$}
+\end{flalign*}}
+\vspace{-1.5em}
+\begin{align*}
+  &\denot{ \rawnuot{b}{\phi} } &&\doteq \{ c ~|~ \emptyset
+                                       \basicvdash c : b \land
+                                       \phi[\nu\mapsto v] \}
+  \\ &\denot{ x{:}t\sarr\tau } &&\doteq \{ e ~|~ \emptyset \basicvdash e : \eraserf{x{:}t\sarr\tau} \land
+                                           \forall c \in \denot{ t }.\, e\ c \in  \denot{ \tau[x\mapsto c ] } \}
+  \\ &\denot{ x{:}t\garr\tau } &&\doteq \{ e ~|~ 
+    \emptyset \basicvdash e : \eraserf{\tau} \land 
+    \forall c \in \denot{t}. e \in  \denot{ \tau[x\mapsto c ] } \}
+  \\ &\denot{ X{:}A\garr\tau } &&\doteq \{ e ~|~ 
+    \emptyset \basicvdash e : \eraserf{\tau} \land 
+    \forall \alpha \in \denot{A}. e \in \denot{ \tau[X\mapsto \alpha] } \}
+  % \\ &\denot{\hfive{A}{B}{t}{B'}{A'}} &&\doteq \{e ~|~ \emptyset \basicvdash e : \eraserf{t} \land \forall \alpha\in\denot{A}\; \beta\in\denot{B}\; \alpha'\, \beta'\,v. 
+  % \\&&& \qquad \qquad(\alpha, \beta, e) \hookrightarrow^* (\alpha \listconcat \alpha', \beta', c) \impl \alpha'\in\denot{A'} \land \beta'\in\denot{B'} \land c \in \denot{t} \}
+   \\ &\denot{\hfive{A}{B}{t}{B'}{A'}} &&\doteq \{e ~|~ \emptyset \basicvdash e : \eraserf{t} \land \forall \alpha\in\denot{A}\; \beta\in\denot{B}\;\alpha'\, \beta'\,v. 
+  \\&&& \qquad \qquad \steptr{\alpha}{(\beta, e)}{\alpha'}{(\beta', c)} \impl \alpha'\in\denot{A'} \land \beta'\in\denot{B'} \land c \in \denot{t} \}
+  \\ &\denot{\hfour{A}{B}{\msgB{op}{\overline{x}}{\phi}}{B'}} &&\doteq \{\eff{op} ~|~ \forall \alpha\in\denot{A}\; \beta\in\denot{B}\; \beta'\, \overline{v_x}. \;\phi[\overline{x \mapsto v_x}] \impl
+  \\&&& \qquad \qquad \alpha, \beta \vDash \zevent{op}{\overline{v_x}} \Downarrow \beta' \impl \beta'\in\denot{B'} \}
+  \\ &\denot{ \tau_1 \interty \tau_2 } &&\doteq \denot{\tau_1} \cap \denot{\tau_2}
+\end{align*}
+\vspace{-1.5em}
+{\small
+\begin{flalign*}
+  &\text{\textbf{Type Context Denotation}}
+  & \fbox{$\denot{\Gamma} \in \mathcal{P}(\sigma)$}
+\end{flalign*}}
+\vspace{-1.2em}
+\begin{flalign*}
+    \denot{ \emptyset } &\doteq \{ \emptyset \} \qquad\qquad\qquad\qquad&
+    \denot{ x{:}t, \Gamma } &\doteq \{ \sigma[x\mapsto v] ~|~ v\in \denot{t}, \sigma \in \denot{\Gamma[x\mapsto v]} \}
+\end{flalign*}
+}
+\vspace{-0.4cm}
+\caption{Type denotations in \langname{}}
+\label{fig:type-denotation}
+\vspace{-.4cm}
+\end{figure}
+
+\paragraph{Typing and Synthesis}
+
+\begin{figure}[!t]
+{\footnotesize
+{\small
+\begin{flalign*}
+ &\text{\textbf{Typing}} & \fbox{$\Gamma \vdash \primop : \tau \quad \Gamma \vdash \eff{op} : \tau \quad \Gamma \vdash \tau \termsyn e$}
+\end{flalign*}
+}
+\\ \
+\mprooftr{55mm}
+{$\Gamma \vdash \hfive{A}{B}{t_x}{B_1'}{A_1'} \termsyn e_1$ \quad
+ $\Gamma, x{:}{t_x} \vdash \hfive{A \seqA A_1'}{B_1'}{t}{B'}{A_2'} \termsyn e_2$}
+{TConcat}
+{$\Gamma \vdash \hfive{A}{B}{t}{B'}{A_1' \seqA A_2'} \termsyn \zlet{x}{e_1}{e_2}$}
+\quad
+\mprooftr{50mm}
+{$\Gamma \vdash \hfive{A}{B}{t_x}{B'}{A_1'} \termsyn e_1$ \quad
+ $\Gamma \vdash \hfive{A}{B}{t_x}{B'}{A_2'} \termsyn e_2$}
+{TUnion}
+{$\Gamma \vdash \hfive{A}{B}{t}{B'}{A_1' \lor  A_2'} \termsyn e_1 \oplus e_2$}
+\\ \ \\ \ \\
+\mprooftr{32mm}
+{$\Gamma \vdash \hfive{A}{B}{t}{B'}{\epsilon} \termsyn e$}
+{TStar1}
+{$\Gamma \vdash \hfive{A}{B}{t}{B'}{A^*} \termsyn e$}
+\quad
+\mprooftr{32mm}
+{$\Gamma \vdash \hfive{A}{B}{t}{B'}{A^*\seqA A} \termsyn e$}
+{TStar2}
+{$\Gamma \vdash \hfive{A}{B}{t}{B'}{A^*} \termsyn e$}
+\quad
+\mprooftr{28mm}
+{$\Gamma \vdash v : t$}
+{TEps}
+{$\Gamma \vdash \hfive{A}{B}{t}{B'}{\epsilon} \termsyn v$}
+\\ \ \\ \ \\
+\mprooftr{32mm}
+{$\Gamma \vdash \tau \termsyn e \quad \Gamma \vdash \tau <: \tau'$}
+{TSub}
+{$\Gamma \vdash \tau' \termsyn e$}
+\quad
+\mprooftr{40mm}
+{ $\Gamma, x{:}\rawnuot{b}{\phi} \vdash \tau \termsyn e$}
+{TVar}
+{$\Gamma \vdash \tau \termsyn \zlet{x}{\zrandom{b}}{e}$}
+\\ \ \\ \ \\ 
+\mprooftr{80mm}
+{$\Gamma \vdash \tau \termsyn e$ \quad
+$\Gamma \vdash \nuot{unit}{\top} <: \nuot{unit}{\phi}$}
+{TAssert}
+{$\Gamma \vdash \tau \termsyn \zassume{\phi}{e}$}
+\\ \ \\ \ \\ 
+\mprooftr{60mm}
+{
+% $\forall \sigma \in \denot{\Gamma}. \sigma(\zevent{op}{\overline{v}}) \in \denot{\sigma(se)}$ \quad
+ $\Gamma \vdash \hfive{A}{ B \seqA\msgB{op}{\overline{y}}{\bigwedge\overline{y=v}} }{t}{B'}{A'} \termsyn e$}
+{TGen}
+{$\Gamma \vdash \hfive{A}{B}{t}{B'}{A'} \termsyn \zgen{op}{\overline{v}}{e}$}
+\\ \ \\ \ \\ 
+\mprooftr{105mm}
+{
+$\Gamma \vdash \eff{op} : \hfour{A}{B_1}{\msgB{op}{\overline{x}}{\phi}}{B_3}$ \quad
+ $\Gamma, \overline{x{:}t} \vdash \hfive{A \seqA \msgB{op}{\overline{x}}{\phi}}{B_1 \seqA B_2 \seqA B_3}{t}{B'}{A'} \termsyn \zassume{\phi}{e}$}
+{TObs}
+{$\Gamma \vdash \hfive{A}{ B_1 \seqA \msgB{op}{\overline{x}}{\phi} \seqA B_2}{t}{B'}{\msgB{op}{\overline{x}}{\phi} \seqA A'} \termsyn \zobs{\overline{x}}{op}{\zassume{\phi}{e}}$}
+\\ \ 
+{\small
+\begin{flalign*}
+ &\text{\textbf{Auxiliary Typing}} & \fbox{$\Gamma \vdash \tau <: \tau \quad \Gamma \vdash v : t$}
+\end{flalign*}
+}
+\\ \
+\mprooftr{80mm}
+{$\Gamma \vdash A_2 \subseteq A_1$ \quad
+$\Gamma \vdash B_2 \subseteq B_1$ \\
+$\Gamma \vdash t_1 <: t_2$ \quad
+$\Gamma \vdash A_1' \subseteq A_2'$ \quad
+$\Gamma \vdash B_1' \subseteq B_2'$ \quad}
+{SubHAT}
+{$\Gamma \vdash \hfive{A_1}{B_1}{t_1}{B_1'}{A_1'} <: \hfive{A_2}{B_2}{t_2}{B_2'}{A_2'}$}
+}
+\vspace*{-.1in}
+\caption{Selected typing rules. All typing judgements (i.e.,
+  {\small$\Gamma \vdash e : t$} and {\small$\Gamma \vdash e : \tau$})
+  assume the corresponding basic type judgement
+  ({\small$\eraserf{\Gamma} \basicvdash e : \eraserf{t}$} holds).% \footnote{It means that terms that are well-typed
+    % under a type refinement are also well-typed under the STLC typing
+    % rules after erasing all refinement's qualifications. The basic
+    % typing rules $\eraserf{\Gamma} \basicvdash e : s$ are included in
+    % the supplemental material. }.
+}
+\label{fig:selected-typing-rules}
+\vspace*{-.2in}
+\end{figure}

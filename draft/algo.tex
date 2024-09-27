@@ -1,0 +1,15 @@
+\section{Typing Algorithm}
+
+There are two judgements:
+\begin{align*}
+    &\Gamma \vdash [H][F] \typeinfer [H'][ e ~|~ F']
+    \\&\Gamma \vdash [H][F] \typeinfer [H' ~|~ e][F']
+    \\&\Gamma \vdash [H][A][F] \typeinfer [H']e[F']
+\end{align*}
+
+{\footnotesize\mprooftr{105mm}{
+$\Gamma \vdash [H][F] \typeinfer [H_1 ~|~ e_1][F_1]$ \quad
+$\Gamma \vdash [H][F] \typeinfer [H_2][e_2 ~|~ F_2]$ \quad}
+{TConcat}
+{$\Gamma \vdash [H][F] \typeinfer [H_1 \land H_2](e_1 \parallel e_2)[F_1 \lor F_2]$}}
+\\ \ 
