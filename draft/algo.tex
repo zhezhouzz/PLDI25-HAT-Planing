@@ -1,15 +1,242 @@
+\section{Meta Theory}
+
+\paragraph{Problem} The under- and over- interpretation of types $\rg{H}{A}{F}$.
+\paragraph{Proposal} We always use overapproximation.
+\paragraph{Problem Details}
+\begin{enumerate}
+    \item Correctness property $\forall x\hasoty{b}{\phi}.A$ typically use \textbf{universal quantified} variable to express data-dependency among different events (e.g., in HAT). In a underapproximate style, if we want to synthesize a program $e$ such that consistent with $\exists x\hasuty{b}{\phi}.\neg A$. On the other hand, the data-dependency in types of primitive operator (e.g., $\eff{ReadReq}$) still use universal quantified variables (ghost variables). These two kinds of variables are mixing, kind of make synthesis algorithm be non-necessarily complicate. I don't think it is main contribution.
+    \item Reachability problem. In IL, the postcondition is vary hard to provide, since it requires all post-states should be reachable. In our setting, whatever we choose $H$ or $F$ be the analogue of post-states in IL, it is very hard to provide reachable automata (it means I cannot provide sound primitive types of operators (e.g., $\eff{ReadReq}$)). I would like to emphasize a concept \emph{semantic well-formed}. Before we talk about if a term $e$ can produce a trace $\alpha$, the $\alpha$ should be semantic well-formed (self-consistent). For example, when $\alpha = [\eff{op_1};\eff{op_2};\eff{op_3};]$, the $\eff{op_3}$ should be trigger by $\eff{op_1}$, or $\eff{op_2}$ , or itself can be directed generated. The relation between operators are complicate and hide in multiple primitives types. Thus, for a type $\rg{H}{A}{F}$, only semantic well-formed traces in $H$ or $F$ makes sense. In overapproximate style, it is fine -- but in underapproximate style where we need provide reachability guarantee of program execution, cannot prove all trace in $H$ (or $F$) can lead reachability unless $H$ (or $F$) is semantic well-formed (it would be a very complex invariant).
+\end{enumerate}
+\paragraph{Proposal Details} I think that using underapproximation extremely complicate our approach. Moreover, for a synthesis problem, we natural can do underapproximation. For example, if we want to synthesis $\nuot{int}{\vnu > 0}$, it is ok for our synthesizer to return a value $2$. Even our original goal is violating a specification $\forall x\hasoty{b}{\phi}.A$ -- it is ok for us to synthesis a program $\forall x\hasoty{b}{\phi'}.\neg A$ where $\models \phi' \impl \phi$. Indeed, in our motivating example, we have
+{\footnotesize\begin{align*}
+    &\exArw \doteq \anyA^* \seqA \msg{WriteRsp}{\fld[v] = x \land \fld[stat] = \true} \seqA (\anyA \setminus \msg{WriteRsp}{\fld[stat] = \true})^* \seqA  \msg{ReadRsp}{\fld[v] = y \land y \not= x}
+    \\&\phi_\Code{correct} \doteq \forall x\hasoty{int}{\top} \forall y\hasoty{int}{\vnu \not = x}.\neg \exArw
+\end{align*}}\noindent
+We actually synthesis a first-order function $e$ has type
+{\footnotesize\begin{align*}
+    x\hasoty{int}{\vnu \not= 0} \sarr y\hasoty{int}{\vnu = 0} \sarr\rg{\epsilon}{\exArw}{\epsilon}
+\end{align*}}\noindent
+where we guarantee that generates trace parametric over assignment of $x$ and $y$. It means
+
+\begin{definition}[Soundness] Consider a global property $\forall \overline{x{:}b}.A$ and a synthesized function $e$ such that $\overline{x{:}\rawnuot{b}{\phi}} \vdash e : \rg{\epsilon}{\neg A}{\epsilon}$
+then we have
+{\footnotesize\begin{align*}
+    &\forall \overline{v_x}. \bigwedge \overline{\phi[x \mapsto v_x]} \impl \forall \alpha. [] \vDash e[\overline{x \mapsto v_x}] \mharr{\alpha} ([], ()) \impl \alpha \in \denot{\neg A[\overline{x \mapsto v_x}]}
+\end{align*}}
+\end{definition}
+
+\begin{definition}[Fundamental] For all type context $\Gamma$, term $e$,  $\Gamma \vdash e : \tau \impl \forall \sigma \in\denot{\Gamma}. \sigma(e) \in  \denot{\sigma(\tau)}$.
+\end{definition}
+
+\paragraph{Type denotation}
+{\footnotesize\begin{align*}
+  &\denot{ \rawnuot{b}{\phi} } &&\doteq \{ c ~|~ \emptyset
+                                       \basicvdash c : b \land
+                                       \phi[\nu\mapsto v] \}
+  \\ &\denot{ x{:}t\sarr\tau } &&\doteq \{ e ~|~ \emptyset \basicvdash e : \eraserf{x{:}t\sarr\tau} \land
+                                           \forall c \in \denot{ t }.\, e\ c \in  \denot{ \tau[x\mapsto c ] } \}
+  % \\ &\denot{ x{:}t\garr\tau } &&\doteq \{ e ~|~ 
+  %   \emptyset \basicvdash e : \eraserf{\tau} \land 
+  %   \forall c \in \denot{t}. e \in  \denot{ \tau[x\mapsto c ] } \}
+  \\ &\denot{ \rg{H}{A}{F} } &&\doteq \{ e ~|~ \emptyset \basicvdash e : \Code{unit} \land \forall e_H\;e_F\;\alpha_H\;\beta_H\;\alpha_F\;\beta_F.
+  \\&&& \qquad\qquad  [] \vDash ([], e_H;e;e_F) \mharr{\alpha_H} (\beta_H, e;e_F) \mharr{\alpha} (\beta_F, e_F) \mharr{\alpha_F} ([], ()) \impl
+  \\&&& \qquad\qquad (\alpha_H \in\denot{H} \impl \alpha \in\denot{A} \land \alpha_F\in\denot{F}) \}
+  \\ &\denot{ \tau_1 \interty \tau_2 } &&\doteq \denot{\tau_1} \cap \denot{\tau_2}
+\end{align*}}
+
 \section{Typing Algorithm}
 
-There are two judgements:
-\begin{align*}
-    &\Gamma \vdash [H][F] \typeinfer [H'][ e ~|~ F']
-    \\&\Gamma \vdash [H][F] \typeinfer [H' ~|~ e][F']
-    \\&\Gamma \vdash [H][A][F] \typeinfer [H']e[F']
-\end{align*}
+In the synthesis problem, the correctness property $A$ provides only an overapproximation of the desirable traces, as not all traces are consistent with the type context of operators $\Delta$. Within the declarative synthesis rules, the subsumption rule acts as an oracle to refine the correctness property $A$ into $A'$ (i.e., $\rg{\epsilon}{A'}{\epsilon} <: \rg{\epsilon}{A}{\epsilon}$), where $A'$ is consistent with $\Delta$.
 
-{\footnotesize\mprooftr{105mm}{
-$\Gamma \vdash [H][F] \typeinfer [H_1 ~|~ e_1][F_1]$ \quad
-$\Gamma \vdash [H][F] \typeinfer [H_2][e_2 ~|~ F_2]$ \quad}
-{TConcat}
-{$\Gamma \vdash [H][F] \typeinfer [H_1 \land H_2](e_1 \parallel e_2)[F_1 \lor F_2]$}}
-\\ \ 
+Following this idea, our algorithm also divide the synthesis process into two stages: planning and term derivation. The planning phase refines the correctness property $A$ into $A' \subseteq A$, ensuring that $A'$ is consistent with $\Delta$ under the type context $\Gamma$. The auxiliary function $\termDerive$ is then used to derive terms that are consistent with both the type context $\Gamma$ and the refined property $A'$.
+
+\paragraph{Planing} The operator type context $\Delta$ does not directly represent valid traces but rather specifies the types of each operator. Consequently, computing $A'$ as $Tr(\Delta) \land A$ would lead to exponential complexity. Therefore, we must refine the types in $\Delta$ using the correctness property $A$ as a guide. This refinement process uses the operator $\eff{op}$ as a hook, allowing us to begin from any point in $A$. Additionally, history automata and prophecy automata (which capture the traces that occur before and after $\eff{op}$) should be mechanically extracted from $A$. This need for this extraction suggests that a more "sequential" representation of the correctness property is necessary. To address this, we introduce the concept of a \emph{symbolic plan}.
+
+\begin{figure}[t!]
+  \vspace{-.3cm}
+{\footnotesize
+{\small
+  \begin{alignat*}{2}
+    \\ \text{\textbf{Symbolic Plan }}& \quad  & \Pi ::= \quad & \epsilon ~|~ \msgB{op}{\overline{x}}{\phi} ~|~ \acSe{op}{\overline{v}} ~|~ A^\acStar ~|~ \Pi \seqA \Pi
+    % \\ \text{\textbf{Symbolic Plan}}& \quad & \Pi ::=\quad & \epsilon ~|~ \pi ~|~ \Pi \seqA \Pi ~|~ \Pi \lorA \Pi
+  \end{alignat*}}
+% {\small\begin{flalign*}
+%  &\text{\textbf{Plan Denotation}} &
+% \end{flalign*}}
+% \vspace{-1.8em}
+% \begin{alignat*}{3}
+%     % e \oplus e &\doteq \zlet{x}{\genbool\;()}{\zif{x}{e}{e}} 
+%     % e_1;e_2 &\doteq \zlet{\_}{e_1}{e_2}
+%     \\ \zassume{\phi}{e} &\doteq ...
+%     \\\zlet{x}{\zrandom{\rawnuot{b}{\phi}}}{e} &\doteq \zlet{x}{\Code{random}(b)\;()}{\zassume{\phi}{e}}
+%     % \quad& \zassume{v}{e} &\doteq \zif{v}{e}{\err}
+%     \\ \zif{v}{e_1}{e_2} &\doteq (\zassert{v}{e_1}) \oplus 
+%     (\zlet{x}{\Code{not}\; v}{\zassert{x}{e_2}})
+%     \\ \zobsPhi{\overline{x}}{op}{\phi}{e} &\doteq \zobs{\overline{x}}{op}{\zassume{\phi}{e}}
+%     % \quad& \err &\doteq \zassume{\Code{false}}{()}
+%   \end{alignat*}
+  }
+\caption{Syntax of Plan}
+\label{fig:plan-syntax}
+\end{figure}
+
+\paragraph{Symbolic Plan} As illustrated in \autoref{fig:plan-syntax}, the symbolic plan is similar to symbolic automata but presented in a sequential format. In addition to the symbolic event $\msgB{op}{\overline{x}}{\phi}$, we introduce \emph{symbolic applications} $\acSe{op}{\overline{x}}$, which represent the application of effect operators. Unlike concrete events $\eff{op}(\overline{c})$, symbolic applications allow variables to be passed as arguments. A symbolic application can be viewed as a special type of symbolic event $\msgB{op}{\overline{y}}{\bigwedge \overline{y = x}}$, where all arguments are properly instantiated. We also introduce a special Kleene star operator $A^\acStar$, which allows us to encapsulate arbitrarily complex symbolic finite automata (SFA) $A$ without unrolling them into a sequential format. This enables lazy unrolling of the Kleene star as needed, improving efficiency.  Finally, unlike SFAs, symbolic plans are free of union operators. As a result, an SFA can be normalized (via the auxiliary function $\normPlan$) into multiple symbolic plans. Importantly, since we use the lazy star $A^\acStar$, the normalization function $\normPlan$ always produces a finite number of plans.
+
+\paragraph{Synthesis Judgements} The planing is just try to convert all $\msgB{op}{\overline{x}}{\phi}$ into $\acSe{op}{\overline{v}}$. There are three classes of synthesis judgements:
+\begin{enumerate}
+    \item Global Synthesis $\Gamma \vdash A \terminfer e$ and $\Gamma \vdash \Pi \terminfer e$.
+    \item Forward Synthesis $\Gamma \vdash \planPair{\Pi_1}{\Pi_2} \inferFW \planPair{\Pi_1'}{\Pi_2'}$, needs to guarantee that there is not $\msgB{op}{\overline{x}}{\phi}$ in $\Pi_2'$.
+    \item Backward Synthesis $\Gamma \vdash \planTri{\Pi_1}{\acSe{op}{\overline{v}}}{\Pi_2} \inferBW \Pi'$, needs to guarantee that all $\acSe{op}{\overline{v}}$ in $\Pi'$ are consistent with $\Delta$.
+\end{enumerate}
+
+\newcommand{\aaStar}{\anyA^\acStar}
+Here is a simple intuition how forward/backward works:
+\begin{align*}
+    \effRed{WriteReq^5} \to \effRed{PutReq^4} \to \effRed{PutRsp^2} &\to \effRed{WriteRsp^1}
+    \\&\searrow \effRed{Commit^3}
+\end{align*}\noindent
+Assume we start from $\vdash \aaStar \seqA \eff{WriteReq} \seqA \aaStar$. 
+\begin{enumerate}
+    \item The rule \textsc{SynFocus} makes us focus on the symbolic event $\eff{WriteReq}$. We first do forward synthesis $\vdash \planPair{\aaStar}{\eff{WriteReq} \seqA \aaStar}$ to make sure all messages trigger by $\eff{WriteReq}$ are refined; then we do backward synthesis from $\eff{WriteReq}$.
+    \item $\eff{WriteReq}$ doesn't trigger new events. The forward synthesis result is $\vdash \planPair{\aaStar}{\eff{WriteReq} \seqA \aaStar} \inferFW \vdash \planPair{\aaStar}{\effRed{WriteReq} \seqA \aaStar}$.
+    \item We do backward synthesis $\vdash \planTri{\aaStar}{\effRed{WriteReq}}{\aaStar}$. As we know $\eff{PutRsp}$ trigger it. We have $\vdash \planTri{\aaStar \seqA \effRed{PutRsp} \seqA \aaStar}{\effRed{WriteReq}}{\aaStar \seqA \eff{Commit} \seqA \aaStar}$. The invariant of ``no symbolic event after $\planBar$'' is broken, thus we apply forward synthesis $\vdash \planPair{\aaStar \seqA \effRed{PutRsp} \seqA \aaStar}{\effRed{WriteReq} \seqA \aaStar \seqA \eff{Commit} \seqA \aaStar}$ again.
+    \item $\eff{Commit}$ doesn't trigger new events. The forward synthesis result is 
+    \begin{align*}
+        \vdash \planPair{\aaStar \seqA \effRed{PutRsp} \seqA \aaStar}{\effRed{WriteReq} \seqA \aaStar \seqA \eff{Commit} \seqA \aaStar} \inferFW \planPair{\aaStar \seqA \effRed{PutRsp} \seqA \aaStar}{\effRed{WriteReq} \seqA \aaStar \seqA \effRed{Commit} \seqA \aaStar}
+    \end{align*}
+    \item We continue backward synthesis, similarly, we have
+    \begin{align*}
+        &\vdash \planTri{\aaStar}{\effRed{PutRsp}}{\aaStar \seqA \effRed{WriteReq} \seqA \aaStar \seqA \effRed{Commit} \seqA \aaStar} 
+        \\&\inferBW \planTri{\aaStar}{\effRed{PutReq}}{\aaStar \seqA \effRed{PutRsp} \seqA \aaStar \seqA \effRed{WriteReq} \seqA \aaStar \seqA \effRed{Commit} \seqA \aaStar}
+        \\&\inferBW \planTri{\aaStar}{\effRed{WriteReq}}{\aaStar \seqA \effRed{PutReq} \seqA \aaStar \seqA \effRed{PutRsp} \seqA \aaStar \seqA \effRed{WriteReq} \seqA \aaStar \seqA \effRed{Commit} \seqA \aaStar}
+    \end{align*}
+    \item Finally, we $\effRed{WriteReq}$ can be generated by environment directly, then backward synthesis ends.
+\end{enumerate}
+
+{\footnotesize\mprooftr{46mm}{
+$\text{no $\msgB{op}{\overline{x}}{\phi}$ in } \Pi$ \quad
+$\Pi' = \Pi[A^\acStar \mapsto \epsilon]$
+}
+{SynStar}
+{$\Gamma \vdash \Pi \terminfer \termDerive(\Gamma, \Pi')$}}
+\quad 
+{\footnotesize\mprooftr{46mm}{
+$\Pi_i \in \normPlan(A)$ \quad
+$\Gamma \vdash \Pi_i \terminfer e_i$
+}
+{SynUnion}
+{$\Gamma \vdash A \terminfer \bigoplus e_i$}}
+\\ \ \\ \ 
+
+{\footnotesize\mprooftr{65mm}{
+$\text{no $\msgB{op}{\overline{x}}{\phi}$ in } \Pi_2$  \quad
+% $\Gamma \vdash \planPair{ \Pi_1 }{ \msgB{op}{\overline{x}}{\phi} \seqA \Pi_2 } \inferFW \Gamma' \vdash \planPair{ \Pi_1' }{ \acSe{op}{\overline{y}} \seqA \Pi_2' }$ \\
+$\Gamma \vdash \planTri{ \Pi_1 }{ \acSe{op}{\overline{y}} }{ \Pi_2 } \inferBW \Gamma' \vdash \Pi'$ \\
+$\Gamma' \vdash \Pi' \terminfer e$
+}
+{SynFocus}
+{$\Gamma \vdash \Pi_1 \seqA \msgB{op}{x}{\phi} \seqA \Pi_2 \terminfer e$}}
+\\ \ \\ \ 
+
+{\footnotesize\mprooftr{80mm}{
+% $\Pi_{21} \seqA \msgB{op}{\overline{x}}{\phi} \seqA \Pi_{22} \in \normPlan(\Pi_2)$\quad
+$\overline{y{:}b} \sarr [H]\msgB{op}{x}{\phi'}[F] \in \Delta(\eff{op})$ \\
+$\Pi_1' \seqA \Pi_{21}' \in \normPlan(\Pi_1 \seqA \Pi_{21} \;\land\; H)$ \quad
+$\Pi_{22}' \in \normPlan(\Pi_{22} \;\land\; F)$ \\
+$\Gamma \infervdash{\Pi_1' \seqA \Pi_{21}' \seqA \msgB{op}{x}{\phi \land \phi'} \seqA \Pi_{22}'} \overline{y{:}b} \effinfer \overline{y{:}\rawnuot{b}{\phi_y}}$  \\
+$\Gamma, \overline{y{:}\rawnuot{b}{\phi_y}} \vdash \planPair{ \Pi_1' }{ \Pi_{21}' \seqA \acSe{op}{\overline{y}} \seqA \Pi_{22}' } \inferFW \Gamma' \vdash \planPair{ \Pi_3 }{ \Pi_4 }$ 
+}
+{FWAct}
+{$\Gamma \vdash \planPair{ \Pi_1 }{ \Pi_{21} \seqA \msgB{op}{\overline{x}}{\phi} \seqA \Pi_{22} } \inferFW \Gamma' \vdash \planPair{\Pi_3}{\Pi_4}$}}
+\quad
+{\footnotesize\mprooftr{40mm}{
+$\text{no $\msgB{op}{\overline{x}}{\phi}$ in } \Pi_2$
+}
+{FWEnd}
+{$\Gamma \vdash \planPair{\Pi_1}{\Pi_2} \inferFW \Gamma \vdash \planPair{\Pi_1}{\Pi_2}$}}
+\\ \ \\ \ 
+
+{\footnotesize\mprooftr{110mm}{
+$\text{no $\msgB{op}{\overline{x}}{\phi}$ in } \Pi_2$ \quad
+$\overline{y{:}b} \sarr [H]\msgB{op_1}{\overline{x}}{\phi_1}[F_1 \seqA \msgB{op_2}{\overline{z}}{\phi_2} \seqA F_2 ] \in \Delta(\eff{op_1})$ \quad 
+$\Pi_{11}'\seqA\msgB{op_1}{\overline{x}}{\phi_1'}\seqA\Pi_{12}' \in \normPlan(\Pi_1 \land H\seqA\msgB{op_1}{\overline{x}}{\phi_1}\seqA F_1)$ \quad
+$\Pi_{2}' \in \normPlan(\Pi_2 \land F_2)$ \\
+$\Gamma, \infervdash{ \Pi_{11}'\seqA\msgB{op_1}{\overline{x}}{\phi_1'}\seqA\Pi_{12}' \seqA \msgB{op_2}{\overline{z}}{\overline{z = z'} \land \phi_2} \seqA \Pi_{2}'} \overline{y{:}b} \effinfer \overline{y{:}\rawnuot{b}{\phi_y}}$ \\
+$\Gamma, \overline{y{:}\rawnuot{b}{\phi_y}} \vdash \planTri{ \Pi_{11}'}{\acSe{op_1}{\overline{y}} }{ \Pi_{12}' \seqA \acSe{op_2}{\overline{z'}} \seqA \Pi_{2}' } \inferBW \Gamma' \vdash \Gamma_3$ 
+% \\
+% $\Gamma'' \vdash \planTri{ \Pi_3}{\acSe{op_1}{\overline{y}} }{ \Pi_4 } \inferBW \Gamma''' \vdash \Pi_5$
+}
+{BWAct}
+{$\Gamma \vdash \planTri{ \Pi_1 }{ \acSe{op_2}{\overline{z'}} }{ \Pi_2 } \inferBW \Gamma' \vdash \Gamma_3$}}
+\\ \ \\ \ 
+
+{\footnotesize\mprooftr{55mm}{
+$\text{no $\msgB{op}{\overline{x}}{\phi}$ in } \Pi_2$ \quad
+$\S{Gen}(\eff{op})$}
+{BWEnd}
+{$\Gamma \vdash \planTri{\Pi_1}{ \acSe{op}{\overline{x}} }{\Pi_2} \inferBW \Gamma \vdash \Pi_1 \seqA \acSe{op}{\overline{x}} \seqA \Pi_2$}}
+\quad
+{\footnotesize\mprooftr{55mm}{
+$\text{has $\msgB{op}{\overline{x}}{\phi}$ in } \Pi_2$ \quad
+$\Gamma \vdash \planPair{\Pi_1}{ \acSe{op}{\overline{x}} \seqA \Pi_2} \inferFW \Gamma' \vdash \planPair{\Pi_1'}{ \acSe{op}{\overline{x}} \seqA \Pi_2'}$\quad
+$\Gamma' \vdash \planTri{\Pi_1'}{ \acSe{op}{\overline{x}} }{\Pi_2'} \inferBW \Gamma'' \vdash \Pi'$
+}
+{BWFW}
+{$\Gamma \vdash \planTri{\Pi_1}{ \acSe{op}{\overline{x}} }{\Pi_2} \inferBW \Gamma'' \vdash \Pi'$}}
+
+\paragraph{Term Derivation}
+
+\begin{algorithm}[t!]
+    \lProcedure{$\termDerive(\Gamma, \Pi) := $}{
+        \Return{$\S{DerivePlan}(\Pi, \Gamma, \emptyset)$}
+    }
+    \Procedure{$\S{DerivePlan}(\Pi, \Gamma_{\Pi}, \Gamma_{e}) := $}{
+    \Match{$\Pi$}{
+      \lCase{$\epsilon$}{ \Return{$()$} }
+      \Case{$\acSe{op}{\overline{x}} \seqA \Pi'$}{
+        $\overline{x'}, \overline{x''} \leftarrow \overline{x'}$ where $ \overline{x''} \subseteq \S{Dom}(\Gamma_{e})$\;
+        $\Gamma_{\Pi}' \leftarrow \Gamma_{\Pi} \setminus \overline{x'}$\;
+        $\Gamma_{e} \infervdash{\exists \Gamma_\Pi'. \Pi} \overline{x'} \effinfer \overline{x'{:}\rawnuot{b}{\phi}}$\;
+        $\Gamma_{e}' \leftarrow \Gamma_{e}, \overline{x'{:}\rawnuot{b}{\phi}}$\;
+        $e \leftarrow \S{DerivePlan}( \Pi', \Gamma_{\Pi}', \Gamma_{e}')$\;
+        \uIf{$\S{Gen}(\eff{op})$}{
+            \lForEach{$x_i{:}\rawnuot{b}{\phi_i}$}{
+                $e_i \leftarrow \S{DeriveArg}(\Gamma_e, \rawnuot{b}{\phi_i})$
+            }
+            \Return{$\zlet{\overline{x_i}}{\overline{e_i}}{\zgen{op}{\overline{e_i}  \; \overline{x''}}{e}}$}\;
+        }
+        \Else{
+            $\phi \leftarrow \top; \quad \overline{y} \leftarrow \emptyset$\;
+            \lForEach{$x_i'{:}\rawnuot{b'}{\phi_i'}$}{
+                $\phi \leftarrow \phi \land \phi_i'[\vnu \mapsto x_i']$
+            }
+            \ForEach{$x_i'' \in \overline{x''}$}{
+                $y_i \leftarrow  \S{freshVar}()$\;
+                $\overline{y} \leftarrow  \overline{y}, y_i; \quad \phi \leftarrow \phi \land y_i = x_i''$\;
+            }
+            \Return{$\zobs{\overline{x'}\; \overline{y}}{op}{\zassert{\phi}{e}}$}\;
+        }
+      }
+    }
+    }
+    \caption{Term Derivation}
+    \label{algo:term-derive}
+  \end{algorithm}
+
+\paragraph{Plan Normalization}
+
+\begin{algorithm}[t!]
+    \Procedure{$\normPlan(A) := $}{
+    \Match{$A$}{
+      \lCase{$\emptyset$}{ \Return{$\emptyset$} }
+      \lCase{$\epsilon$}{ \Return{$\{\epsilon\}$} }
+      \lCase{$\msgB{op}{\overline{x}}{\phi}$}{ \Return{$\{\msgB{op}{\overline{x}}{\phi}\}$} }
+      \lCase{$A_1 \lorA A_2$}{ 
+      \Return{$\{ \Pi_1 \seqA \Pi_2 ~|~ \Pi_1 \in \normPlan(A_1) \land \Pi_2 \in \normPlan(A_2) \}$}}
+      \lCase{$A^*$}{ \Return{$\{ A^\acStar \}$}}
+      \lCase{$\anyA$}{ \Return{$\{ \msgB{op}{\overline{x}}{\top} ~|~ \text{for all } \eff{op} \}$}}
+    }
+    }
+    \caption{Plan Normalization}
+    \label{algo:norm}
+  \end{algorithm}

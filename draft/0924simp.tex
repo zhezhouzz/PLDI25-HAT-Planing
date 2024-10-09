@@ -5,37 +5,17 @@
 {\footnotesize
 {\small
   \begin{alignat*}{2}
-    \text{\textbf{Variables }}& \quad &\quad& x, y, z, X, Y, Z, f, \vnu, ... \\
-    \text{\textbf{Component Identifier}}& \quad &\quad& \iota ... \\
+    \text{\textbf{Variables }}& \quad &\quad& x, y, z, \vnu, ... \\
     \text{\textbf{Base Types}}& \quad & b  ::= \quad &  \Code{unit} ~|~ \Code{bool} ~|~ \Code{nat} ~|~ \Code{int} ~|~ ... \\
     \text{\textbf{Pure Operations}}& \quad & \primop ::= \quad & {+} ~|~ {-} ~|~ {==} ~|~ {<} ~|~ {\leq} ~|~ \Code{not} ~|~ \Code{Random}(b) ~|~ ...\\
     \text{\textbf{Effectful Operations }}& \quad & \eff{op} ::= \quad & \eff{readReq} ~|~ \eff{readRsp} ~|~  ...
-    \\ \text{\textbf{Constants }}& \quad &c ::= \quad & \mathbb{1} ~|~ \mathbb{B} ~|~ \mathbb{Z} ~|~ \iota
-    \\ \text{\textbf{Values }}& \quad  & v ::= \quad & v ~|~ x
-    \\ \text{\textbf{Expressions}}& \quad & e ::=\quad & v
-    % ~|~ \zrand{x}{e}
-    ~|~ \zlet{x}{\primop\ \overline{v}}{e}
-    \\ &\quad&\quad& ~|~ \zgen{op}{\overline{v}}{e} ~|~ \zobs{\overline{x}}{op}{e}
-    \\ &\quad&\quad& ~|~ e;e ~|~ e \oplus e ~|~ \zassume{v}{e}
-    % ~|~ \zloop{e}
+    \\ \text{\textbf{Constants }}& \quad &c ::= \quad & \mathbb{1} ~|~ \mathbb{B} ~|~ \mathbb{Z}
+    \\ \text{\textbf{Values }}& \quad  & v ::= \quad & c ~|~ x
+    \\ \text{\textbf{Expressions}}& \quad & e ::=\quad & v ~|~ \zlet{x}{\primop\ \overline{v}}{e} ~|~ \zgen{op}{\overline{v}}{e} ~|~ \zobs{\overline{x}}{op}{e} 
+    \\ & & \quad & ~|~ \zassert{v}{e} ~|~ e \oplus e
     \\\text{\textbf{Traces}}& \quad &\alpha,\beta ::= \quad &
     \emptr ~|~ \zevent{op}{\overline{v}} \;{::}\; \alpha
   \end{alignat*}}
-{\small\begin{flalign*}
- &\text{\textbf{Syntax Sugar}} &
-\end{flalign*}}
-\vspace{-1.8em}
-\begin{alignat*}{3}
-    % e \oplus e &\doteq \zlet{x}{\genbool\;()}{\zif{x}{e}{e}} 
-    % e_1;e_2 &\doteq \zlet{\_}{e_1}{e_2}
-    \zassume{\phi}{e} &\doteq ...
-    \\\zlet{x}{\zrandom{\rawnuot{b}{\phi}}}{e} &\doteq \zlet{x}{\Code{random}(b)\;()}{\zassume{\phi}{e}}
-    % \quad& \zassume{v}{e} &\doteq \zif{v}{e}{\err}
-    \\ \zif{v}{e_1}{e_2} &\doteq (\zassume{v}{e_1}) \oplus 
-    (\zlet{x}{\Code{not}\; v}{\zassume{x}{e_2}})
-    \\ \zobsPhi{\overline{x}}{op}{\phi}{e} &\doteq \zobs{\overline{x}}{op}{\zassume{\phi}{e}}
-    % \quad& \err &\doteq \zassume{\Code{false}}{()}
-  \end{alignat*}
   }
 \caption{Expression and Trace Syntax. }
 \label{fig:term-syntax}
@@ -150,18 +130,13 @@ The small-step reduction is shown in \autoref{fig:semantics}. The environment $e
 \begin{alignat*}{2}
     \text{\textbf{Basic Types}}& \quad & s  ::= \quad & b ~|~ s \sarr s
 \\ \text{\textbf{Qualifiers}}& \quad & \phi ::= \quad & v ~|~ \bot ~|~ \top  ~|~ \neg \phi ~|~ \phi \land \phi ~|~ \phi \lor \phi ~|~ \phi \impl \phi ~|~ \forall x{:}b.\, \phi
-     \\ \text{\textbf{Symbolic Events}}& \quad &\se  ::= \quad & \msgB{op}{\overline{x}}{\phi} ~|~ \se \cup \se ~|~ \msgG{\phi}
-    \\ \text{\textbf{Symbolic Regular Expression (SFA)}}& \quad &A,B  ::= \quad & se ~|~ \emptyset ~|~ \epsilon ~|~ \anyA ~|~ A \lorA A ~|~ A \seqA A ~|~ A^*
+    \\ \text{\textbf{Symbolic Regular Expression (SRE)}}& \quad &A,B  ::= \quad & \msgB{op}{\overline{x}}{\phi} ~|~ \emptyset ~|~ \epsilon ~|~ \anyA ~|~ A \lorA A ~|~ A \seqA A ~|~ A^*
     \\ \text{\emph{LTL Syntax Sugar}}& \quad &\quad & ~|~ A \land A ~|~ \neg A ~|~ \nextA A ~|~ \finalA A ~|~ \globalA A
     % \\ \text{\textbf{Buffer Types}}& \quad & \Omega  ::= \quad  &\emptyset ~|~ \iota{:}A, \Omega
     % ~|~ \scope{se} A ~|~ \femp ~|~ \boxed{A}
-    \\ \text{\textbf{Refinement Base Types}}& \quad & t  ::= \quad & \rawnuot{b}{\phi} ~|~ \rawnuut{b}{\phi}
-    \\ \text{\textbf{Hoare Automata Types}}& \quad & \tau  ::= \quad &
-    \rg{H}{A}{F} ~|~
-    % \astate{B}{t} ~|~
-    % \hfive{A}{B}{t}{B'}{A'} ~|~ \hfour{A}{B}{se}{B'}
-    % \hfive{A}{B}{t}{B'}{A'} 
-    \\ & & & ~|~ \tau \interty \tau  ~|~ x{:}t\sarr \tau ~|~ x{:}t\garr \tau
+    \\ \text{\textbf{Refinement Base Types}}& \quad & t  ::= \quad & \rawnuot{b}{\phi}
+    \\ \text{\textbf{Prophecy Automata Types}}& \quad & \tau  ::= \quad &
+    \rg{H}{A}{F} ~|~ x{:}t\sarr \tau ~|~ \tau \interty \tau
     \\\text{\textbf{Type Contexts}}& \quad &\Gamma ::= \quad  &\emptyset ~|~ x{:}t, \Gamma
   \end{alignat*}}
 \vspace{-1.8em}
@@ -505,12 +480,11 @@ $\Gamma \vdash \rg{H_2}{A_2 \seqA \msg{op_2}{\phi}}{F_2} \termsyn e_2$}
   %   \forall \alpha \in \denot{A}. e \in \denot{ \tau[X\mapsto \alpha] } \}
   % \\ &\denot{\hfive{A}{B}{t}{B'}{A'}} &&\doteq \{e ~|~ \emptyset \basicvdash e : \eraserf{t} \land \forall \alpha\in\denot{A}\; \beta\in\denot{B}\; \alpha'\, \beta'\,v. 
   % \\&&& \qquad \qquad(\alpha, \beta, e) \hookrightarrow^* (\alpha \listconcat \alpha', \beta', c) \impl \alpha'\in\denot{A'} \land \beta'\in\denot{B'} \land c \in \denot{t} \}
-  \\ &\denot{\rg{H}{A}{F}} &&\doteq \{e ~|~ \emptyset \basicvdash e : \eraserf{t} \land \forall e_H\; \alpha_H\; e_F\; \alpha_F\; v\; \beta_H\;\beta. \alpha_H \in \denot{H} \impl
-  \\&&& \qquad\qquad [] \vDash ([], e_H;e;e_F) \mharr{\alpha_H} (\beta_H, e;e_F) \mharr{\alpha} (\beta, e_F) \mharr{\alpha_F} ([], v) \impl \alpha\in\denot{A} \land \alpha_F\in\denot{F} \}
-  %  \\ &\denot{\hfive{A}{B}{t}{B'}{A'}} &&\doteq \{e ~|~ \emptyset \basicvdash e : \eraserf{t} \land \forall \alpha\in\denot{A}\; \beta\in\denot{B}\;\alpha'\, \beta'\,v. 
-  % \\&&& \qquad \qquad \steptr{\alpha}{(\beta, e)}{\alpha'}{(\beta', c)} \impl \alpha'\in\denot{A'} \land \beta'\in\denot{B'} \land c \in \denot{t} \}
-  % \\ &\denot{\hfour{A}{B}{\msgB{op}{\overline{x}}{\phi}}{B'}} &&\doteq \{\eff{op} ~|~ \forall \alpha\in\denot{A}\; \beta\in\denot{B}\; \beta'\, \overline{v_x}. \;\phi[\overline{x \mapsto v_x}] \impl
-  % \\&&& \qquad \qquad \alpha, \beta \vDash \zevent{op}{\overline{v_x}} \Downarrow \beta' \impl \beta'\in\denot{B'} \}
+  % \\&\denot{\alpha}_\Code{history} &&\doteq \{ \beta ~|~ \exists e. \emptyset \basicvdash e \land  [] \vDash ([], e) \mharr{\alpha} (\beta, ()) \}
+  % \\&\denot{(\alpha_1, \alpha_2)}_\Code{prophecy} &&\doteq \{ \beta ~|~ \exists e. \emptyset \basicvdash e \land \alpha_1 \vDash (\beta, e) \mharr{\alpha_2} ([], ()) \}
+  % \\ &\denot{\rg{H}{A}{F}} &&\doteq \{e ~|~ \emptyset \basicvdash e \land \forall \alpha_H\;\alpha_F\;\alpha\;e_H\;\beta_H\;e_F\;\beta_F.
+  \\&&& \qquad\qquad [] \vDash ([], e_H;e;e_F) \mharr{\alpha_H} (\beta_H, e;e_F) \mharr{\alpha} (\beta_F, e_F) \mharr{\alpha_F} ([], ()) \impl
+  \\&&& \qquad\qquad (\alpha_H \in\denot{H} \impl \alpha \in\denot{A} \land \alpha_F\in\denot{F}) \land (\alpha_F \in\denot{F} \impl \alpha \in\denot{A} \land \alpha_H\in\denot{H}) \}
   \\ &\denot{ \tau_1 \interty \tau_2 } &&\doteq \denot{\tau_1} \cap \denot{\tau_2}
 \end{align*}
 \vspace{-1.5em}
