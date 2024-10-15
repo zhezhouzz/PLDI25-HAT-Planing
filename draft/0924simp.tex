@@ -5,14 +5,15 @@
 {\footnotesize
 {\small
   \begin{alignat*}{2}
-    \text{\textbf{Variables }}& \quad &\quad& x, y, z, \vnu, ... \\
-    \text{\textbf{Base Types}}& \quad & b  ::= \quad &  \Code{unit} ~|~ \Code{bool} ~|~ \Code{nat} ~|~ \Code{int} ~|~ ... \\
-    \text{\textbf{Pure Operations}}& \quad & \primop ::= \quad & {+} ~|~ {-} ~|~ {==} ~|~ {<} ~|~ {\leq} ~|~ \Code{not} ~|~ \Code{Random}(b) ~|~ ...\\
-    \text{\textbf{Effectful Operations }}& \quad & \eff{op} ::= \quad & \eff{readReq} ~|~ \eff{readRsp} ~|~  ...
+    \text{\textbf{Variables }}& \quad &\quad& x, y, z, \vnu, ...
+    \\\text{\textbf{Base Types}}& \quad & b  ::= \quad &  \Code{unit} ~|~ \Code{bool} ~|~ \Code{nat} ~|~ \Code{int} ~|~ ... 
+    \\\text{\textbf{Pure Operations}}& \quad & \primop ::= \quad & {+} ~|~ {-} ~|~ {==} ~|~ {<} ~|~ {\leq} ~|~ ...
     \\ \text{\textbf{Constants }}& \quad &c ::= \quad & \mathbb{1} ~|~ \mathbb{B} ~|~ \mathbb{Z}
     \\ \text{\textbf{Values }}& \quad  & v ::= \quad & c ~|~ x
-    \\ \text{\textbf{Expressions}}& \quad & e ::=\quad & v ~|~ \zlet{x}{\primop\ \overline{v}}{e} ~|~ \zgen{op}{\overline{v}}{e} ~|~ \zobs{\overline{x}}{op}{e} 
-    \\ & & \quad & ~|~ \zassert{v}{e} ~|~ e \oplus e
+    \\ \text{\textbf{Qualifiers}}& \quad & \phi ::= \quad & v ~|~ \primop(\overline{v}) ~|~ \bot ~|~ \top  ~|~ \neg \phi ~|~ \phi \land \phi ~|~ \phi \lor \phi ~|~ \phi \impl \phi ~|~ \forall x{:}b.\, \phi
+    \\\text{\textbf{Effectful Operations }}& \quad & \eff{op} ::= \quad & \eff{readReq} ~|~ \eff{readRsp} ~|~  ...
+    \\ \text{\textbf{Expressions}}& \quad & e ::=\quad & v ~|~ \zlet{x{:}b}{\primop\ \overline{v}}{e} ~|~ \zgen{op}{\overline{v}}{e} ~|~ \zobs{\overline{x{:}b}}{op}{e} 
+    \\ & & \quad & ~|~\zletassume{\overline{x{:}b}}{\phi}{e} ~|~  \zassert{\phi}{e} ~|~ e \oplus e
     \\\text{\textbf{Traces}}& \quad &\alpha,\beta ::= \quad &
     \emptr ~|~ \zevent{op}{\overline{v}} \;{::}\; \alpha
   \end{alignat*}}
@@ -46,7 +47,7 @@ The small-step reduction is shown in \autoref{fig:semantics}. The environment $e
 \begin{figure}[h!]
 {\footnotesize
 {\small\begin{flalign*}
- &\text{\textbf{Auxiliary Operational Semantics }} & \fbox{$\primop\ \overline{v} \Downarrow v_x  \quad \alpha, \beta \vDash \zevent{op}{\overline{c}} \Downarrow \beta$}
+ &\text{\textbf{Auxiliary Operational Semantics }} & \fbox{$\primop\ \overline{v} \Downarrow v_x  \quad \alpha \vDash \zevent{op}{\overline{c}} \Downarrow \beta$}
 \end{flalign*}}
 {\small
 \begin{flalign*}
@@ -59,28 +60,22 @@ The small-step reduction is shown in \autoref{fig:semantics}. The environment $e
       }
 \end{prooftree}
     \\ \ \\ \ \\
-    % \begin{prooftree}
-    %   \hypo{ \src{\zevent{op}{v}} = \envI }
-    %   \infer1[\textsc{\small StGen}]{
-    %     \steptr{\alpha}{(\buf, \zgen{op}{\overline{v}}{e})}{[]}{(\buf \listconcat [\zevent{op}{v}], e)}
-    %   }
-    % \end{prooftree}
     \begin{prooftree}
-      \hypo{ \src{\zevent{op}{v}} = \envI \quad \alpha, \beta \vDash \zevent{op}{\overline{v}} \Downarrow \beta'}
+      \hypo{}
       \infer1[\textsc{\small StGen}]{
-        \steptr{\alpha}{(\buf', \zgen{op}{\overline{v}}{e})}{[\zevent{op}{\overline{v}}]}{(\buf', e)}
+        \steptr{\alpha}{(\buf, \zgen{op}{\overline{v}}{e})}{[\zevent{op}{\overline{v}}]}{(\buf, e)}
       }
     \end{prooftree}
     \\ \ \\ \ \\    
     \begin{prooftree}
     \mhypo{70mm}
-    {$\buf = [\zevent{op}{\overline{v}}] \listconcat \buf'$ \quad
-    $\alpha, \buf' \vDash \zevent{op}{\overline{v}} \Downarrow \beta''$ \quad
+    {$\buf = \buf_1 \listconcat [\zevent{op}{\overline{v}}] \listconcat \buf_2$ \quad
+    $\alpha \vDash \zevent{op}{\overline{v}} \Downarrow \beta_3$ \quad
     % $\select{\buf, \zevent{op}{\overline{v}}, \buf'} $ \quad
      $e' = e[\overline{x \mapsto v}]$
      }
       \infer1[\textsc{\small StObserve}]{
-        \steptr{\alpha}{(\buf, \zobs{\overline{x}}{op}{e})}{[\zevent{op}{\overline{v}}]}{(\beta'', e')}
+        \steptr{\alpha}{(\buf, \zobs{\overline{x}}{op}{e})}{[\zevent{op}{\overline{v}}]}{(\buf_1 \listconcat \buf_2 \listconcat \buf_3, e')}
       }
     \end{prooftree}
     \\ \ \\ \ \\
@@ -91,7 +86,12 @@ The small-step reduction is shown in \autoref{fig:semantics}. The environment $e
     $\steptr{\alpha}{(\buf, e_1 \oplus e_2)}{[]}{(\buf, e_2)}$
     }
     \\ \ \\ \ \\
-    \mprooftr{50mm}{}{StAssert}{
+    \mprooftr{60mm}{
+    $\exists \overline{v{:b}}. \phi[\overline{x\mapsto v}]$
+    }{StAssume}{
+    $\steptr{\alpha}{(\buf, \zletassume{\overline{x{:}b}}{\phi}{e}}{[]}{(\buf, e[\overline{x\mapsto v}])}$
+    }\quad
+    \mprooftr{44mm}{}{StAssert}{
     $\steptr{\alpha}{(\buf, \zassume{\Code{true}}{e})}{[]}{(\buf, e)}$
     }
     % \begin{prooftree}
@@ -128,15 +128,13 @@ The small-step reduction is shown in \autoref{fig:semantics}. The environment $e
 \vspace{-1.8em}
 {\small
 \begin{alignat*}{2}
-    \text{\textbf{Basic Types}}& \quad & s  ::= \quad & b ~|~ s \sarr s
-\\ \text{\textbf{Qualifiers}}& \quad & \phi ::= \quad & v ~|~ \bot ~|~ \top  ~|~ \neg \phi ~|~ \phi \land \phi ~|~ \phi \lor \phi ~|~ \phi \impl \phi ~|~ \forall x{:}b.\, \phi
-    \\ \text{\textbf{Symbolic Regular Expression (SRE)}}& \quad &A,B  ::= \quad & \msgB{op}{\overline{x}}{\phi} ~|~ \emptyset ~|~ \epsilon ~|~ \anyA ~|~ A \lorA A ~|~ A \seqA A ~|~ A^*
+    \text{\textbf{Symbolic Regular Expression (SRE)}}& \quad &A,B  ::= \quad & \msgB{op}{\overline{x}}{\phi} ~|~ \emptyset ~|~ \epsilon ~|~ \anyA ~|~ A \lorA A ~|~ A \seqA A ~|~ A^*
     \\ \text{\emph{LTL Syntax Sugar}}& \quad &\quad & ~|~ A \land A ~|~ \neg A ~|~ \nextA A ~|~ \finalA A ~|~ \globalA A
     % \\ \text{\textbf{Buffer Types}}& \quad & \Omega  ::= \quad  &\emptyset ~|~ \iota{:}A, \Omega
     % ~|~ \scope{se} A ~|~ \femp ~|~ \boxed{A}
     \\ \text{\textbf{Refinement Base Types}}& \quad & t  ::= \quad & \rawnuot{b}{\phi}
     \\ \text{\textbf{Prophecy Automata Types}}& \quad & \tau  ::= \quad &
-    \rg{H}{A}{F} ~|~ x{:}t\sarr \tau ~|~ \tau \interty \tau
+    \rg{H}{A}{F} ~|~ x{:}b \garr \tau ~|~ x{:}t\sarr \tau ~|~ \tau \interty \tau
     \\\text{\textbf{Type Contexts}}& \quad &\Gamma ::= \quad  &\emptyset ~|~ x{:}t, \Gamma
   \end{alignat*}}
 \vspace{-1.8em}
@@ -229,20 +227,20 @@ $\Gamma \vdash \rg{H}{A_2}{F} \termsyn e_2$}
 {$\Gamma \vdash \tau' \termsyn e$}
 \quad
 \mprooftr{28mm}
-{$\Gamma,  x{:}\rawnuut{b} \vdash \tau \termsyn e$}
+{$\Gamma,  x{:}\rawnuot{b}{\top} \vdash \tau \termsyn e$}
 {TGhost}
-{$\Gamma \vdash x{:}\rawnuut{b}{\phi}\garr \tau \termsyn e$}
-\quad
-\mprooftr{35mm}
-{ $\Gamma, x{:}\rawnuut{b}{\phi} \vdash \tau \termsyn e$}
-{TVar}
-{$\Gamma \vdash \tau \termsyn \zlet{x}{\zrandom{b}}{e}$}
+{$\Gamma \vdash x{:}b\garr \tau \termsyn e$}
 \\ \ \\ \ \\ 
-\mprooftr{80mm}
+\mprooftr{55mm}
+{ $\Gamma, \overline{x{:}\rawnuot{b}{\top}}, \_\hasoty{unit}{\phi} \vdash \tau \termsyn e$}
+{TVar}
+{$\Gamma \vdash \tau \termsyn \zletassume{\overline{x}}{\phi}{e}$}
+\quad
+\mprooftr{50mm}
 {$\Gamma \vdash \tau \termsyn e$ \quad
 $\Gamma \vdash \phi$}
 {TAssert}
-{$\Gamma \vdash \tau \termsyn \zassume{\phi}{e}$}
+{$\Gamma \vdash \tau \termsyn \zassert{\phi}{e}$}
 \\ \ \\ \ \\ 
 \mprooftr{70mm}
 {
@@ -290,19 +288,19 @@ $\Gamma \vdash F_1 \subseteq F_2$ \quad}
 \paragraph{Synthesis Example} Assume the correctness property is ``the read value should be equal to the last success write result.'' Its negation is
 {\footnotesize\begin{align*}
     &\exArw \doteq \anyA^* \seqA \msg{WriteRsp}{\fld[v] = x \land \fld[stat] = \true} \seqA (\anyA \setminus \msg{WriteRsp}{\fld[stat] = \true})^* \seqA  \msg{ReadRsp}{\fld[v] = y \land y \not= x}
-    \\&\tau = x\hasuty{int}{\top}\garr y\hasuty{int}{\vnu \not = x}\garr \exArw
+    \\&\tau = x\hasoty{int}{\top}\garr y\hasoty{int}{\vnu \not = x}\garr \exArw
 \end{align*}}\noindent
 Now we convert it into the following synthesis judgement
 \begin{align*}
-    \emptyset \vdash x\hasuty{int}{\top}\garr y\hasuty{int}{\vnu \not = x}\garr \rg{\epsilon}{\exArw}{\anyA^*} \termsyn e
+    \emptyset \vdash x\hasoty{int}{\top}\garr y\hasoty{int}{\vnu \not = x}\garr \rg{\epsilon}{\exArw}{\anyA^*} \termsyn e
 \end{align*}\noindent
 We apply subsumption rule to specialize it:
 
 {\footnotesize\mprooftr{90mm}
-{$\Gamma \vdash x\hasuty{int}{\vnu \not= 0}\garr x\hasuty{int}{\vnu =  0}\garr \rg{\epsilon}{\exArw}{\anyA^*} \termsyn e$ \quad 
- $\Gamma \vdash x\hasuty{int}{\vnu \not= 0}\garr x\hasuty{int}{\vnu =  0}\garr \rg{\epsilon}{\exArw}{\anyA^*} <: x\hasuty{int}{\top}\garr y\hasuty{int}{\vnu \not = x}\garr \rg{\epsilon}{\exArw}{\anyA^*}$}
+{$\Gamma \vdash x\hasoty{int}{\vnu \not= 0}\garr x\hasoty{int}{\vnu =  0}\garr \rg{\epsilon}{\exArw}{\anyA^*} \termsyn e$ \quad 
+ $\Gamma \vdash x\hasoty{int}{\vnu \not= 0}\garr x\hasoty{int}{\vnu =  0}\garr \rg{\epsilon}{\exArw}{\anyA^*} <: x\hasoty{int}{\top}\garr y\hasoty{int}{\vnu \not = x}\garr \rg{\epsilon}{\exArw}{\anyA^*}$}
 {TSub}
-{$\Gamma \vdash x\hasuty{int}{\top}\garr y\hasuty{int}{\vnu \not = x}\garr \rg{\epsilon}{\exArw}{\anyA^*} \termsyn e$}}
+{$\Gamma \vdash x\hasoty{int}{\top}\garr y\hasoty{int}{\vnu \not = x}\garr \rg{\epsilon}{\exArw}{\anyA^*} \termsyn e$}}
 \\ \ 
 
 The desirable synthesis result is
@@ -323,22 +321,22 @@ let (y5: int) = ?$\mykw{observe}$? ReadRsp ?$(y_5 = y_4)$? in
 
 \paragraph{Typing Example} Consider the following synthesis judgement
 \begin{align*}
-    \emptyset \vdash x\hasuty{int}{\top}\garr y\hasuty{int}{\vnu \not = x}\garr \rg{\epsilon}{\exArw}{\anyA^*} \termsyn e
+    \emptyset \vdash x\hasoty{int}{\top}\garr y\hasoty{int}{\vnu \not = x}\garr \rg{\epsilon}{\exArw}{\anyA^*} \termsyn e
 \end{align*}\noindent
 We apply subsumption rule to specialize it:
 
 {\footnotesize\mprooftr{110mm}
-{$\Gamma \vdash x\hasuty{int}{\vnu \not= 0}\garr \rg{\epsilon}{\exArw[y \mapsto 0]}{\anyA^*} \termsyn e$ \quad 
- $\Gamma \vdash x\hasuty{int}{\vnu \not= 0}\garr \rg{\epsilon}{\exArw[y \mapsto 0]}{\anyA^*} <: x\hasuty{int}{\top}\garr y\hasuty{int}{\vnu \not = x}\garr \rg{\epsilon}{\exArw}{\anyA^*}$}
+{$\Gamma \vdash x\hasoty{int}{\vnu \not= 0}\garr \rg{\epsilon}{\exArw[y \mapsto 0]}{\anyA^*} \termsyn e$ \quad 
+ $\Gamma \vdash x\hasoty{int}{\vnu \not= 0}\garr \rg{\epsilon}{\exArw[y \mapsto 0]}{\anyA^*} <: x\hasoty{int}{\top}\garr y\hasoty{int}{\vnu \not = x}\garr \rg{\epsilon}{\exArw}{\anyA^*}$}
 {TSub}
-{$\Gamma \vdash x\hasuty{int}{\top}\garr y\hasuty{int}{\vnu \not = x}\garr \rg{\epsilon}{\exArw}{\anyA^*} \termsyn e$}}
+{$\Gamma \vdash x\hasoty{int}{\top}\garr y\hasoty{int}{\vnu \not = x}\garr \rg{\epsilon}{\exArw}{\anyA^*} \termsyn e$}}
 \\ \ 
 
 Then apply \textsc{TGhost}, \textsc{TVar}, and \textsc{TAssume} to instantiate variable $x$. 
 
-{\footnotesize\mprooftr{110mm}{ $x\hasuty{int}{\vnu \not= 0} \vdash \rg{\epsilon}{\exArw[y \mapsto 0]}{\anyA^*} \termsyn e$}
+{\footnotesize\mprooftr{110mm}{ $x\hasoty{int}{\vnu \not= 0} \vdash \rg{\epsilon}{\exArw[y \mapsto 0]}{\anyA^*} \termsyn e$}
 {TGhost, TVar, TAssume}
-{$\emptyset \vdash x\hasuty{int}{\vnu \not= 0}\garr \rg{\epsilon}{\exArw[y \mapsto 0]}{\anyA^*} \termsyn e \termsyn \zlet{x}{\zrandom{\Code{int}}}{\zassume{x \not= 0}{e}}$}}
+{$\emptyset \vdash x\hasoty{int}{\vnu \not= 0}\garr \rg{\epsilon}{\exArw[y \mapsto 0]}{\anyA^*} \termsyn e \termsyn \zlet{x}{\zrandom{\Code{int}}}{\zassume{x \not= 0}{e}}$}}
 \\ \ 
 
 The automata $\exArw$ is already a sequential style, we just choose the last symbolic event. In order to locate this position, we apply the \textsc{TConcat}.
@@ -366,7 +364,7 @@ $\Gamma \vdash \eff{op} : \rg{ H\seqA A_1 }{\exGetReq}{\epsilon \seqA \anyA^*}$
 
 A more interesting case is the inference of $e_1$, that is 
 \begin{align*}
-   x\hasuty{int}{\vnu \not= 0} \vdash \rg{H}{A_1}{\msg{ReadRsp}{\fld[v] = 0} \seqA F} \termsyn e_1
+   x\hasoty{int}{\vnu \not= 0} \vdash \rg{H}{A_1}{\msg{ReadRsp}{\fld[v] = 0} \seqA F} \termsyn e_1
 \end{align*}\noindent
 where we expect ``in the future'', we can see an event $\msg{ReadRsp}{\fld[v] \not= x}$ to be received -- which means it should be sent now. Consider a special form of \textsc{TObs}:
 
@@ -484,7 +482,7 @@ $\Gamma \vdash \rg{H_2}{A_2 \seqA \msg{op_2}{\phi}}{F_2} \termsyn e_2$}
   % \\&\denot{(\alpha_1, \alpha_2)}_\Code{prophecy} &&\doteq \{ \beta ~|~ \exists e. \emptyset \basicvdash e \land \alpha_1 \vDash (\beta, e) \mharr{\alpha_2} ([], ()) \}
   % \\ &\denot{\rg{H}{A}{F}} &&\doteq \{e ~|~ \emptyset \basicvdash e \land \forall \alpha_H\;\alpha_F\;\alpha\;e_H\;\beta_H\;e_F\;\beta_F.
   \\&&& \qquad\qquad [] \vDash ([], e_H;e;e_F) \mharr{\alpha_H} (\beta_H, e;e_F) \mharr{\alpha} (\beta_F, e_F) \mharr{\alpha_F} ([], ()) \impl
-  \\&&& \qquad\qquad (\alpha_H \in\denot{H} \impl \alpha \in\denot{A} \land \alpha_F\in\denot{F}) \land (\alpha_F \in\denot{F} \impl \alpha \in\denot{A} \land \alpha_H\in\denot{H}) \}
+  \\&&& \qquad\qquad (\alpha_H \in\denot{H} \impl \alpha \in\denot{A} \land \alpha_F\in\denot{F}) \}
   \\ &\denot{ \tau_1 \interty \tau_2 } &&\doteq \denot{\tau_1} \cap \denot{\tau_2}
 \end{align*}
 \vspace{-1.5em}
