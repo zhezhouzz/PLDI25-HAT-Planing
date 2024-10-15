@@ -101,6 +101,7 @@
 \newcommand{\iobs}[2]{\mykw{let}\ {#1}\ {=}\ \mykw{observe}\ \eff{#2}}
 \newcommand{\igen}[2]{\mykw{generate}\ \eff{#1} \ {#2}}
 \newcommand{\iassume}[1]{\mykw{assume}\ {#1}}
+\newcommand{\zletassume}[3]{\mykw{let}\ {#1}\ \mykw{assume}\ {#2}\ \mykw{in}\ {#3}}
 \newcommand{\iassert}[1]{\mykw{assert}\ {#1}}
 \newcommand{\iadmit}[1]{\mykw{admit}\ {#1}}
 % Constant
@@ -559,7 +560,8 @@
     \mhypo{#1}{#2}
     \infer1[{\small \textsc{#3}}]{\parbox{#1}{\center{#4}}}
     \end{prooftree}}
-\newcommand{\termsyn}{\ddagger}
+% \newcommand{\termsyn}{\ddagger}
+\newcommand{\termsyn}{\Rightarrow}
 \newcommand{\mix}{{\parallel}}
 \newcommand{\mixA}[1]{\anyA^* \seqA {#1} \seqA \anyA^*}
 \newcommand{\mixAA}[2]{\anyA^* \seqA {#1} \seqA \anyA^* {#2} \seqA \anyA^*}
