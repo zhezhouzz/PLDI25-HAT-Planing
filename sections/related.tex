@@ -1,0 +1,4 @@
+\OL{Introduce difference from reactive program synthesis}
+
+Our environment synthesis and planning problem can be treated as complement of well-known reactive program synthesis problem \cite{ReactiveSynthesis}, which focuses on synthesizing component implementations. The key distinction is that, in reactive synthesis, the synthesized components must be correct under \emph{every} possible scheduling plan, determined by a total random environment. In contrast, plan synthesis only requires finding \emph{one} scheduling plan that guides the given components to reproduce a desirable trace.
+While reactive synthesis defines \emph{what} a desirable component implementation should be, it does not explain \emph{why} or \emph{how} such components achieve the desired behavior. Our approach to plan synthesis offers deeper insights, helping users better understand the complexities of component behavior in modern distributed systems.
