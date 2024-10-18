@@ -61,9 +61,9 @@ The small-step reduction is shown in \autoref{fig:semantics}. The environment $e
 \end{prooftree}
     \\ \ \\ \ \\
     \begin{prooftree}
-      \hypo{}
+      \hypo{$\alpha \vDash \zevent{op}{\overline{v}} \Downarrow \beta'$}
       \infer1[\textsc{\small StGen}]{
-        \steptr{\alpha}{(\buf, \zgen{op}{\overline{v}}{e})}{[\zevent{op}{\overline{v}}]}{(\buf, e)}
+        \steptr{\alpha}{(\buf, \zgen{op}{\overline{v}}{e})}{[\zevent{op}{\overline{v}}]}{(\buf \listconcat \beta', e)}
       }
     \end{prooftree}
     \\ \ \\ \ \\    

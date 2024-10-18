@@ -1,4 +1,4 @@
-\section{Introduction}
+\section{Introduction}\label{sec:intro}
 
 \OL{Introduce reactive system.}
 
@@ -16,14 +16,14 @@ In this paper, we focus on a specific realizability reasoning problem: identifyi
 For example, the strong consistency property in storage system requires that all read response messages return the most recent write value, which is a data-dependent temporal property. However, whether a read result meets this criterion depends on when the environment non-deterministically schedules the read messages to be received. For components that only guarantee eventual consistency (i.e., read response messages will eventually return the last write value), if the environment schedules the read messages too early, the strong consistency property may be violated.
 Thus, with a particular scheduling order, the execution of components guaranteeing only eventual consistency can lead to a violation of the strong consistency property. One such scheduling plan $P_1$ is illustrated below, where write messages are represented in green and read messages in blue:
 {\small\begin{align*}
-...;\effGreen{WriteReq(x)}; ... \effGreen{WriteRsp(x)};...;\effBlue{ReadReq};...;\effBlue{ReadRsp(y)}; ... \effGreen{Commit(x)};... \quad \text{ where } x \not= y \tag{$P_1$}
+...;\effGreen{writeReq(x)}; ... \effGreen{writeRsp(x)};...;\effBlue{readReq};...;\effBlue{readRsp(y)}; ... \effGreen{commit(x)};... \quad \text{ where } x \not= y \tag{$P_1$}
 \end{align*}}\noindent
-As shown above, the strong consistency property is violated because the $\effBlue{ReadRsp}$ returns a value $y$ that differs from the most recent write value $x$ (i.e., $\effGreen{WriteRsp(x)}$). This occurs because, at the time of the read operation, the write operation has not yet completed (i.e., the final write message $\effGreen{Commit(x)}$ has not been scheduled), causing the read operation to return an outdated value. However, the $\effGreen{Commit(x)}$ message will be finally received, and the read operation will return the correct last write value, thus ensuring eventual consistency.
+As shown above, the strong consistency property is violated because the $\effBlue{readRsp}$ returns a value $y$ that differs from the most recent write value $x$ (i.e., $\effGreen{writeRsp(x)}$). This occurs because, at the time of the read operation, the write operation has not yet completed (i.e., the final write message $\effGreen{commit(x)}$ has not been scheduled), causing the read operation to return an outdated value. However, the $\effGreen{commit(x)}$ message will be finally received, and the read operation will return the correct last write value, thus ensuring eventual consistency.
 
 \OL{Introduce challenges. }
 
 Finding such scheduling cases is not trivial. The search space is vast and unbounded because the input property (e.g., strong consistency) expressed in temporal logic does not constrain the length of the trace, and every possible message interleaving must be considered. Moreover, to ensure that the scheduling case is consistent with the component implementation, both the past and future events relative to each message must align with the implementation.
-For instance, the handler of a $\effBlue{ReadReq}$ will send a new message $\effBlue{ReadRsp}$ (expect $\effBlue{ReadRsp}$ occurs later) with a payload equal to the most recently committed value. This sanity check for one message affects the scheduling of both earlier and subsequent messages, adding further complexity to the search process.
+For instance, the handler of a $\effBlue{readReq}$ will send a new message $\effBlue{readRsp}$ (expect $\effBlue{readRsp}$ occurs later) with a payload equal to the most recently committed value. This sanity check for one message affects the scheduling of both earlier and subsequent messages, adding further complexity to the search process.
 On the other hand, our scheduling case is not over-specialized to a single concrete trace. As illustrated earlier, we allow multiple traces that are parameterized by the assignment of $x$ and $y$.
 
 \OL{Introduce plan synthesis and difference from reactive program synthesis.}
@@ -32,14 +32,14 @@ We treat this problem as a type-based plan synthesis task, where we synthesize a
 The program in our DSL defines the sequential \emph{receiving} order of messages, similar to the scheduling plan $P_1$ shown earlier. Additionally, we introduce $\mykw{assume}\; \phi$ and $\mykw{assert}\; \phi$ into our DSL, enabling multiple plans that are parameterized by any assignments consistent with SMT-solvable qualifiers (e.g., $x \not= y$). Our DSL also supports non-deterministic choices, allowing the synthesized environment to choose from multiple message orders.
 For instance, another valid scheduling plan for the previous example can be:
 {\small\begin{align*}
-...;\effGreen{WriteReq(x)}; ... \effGreen{WriteRsp(x)};...;\effBlue{ReadReq};...; \effGreen{Commit(x)};... \effBlue{ReadRsp(y)}; ... \quad \text{ where } x \not= y \tag{$P_2$}
+...;\effGreen{writeReq(x)}; ... \effGreen{writeRsp(x)};...;\effBlue{readReq};...; \effGreen{commit(x)};... \effBlue{readRsp(y)}; ... \quad \text{ where } x \not= y \tag{$P_2$}
 \end{align*}}\noindent
-Note that the $\effGreen{Commit(x)}$ message can be received before $\effBlue{ReadRsp(y)}$ since the payload $y$ is determined by the sender of $\effBlue{ReadRsp}$ (i.e., the handler of $\effBlue{ReadReq}$). Thus, $\effGreen{Commit}$ only needs to occur after $\effBlue{ReadReq}$.
+Note that the $\effGreen{commit(x)}$ message can be received before $\effBlue{readRsp(y)}$ since the payload $y$ is determined by the sender of $\effBlue{readRsp}$ (i.e., the handler of $\effBlue{readReq}$). Thus, $\effGreen{commit}$ only needs to occur after $\effBlue{readReq}$.
 
 % \begin{minted}[xleftmargin=5pt, numbersep=4pt, linenos = true, fontsize = \footnotesize, escapeinside=??]{OCaml}
-% let (x: int) ?$\mykw{by\; assume}$? (x != -1); ?$\mykw{gen}$? WriteReq x; let _ = ?$\mykw{obs}$? WriteRsp in ?$\mykw{gen}$? ReadReq;
-% (let (y: int) = ?$\mykw{obs}$? ReadRsp in ?$\mykw{assert}$? (y != x); let _ = ?$\mykw{obs}$? Commit in ()) ?$\oplus$?
-% (let _ = ?$\mykw{obs}$? Commit in let (y: int) = ?$\mykw{obs}$? ReadRsp in ?$\mykw{assert}$? (y != x) in ())
+% let (x: int) ?$\mykw{by\; assume}$? (x != -1); ?$\mykw{gen}$? writeReq x; let _ = ?$\mykw{obs}$? writeRsp in ?$\mykw{gen}$? readReq;
+% (let (y: int) = ?$\mykw{obs}$? readRsp in ?$\mykw{assert}$? (y != x); let _ = ?$\mykw{obs}$? commit in ()) ?$\oplus$?
+% (let _ = ?$\mykw{obs}$? commit in let (y: int) = ?$\mykw{obs}$? readRsp in ?$\mykw{assert}$? (y != x) in ())
 % \end{minted}
 
 \OL{Introduce difference from reactive program synthesis}
@@ -55,10 +55,10 @@ Similarly, we use SFA and symbolic temporal logic, but extending the pre- and po
 
 Adapting this asynchronous semantics, we introduce Prophecy Automata Type (PAT), which consists of three Symbolic Finite Automata (SFA) that constrain the \emph{history}, \emph{current}, and \emph{prophecy} traces. The prophecy trace predicts the environment’s scheduling and guarantees that certain events will happen in the future. This concept is analogous to prophecy variables\cite{...} in the trace-based view. For example, the type of the $\eff{readReq}$ message can be represented by the following type:
 {\small\begin{align*}
-    \Code{y{:}int} \garr \rg{\underbrace{\anyA^* \seqA \msgB{Commit}{x}{x = \Code{y}} \seqA (\anyA \setminus \msgB{Commit}{x}{\true})^*}_\texttt{history automata}}{\underbrace{\msg{readReq}{\true}}_\texttt{current automata}}{ \underbrace{\anyA^* \seqA \msgB{readRsp}{x}{x = \Code{y}} \seqA \anyA^* }_\texttt{prophecy automata} }
+    \Code{y{:}int} \garr \rg{\underbrace{\anyA^* \seqA \msgB{commit}{x}{x = \Code{y}} \seqA (\anyA \setminus \msgB{commit}{x}{\true})^*}_\texttt{history automata}}{\underbrace{\msg{readReq}{\true}}_\texttt{current automata}}{ \underbrace{\anyA^* \seqA \msgB{readRsp}{x}{x = \Code{y}} \seqA \anyA^* }_\texttt{prophecy automata} }
 \end{align*}}\noindent
 The ghost variable $\Code{y{:}int} \garr$ indicates that the type holds for any integer value assigned to $\Code{y}$. We use standard regular expression operators to express the SFA: $\anyA$ represents any arbitrary event, $^*$ denotes the Kleene star, $\seqA$ is concatenation, and $\setminus$ represents set difference. 
-The \emph{symbolic event} $\msgB{Commit}{x}{x = \Code{y}}$ indicates that the payload (local variable $x$) of the $\eff{Commit}$ message is equal to the value $\Code{y}$. This type means that: 
+The \emph{symbolic event} $\msgB{commit}{x}{x = \Code{y}}$ indicates that the payload (local variable $x$) of the $\eff{commit}$ message is equal to the value $\Code{y}$. This type means that: 
 "When the history shows that the last committed value is $\Code{y}$, the handling of the $\eff{readReq}$ message will cause a $\eff{readReq}$ event to happen \emph{now}, and in the \emph{future}, a $\eff{readRsp}$ message with the payload $\Code{y}$ will also be received." 
 
 \OL{Solution: a novel deductive synthesis algorithm. }
