@@ -1,0 +1,35 @@
+\section{Channel-Variable}
+
+\newcommand{\chPrivate}{\iota_\Code{private}}
+\newcommand{\chPublic}{\iota_\Code{public}}
+
+\paragraph{channel variables} 
+Communications between two nodes in the network are organized into channels (or sessions), meaning that every message (or event) must carry a channel variable. These channel variables, denoted as $\iota$, can have types (e.g., $\Code{public}$ or $\Code{private}$) and can be sent or received through messages.
+
+Trace example (request massage of register is colored as blue):
+\begin{align*}
+    &\effBlue{NewChannelReq}[\iota_0](\Code{Client_1}, \Code{Server}, \Code{private});\\
+    &\eff{NewChannelRsp}[\iota_0](\Code{Server},\Code{Client_1},\iota_\Code{private}, \Code{private});\\
+    &\effBlue{WriteReq}[\iota_\Code{private}](3);\\
+    &\effBlue{ReadReq}[\iota_1]();\\
+    &\eff{ReadRsp}[\iota_1](0);\\
+    &\effBlue{ReadReq}[\iota_2]();\\
+    &\eff{WriteRsp}[\iota_\Code{private}](\Code{SUCCESS});\\
+    &\eff{ReadRsp}[\iota_2](3);\\
+\end{align*}\noindent
+The channels $\iota_0$, $\iota_1$, and $\iota_2$ are public, and therefore do not require any special request for use. However, some components using the public channel $\iota_0$ can request a private channel, denoted as $\iota_\Code{private}$. The write operation is restricted to occur only over the private channel, a constraint that is enforced by the following specification.
+
+\paragraph{Specification}:
+{\small\begin{align*}
+    &\iota \garr
+    x{:}\Code{int} \sarr
+    [\textcolor{red}{\finalA} \msg{NewChannelRsp}{\_\;\_\;\iota\;\Code{private}}]
+    [\msgB{WriteReq[\iota]}{va}{va = x}]
+    [\msgB{WriteRsp[\iota]}{s}{s = \Code{SUCCESS}}]\\
+    &\iota \garr
+    x{:}\Code{int} \sarr
+    [\textcolor{red}{\neg \finalA} \msg{NewChannelRsp}{\_\;\_\;\iota\;\Code{private}}]
+    [\msgB{WriteReq[\iota]}{va}{va = x}]
+    [\msgB{WriteRsp[\iota]}{s}{s = \Code{FAILURE}}]
+\end{align*}}\noindent
+Whether a write request is successful depends on whether a private channel has been previously created. If a private channel exists, the write operation can proceed; otherwise, the request will fail.

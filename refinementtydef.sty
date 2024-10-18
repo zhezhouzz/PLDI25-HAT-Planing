@@ -78,18 +78,14 @@
 \newcommand{\handle}[3]{ \mathtt{handle}\ {#1}\ \mathtt{with} \{ {#2} ; {#3} \} }
 \newcommand{\ite}[3]{\mykw{if}\ {#1}\ \mykw{then}\ {#2}\ \mykw{else}\ {#3}}
 \newcommand{\match}[1]{\mykw{match}\ {#1}\ \mykw{with}\ }
+% Lambda Calculus
 \newcommand{\zlet}[3]{\mykw{let}\ {#1}\ {=}\ {#2} \  \mykw{in}\ {#3}}
 \newcommand{\zrandom}[1]{\mykw{random}\ {#1}}
 \newcommand{\zobs}[3]{\mykw{let}\ {#1}\ {=}\ \mykw{observe}\ \eff{#2}\ \mykw{in}\ {#3}}
 \newcommand{\zobsPhi}[4]{\mykw{let}\ {#1}\ {=}\ \mykw{observe}\ \eff{#2}\ {#3}\ \mykw{in}\ {#4}}
-% \newcommand{\zobs}[5]{\mykw{let}\ ({#2},{#3},{#4})\ {=}\ \mykw{observe}\ \eff{#1}\ \mykw{in}\ {#5}}
 \newcommand{\zgen}[3]{\mykw{generate}\ \eff{#1} \ {#2} \ \mykw{in}\ {#3}}
-% \newcommand{\zgen}[4]{\mykw{generate}\ \eff{#1} ({#2}, {#3}) \ \mykw{in}\ {#4}}
 \newcommand{\zevent}[2]{(\eff{#1}\;{#2})}
-% \newcommand{\eventC}[4]{\eff{#1}({#2},{#3},{#4})}
 \newcommand{\zrecv}[3]{\mykw{receive}\ {#1}\ {#2} \ \mykw{in}\ {#3}}
-% \newcommand{\zrand}[3]{\zlet{#1}{\mykw{random}\ {#2}}{#3}}
-% \newcommand{\zrand}[3]{\zlet{#1}{\eff{genInt}}{#2}}
 \newcommand{\zassume}[2]{\mykw{assume}\ {#1} \  \mykw{in}\ {#2}}
 \newcommand{\zassert}[2]{\mykw{assert}\ {#1} \  \mykw{in}\ {#2}}
 \newcommand{\perform}[4]{\mykw{let}\ {#1}\ {=}\ \Code{#2}\ {#3}\ \mykw{in}\ {#4}}
@@ -100,6 +96,15 @@
 \newcommand{\zzfix}[3]{\mykw{fix}{#1}.\zzlam{#2}{#3}}
 \newcommand{\zloop}[1]{\mykw{loop}\;{#1}}
 \newcommand{\exnc}{\Code{crash}}
+% Impertive Language
+\newcommand{\ilet}[2]{\mykw{let}\ {#1}\ {=}\ {#2}}
+\newcommand{\iobs}[2]{\mykw{let}\ {#1}\ {=}\ \mykw{observe}\ \eff{#2}}
+\newcommand{\igen}[2]{\mykw{generate}\ \eff{#1} \ {#2}}
+\newcommand{\iassume}[1]{\mykw{assume}\ {#1}}
+\newcommand{\zletassume}[3]{\mykw{let}\ {#1}\ \mykw{assume}\ {#2}\ \mykw{in}\ {#3}}
+\newcommand{\iassert}[1]{\mykw{assert}\ {#1}}
+\newcommand{\iadmit}[1]{\mykw{admit}\ {#1}}
+% Constant
 \newcommand{\ct}{\Code{true}}
 \newcommand{\cf}{\Code{false}}
 \newcommand{\err}{\Code{err}}
@@ -185,6 +190,10 @@
 \newcommand{\nottypecheck}{\textcolor{violet}{~\not\Leftarrow~}}
 % \newcommand{\typeinfer}{\textcolor{DarkOrange}{~\Rightarrow\mspace{-12mu}\Rightarrow~}}
 \newcommand{\typeinfer}{\textcolor{DarkOrange}{~\Rightarrow~}}
+\newcommand{\terminfer}{{~\Rightarrow~}}
+\newcommand{\inferFW}{{~\textcolor{CobaltBlue}{\Rightarrow^\S{FW}}~}}
+\newcommand{\inferBW}{{~\textcolor{CobaltBlue}{\Rightarrow^\S{BW}}~}}
+\newcommand{\ainfer}[1]{\textcolor{DarkOrange}{\{}{#1}\textcolor{DarkOrange}{\}}}
 \newcommand{\effinfer}{\textcolor{DarkOrange}{~\approx\hspace{-.6em}\text{\Large\guilsinglright}}}
 \newcommand{\subsetinfer}{\textcolor{DarkOrange}{~\boldsymbol{\subseteq}~}}
 \newcommand{\covervdash}{\vdash}
@@ -263,6 +272,11 @@
 \newcommand{\parAR}{ \textcolor{CobaltBlue}{\boldsymbol{\rrparenthesis}} }
 \newcommand{\parA}[1]{ \parAL{} {#1} \parAR{}}
 
+\newcommand{\synL}{\llparenthesis}
+\newcommand{\synR}{\rrparenthesis}
+\newcommand{\parSyn}[1]{ \synL {#1} \synR}
+
+
 \newcommand{\effL}{ \textcolor{DeepGreen}{\mbox{\rm\textbf{[}}} }
 \newcommand{\effR}{ \textcolor{DeepGreen}{\mbox{\rm\textbf{]}}} }
 \newcommand{\effLR}[1]{ \effL{} {#1} \effR{} }
@@ -289,6 +303,11 @@
 \newcommand{\pevappret}[1]{\S{ret}\, {#1}}
 
 \newcommand{\evparenth}[1]{ \ltortoise {#1} \rtortoise }
+
+\newcommand{\synRecv}[1]{\evparenth{#1}^{\Code{recv}}}
+\newcommand{\synSent}[1]{\evparenth{#1}^{\Code{sent}}}
+\newcommand{\synDone}[1]{\evparenth{#1}^{\Code{done}}}
+
 \newcommand{\evinclude}[2]{\evparenth{{#1} \in {#2} }}
 \newcommand{\ev}[2]{ \evparenth{ \I{#1} \eveq \vnu \,|\, {#2} }}
 % \newcommand{\evp}[5]{ \evparenth{ \I{#1^{#2}_\Code{#3}\;{#4}} \,|\, {#5} }}
@@ -298,8 +317,37 @@
 \newcommand{\evp}[4]{ \evparenth{ \mathbf{#1}^\Code{#2}\;\I{#3} \,|\, {#4} }}
 \newcommand{\evpc}[3]{ \evparenth{ \mathbf{#1}^\Code{#2}\;\I{\Code{#3}} }}
 \newcommand{\evop}[3]{ \ev{\S{#1}\,{#2}}{#3} }
+
 \newcommand{\msgB}[3]{ \evparenth{\eff{#1}\;{#2}~|~{#3}} }
 \newcommand{\msg}[2]{ \evparenth{\eff{#1}~|~{#2}} }
+\newcommand{\msgC}[1]{ \evparenth{#1}}
+% \newcommand{\acSe}[2]{ \evparenth{\mykw{app}\;\eff{#1}({#2})} }
+\newcommand{\acSe}[2]{\eff{#1}({#2}) }
+% \newcommand{\acGen}[2]{ \evparenth{\mykw{gen}\;\eff{#1}({#2})} }
+\newcommand{\acStar}{{\star}}
+\newcommand{\normPlan}{\textcolor{CobaltBlue}{\S{Norm}}}
+\newcommand{\termDerive}{\textcolor{CobaltBlue}{\S{TermDerive}}}
+\newcommand{\planBar}{\textcolor{CobaltBlue}{\;\fcmp\;}}
+\newcommand{\planSimpBar}{\textcolor{CobaltBlue}{\;\boldsymbol{|}\;}}
+\newcommand{\planTri}[3]{{#1} \planBar {#2} \planSimpBar {#3} }
+\newcommand{\planPair}[2]{{#1} \planBar {#2}}
+
+\newcommand{\synmsgB}[3]{ \parSyn{\eff{#1}\;{#2}~|~{#3}} }
+\newcommand{\synmsg}[2]{ \parSyn{\eff{#1}~|~{#2}} }
+\newcommand{\synmsgC}[1]{ \parSyn{#1}}
+
+\newcommand{\recvmsgB}[3]{ \synRecv{\eff{#1}\;{#2}~|~{#3}} }
+\newcommand{\recvmsg}[2]{ \synRecv{\eff{#1}~|~{#2}} }
+\newcommand{\recvmsgC}[1]{ \synRecv{#1}}
+
+\newcommand{\sentmsgB}[3]{ \synSent{\eff{#1}\;{#2}~|~{#3}} }
+\newcommand{\sentmsg}[2]{ \synSent{\eff{#1}~|~{#2}} }
+\newcommand{\sentmsgC}[1]{ \synSent{#1}}
+
+\newcommand{\donemsgB}[3]{ \synDone{\eff{#1}\;{#2}~|~{#3}} }
+\newcommand{\donemsg}[2]{ \synDone{\eff{#1}~|~{#2}} }
+\newcommand{\donemsgC}[1]{ \synDone{#1}}
+
 \newcommand{\evopa}[4]{ \ev{\S{#1}\,\Code{#2}\,{#3}}{#4} }
 \newcommand{\evoponly}[1]{ \evparenth{\S{#1} }}
 % \newcommand{\evoponlya}[2]{ \evparenth{\S{#1}\,\Code{#2}}}
@@ -512,7 +560,8 @@
     \mhypo{#1}{#2}
     \infer1[{\small \textsc{#3}}]{\parbox{#1}{\center{#4}}}
     \end{prooftree}}
-\newcommand{\termsyn}{\ddagger}
+% \newcommand{\termsyn}{\ddagger}
+\newcommand{\termsyn}{\Rightarrow}
 \newcommand{\mix}{{\parallel}}
 \newcommand{\mixA}[1]{\anyA^* \seqA {#1} \seqA \anyA^*}
 \newcommand{\mixAA}[2]{\anyA^* \seqA {#1} \seqA \anyA^* {#2} \seqA \anyA^*}
@@ -527,5 +576,6 @@
 \newcommand{\exReadReq}{\msg{ReadReq}{\top}}
 \newcommand{\exReadRsp}[1]{\msg{ReadRsp}{#1}}
 \newcommand{\exArw}{A_\Code{WR}}
-\newcommand{\effBlue}[1]{\textcolor{blue}{\eff{#1}}}
+\newcommand{\effBlue}[1]{\textcolor{CobaltBlue}{\eff{#1}}}
 \newcommand{\effRed}[1]{\textcolor{red}{\eff{#1}}}
+\newcommand{\effGreen}[1]{\textcolor{DeepGreen}{\eff{#1}}}
