@@ -231,6 +231,68 @@
 %% This command processes the author and affiliation and title
 %% information and builds the first part of the formatted document.
 \maketitle
+
+provided HAT to guide the search.  For instance, atomicity assumed by
+HAT types ensures that every $\eff{readReq}$ must eventually lead to a
+$\eff{readRsp}$, as we discussed above. Then, even the realizability
+property $\negSCA$ only includes $\eff{readRsp}$,
+{\footnotesize\begin{align*} \anyA^* \seqA \msg{writeRsp}{va =
+    \Code{x} \land stat = \true} \seqA (\anyA \setminus
+  \msg{writeRsp}{stat = \true})^* \seqA \msg{readRsp}{va = \Code{y}
+    \land \Code{y} \not= \Code{x}} \seqA \anyA^* \tag{after desugar
+    into regex}
+\end{align*}}\noindent
+the corresponding $\eff{readReq}$ must occur first.
+{\footnotesize\begin{align*}
+   & \anyA^* \seqA  \msg{readReq}{\top} \seqA \anyA^* \seqA
+   \\&\quad \msg{writeRsp}{va = \Code{x} \land stat = \true} \seqA (\anyA \setminus \msg{writeRsp}{stat = \true})^* \seqA \msg{readRsp}{va = \Code{y} \land \Code{y} \not= \Code{x}} \seqA \anyA^*
+\end{align*}}\noindent
+Our algorithm, once synthesizing for $\eff{readRsp}$, will smartly list $\eff{readReq}$ as its next subgoals with the help of types of these effect operators.
+This approach allows synthesis to start mid-program and synthesize any events required to be happened before or after it. Unlike standard forward or backward synthesis, our algorithm don’t need to follow the message order in the expect program, but rather the semantic relations between events.
+
+
+provided HAT to guide the search.  For instance, atomicity assumed by
+HAT types ensures that every $\eff{readReq}$ must eventually lead to a
+$\eff{readRsp}$, as we discussed above. Then, even the realizability
+property $\negSCA$ only includes $\eff{readRsp}$,
+{\footnotesize\begin{align*} \anyA^* \seqA \msg{writeRsp}{va =
+    \Code{x} \land stat = \true} \seqA (\anyA \setminus
+  \msg{writeRsp}{stat = \true})^* \seqA \msg{readRsp}{va = \Code{y}
+    \land \Code{y} \not= \Code{x}} \seqA \anyA^* \tag{after desugar
+    into regex}
+\end{align*}}\noindent
+the corresponding $\eff{readReq}$ must occur first.
+{\footnotesize\begin{align*}
+   & \anyA^* \seqA  \msg{readReq}{\top} \seqA \anyA^* \seqA
+   \\&\quad \msg{writeRsp}{va = \Code{x} \land stat = \true} \seqA (\anyA \setminus \msg{writeRsp}{stat = \true})^* \seqA \msg{readRsp}{va = \Code{y} \land \Code{y} \not= \Code{x}} \seqA \anyA^*
+\end{align*}}\noindent
+Our algorithm, once synthesizing for $\eff{readRsp}$, will smartly list $\eff{readReq}$ as its next subgoals with the help of types of these effect operators.
+This approach allows synthesis to start mid-program and synthesize any events required to be happened before or after it. Unlike standard forward or backward synthesis, our algorithm don’t need to follow the message order in the expect program, but rather the semantic relations between events.
+
+
+{\small\begin{align*}
+...;\effGreen{writeReq(x)}; ... \effGreen{writeRsp(x,\true)};...;\effBlue{readReq};...;\effBlue{readRsp(y)}; ... \effGreen{commit(x)};... \quad \text{ where } x \not= y \tag{$P_1$}
+\end{align*}}\noindent
+\begin{minted}[xleftmargin=5pt, numbersep=4pt, linenos = true, fontsize = \footnotesize, escapeinside=??]{OCaml}
+?$\mykw{assert}$? (x != y); ...
+?$\mykw{gen}$? ?$\eff{writeReq}$? x; ...
+let (x1: int), (s1: bool) = ?$\mykw{obs}$? ?$\eff{writeRsp}$? in ?$\mykw{assert}$? (x1 == x && s1 == true); ...
+?$\mykw{gen}$? ?$\eff{readReq}$?; ...
+let (y1: int) = ?$\mykw{obs}$? ?$\eff{readRsp}$? in ?$\mykw{assert}$? (y1 == y); ...
+let (x2: int) = ?$\mykw{obs}$? ?$\eff{commit}$? in ?$\mykw{assert}$? (x2 == x);
+\end{minted}
+{\small\begin{align*}
+...;\effGreen{writeReq(x)}; ... \effGreen{writeRsp(x)};...;\effBlue{readReq};...; \effGreen{commit(x)};... \effBlue{readRsp(y)}; ... \quad \text{ where } x \not= y \tag{$P_2$}
+\end{align*}}\noindent
+\begin{minted}[xleftmargin=5pt, numbersep=4pt, linenos = true, fontsize = \footnotesize, escapeinside=??]{OCaml}
+?$\mykw{assert}$? (x != y); ...
+?$\mykw{gen}$? ?$\eff{writeReq}$? x; ...
+let (x1: int), (s1: bool) = ?$\mykw{obs}$? ?$\eff{writeRsp}$? in ?$\mykw{assert}$? (x1 == x && s1 == true); ...
+?$\mykw{gen}$? ?$\eff{readReq}$?; ...
+let (x2: int) = ?$\mykw{obs}$? ?$\eff{commit}$? in ?$\mykw{assert}$? (x2 == x);
+let (y1: int) = ?$\mykw{obs}$? ?$\eff{readRsp}$? in ?$\mykw{assert}$? (y1 == y); ...
+\end{minted}
+
 \subfile{sections/0-intro}
 \subfile{sections/1-overview}
 % \subfile{draft/weird-network}
