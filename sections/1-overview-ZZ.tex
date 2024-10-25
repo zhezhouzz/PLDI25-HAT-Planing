@@ -42,8 +42,8 @@ tr_2 \doteq
     \centering
 {\footnotesize\begin{align*}
     \eff{readReq}:& \rg{\allTL}{\lastA\msg{readReq}{\top}}{\finalA \msg{getReq}{\top}}
-    \\\eff{getReq}:&  \Code{x}\hasnty{int}\garr \rg{\finalA \msg{putRsp}{v = \Code{x} \land st} \land \neg\nextA\finalA\msg{putRsp}{st}}{\lastA\msg{getReq}{\top}}{\finalA\msg{readRsp}{ v = \Code{x}}}
-    \\&\interty  \rg{\neg\finalA \msg{putRsp}{\top}}{\lastA\msg{getReq}{\top}}{\finalA\msg{readRsp}{ v = \Code{-1}}}
+    \\\eff{getReq}:&  \Code{x}\hasnty{int}\garr \rg{\finalA \msg{putRsp}{v = \Code{x} \land st} \land \neg\nextA\finalA\msg{putRsp}{st}}{\lastA\msg{getReq}{\top}}{\finalA\msg{getRsp}{ v = \Code{x}}}
+    \\&\interty  \rg{\neg\finalA \msg{putRsp}{\top}}{\lastA\msg{getReq}{\top}}{\finalA\msg{getRsp}{ v = \Code{-1}}}
     \\\eff{getRsp}:& \Code{x}\hasnty{int}\sarr \rg{\allTL}{\lastA\msg{getRsp}{v = \Code{x}}}{\finalA\msg{readRsp}{v = \Code{x}}}
    \\\eff{readRsp}:& \Code{x}\hasnty{int} \sarr \Code{s}\hasnty{bool} \sarr \rg{\allTL}{\lastA\msg{readRsp}{v = \Code{x} \land st = \Code{s}}}{\allTL}
     % \\\eff{readRsp}:& \Code{x}\hasnty{int}\sarr \rg{\allTL}{\lastA\msg{readRsp}{v = \Code{x}}}{\allTL}
