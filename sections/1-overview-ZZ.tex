@@ -1,0 +1,58 @@
+Read an un-written value will lead status of $\eff{readRsp}$ to be false.
+
+The specification is the same.
+
+The erroneous trace:
+
+{\small\begin{align*}
+tr_1 \doteq 
+&\effGreen{writeReq(3)};\effBlue{writeReq(4)};\effBlue{writeRsp(4,\true)};\effRed{readReq};\effGreen{writeRsp(3,\true)};\effRed{readRsp(4, \true)}
+\end{align*}}\noindent
+
+The synthesized program:
+
+\begin{figure}
+    \centering
+\begin{minted}[xleftmargin=5pt, numbersep=4pt, linenos = true, fontsize = \footnotesize, escapeinside=??]{OCaml}
+?$\mykw{assert}$? (x != y); 
+?$\mykw{gen}$? ?$\eff{writeReq}$? x;
+?$\mykw{gen}$? ?$\eff{writeReq}$? y;
+let (y1: int) (s1: bool) = ?$\mykw{obs}$? ?$\eff{writeRsp}$?; ?$\mykw{assert}$? (y1 == y && s1 == true);
+?$\mykw{gen}$? ?$\eff{readReq}$?;
+let (x1: int) (s2: bool) = ?$\mykw{obs}$? ?$\eff{writeRsp}$?; ?$\mykw{assert}$? (x1 == x && s2 == true);
+let (y2: int) (s3: bool) = ?$\mykw{obs}$? ?$\eff{readRsp}$?; ?$\mykw{assert}$? (y2 == y && s3 == true)
+\end{minted}
+    \caption{An plan program $e_{P_1}$ that is consistent with reachability property $\negSCA$. }
+    \label{fig:2pc-term}
+\end{figure}
+
+Another possible trace:
+
+{\small\begin{align*}
+tr_1 \doteq 
+&\effBlue{writeReq(4)};\effGreen{writeReq(3)};\effBlue{writeRsp(4,\true)};\effRed{readReq};\effGreen{writeRsp(3,\true)};\effRed{readRsp(4, \true)}
+\end{align*}}\noindent
+
+
+\begin{figure}
+    \centering
+{\footnotesize\begin{align*}
+    \eff{writeReq}:&  \Code{x}\hasnty{int} \sarr \rg{\allTL}{\lastA\msg{writeReq}{v = \Code{x}}}{\finalA\msg{writeRsp}{v = \Code{x}}}
+    \\\eff{writeRsp}:& \Code{x}\hasnty{int}\sarr \Code{s}\hasnty{bool} \sarr \rg{\allTL}{\lastA\msg{writeRsp}{v = \Code{x} \land st = \Code{s}}}{\allTL}
+    \\
+    \\\eff{readReq}:&  \Code{x}\hasnty{int}\garr \rg{\finalA \msg{writeRsp}{v = \Code{x} \land st} \land \neg\nextA\finalA\msg{writeRsp}{st}}{\lastA\msg{readRsp}{\top}}{\finalA\msg{readRsp}{v = \Code{x} \land st}}
+    \\&\interty  \rg{\neg\finalA \msg{writeRsp}{\top}}{\lastA\msg{readReq}{\top}}{\finalA\msg{readRsp}{ \neg st}}
+    \\\eff{readRsp}:& \Code{x}\hasnty{int}\sarr \Code{s}\hasnty{bool} \sarr \rg{\allTL}{\lastA\msg{readRsp}{v = \Code{x} \land st = \Code{s}}}{\allTL}
+\end{align*}}
+    \caption{2PC components Specification $\Delta$ that is expressed in Prophecy Automata Type (PAT) of messages }
+    \label{fig:2pc-pat}
+\end{figure}
+
+The interesting type of $\eff{readReq}$, which is a intersection type. the First case is similar with the cased introduced in the Sec.1. The second type means if there is no success write before, it will return read response with false status.
+
+{\footnotesize\begin{align*}
+    &\eff{readReq}: x\hasnty{int}\sarr \rg{\anyA^* \seqA \msg{writeRsp}{v = \Code{x} \land st } \seqA (\anyA \setminus \msg{writeRsp}{\top})^*}{\msg{readReq}{\top}}{ \anyA^* \seqA \msg{readRsp}{ v = \Code{x} \land st} \seqA \anyA^*  }
+    \tag{after desugar}
+    \\&\eff{readReq}: \rg{(\anyA \setminus \msg{writeRsp}{st})^*}{\msg{readReq}{\top}}{ \anyA^* \seqA \msg{readRsp}{v = \Code{x} \land \neg st} \seqA \anyA^*  }
+    \tag{after desugar}
+\end{align*}}\noindent

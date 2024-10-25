@@ -100,14 +100,14 @@ $\eff{readRsp}(k,v)$ event that returns the value $v$ of $k$ in the
 store.  We can specify the logical dependence between requests and
 responses as the following \PAT type:
 {\footnotesize\begin{align*}
-    \Code{y{:}int} \garr \rg{\underbrace{\anyA^* \seqA \msgB{write}{(k,v)}{v = \Code{y}} \seqA (\anyA \setminus \msgB{commit}{(k,\_)}{\true})^*}_\texttt{history automata}}{\underbrace{\msgB{readReq}{(k)}{\true}}_\texttt{current automata}}{ \underbrace{\anyA^* \seqA \msgB{readRsp}{(k,v)}{y = \Code{y}} \seqA \anyA^* }_\texttt{prophecy automata} }
+    % \Code{y{:}int} \garr 
+    \rg{\underbrace{\anyA^* \seqA \msg{writeRsp}{k = \Code{key} \land v = \Code{x}} \seqA (\anyA \setminus \msg{writeRsp}{k = \Code{key}})^*}_\texttt{history automata}}{\underbrace{\msg{readReq}{k = \Code{key}}}_\texttt{current automata}}{ \underbrace{\anyA^* \seqA \msg{readRsp}{k = \Code{key} \land v = \Code{x}} \seqA \anyA^* }_\texttt{prophecy automata} }
 \end{align*}}\noindent
-This type, parameterized by a ghost variable $y$ that defines the
-value associated with a key, is comprised of a \emph{history} automata
+This type, parameterized by a key variable $\Code{key}$ and a variable $\Code{x}$ that defines the value associated with a key, is comprised of a \emph{history} automata
 (i.e., a specification that constrains the set of traces that describe
 the allowed actions of the system prior to handling of
 $\eff{readReq}$).  This specification permits any trace whose last
-write to key $k$ is a value $v$ that is equal to $y$.  We use standard
+write to key $\Code{key}$ is a value that is equal to $\Code{x}$, where we use local variable $k$ and $v$ indicate key and value payload of the message.  We use standard
 regular expression operators to express the automata: $\anyA$
 represents any arbitrary event, $^*$ denotes the Kleene star, $\seqA$
 is concatenation, and $\setminus$ represents set difference. The
@@ -115,9 +115,9 @@ action to be taken, specfied by the \emph{current} automata, is a
 $\eff{readReq}$ that imposes no further constraints.  Finally, the set
 of traces that can follow this action is defined by a \emph{prophecy}
 automata that specifies that a $\eff{readRsp}$ whose payload contains
-the value $y$ must appear in any trace following the $\eff{readReq}$,
+the key-value pair $\Code{(key, x)}$ must appear in any trace following the $\eff{readReq}$,
 thus guaranteeing that every $\eff{readReq}$ is paired with
-$\eff{readRsp}$ that returns the last writtenv value.  Observe that
+$\eff{readRsp}$ that returns the last written value.  Observe that
 these constraints enforce an atomicity property on reads to the store
 - even though requests and responses may occur far apart in time,
 reflecting the store's asynchronous semantics, the desired behavior
@@ -294,4 +294,15 @@ work and conclusions are given in \autoref{sec:related} and
 
 %% \OL{This paper makes the following contributions. -- include some result of our expironments. }
 
-%% \OL{The remainder of the paper is structured as follows. }
+% We adopt a type-driven, component-based synthesis algorithm where each event is treated as an invocation of an effect operator (e.g., $\eff{readReq}$). Traditional synthesis involves selecting the next operator and synthesizing its arguments, but this can suffer from a large search space due to arbitrary component ordering. Instead of relying on heuristics, we use the data-dependent temporal relations from the provided HAT to guide the search.
+% For instance, atomicity assumed by HAT types ensures that every $\eff{readReq}$ must eventually lead to a $\eff{readRsp}$, as we discussed above. Then, even the realizability property $\negSCA$ only includes $\eff{readRsp}$, 
+% {\footnotesize\begin{align*}
+%    \anyA^* \seqA \msg{writeRsp}{va = \Code{x} \land stat = \true} \seqA (\anyA \setminus \msg{writeRsp}{stat = \true})^* \seqA \msg{readRsp}{va = \Code{y} \land \Code{y} \not= \Code{x}} \seqA \anyA^* \tag{after desugar into regex}
+% \end{align*}}\noindent
+% the corresponding $\eff{readReq}$ must occur first. 
+% {\footnotesize\begin{align*}
+%    & \anyA^* \seqA  \msg{writeReq}{va = \Code{x}} \seqA \anyA^* \seqA 
+%    \\&\quad \msg{writeRsp}{va = \Code{x} \land stat = \true} \seqA (\anyA \setminus \msg{writeRsp}{stat = \true})^* \seqA \msg{readRsp}{va = \Code{y} \land \Code{y} \not= \Code{x}} \seqA \anyA^*
+% \end{align*}}\noindent
+% Our algorithm, once synthesizing for $\eff{readRsp}$, will smartly list $\eff{readReq}$ as its next subgoals with the help of types of these effect operators.
+% This approach allows synthesis to start mid-program and synthesize any events required to be happened before or after it. Unlike standard forward or backward synthesis, our algorithm don't need to follow the message order in the expect program, but rather the semantic relations between events.
