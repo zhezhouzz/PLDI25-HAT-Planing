@@ -71,3 +71,18 @@ For instance, our algorithm can prioritize synthesizing $\effGreen{readRsp}$ and
 \OL{This paper makes the following contributions. -- include some result of our expironments. }
 
 \OL{The remainder of the paper is structured as follows. }
+
+
+We adopt a type-driven, component-based synthesis algorithm where each event is treated as an invocation of an effect operator (e.g., $\eff{readReq}$). Traditional synthesis involves selecting the next operator and synthesizing its arguments, but this can suffer from a large search space due to arbitrary component ordering. Instead of relying on heuristics, we use the data-dependent temporal relations from the provided HAT to guide the search.
+For instance, atomicity assumed by HAT types ensures that every $\eff{readReq}$ must eventually lead to a $\eff{readRsp}$, as we discussed above. Then, even the realizability property $\negSCA$ only includes $\eff{readRsp}$, 
+{\footnotesize\begin{align*}
+   \anyA^* \seqA \msg{writeRsp}{va = \Code{x} \land stat = \true} \seqA (\anyA \setminus \msg{writeRsp}{stat = \true})^* \seqA \msg{readRsp}{va = \Code{y} \land \Code{y} \not= \Code{x}} \seqA \anyA^* \tag{after desugar into regex}
+\end{align*}}\noindent
+the corresponding $\eff{readReq}$ must occur first. 
+{\footnotesize\begin{align*}
+   & \anyA^* \seqA  \msg{readReq}{\top} \seqA \anyA^* \seqA 
+   \\&\quad \msg{writeRsp}{va = \Code{x} \land stat = \true} \seqA (\anyA \setminus \msg{writeRsp}{stat = \true})^* \seqA \msg{readRsp}{va = \Code{y} \land \Code{y} \not= \Code{x}} \seqA \anyA^*
+\end{align*}}\noindent
+Our algorithm, once synthesizing for $\eff{readRsp}$, will smartly list $\eff{readReq}$ as its next subgoals with the help of types of these effect operators.
+This approach allows synthesis to start mid-program and synthesize any events required to be happened before or after it. Unlike standard forward or backward synthesis, our algorithm don't need to follow the message order in the expect program, but rather the semantic relations between events.
+
