@@ -103,7 +103,7 @@ $\eff{readReq}$.  We can specify the logical dependence between requests and
 responses as the following \PAT type:
 {\footnotesize\begin{align*}
     % \Code{y{:}int} \garr 
-    \rg{\underbrace{\anyA^* \seqA \msg{writeRsp}{k = \Code{key} \land v = \Code{x}} \seqA (\anyA \setminus \msg{writeRsp}{k = \Code{key}})^*}_\texttt{history automata}}{\underbrace{\msg{readReq}{k = \Code{key}}}_\texttt{current automata}}{ \underbrace{\anyA^* \seqA \msg{readRsp}{k = \Code{key} \land v = \Code{x}} \seqA \anyA^* }_\texttt{prophecy automata} }
+    \rg{\underbrace{\anyA^* \seqA \msg{writeReq}{k = \Code{key} \land v = \Code{x}} \seqA (\anyA \setminus \msg{writeReq}{k = \Code{key}})^*}_\texttt{history automata}}{\underbrace{\msg{readReq}{k = \Code{key}}}_\texttt{current automata}}{ \underbrace{\anyA^* \seqA \msg{readRsp}{k = \Code{key} \land v = \Code{x}} \seqA \anyA^* }_\texttt{prophecy automata} }
 \end{align*}}\noindent
 This type, parameterized by a key variable $\Code{key}$ and a variable
 $\Code{x}$ that defines the value associated with a key, is comprised
