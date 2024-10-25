@@ -126,20 +126,21 @@ atomic.
 
 However, this property does not hold if the store provides only weak,
 eventually consistent (EC), guarantees~\cite{...}; in this case, the
-store would effectively allow writes to execute out-of-order.  In the
-context of such a design, our goal is to generate an ordering of read
-and write messages, along with their payloads, that interact with the
-store such that their execution witnesses an atomicity violation on
-read events.  We manifest the generation of this message sequence as a
-program that our tool, \name, synthesizes.  However, not all schedules
-of read and write operations, implemented in terms of request and
-response events, are necessarily erroneous, since every sequentially
-consistent (SC) execution is also an EC one.  Nonetheless, our
-experimental results demonstrate that a testing framework based on our
-synthesized scheduler programs significantly reduces the number of
-tests that need to be executed before a violation is witnessed,
-compared to a randomized scheduler that imposes no constraints on how
-messages are sent and received.
+store could buffer read requests arbitrarily, yielding behaviors that
+do not correspond to any sequentially consistent execution.
+In the context of such a design, our goal is to generate an ordering
+of read and write messages, along with their payloads, that interact
+with the store such that their execution witnesses an atomicity
+violation on read events.  We manifest the generation of this message
+sequence as a program that our tool, \name, synthesizes.  However, not
+all schedules of read and write operations, implemented in terms of
+request and response events, are necessarily erroneous, since every
+sequentially consistent (SC) execution is also an EC one.
+Nonetheless, our experimental results demonstrate that a testing
+framework based on our synthesized scheduler programs significantly
+reduces the number of tests that need to be executed before a
+violation is witnessed, compared to a randomized scheduler that
+imposes no constraints on how messages are sent and received.
 
 We leverage \PAT\ specifications to design a component-based
 synthesis~\cite{...}  algorithm where each event is treated as an
