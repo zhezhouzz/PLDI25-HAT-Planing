@@ -1,73 +1,296 @@
 \section{Introduction}\label{sec:intro}
 
-Distributed systems, where participants communicate concurrently via asynchronous message-passing, are challenging to reason about. 
-Reactive systems have become a popular abstract model for distributed systems. They consist of \emph{components} that communicate with each other and the \emph{environment} by sending and receiving messages. Sent but unreceived messages can be arbitrarily rescheduled by the environment, simulating realistic network transmission.
-Sent but unreceived messages can be arbitrarily rescheduled by the environment, simulating realistic network behavior. Messages generated and sent during the execution of a reactive system can be arranged into traces, which are sequences of messages ordered by their actual time of receipt.
-Unlike the traditional state-based approach, which relates input and output states, reactive systems adopt a trace-based view \cite{OldSurveyOfReactiveSystem}, where properties are expressed using \emph{temporal logic} to constrain the order of messages within a trace \footnote{In a effect point of view, the \emph{messages} can be treated as \emph{events}, where components that waits for incoming messages can be treated as a set of effect handlers. We will not distinguish messages and events in the rest of the paper.}.
+Well-studied and popular tools used to model distributed applications
+such as P~\cite{...}  or TLA+~\cite{...} allow users to abstract the
+behaviors they expect implementations to exhibit, and to specify a
+safety property that the system should respect.  To test the
+correctness of these models, these tools bake various mechanisms into
+their implementation that are responsible for guiding the search for a
+feasible error state.  Examples of such techniques include enumerative
+methods for state space exploration as found in (bounded)
+model-checking systems~\cite{...} or precondition-aware input
+generators used in property-based testing (PBT) frameworks~\cite{...}.
 
-\begin{figure}[ht!]
-    \centering
-    \includegraphics[width=0.8\linewidth]{figures/2pc-events.drawio.png}
-    \caption{A simplified two-phase-commit.}
-    \label{fig:2pc-workflow}
-\end{figure}
+It is also well-known that a typical distributed application (or a
+model of such an application) can manifest an intractably large number
+of possible distinct execution traces because of inherent
+non-determinism on the order in which messages are sent and received,
+and the large (often infinite) number of possible payloads that a
+message can carry.  In a typical testing framework, however, the
+search for a violating execution proceeds without the help of any
+application-specific constraints, which may have otherwise pruned the
+set of executions that actually need to be considered.  As a result,
+it is often problematic to \emph{a priori} determine the effectiveness
+of a particular exploration strategy in manifesting a design flaw in
+the model.
 
-To illustrate a reactive system concretely, consider a server implementing a simplified two-phase commit (2PC) protocol, as depicted in \autoref{fig:2pc-workflow}. This reactive system includes three types of components: the user, coordinator, and database. The server's 2PC implementation involves only the coordinator and database components, while the user (shown within a dashed square) is considered part of the environment. In this distributed system, data is stored in the database component, but the user cannot access it directly. Instead, the user interacts with the coordinator, which serves as an intermediary, forwarding and processing read and write requests (e.g., messages ending in $\eff{Req}$ and $\eff{Rsp}$ in \autoref{fig:2pc-workflow}).
-For clarity, we use $\eff{read/write}$ to represent messages between users and coordinators, and $\eff{get/put}$ for messages between coordinators and the database. Additionally, the coordinator can send either a $\eff{commit}$ or $\eff{abort}$ message to the database to finalize or cancel data modifications. These messages contain a payload, $va$, indicating the read or write value, and $st$, indicating the operation's status.
-Sent messages are not received immediately; their actual receiving order is determined by the scheduler in environment. The behavior of this reactive system is characterized by the traces it produces. For instance, the strong consistency of the 2PC protocol can be expressed as a temporal property: all $\eff{readRsp}$ messages must return the most recent successful write value (i.e., the payload of a $\eff{writeRsp}$ message with a $\true$ status).
+In this paper, we investigate this problem in the context of reactive
+executable models of distributed applications that are comprised of a
+set of components that maintain internal (local) state, and which
+communicate with each other via message-passing.  We can think of
+these components as \emph{actors} that produce output messages in
+response to input ones.  These components, which collectively define
+the system model under test, also typically communicate with an
+\emph{environment} that abstracts the behavior of other agents,
+external to the model; these agents include users that provide inputs
+to the model's actors or other system elements that interact with the
+application, but whose actions are not intended to be directly
+controlled or modeled by the testing framework.  The overall behavior
+of the system is thus parameterized by (a) how components are allowed
+to interact with the environment (e.g., the responses that they
+allowed to generate from environment-sourced inputs), (b) the
+responses permitted to be generated by the environment to outputs
+produced by the model, and (c) the order in which messages generated
+by components are received and handled by others.
 
-However, the advantages of modeling message-passing communication in distributed systems with reactive systems come at a cost: these systems are inherently challenging to reason about due to their intrinsic complexity. One major source of complexity is their highly non-deterministic nature -- every possible message interleaving during execution must be accounted for by the scheduler. Scheduling is critical, as many concurrency bugs arise from specific message orders.
-Moreover, properties in realistic reactive systems often involve both temporal and data-dependent relationships. For instance, the strong consistency property introduced earlier not only depends on the receiving order of $\eff{readRsp}$ and $\eff{writeRsp}$ but also requires that they share the same payload. These rich specifications further increase the complexity of reasoning and verifying reactive systems.
+A \emph{scheduler} controls the execution of these components and is
+thus responsible for determining the contents of a message payload as
+well as the specific linearization of messages sent and received
+amongst actors.  The simplest and most obvious form of such a
+scheduler is one that fully randomizes these decisions.  While
+possibly effective in certain settings, it offers few guarantees on
+the efficiency of its search process.  Rather than increasing its
+sophistication with more clever optimizations and heuristics (e.g.,
+commutativity reasoning~\cite{...}), we propose instead to regulate
+the sequence of actions the scheduler can perform based directly on
+the design requirements of the application being modeled.
 
-In this paper, we focus on a specific form of realizability: identifying a particular scheduling plan for message-passing between components that ensures the observed traces align with a given \emph{realizability property}. For example, we aim to realize a violation of strong consistency in a 2PC server that only guarantees eventual consistency (i.e., read response messages will eventually return the latest write value). This violation occurs when the environment schedules read messages too early, before the latest write value has been finalized.
-An example of such a scheduling plan, $P_1$, is illustrated below, where write messages are shown in green and read messages in blue:
-{\small\begin{align*}
-...;\effGreen{writeReq(x)}; ... \effGreen{writeRsp(x,\true)};...;\effBlue{readReq};...;\effBlue{readRsp(y)}; ... \effGreen{commit(x)};... \quad \text{ where } x \not= y \tag{$P_1$}
+There are two immediate challenges that need to be overcome to realize
+this goal.  The first concerns the form of specification that should
+be used to express desired (meaningful) schedules.  The second
+concerns the mechanism that should be used to interpret these
+specifications to maximize the likelihood that unprofitable or
+uninteresting execution paths (i.e., executions that do not lead to a
+violation of a desired safety property) are not explored.  In this
+paper, we present a unified solution to both these challenges.  Our
+approach yields a novel framework for testing distributed system
+designs in which the exploration of execution paths is governed by a
+\emph{bespoke} scheduler program written in a solver-aided~\cite{...}
+DSL that is automatically synthesized from scheduler constraint
+specifications provided by the model designer. A scheduler program
+thus represents many possible executions since the specific payload
+contents generated by the underlying solver can result in different
+execution outcomes.  Any one execution of the program, however,
+results in a specific concrete schedule that specifies both the order
+of message delivery and receipt amongst actors, and the payload
+contents of these messages.
+
+To enable synthesis, we define the set of allowed behaviors a testing
+framework should produce by equipping components with specifications
+that incorporate recent advances in the use of \emph{trace-based
+  refinement types}~\cite{...}  for symbolically modeling stateful
+program behavior.  Intuitively, these specifications dictate how a
+particular message (or event) handled by a component is influenced by
+the trace of global events that have been previously generated and how
+performing an action in response constrains the possible set of traces
+that can be produced subsequently.  Our trace language is expressed as
+formula in a symbolic variant of linear temporal logic over finite
+traces (s-LTL$_f$) for which efficient decision procedures are
+available~\cite{...}.  Sets of traces are represented using a new type
+abstraction called a \emph{prophecy automata type} (\PAT), a variant
+of recent work that integrates automata specifications into 
+refinement types~\cite{...}.  
+
+To illustrate, consider the specification of a $\eff{readReq}(k)$
+event that queries a key-value store for the value of key $k$.
+Logically, this operation should be atomic, returning the value of the
+last write to the store on the key.  In a distributed system where
+components execute asynchronously, this operation is paired with a
+$\eff{readRsp}(k,v)$ event that returns the value $v$ of $k$ in the
+store.  We can specify the logical dependence between requests and
+responses as the following \PAT type:
+{\footnotesize\begin{align*}
+    \Code{y{:}int} \garr \rg{\underbrace{\anyA^* \seqA \msgB{write}{(k,v)}{v = \Code{y}} \seqA (\anyA \setminus \msgB{commit}{(k,\_)}{\true})^*}_\texttt{history automata}}{\underbrace{\msgB{readReq}{(k)}{\true}}_\texttt{current automata}}{ \underbrace{\anyA^* \seqA \msgB{readRsp}{(k,v)}{y = \Code{y}} \seqA \anyA^* }_\texttt{prophecy automata} }
 \end{align*}}\noindent
-As shown above, the strong consistency property is violated because the $\eff{readRsp}$ returns an outdated value $y$, which differs from the most recent write value $x$ (i.e., $\eff{writeRsp(x)}$). This inconsistency relies on two assumptions: one concerning data dependency and the other regarding scheduling order. First, the most recent write value $x$ must be different from the outdated value $y$. Second, at the time $\eff{readReq}$ is received, the $\eff{commit(x)}$ message has not yet been scheduled, preventing the write operation from completing.
-On the other hand, the $\eff{commit(x)}$ message will eventually be received, and subsequent reads will return the correct last write value, thereby ensuring eventual consistency.
+This type, parameterized by a ghost variable $y$ that defines the
+value associated with a key, is comprised of a \emph{history} automata
+(i.e., a specification that constrains the set of traces that describe
+the allowed actions of the system prior to handling of
+$\eff{readReq}$).  This specification permits any trace whose last
+write to key $k$ is a value $v$ that is equal to $y$.  We use standard
+regular expression operators to express the automata: $\anyA$
+represents any arbitrary event, $^*$ denotes the Kleene star, $\seqA$
+is concatenation, and $\setminus$ represents set difference. The
+action to be taken, specfied by the \emph{current} automata, is a
+$\eff{readReq}$ that imposes no further constraints.  Finally, the set
+of traces that can follow this action is defined by a \emph{prophecy}
+automata that specifies that a $\eff{readRsp}$ whose payload contains
+the value $y$ must appear in any trace following the $\eff{readReq}$,
+thus guaranteeing that every $\eff{readReq}$ is paired with
+$\eff{readRsp}$ that returns the last writtenv value.  Observe that
+these constraints enforce an atomicity property on reads to the store
+- even though requests and responses may occur far apart in time,
+reflecting the store's asynchronous semantics, the desired behavior
+specified by this type requires all correct executions to be logically
+atomic.
 
-\OL{Challenges and existing works.}
+However, this property does not hold if the store provides only weak,
+eventually consistent (EC), guarantees~\cite{...}; in this case, the
+store would effectively allow writes to execute out-of-order.  In the
+context of such a design, our goal is to generate an ordering of read
+and write messages, along with their payloads, that interact with the
+store such that their execution witnesses an atomicity violation on
+read events.  We manifest the generation of this message sequence as a
+program that our tool, \name, synthesizes.  However, not all schedules
+of read and write operations, implemented in terms of request and
+response events, are necessarily erroneous, since every sequentially
+consistent (SC) execution is also an EC one.  Nonetheless, our
+experimental results demonstrate that a testing framework based on our
+synthesized scheduler programs significantly reduces the number of
+tests that need to be executed before a violation is witnessed,
+compared to a randomized scheduler that imposes no constraints on how
+messages are sent and received.
 
-Finding such a scheduling plan is non-trivial. The search space is vast and unbounded because the input property (e.g., strong consistency), expressed in temporal logic, does not limit the trace length, and every possible message interleaving must be explored. Additionally, to ensure the plan is consistent with the component implementation, both past and future events relative to each message must align with that implementation.
-For example, when handling a $ \eff{readReq} $, the system must send a $ \eff{readRsp} $ message (which should occur later) with a payload matching the most recently committed value. This requirement creates a ripple effect—ensuring correctness for one message influences the scheduling of both earlier and subsequent messages, increasing the complexity of the search process.
-On the other hand, our scheduling approach is not narrowly focused on a single concrete trace. As demonstrated earlier, we allow for multiple traces that are parameterized by the assignment of values $ x $ and $ y $, providing greater flexibility.
+We leverage \PAT\ specifications to design a component-based
+synthesis~\cite{...}  algorithm where each event is treated as an
+invocation of an effect operator (e.g., $\eff{readReq}$).  A
+traditional component-synthesis approach involves selecting a
+candidate component (e.g., a library method) and synthesizing its
+arguments~\cite{...}, with the goal of constraining the intractably
+large search space that needs to be navigated to find a feasible
+solution.  In our setting, on the other hand, components are events
+(aka messages) generated or consumed by the actors defined by the
+model.  Our synthesis algorithm uses the data-dependent temporal
+relations defined by \PAT\ types to guide the search for a scheduler
+program that is written in a custom solver-aided DSL.  This program
+represents a set of possible concrete traces that the system under
+test is permitted to generate, constrained by \PAT\ specifications
+associated with the components under test and a safety property we
+wish to falsify.  The execution of the program interacts with an
+underlying SMT solver (Z3~\cite{...}) to instantiate concrete values
+for message payloads as execution proceeds to finally yield a concrete
+schedule.
 
-There are two existing classes of approaches. One approach \cite{Verdi} utilizes a rich specification language to precisely express the semantics of component implementation, allowing for the derivation of a scheduling plan with a strong realizability guarantee. However, this method requires significant human effort. 
-On the other hand, automated randomized testing \cite{P} for distributed systems does not impose assumptions on the components or additional user efforts, but it also offers no guarantees that such a plan is realizable during testing. We propose introducing a search technique that lies between these two approaches, which remains automated while providing a reasonable realizability guarantee with respect to the given specifications of the components.
+This paper makes the following contributions:
 
-\OL{Introduce plan synthesis.}
+\begin{enumerate}
 
-We treat this problem as a type-based plan synthesis task, where we synthesize an environment that implements a specific scheduling order within a \emph{solver-aided} Domain-Specific Language (DSL) that is consistent with a given \emph{realizability property} (e.g., violation of strong consistency). The semantics of the components are abstracted using refinement types, ensuring that the synthesized program is type-safe.
-The program in our DSL defines the receiving order of messages, akin to the scheduling plan $ P_1 $ described earlier. Additionally, we incorporate assertions into our DSL, allowing for multiple plans that are parameterized by any assignments consistent with SMT-solvable qualifiers (e.g., $ x \not= y $). Our DSL also supports non-deterministic choices, enabling the synthesized environment to select from various message orders.
-For instance, another valid scheduling plan for the previous example can be:
-{\small\begin{align*}
-...;\effGreen{writeReq(x)}; ... \effGreen{writeRsp(x)};...;\effBlue{readReq};...; \effGreen{commit(x)};... \effBlue{readRsp(y)}; ... \quad \text{ where } x \not= y \tag{$P_2$}
-\end{align*}}\noindent
-Note that the $\eff{commit(x)}$ message can be received before $\eff{readRsp(y)}$ since the payload $y$ is determined by the sender of $\eff{readRsp}$ (i.e., the handler of $\eff{readReq}$). Thus, $\eff{commit}$ only needs to occur after $\eff{readReq}$.
+\item We formalize a new symbolic type-based trace-guided component
+  synthesis algorithm for representing sets of feasible schedules in
+  reactive distributed system models.  The output of the algorithm is
+  a solver-aided program in a DSL that expresses executions in terms
+  of message actions among the components under test and the
+  interaction of these components with an external environment.
 
-Our plan program can be combined with the component implementation and executed with the help of a solver to provide valid assignments in accordance with the assertions. It may also be executed using random sampling. During execution, the components can exhibit any behaviors allowed by their specifications (types), which means that assertions in the plan program may be violated at runtime. However, we guarantee that there exists an execution of the plan program that can produce a trace consistent with the realizability property.
+\item We devise a new refinement type abstraction called
+  \emph{prophecy automata types} (\PAT) used by the synthesizer that
+  allows the specification of temporal actions in terms of histories
+  and futures over symbolic traces.
+  
+\item We formalize the type system and present a soundness result that
+  establishes the correctness of the synthesis algorithm with respect
+  to provided type specifications and the safety property being
+  tested.
+  
+\item We describe the implementation of a tool (\name{}) that realizes
+  these ideas, and present a detailed evaluation study over a diverse
+  set of non-trivial, realistic benchmarks including models of
+  Paxos~\cite{...}, Raft~\cite{...}, chain replication~\cite{...}, and
+  other well-studied distributed protocols~\cite{...}.  Our benchmark
+  results also include case studies drawn from application models
+  developed at a major cloud vendor.
 
-\OL{Solution: Prophecy Automata Type (PAT). }
+  The \name{} implementation additionally includes a mechanism to
+  translate scheduler programs directly into P~\cite{...}, offloading
+  the ability to have very fine-grained control over explicit
+  scheduler ordering and payload content decisions to the P
+  implementation; this pathway provides a means to tradeoff precision
+  in scheduling decisions for a richer ecosystem in which to perform
+  testing, when desired.  To the best of our knowledge, \name{} is the
+  first synthesis procedure capable of generating scheduler programs
+  from scheduler-specific constraints to guide testing of real-world
+  distributed models.
+\end{enumerate}
 
-A key aspect of our synthesis approach is a novel formulation of the asynchronous semantics of message-passing in reactive systems, which facilitates the our synthesis algorithm. Since realizability property of these system represented in data-dependent temporal logic and trace-based view, our formalization should also adopt the same trace-based style.
-Our approach is inspired by the recent trace-based refinement type system for effectful programming\cite{HAT}, which can specify the pre-effect context (i.e., the trace before executing an effectful program) and the post-effect context (i.e., the trace after executing an effectful program). These traces are constrained by Symbolic Finite Automata (SFA) and Symbolic Linear Temporal Logic on Finite traces (s-LTL$_f$), which support an automated and decidable decision procedure.
-Similarly, we use SFA and symbolic temporal logic, but extending the pre- and post-trace concepts to fit the asynchronous semantics of reactive systems. Unlike synchronous semantics, where the result of an effect operation is returned immediately, in reactive systems, operations like a read are divided into separate requests and responses, such as $\eff{readReq}$ and $\eff{readRsp}$. When the handler of $\eff{readReq}$ receives the request, it cannot directly return the read value; instead, it must package the value into the payload of a $\eff{readRsp}$ message and send it. The timing of when the $\eff{readRsp}$ message is received is not controlled by the component but by the environment, reflecting the non-deterministic nature of message-passing in reactive systems.
+\noindent The remainder of this paper is organized as follows.  In the
+next section, we provide a detailed informal overview of our approach
+using a running example that will be used throughout the rest of the
+paper.  \autoref{sec:lang} introduces a core distributed modeling
+language as well as the language in which scheduler programs are
+written.  Details about the type system for specifying schedule
+constraints is given in \autoref{sec:types}.  The synthesis algorithm
+along with associated metatheory is described in
+\autoref{sec:synthesis}.  An overview of the \name{} implementation
+and benchmark results are provided in \autoref{sec:impl}.  Related
+work and conclusions are given in \autoref{sec:related} and
+\autoref{sec:conc}, resp.
 
-Adapting this asynchronous semantics, we introduce Prophecy Automata Type (PAT), which consists of three Symbolic Finite Automata (SFA) that constrain the \emph{history}, \emph{current}, and \emph{prophecy} traces. The prophecy trace predicts the environment’s scheduling and guarantees that certain events will happen in the future. This concept is analogous to prophecy variables\cite{...} in the trace-based view. For example, the type of the $\eff{readReq}$ message can be represented by the following type:
-{\small\begin{align*}
-    \Code{y{:}int} \garr \rg{\underbrace{\anyA^* \seqA \msgB{commit}{x}{x = \Code{y}} \seqA (\anyA \setminus \msgB{commit}{x}{\true})^*}_\texttt{history automata}}{\underbrace{\msg{readReq}{\true}}_\texttt{current automata}}{ \underbrace{\anyA^* \seqA \msgB{readRsp}{x}{x = \Code{y}} \seqA \anyA^* }_\texttt{prophecy automata} }
-\end{align*}}\noindent
-The ghost variable $\Code{y{:}int} \garr$ indicates that the type holds for any integer value assigned to $\Code{y}$. We use standard regular expression operators to express the SFA: $\anyA$ represents any arbitrary event, $^*$ denotes the Kleene star, $\seqA$ is concatenation, and $\setminus$ represents set difference. 
-The \emph{symbolic event} $\msgB{commit}{x}{x = \Code{y}}$ indicates that the payload (local variable $x$) of the $\eff{commit}$ message is equal to the value $\Code{y}$. This type means that: 
-"When the history shows that the last committed value is $\Code{y}$, the handling of the $\eff{readReq}$ message will cause a $\eff{readReq}$ event to happen \emph{now}, and in the \emph{future}, a $\eff{readRsp}$ message with the payload $\Code{y}$ will also be received." 
+  
 
-\OL{Solution: a novel deductive synthesis algorithm. }
 
-With the introduction of PAT, we are able to design a more flexible type-based deductive program synthesis algorithm. When concatenating the three automata in a PAT $\rg{H}{A}{F}$ as $H \seqA A \seqA F$, we essentially obtain a complete summary of the entire execution lifetime. This type allows a program to not only specify the effect context it depends on via the history automata $H$ but also guarantee future behavior through the prophecy automata $F$. This approach fits well with our plan synthesis, which must ensure that each scheduled message is consistent with both past and future events.
-Furthermore, with this formalization, our synthesis algorithm can start at any ``middle point'' of the correctness property by slicing it into three parts: history, current, and future (prophecy). This allows the algorithm to easily switch between backward and forward synthesis by shifting the current automata as a "sliding window" along the correctness property. This flexibility ensures that the synthesis is guided by the semantic dependencies of the messages, focusing on specific causal chains.
-For instance, our algorithm can prioritize synthesizing $\effGreen{readRsp}$ and $\effGreen{readReq}$ first, even though they are not the first or last messages in plan $P_1$. Additionally, it can concentrate on the causal chain of read operations before write operations, even when they are mixed, as in plan $P_2$. This capability allows the synthesis algorithm smartly search in the large hypothesis space efficiently.
 
-\OL{This paper makes the following contributions. -- include some result of our expironments. }
 
-\OL{The remainder of the paper is structured as follows. }
+
+
+
+%% Distributed systems, where participants communicate concurrently via asynchronous message-passing, are challenging to reason about. 
+%% Reactive systems have become a popular abstract model for distributed systems. They consist of \emph{components} that communicate with each other and the \emph{environment} by sending and receiving messages. Sent but unreceived messages can be arbitrarily rescheduled by the environment, simulating realistic network transmission.
+%% Sent but unreceived messages can be arbitrarily rescheduled by the environment, simulating realistic network behavior. Messages generated and sent during the execution of a reactive system can be arranged into traces, which are sequences of messages ordered by their actual time of receipt.
+%% Unlike the traditional state-based approach, which relates input and output states, reactive systems adopt a trace-based view \cite{OldSurveyOfReactiveSystem}, where properties are expressed using \emph{temporal logic} to constrain the order of messages within a trace \footnote{In a effect point of view, the \emph{messages} can be treated as \emph{events}, where components that waits for incoming messages can be treated as a set of effect handlers. We will not distinguish messages and events in the rest of the paper.}.
+
+%% \begin{figure}[ht!]
+%%     \centering
+%%     \includegraphics[width=0.8\linewidth]{figures/2pc-events.drawio.png}
+%%     \caption{A simplified two-phase-commit.}
+%%     \label{fig:2pc-workflow}
+%% \end{figure}
+
+%% To illustrate a reactive system concretely, consider a server implementing a simplified two-phase commit (2PC) protocol, as depicted in \autoref{fig:2pc-workflow}. This reactive system includes three types of components: the user, coordinator, and database. The server's 2PC implementation involves only the coordinator and database components, while the user (shown within a dashed square) is considered part of the environment. In this distributed system, data is stored in the database component, but the user cannot access it directly. Instead, the user interacts with the coordinator, which serves as an intermediary, forwarding and processing read and write requests (e.g., messages ending in $\eff{Req}$ and $\eff{Rsp}$ in \autoref{fig:2pc-workflow}).
+%% For clarity, we use $\eff{read/write}$ to represent messages between users and coordinators, and $\eff{get/put}$ for messages between coordinators and the database. Additionally, the coordinator can send either a $\eff{commit}$ or $\eff{abort}$ message to the database to finalize or cancel data modifications. These messages contain a payload, $va$, indicating the read or write value, and $st$, indicating the operation's status.
+%% Sent messages are not received immediately; their actual receiving order is determined by the scheduler in environment. The behavior of this reactive system is characterized by the traces it produces. For instance, the strong consistency of the 2PC protocol can be expressed as a temporal property: all $\eff{readRsp}$ messages must return the most recent successful write value (i.e., the payload of a $\eff{writeRsp}$ message with a $\true$ status).
+
+%% However, the advantages of modeling message-passing communication in distributed systems with reactive systems come at a cost: these systems are inherently challenging to reason about due to their intrinsic complexity. One major source of complexity is their highly non-deterministic nature -- every possible message interleaving during execution must be accounted for by the scheduler. Scheduling is critical, as many concurrency bugs arise from specific message orders.
+%% Moreover, properties in realistic reactive systems often involve both temporal and data-dependent relationships. For instance, the strong consistency property introduced earlier not only depends on the receiving order of $\eff{readRsp}$ and $\eff{writeRsp}$ but also requires that they share the same payload. These rich specifications further increase the complexity of reasoning and verifying reactive systems.
+
+%% In this paper, we focus on a specific form of realizability: identifying a particular scheduling plan for message-passing between components that ensures the observed traces align with a given \emph{realizability property}. For example, we aim to realize a violation of strong consistency in a 2PC server that only guarantees eventual consistency (i.e., read response messages will eventually return the latest write value). This violation occurs when the environment schedules read messages too early, before the latest write value has been finalized.
+%% An example of such a scheduling plan, $P_1$, is illustrated below, where write messages are shown in green and read messages in blue:
+%% {\small\begin{align*}
+%% ...;\effGreen{writeReq(x)}; ... \effGreen{writeRsp(x,\true)};...;\effBlue{readReq};...;\effBlue{readRsp(y)}; ... \effGreen{commit(x)};... \quad \text{ where } x \not= y \tag{$P_1$}
+%% \end{align*}}\noindent
+%% As shown above, the strong consistency property is violated because the $\eff{readRsp}$ returns an outdated value $y$, which differs from the most recent write value $x$ (i.e., $\eff{writeRsp(x)}$). This inconsistency relies on two assumptions: one concerning data dependency and the other regarding scheduling order. First, the most recent write value $x$ must be different from the outdated value $y$. Second, at the time $\eff{readReq}$ is received, the $\eff{commit(x)}$ message has not yet been scheduled, preventing the write operation from completing.
+%% On the other hand, the $\eff{commit(x)}$ message will eventually be received, and subsequent reads will return the correct last write value, thereby ensuring eventual consistency.
+
+%% \OL{Challenges and existing works.}
+
+%% Finding such a scheduling plan is non-trivial. The search space is vast and unbounded because the input property (e.g., strong consistency), expressed in temporal logic, does not limit the trace length, and every possible message interleaving must be explored. Additionally, to ensure the plan is consistent with the component implementation, both past and future events relative to each message must align with that implementation.
+%% For example, when handling a $ \eff{readReq} $, the system must send a $ \eff{readRsp} $ message (which should occur later) with a payload matching the most recently committed value. This requirement creates a ripple effect—ensuring correctness for one message influences the scheduling of both earlier and subsequent messages, increasing the complexity of the search process.
+%% On the other hand, our scheduling approach is not narrowly focused on a single concrete trace. As demonstrated earlier, we allow for multiple traces that are parameterized by the assignment of values $ x $ and $ y $, providing greater flexibility.
+
+%% There are two existing classes of approaches. One approach \cite{Verdi} utilizes a rich specification language to precisely express the semantics of component implementation, allowing for the derivation of a scheduling plan with a strong realizability guarantee. However, this method requires significant human effort. 
+%% On the other hand, automated randomized testing \cite{P} for distributed systems does not impose assumptions on the components or additional user efforts, but it also offers no guarantees that such a plan is realizable during testing. We propose introducing a search technique that lies between these two approaches, which remains automated while providing a reasonable realizability guarantee with respect to the given specifications of the components.
+
+%% \OL{Introduce plan synthesis.}
+
+%% We treat this problem as a type-based plan synthesis task, where we synthesize an environment that implements a specific scheduling order within a \emph{solver-aided} Domain-Specific Language (DSL) that is consistent with a given \emph{realizability property} (e.g., violation of strong consistency). The semantics of the components are abstracted using refinement types, ensuring that the synthesized program is type-safe.
+%% The program in our DSL defines the receiving order of messages, akin to the scheduling plan $ P_1 $ described earlier. Additionally, we incorporate assertions into our DSL, allowing for multiple plans that are parameterized by any assignments consistent with SMT-solvable qualifiers (e.g., $ x \not= y $). Our DSL also supports non-deterministic choices, enabling the synthesized environment to select from various message orders.
+%% For instance, another valid scheduling plan for the previous example can be:
+%% {\small\begin{align*}
+%% ...;\effGreen{writeReq(x)}; ... \effGreen{writeRsp(x)};...;\effBlue{readReq};...; \effGreen{commit(x)};... \effBlue{readRsp(y)}; ... \quad \text{ where } x \not= y \tag{$P_2$}
+%% \end{align*}}\noindent
+%% Note that the $\eff{commit(x)}$ message can be received before $\eff{readRsp(y)}$ since the payload $y$ is determined by the sender of $\eff{readRsp}$ (i.e., the handler of $\eff{readReq}$). Thus, $\eff{commit}$ only needs to occur after $\eff{readReq}$.
+
+%% Our plan program can be combined with the component implementation and executed with the help of a solver to provide valid assignments in accordance with the assertions. It may also be executed using random sampling. During execution, the components can exhibit any behaviors allowed by their specifications (types), which means that assertions in the plan program may be violated at runtime. However, we guarantee that there exists an execution of the plan program that can produce a trace consistent with the realizability property.
+
+%% \OL{Solution: Prophecy Automata Type (PAT). }
+
+%% A key aspect of our synthesis approach is a novel formulation of the asynchronous semantics of message-passing in reactive systems, which facilitates the our synthesis algorithm. Since realizability property of these system represented in data-dependent temporal logic and trace-based view, our formalization should also adopt the same trace-based style.
+%% Our approach is inspired by the recent trace-based refinement type system for effectful programming\cite{HAT}, which can specify the pre-effect context (i.e., the trace before executing an effectful program) and the post-effect context (i.e., the trace after executing an effectful program). These traces are constrained by Symbolic Finite Automata (SFA) and Symbolic Linear Temporal Logic on Finite traces (s-LTL$_f$), which support an automated and decidable decision procedure.
+%% Similarly, we use SFA and symbolic temporal logic, but extending the pre- and post-trace concepts to fit the asynchronous semantics of reactive systems. Unlike synchronous semantics, where the result of an effect operation is returned immediately, in reactive systems, operations like a read are divided into separate requests and responses, such as $\eff{readReq}$ and $\eff{readRsp}$. When the handler of $\eff{readReq}$ receives the request, it cannot directly return the read value; instead, it must package the value into the payload of a $\eff{readRsp}$ message and send it. The timing of when the $\eff{readRsp}$ message is received is not controlled by the component but by the environment, reflecting the non-deterministic nature of message-passing in reactive systems.
+
+%% Adapting this asynchronous semantics, we introduce Prophecy Automata Type (PAT), which consists of three Symbolic Finite Automata (SFA) that constrain the \emph{history}, \emph{current}, and \emph{prophecy} traces. The prophecy trace predicts the environment’s scheduling and guarantees that certain events will happen in the future. This concept is analogous to prophecy variables\cite{...} in the trace-based view. For example, the type of the $\eff{readReq}$ message can be represented by the following type:
+%% {\small\begin{align*}
+%%     \Code{y{:}int} \garr \rg{\underbrace{\anyA^* \seqA \msgB{commit}{x}{x = \Code{y}} \seqA (\anyA \setminus \msgB{commit}{x}{\true})^*}_\texttt{history automata}}{\underbrace{\msg{readReq}{\true}}_\texttt{current automata}}{ \underbrace{\anyA^* \seqA \msgB{readRsp}{x}{x = \Code{y}} \seqA \anyA^* }_\texttt{prophecy automata} }
+%% \end{align*}}\noindent
+%% The ghost variable $\Code{y{:}int} \garr$ indicates that the type holds for any integer value assigned to $\Code{y}$. We use standard regular expression operators to express the SFA: $\anyA$ represents any arbitrary event, $^*$ denotes the Kleene star, $\seqA$ is concatenation, and $\setminus$ represents set difference. 
+%% The \emph{symbolic event} $\msgB{commit}{x}{x = \Code{y}}$ indicates that the payload (local variable $x$) of the $\eff{commit}$ message is equal to the value $\Code{y}$. This type means that: 
+%% "When the history shows that the last committed value is $\Code{y}$, the handling of the $\eff{readReq}$ message will cause a $\eff{readReq}$ event to happen \emph{now}, and in the \emph{future}, a $\eff{readRsp}$ message with the payload $\Code{y}$ will also be received." 
+
+%% \OL{Solution: a novel deductive synthesis algorithm. }
+
+%% With the introduction of PAT, we are able to design a more flexible type-based deductive program synthesis algorithm. When concatenating the three automata in a PAT $\rg{H}{A}{F}$ as $H \seqA A \seqA F$, we essentially obtain a complete summary of the entire execution lifetime. This type allows a program to not only specify the effect context it depends on via the history automata $H$ but also guarantee future behavior through the prophecy automata $F$. This approach fits well with our plan synthesis, which must ensure that each scheduled message is consistent with both past and future events.
+%% Furthermore, with this formalization, our synthesis algorithm can start at any ``middle point'' of the correctness property by slicing it into three parts: history, current, and future (prophecy). This allows the algorithm to easily switch between backward and forward synthesis by shifting the current automata as a "sliding window" along the correctness property. This flexibility ensures that the synthesis is guided by the semantic dependencies of the messages, focusing on specific causal chains.
+%% For instance, our algorithm can prioritize synthesizing $\effGreen{readRsp}$ and $\effGreen{readReq}$ first, even though they are not the first or last messages in plan $P_1$. Additionally, it can concentrate on the causal chain of read operations before write operations, even when they are mixed, as in plan $P_2$. This capability allows the synthesis algorithm smartly search in the large hypothesis space efficiently.
+
+%% \OL{This paper makes the following contributions. -- include some result of our expironments. }
+
+%% \OL{The remainder of the paper is structured as follows. }
