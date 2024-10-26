@@ -80,25 +80,27 @@ framework should produce by equipping components with specifications
 that incorporate recent advances in the use of \emph{trace-based
   refinement types}~\cite{...}  for symbolically modeling stateful
 program behavior.  Intuitively, these specifications dictate how a
-particular message (or event) handled by a component is influenced by
-the trace of global events that have been previously generated and how
-performing an action in response constrains the possible set of traces
-that can be produced subsequently.  Our trace language is expressed as
-formula in a symbolic variant of linear temporal logic over finite
-traces (s-LTL$_f$) for which efficient decision procedures are
-available~\cite{...}.  Sets of traces are represented using a new type
-abstraction called a \emph{prophecy automata type} (\PAT), a variant
-of recent work that integrates automata specifications into 
-refinement types~\cite{...}.  
+particular message\footnote{In the following, we use the term message
+  to refer to an application of an event constructor to its arguments.}
+handled by a component is
+influenced by the trace of global messages that have been previously
+generated and how performing an action in response constrains the
+possible set of traces that can be produced subsequently.  Our trace
+language is expressed as formula in a symbolic variant of linear
+temporal logic over finite traces (s-LTL$_f$) for which efficient
+decision procedures are available~\cite{...}.  Sets of traces are
+represented using a new type abstraction called a \emph{prophecy
+  automata type} (\PAT), a variant of recent work that integrates
+automata specifications into refinement types~\cite{...}.
 
 To illustrate, consider the specification of a $\eff{readReq}(k)$
-event that queries a database for the value of a key $k$.  A desirable
+message that queries a database for the value of a key $k$.  A desirable
 property we might wish the store to maintain is strong consistency -
 i.e., the value returned by $\eff{readReq}(k)$ is the value of $k$ in
 the store at the point the request was issued.  Because of the
 inherently asynchronous nature of a distributed system, however,
 executing $\eff{readReq}(k)$  results in the generation of another
-event, $\eff{readRsp}(k,v)$, at some later point in the execution, that
+message, $\eff{readRsp}(k,v)$, at some later point in the execution, that
 returns the current value $v$ of $k$ in the store.  If the store permits
 writes that follow the read request to be performed before the response
 is issued, strong consistency would be violated.
@@ -113,25 +115,25 @@ This type, parameterized by a key variable $\Code{key}$ and a variable
 $\Code{x}$ that defines the value associated with a key, is comprised
 of a \emph{history} automata (i.e., a specification that constrains
 the set of traces that describe the allowed actions of the system
-prior to handling of $\eff{readReq}$).  This specification permits any
-trace whose last write to key $\Code{key}$ is a value that is equal to
-$\Code{x}$, where we use variables $k$ and $v$ to indicate the key and
-value payload of the message.  We use standard regular expression
-operators to express the automata: $\anyA$ represents any arbitrary
-event, $^*$ denotes the Kleene star, $\seqA$ is concatenation, and
-$\setminus$ represents set difference. The action to be taken,
-specfied by the \emph{current} automata, is a $\eff{readReq}$ that
-imposes no additional constraints.  Finally, the set of traces
-that can follow this action is defined by a \emph{prophecy} automata
-that specifies that a $\eff{readRsp}$ whose payload contains the
-key-value pair $\Code{(key, x)}$ must appear in any trace following
-the $\eff{readReq}$, thus guaranteeing that every $\eff{readReq}$ is
-paired with $\eff{readRsp}$ that returns the last written value.
-Observe that these constraints enforce an atomicity property on reads
-to the store - even though requests and responses may occur far apart
-in time, reflecting the store's asynchronous semantics, the desired
-behavior specified by this type requires all correct executions to be
-strongly consistent.
+prior to handling of an $\eff{readReq}$) event.  This specification
+permits any trace whose last write to key $\Code{key}$ is a value that
+is equal to $\Code{x}$, where we use variables $k$ and $v$ to indicate
+the key and value payload of the message.  We use standard regular
+expression operators to express the automata: $\anyA$ represents any
+arbitrary message, $^*$ denotes the Kleene star, $\seqA$ is
+concatenation, and $\setminus$ represents set difference. The action
+to be taken, specfied by the \emph{current} automata, is a
+$\eff{readReq}$ event that imposes no additional constraints.
+Finally, the set of traces that can follow this action is defined by a
+\emph{prophecy} automata that specifies that a $\eff{readRsp}$ message
+whose payload contains the key-value pair $\Code{(key, x)}$ must
+appear in any trace following $\eff{readReq}$, thus guaranteeing that
+every $\eff{readReq}$ message is paired with a $\eff{readRsp}$ message
+that returns the last written value.  Observe that these constraints
+enforce an atomicity property on reads to the store - even though
+requests and responses may occur far apart in time, reflecting the
+store's asynchronous semantics, the desired behavior specified by this
+type requires all correct executions to be strongly consistent.
 
 However, this property does not hold if the store provides only weak,
 eventually consistent (EC), guarantees~\cite{...}; in this case, the
@@ -142,7 +144,7 @@ interact with the store such that their execution witnesses such a
 violation.  We manifest the generation of this message sequence as a
 program that our tool, \name, synthesizes.  However, not all schedules
 of read and write operations, implemented in terms of request and
-response events, are necessarily erroneous, since every strongly
+response messages, are necessarily erroneous, since every strongly
 consistent execution is also an EC one.  Nonetheless, our experimental
 results demonstrate that a testing framework based on our synthesized
 scheduler programs significantly reduces the number of tests that need
@@ -151,24 +153,24 @@ randomized scheduler that imposes no constraints on how messages are
 sent and received.
 
 We leverage \PAT\ specifications to design a component-based
-synthesis~\cite{...}  algorithm that yields a bespoke controller, where
-each event is treated as an invocation of an effect operator (e.g.,
+synthesis~\cite{...}  algorithm that yields a bespoke controller,
+where each message is treated as an invocation of an event (e.g.,
 $\eff{readReq}$).  A traditional component-synthesis approach involves
 selecting a candidate component (e.g., a library method) and
 synthesizing its arguments~\cite{...}, with the goal of constraining
 the intractably large search space that needs to be navigated to find
-a feasible solution.  In our setting, on the other hand, components
-are events (aka messages) generated or consumed by the actors defined
-by the model.  Our synthesis algorithm uses the data-dependent
-temporal relations defined by \PAT\ types to guide the search for a
-controller that is written in a custom solver-aided DSL.  This
-program denotes a set of possible concrete traces that the system
-under test is permitted to generate, constrained by
-\PAT\ specifications associated with the components under test and a
-safety property we wish to falsify.  The execution of the program
-interacts with an underlying SMT solver (Z3~\cite{...}) to instantiate
-concrete values for message payloads as execution proceeds to finally
-yield a concrete schedule.
+a feasible solution.  In our setting, on the other hand, the
+component-based synthesis involves the sequencing of messages
+generated or consumed by the actors defined by the model.  Our
+synthesis algorithm uses the data-dependent temporal relations defined
+by \PAT\ types to guide the search for a controller that is written in
+a custom solver-aided DSL.  This program denotes a set of possible
+concrete traces that the system under test is permitted to generate,
+constrained by \PAT\ specifications associated with the components
+under test and a safety property we wish to falsify.  The execution of
+the program interacts with an underlying SMT solver (Z3~\cite{...}) to
+instantiate concrete values for message payloads as execution proceeds
+to finally yield a concrete schedule.
 
 This paper makes the following contributions:
 
