@@ -265,12 +265,12 @@ As shown, the property $\negSCA'$ closely resembles the controller program $P_{C
 
 \paragraph{Property Refinement Loop} 
 The property refinement process is crucial, as it adapts \PAT to constrain all messages in the refined property $\negSCA'$. Although $\negSCA'$ includes $6$ events, not all (e.g., $\eff{readReq}$) are directly found in the original $\negSCA$. The algorithm dynamically add new messages that need to be check as subgoal when it solving one subgoal.
-For example, when checking the type of the $\eff{readRsp}$ message, the last message in $\negSCA$ (highlighted in red), the algorithm identifies that $\eff{readRsp}$ is sent by the handler for $\eff{readReq}$ (via the type of $\eff{readReq}$). Moreover, the type of $\eff{readReq}$ also indicates the payload $\Code{y}$ of $\eff{readRsq}$ should belong to a previous $\eff{writeReq}$.
+For example, when checking the type of the $\eff{readRsp}$ message, the last message in $\negSCA$ (highlighted in red), the algorithm identifies that $\eff{readRsp}$ is sent by the handler for $\eff{readReq}$ (via the first case of type of $\eff{readReq}$). Moreover, the type of $\eff{readReq}$ also indicates the payload $\Code{y}$ of $\eff{readRsq}$ should belong to a previous $\eff{writeReq}$.
 It then adds $\eff{writeReq}$ and $\eff{readReq}$ before $\eff{readRsp}$ in the refined property, also marking them as messages to be checked later.
 {\footnotesize\begin{align*}
 \negSCA''
     \doteq
-    &\anyA^* \seqA \msg{writeReq}{v = \Code{y}} \seqA \anyA^* \seqA \msg{readReq}{\top} \seqA \anyA^* \seqA
+    &\anyA^* \seqA \msg{writeReq}{v = \Code{y}} \seqA (\anyA \setminus \msg{writeReq}{\top})^* \seqA \msg{readReq}{\top} \seqA \anyA^* \seqA
     \\&\textcolor{DeepGreen}{\msg{writeRsp}{v = \Code{x} \land st}} \seqA
     (\anyA \setminus \msg{writeRsp}{ st})^* \seqA
     \textcolor{red}{\msg{readRsp}{v = \Code{y} \land st \land v \not= \Code{y}}} \seqA \anyA^* \tag{after check $\eff{readRsp}$}
@@ -280,7 +280,7 @@ To achieve this, we construct a refinement loop, as shown in \autoref{fig:intuit
 To ensure the synthesized controller can realize at least one execution, the merged result ($A'$) must contain at least one trace, which the diamond box in \autoref{fig:intuition-algo} verifies using a standard SFA non-emptiness check. If $A'$ is non-empty, the refinement loop continues; if it is empty, the algorithm backtracks to try a different type from $\Delta$ or chooses another subgoal. This loop ends when all symbolic events in $A$ (except those within Kleene star expressions) are verified consistent with $\Delta$.
 {\footnotesize\begin{align*}
     &\anyA^* \seqA \msg{writeReq}{v = \Code{x}} \seqA \anyA^* \seqA
-    \msg{writeReq}{v = \Code{y} \land v \not= \Code{x}} \seqA \anyA^* \seqA
+    \msg{writeReq}{v = \Code{y} \land v \not= \Code{x}} \seqA (\anyA \setminus \msg{writeReq}{\top})^* \seqA
     \msg{readReq}{\top} \seqA \anyA^* \seqA
     \\&\msg{writeRsp}{v = \Code{y} \land st} \seqA \anyA^* \seqA
     \textcolor{DeepGreen}{\msg{writeRsp}{v = \Code{x} \land st}} \seqA (\anyA \setminus \msg{writeRsp}{ st})^* \seqA
@@ -288,7 +288,8 @@ To ensure the synthesized controller can realize at least one execution, the mer
 \end{align*}}\noindent
 Our algorithm choose shorter programs that satisfy the violation property; thus, it specializes all Kleene stars to $\epsilon$, resulting in the final refined property.
 
-Viewed from another perspective, our approach functions as a trace-exploration algorithm, exploring traces consistent with violation property until one align with $\Delta$. The primary challenge lies in handling the Kleene star, which allows for arbitrary unrolling. The algorithm in \autoref{fig:intuition-algo} takes a lazy approach, unrolling the Kleene star only as necessary. For instance, refining $\negSCA$ to include an additional $\eff{writeReq}$ and $\eff{readReq}$ results in $\negSCA'$ by forcing the first $\anyA^*$ in $\negSCA$ to refine as $\anyA^* \seqA \msg{writeReq}{v = \Code{y}} \seqA \anyA^* \seqA \msg{readReq}{\top} \seqA \anyA^* \seqA$, which also unrolls the Kleene star.
+Viewed from another perspective, our approach functions as a trace-exploration algorithm, exploring traces consistent with violation property until one align with $\Delta$. The primary challenge lies in handling the Kleene star, which allows for arbitrary unrolling. The algorithm in \autoref{fig:intuition-algo} takes a lazy approach, unrolling the Kleene star only as necessary. For instance, refining $\negSCA$ to include an additional $\eff{writeReq}$ and $\eff{readReq}$ results in $\negSCA'$ by forcing the first $\anyA^*$ in $\negSCA$ to refine as $\anyA^* \seqA \msg{writeReq}{v = \Code{y}} \seqA (\anyA \setminus \msg{writeReq}{\top})^* \seqA \msg{readReq}{\top} \seqA \anyA^*$
+which also unrolls the Kleene star.
 
 The details of algorithm will explained in \autoref{sec:algo}.
 
