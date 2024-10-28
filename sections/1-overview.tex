@@ -36,8 +36,9 @@ database is precisely modeled - our primary interest is in the
 specification of its interface and the dependencies that must hold on
 messages sent between the users and the database, since these are the
 primary elements that inform scheduling decisions.  The goal of the
-synthesized controller generates user requests and orders the delivery
-of messages in an attempt to drive execution to a violation of some
+synthesized controller is to constrain the form of generated user
+requests and order the delivery of messages between the user and the
+database in an attempt to drive execution to a violation of some
 safety property we wish to establish about the system.
 
 In the figure, $\eff{readReq}$ and $\eff{writeReq}$ messages (marked
@@ -49,24 +50,27 @@ contents depend upon previously issued messages.
 
 \paragraph{Traces and safety}
 An executable model, provided user inputs, generates a sequence of
-messages with concrete values as payloads, which we refer to
-as a \emph{trace}.  In this example, we consider a weaker safety
-property than strong consistency as discussed in the previous section.
-Here, we expect the database to satisfy a \emph{read-your-writes} (RYW)
-consistency policy~\cite{...}  in which reads see the most recent
-write to the database.  Under a database that provides only weak
-eventually consistent semantics, however, we might witness the
-following trace:
-{\small\begin{align*} tr_1 \doteq
-  &\effGreen{writeReq(3)};\effBlue{writeReq(4)};\effBlue{writeRsp(4,\true)};\effRed{readReq};\effGreen{writeRsp(3,\true)};\effRed{readRsp(4,
-    \true)}
+messages with concrete values as payloads, which we refer to as a
+\emph{trace}.  In this example, we consider a weaker safety property
+than strong consistency as discussed in the previous section.  Here,
+we expect the database to satisfy a \emph{read-your-writes} (RYW)
+consistency policy~\cite{...}  in which reads expect to see the most
+recent write to the database.  Under a database that provides a
+weaker eventually consistent semantics, however, we might witness the
+following trace (we use $\effRed{red}$ to denote messages sent from the
+database to the user, and $\effGreen{green}$ and $\effBlue{blue}$ to
+denote messages from logically-different clients sent by the user to
+the database):
+{\small\begin{align*} tr_1 \doteq\
+  &\effGreen{writeReq(3)};\effBlue{writeReq(4)};\effBlue{writeRsp(4,\true)};\effRed{readReq};\effGreen{writeRsp(3,\true)};\effRed{readRsp(4,\true)}
 \end{align*}}\noindent
-Here the value returned by the $\effRed{readRsp}$ generated as a
+In this trace, the value returned by the $\effRed{readRsp}$ generated as a
 result of a previously issued $\eff{readReq}$ returns a value that is
 not the most recent one in the database.  This can happen, for
-example, if the database is replicated and the effect of the
-$\effGreen{writeRsp(3,true)}$ event is not propagated to all replicas,
-one of which responds to the $\effRed{readReq}$ event.
+example, if messages on $\eff{writeReq}$ events are not guaranteed to
+be serviced in-order, or if database state is replicated and the
+effect of the $\effGreen{writeRsp(3,true)}$ event is not propagated to
+all replicas, one of which responds to the $\effRed{readReq}$ event.
 
 We can formally express a violation of RYW as the following specification,
 defined as a symbolic LTL$_f$ formula~\cite{...}:
@@ -96,7 +100,7 @@ example, although the trace
 $\effGreen{writeRsp(3,\true)};\effBlue{readRsp(-1,\true)}$ is consistent
 with (aka satisfies) $\negSCA$, it does not represent a realizable
 execution because it does not contain corresponding request messages
-for the write and read.
+for these responses.
 
 \begin{figure}
     \centering
@@ -114,34 +118,37 @@ let (y2: int) (s3: bool) = ?$\mykw{obs}$? ?$\eff{readRsp}$?; ?$\mykw{assert}$? (
 \end{figure}
 
 \paragraph{Controllers}
-As mentioned earlier, testing the components in reactive a distributed
+As mentioned earlier, testing the components in a reactive distributed
 system requires the support of a controller.  We introduce a DSL for
-expressing controllers. A controller program manages the generation of
-messages, schedules message order, and constrains data dependencies
-between messages.  Concretely, to realize the trace $tr_1$ given
-above, the controller must provide generatable messages (e.g.,
-$\effGreen{writeReq(3)}$).
+writing such controllers amenable to automated synthesis. A controller
+program manages the generation of messages, schedules message order,
+and constrains data dependencies between messages.  Concretely, to
+realize the trace $tr_1$ given above, the controller must (a) provide
+generatable messages (e.g., $\effGreen{writeReq(3)}$), (b) determine that
+the database specification allows the $\effGreen{writeRsp(3,true)}$ message
+to precede the $\effRed{readRsp(4,\true)}$ response.
 
 A controller program $P_{C}$ that generates traces geared towards
 exhibiting the violation property specified by $\negSCA$ is shown in
 \autoref{fig:2pc-term}. The program's body defines a message ordering
 using the keywords $\mykw{gen}$ and $\mykw{obs}$, which indicate
-whether the message is directly generated by the user or
-the database (i.e., the system-under-test).  It is also
-the controller's responsibility to provide the payload for generatable
-messages, and it can bind the payloads of observable messages to new
-variables. The constraints on parameters $\Code{x}$ and $\Code{y}$ are
-defined by the $\mykw{assert}$ statements on lines 1.  Since the
-controller does not control the internal behavior of components, it
-cannot directly enforce specific traces; in other words, it cannot
-mandate the specific values output by the database in response to a
+whether the message is directly generated by the user or the database
+(i.e., the system-under-test).  It is also the controller's
+responsibility to provide the payload for generatable messages, and it
+can bind the payloads of observable messages to new variables. The
+constraints on parameters $\Code{x}$ and $\Code{y}$ are defined by the
+$\mykw{assert}$ statements on line 1.  Since the controller does not
+control the internal behavior of components, it cannot directly
+enforce specific traces; in other words, it cannot mandate the
+specific values output by the database in response to a
 message. Instead, it uses assertions to guide the execution towards
-traces consistent with $\negSCA$.  However, assertions may fail; for
-instance, if the database component sends a $\eff{writeRsp}$ message
-with a $\false$ status, this would violate the assertion on line 4.
-Nonetheless, our synthesis procedure guarantees that it will generate
-an execution of the system that produces the expected traces in
-$\negSCA$, if one exists.  
+traces consistent with $\negSCA$; a synthesized controller generates
+these assertions from component specifications.  Consequently,
+assertions may fail; for instance, if the database component sends a
+$\eff{writeRsp}$ message with a $\false$ status, this would violate
+the assertion on line 4.  Nonetheless, our synthesis procedure
+guarantees that it will generate an execution of the system that
+produces the expected traces in $\negSCA$, if one exists.
 
 % {\footnotesize\begin{align*}
 %     &\Code{readReq}: \Code{unit} \quad& \Code{readRsp}: va\hasnty{int} \sarr \Code{unit}
@@ -159,11 +166,39 @@ $\negSCA$, if one exists.
 
 \newcommand{\specRealizable}{A_\Code{realizable}}
 
-For a given violation property (e.g., $\negSCA$), when we have no assumptions about component behaviors, all traces accepted by $\negSCA$ are worth exploring, including clearly unrealizable traces such as $\effGreen{writeRsp(3,\true)};\effBlue{readRsp(-1,\true)}$, as noted previously.
-To filter out these unrealizable traces, we need specifications for components that establish necessary message relation in realizable traces. These specifications are both temporal (e.g., response messages should follow corresponding request messages) and data-dependent (e.g., the payload of a read response should match the most recent write value). On the other hand, they should also align with the actual implementation of the reactive system. Unlike defining a violation property, crafting an s-LTL$_f$ property $\specRealizable$ to capture all realizable traces precisely is non-trivial, as different messages are handled by different nodes in distributed system.
+In the absence of any assumptions about component behaviors, all
+traces are worth exploring to see if they witness a violation (e.g.,
+$\negSCA$), including clearly incorrect traces such as
+$\effGreen{writeRsp(3,\true)};\effBlue{readRsp(-1,\true)}$, as noted
+previously.  To filter out these unrealizable traces, we need
+specifications for components that establish necessary message
+dependencies that any sensible trace should respect.  Our
+specifications are both temporal (e.g., response messages should
+follow corresponding request messages) and data-dependent (e.g., the
+payload of a read response should match the most recent write
+value). On the other hand, they should also align with the actual
+implementation of system under test. Unlike defining a violation
+property, crafting an s-LTL$_f$ property $\specRealizable$ to
+precisely capture all feasible traces is non-trivial, as different
+messages are handled by different components.
 
-To achieve both expressiveness and compositionality, we use trace-based refinement types \cite{...} to constrain each message handler, instead of provide a global specification. In this approach, the reactive system is modeled as a set of function types, where each function name corresponds to a message name, parameter types define constraints on message payloads, and return types specify relationships between messages.
-Unlike standard trace-based refinement types, our model incorporates asynchronous semantics, where handling one message can trigger the sending of new messages that will only be received later. Thus, return types must include both a ``rely", specifying assumptions about prior events, and a ``guarantee", constraining future events. Based on this, we introduce Prophecy Automata Types (\PAT), which act as a ``prophecy" to constrain which messages should be received in the future.
+To achieve both expressiveness and compositionality, we introduce a
+trace-based refinement types \cite{...} to constrain the behavior of a
+component's message handlers, instead of providing a global
+specification that characterizes the entire distributed state. In our
+approach, component behavior is modeled as a set of function types,
+where each function name corresponds to a message name, parameter
+types define constraints on message payloads, and return types specify
+relationships between messages.  Unlike prior work that incorporate
+trace-based types, our model incorporates asynchronous semantics,
+where handling one message can trigger the sending of new messages
+that will only be received later.  Intuitively, this means that the
+return type of a handler must include both a ``rely", specifying
+assumptions about prior events that allow this type to be manifested,
+and a ``guarantee" that constrains future events. Based on this
+intuition, we introduce Prophecy Automata Types (\PAT), which provide
+constraints on traces that regulate the kind and content of messages
+that are received after the handler returns.
 
 % While reachability properties are naturally expressed using s-LTL$_f$
 % and SFA, the behavior of a plan program cannot be directly captured by
@@ -198,12 +233,56 @@ Unlike standard trace-based refinement types, our model incorporates asynchronou
     \\\eff{readRsp}:& \Code{x}\hasnty{int}\sarr \Code{s}\hasnty{bool} \sarr \rg{\allTL}{\lastA\msg{readRsp}{v = \Code{x} \land st = \Code{s}}}{\allTL}
 \end{align*}}
     \caption{Components Specification $\Delta$ that is expressed in Prophecy Automata Type (\PAT) of messages }
-    \label{fig:2pc-pat}
+    \label{fig:spec}
 \end{figure}
 
-\paragraph{History, current, and prophecy automata} The message specification $\Delta$ of reactive system in our motivating example is shown in \autoref{fig:2pc-pat}, where we still use s-LTL$_f$ to express SFAs in \PAT{}s. The return type of these messages has the form $\rg{H}{A}{F}$, where $H$, $A$, and $F$ represent the history, current, and prophecy automata, respectively. It means that: ``If a program is executed under a context trace accepted by the history automaton $H$, then the execution will produce a present trace accepted by the current automaton $A$, moreover, the future trace (the remaining part of the execution) will be accepted by the prophecy automaton $F$''. In this sense, prophecy automata serve as the trace-based analogue of prophecy variables\cite{...}, which have been introduced in other state-based concurrency reasoning approaches. For example, the first type in \autoref{fig:2pc-pat} is about $\eff{writeReq}$ and has history automaton that allows $\eff{writeReq}$ to be received at any context, i.e., any messages ($\evparenth{\top}$) are allowed within the context trace globally ($\globalA$). The current automaton only allows singleton ($\lastA$ modality in s-LTL$_f$) trace with message $\eff{writeReq}$ itself. This is consistent that the handling of message $\eff{writeReq}$ can only make itself happens. More interestingly, the prophecy automaton guarantees that in the future a $\eff{writeRsp}$ message will be handled in the future, since the handler of $\eff{writeReq}$ will send a $\eff{writeRsp}$ message that is expected to be received in the future following the asynchronous semantics.
+\paragraph{History, current, and prophecy automata}   Handler
+specifications $\Delta$ for our motivating example is shown in
+\autoref{fig:spec}. The return type of an event has the form
+$\rg{H}{A}{F}$, where $H$, $A$, and $F$ represent the history,
+current, and prophecy automata, resp. that establishes the context and
+effect for any message over this event.  Recall that a \PAT\ type
+reads: ``If a program is executed under a context trace accepted by
+the history automaton $H$, then the effect of executing this program
+is defined by the current automaton $A$; moreover, the future trace
+(i.e., the remaining part of the execution) will be accepted by the
+prophecy automaton $F$''. Intuitively, prophecy automata serves as the
+trace-based analogue of prophecy variables\cite{...}, which have been
+introduced in other state-based concurrency reasoning approaches. For
+example, the first type in \autoref{fig:spec} characterizes the
+behavior of $\eff{writeReq}$ messages.  Its history automaton allows a
+$\eff{writeReq}$ to be handled in any context
+($\globalA\evparenth{\top}$).  The current automaton admits a trace
+with a single message, specified by the $\lastA$ modality, namely
+$\eff{writeReq}$ itself.  More interestingly, the prophecy automaton
+guarantees that, given a trace that satisfies $H$ and $A$, a
+$\eff{writeRsp}$ message will be handled in the future, as specified
+by the $\finalA$ modality.  This specification captures the
+asynchronous behavior of request/response pairs in our example,
+requiring that the handler of $\eff{writeReq}$ eventually trigger a
+$\eff{writeRsp}$ message.
 
-\paragraph{Control flows} The history, current, and prophecy automata can describe the control follows  of the message handler. For example, the type of $\eff{readReq}$ use intersection type ($\interty$) encodes two situations the handler may face, i.e., wether there exists a previous write value. The first type indicates the handler of message $\eff{readReq}$ should send the written value ($\Code{x}$ in $\msg{writeReq}{v = \Code{x}}$) which is also the last one ($\nextA\finalA\msg{writeReq}{\top}$) as an response message ($\msg{readRsp}{v = \Code{x} \land st}$) with $\true$ status. Otherwise, there is no write value ($\neg\finalA \msg{writeRsp}{\top}$), then the a $\eff{readRsp}$ with a $\false$ status ($\finalA\msg{readRsp}{ \neg st}$) should be received in the future. On the other hand, the handlers of observable messages $\eff{readRsp}$ and $\eff{writeRsp}$ are exactly the controller (user) itself. Thus, the prophecy automata of these types has not guarantee about future ($\allTL$), since we cannot constrain what message will be sent by user.
+\paragraph{Control flow} The history, current, and prophecy
+automata can also describe salient control-flow of the message
+handler. For example, the type of $\eff{readReq}$ makes use of
+intersection types ($\interty$) to encode the two situations the
+handler may face in responding to this request, namely whether a value
+has been previously written to the database or not. The first type
+indicates that the handler should send the last written value,
+as specified in the history automata
+{\footnotesize\begin{align*}
+ \finalA \msg{writeReq}{v = \Code{x}} \land \neg\nextA\finalA\msg{writeReq}{\top}\end{align*}}\noindent
+as a response message ($\msg{readRsp}{v = \Code{x} \land st}$) with
+$\true$ status, as specified in the prophecy automata.  Otherwise,
+there is no write value ($\neg\finalA \msg{writeRsp}{\top}$), and a
+$\eff{readRsp}$ message with a $\false$ status should should
+eventually be returned ($\finalA\msg{readRsp}{ \neg st}$). On the
+other hand, the handlers of observable messages $\eff{readRsp}$ and
+$\eff{writeRsp}$ are unconstrained by the controller. Thus, the
+prophecy automata of these types cannot make any guarantee about
+future ($\allTL$) actions, since we have no control over how they
+can generate subsequent messages in response to previously issued
+ones.
 
 % This structure allows for a more nuanced reasoning about asynchronous message-passing systems, where both past and future events are connected with current events. The inclusion of prophecy automata adds flexibility in reasoning about future states in a way that traditional two-state specification (pre- and post-condition based) cannot, making it particularly suited to reactive systems.
 
@@ -213,10 +292,33 @@ Unlike standard trace-based refinement types, our model incorporates asynchronou
 % The first case indicates a $\eff{readRsp}$ message will eventually be triggered, with its payload equal to the last committed value (i.e., $\finalA \msg{commit}{va = x} \land \neg\nextA\finalA\msg{commit}{\top}$). This is expressed with the help of a ghost variable to link the last committed value in history automata into prophecy automata. The second case handles the situation where no committed value exists, then reads default value ($-1$).
 % \end{example}
 
-\paragraph{Type check over \PAT} By defining message specification as function \PAT over messages, we can perform standard refinement type check on the controller programs to decide if they are consistent of the message specification. In this sense, all $\mykw{gen}$ and $\mykw{obs}$ terms in the controller program are treated as function application, which should be consistent with the function \PAT of corresponding message in message specification $\Delta$.
-For example, the controller $P_{C}$ is type-safe, where a observed $\eff{readReq}$ term on line $5$ in \autoref{fig:2pc-term} can divide the whole program intro three pieces: history pieces (line $1$ - $4$), current piece (line $5$), and future piece (line $6$ - $7$). These three piece are consistent with the first case of \PAT of $\eff{readReq}$, which requires the last write value is $\Code{y}$ (line $3$) in the history, current handling message is $\eff{readReq}$, and there will be a success $\eff{readReq}$ with value $\Code{y}$ in the future (line $7$). Moreover, the controller $P_{C}$ can indeed induce a trace that violate the RYW consistency policy. This is be also proved by type check controller $P_{C}$ against a \PAT $\rg{\globalA\evparenth{\bot}}{\negSCA}{\globalA\evparenth{\bot}}$, which assume there is no history message happens ($\globalA\evparenth{\bot}$), the execution of controller generate trace consistent with $\negSCA$, and also not more pending message to be received in the future ($\globalA\evparenth{\bot}$).
+\paragraph{Typechecking} By defining message behavior
+in terms of \PAT\ type specifications, we can perform standard
+refinement type checking on controller programs to decide if they are
+consistent with specification constraints. In this sense, we can treat
+$\mykw{gen}$ and $\mykw{obs}$ terms in the controller program as as a
+form of function application that should be consistent with the
+specification of the corresponding handler.
 
-\subsection{Controller Program Synthesis}
+For example, to check that the controller $P_{C}$ is type-safe, an observed
+$\eff{readReq}$ term on line $5$ in \autoref{fig:spec} ``divides'' a
+program execution into three pieces: a history (line $1$ - $4$), an
+action (line $5$), and a future (line $6$ - $7$). These three pieces
+are consistent with the type specification for $\eff{readReq}$, which
+requires the last value written to the database is $\Code{y}$ (line
+$3$) in the history, that the message being handled is
+$\eff{readReq}$, and that there will be a future $\eff{readReq}$
+message with value $\Code{y}$ produced in the future (line
+$7$). Notably, $P_{C}$ can indeed induce a trace that violates an RYW
+consistency policy. This can be shown by typechecking it against a
+context specified by the \PAT\ type
+$\rg{\globalA\evparenth{\bot}}{\negSCA}{\globalA\evparenth{\bot}}$,
+that assumes there is no history message,
+($\globalA\evparenth{\bot}$), the execution of the controller
+generates a trace consistent with $\negSCA$, and there are no more
+messages to be received in the future ($\globalA\evparenth{\bot}$).
+
+\subsection{Controller Synthesis}
 
 \begin{figure}[ht!]
     \centering
@@ -227,25 +329,45 @@ For example, the controller $P_{C}$ is type-safe, where a observed $\eff{readReq
 
 % For example, desirable controller should uses messages properly with respect to message specification $\Delta$, moreover, can be type checked against \PAT $\rg{\globalA\evparenth{\bot}}{\negSCA}{\globalA\evparenth{\bot}}$.
 
-By treating messages as library methods, controller program synthesis can be formalized as a type-guided, component-based synthesis task, where the types of library methods are provided by message specifications $\Delta$. Naive enumeration of these message invocations is impractical due to exponential complexity. Instead, our algorithm incrementally refines the violation property to exclude unrealizable traces.
-As illustrated in \autoref{fig:intuition-algo}, our algorithm consists of two parts. First, it refines the violation property $A$ to $A'$, where $A' \impl A$, ensuring all message invocations in $A'$ align with $\Delta$. Second, it derives the corresponding plan program from $A'$. For instance, the refined property of $\negSCA$ in our motivating example can be:
-{\footnotesize\begin{align*}
-\negSCA
-    \equiv
-    &\anyA^* \seqA \textcolor{DeepGreen}{\msg{writeRsp}{v = \Code{x} \land st}} \seqA
-    (\anyA \setminus \msg{writeRsp}{ st})^* \seqA
-    \textcolor{red}{\msg{readRsp}{v = \Code{y} \land st \land v \not= \Code{y}}} \seqA \anyA^* \tag{desugar into SRE}
-\\\negSCA'
-    \doteq
-    &\msg{writeReq}{v = \Code{x}} \seqA
-    \msg{writeReq}{v = \Code{y} \land v \not= \Code{x}} \seqA
-    \msg{readReq}{\top} \seqA
-    \\&\msg{writeRsp}{v = \Code{y} \land st} \seqA
-    \textcolor{DeepGreen}{\msg{writeRsp}{v = \Code{x} \land st}} \seqA
-    \textcolor{red}{\msg{readRsp}{v = \Code{y} \land st \land v \not= \Code{x}}}
+By treating messages as invocations of component handlers, we can
+formulate a type-guided, component-based synthesis problem, where the
+types of component methods are provided as message specifications, as
+in $\Delta$ in our running example. Because na\"{\i}ve enumeration of
+these message invocations is impractical, our synthesis procedure
+instead incrementally refines the violation property to increase the
+number of infeasible or unrealizable traces that should not be
+considered.  As illustrated in \autoref{fig:intuition-algo}, our
+algorithm consists of two parts. First, it systematically refines the
+given property $A$ that we are interested in violating to a stronger
+property $A'$, where $A' \impl A$, ensuring that all message
+invocations in $A'$ align with $\Delta$. Second, it derives a
+corresponding controller program from $A'$. For instance, 
+a symbolic regular expression (SRE) that captures the set of
+traces admitted by $\negSCA$:
+{\footnotesize\begin{align*} \negSCA \doteq &\anyA^* \seqA
+  \textcolor{DeepGreen}{\msg{writeRsp}{v = \Code{x} \land st}} \seqA
+  (\anyA \setminus \msg{writeRsp}{ st})^* \seqA
+  \textcolor{red}{\msg{readRsp}{v = \Code{y} \land st \land v \not=
+      \Code{y}}} \seqA \anyA^* \end{align*}}
+can be refined into:
+{\footnotesize\begin{align*} 
+  \negSCA'
+  \doteq &\msg{writeReq}{v = \Code{x}} \seqA \msg{writeReq}{v =
+    \Code{y} \land v \not= \Code{x}} \seqA \msg{readReq}{\top} \seqA
+  \\&\msg{writeRsp}{v = \Code{y} \land st} \seqA
+  \textcolor{DeepGreen}{\msg{writeRsp}{v = \Code{x} \land st}} \seqA
+  \textcolor{red}{\msg{readRsp}{v = \Code{y} \land st \land v \not=
+      \Code{x}}}
 \end{align*}}\noindent
-To emphasize that all traces consistent with $\negSCA'$ also satisfy $\negSCA$, we highlight two key symbolic events, $\effGreen{writeRsp}$ and $\effRed{readRsp}$, which violate the Read-Your-Writes (RYW) consistency policy.
-As shown, the property $\negSCA'$ closely resembles the controller program $P_{C}$. The main difference is that $P_{C}$ is more operational, divides messages into $\mykw{gen}$ (generatable) and $\mykw{obs}$ (observable) groups. The controller provides payloads for $\mykw{gen}$ messages, while payloads in $\mykw{obs}$ messages are constrained only by local variables.
+To emphasize that all traces consistent with $\negSCA'$ also satisfy
+$\negSCA$, we highlight two key symbolic events, $\effGreen{writeRsp}$
+and $\effRed{readRsp}$, which violate the RYW
+consistency policy.  As shown, the property $\negSCA'$ closely
+resembles the controller program $P_{C}$. The main difference is that
+$P_{C}$ is more operational, divides messages into $\mykw{gen}$
+(generatable) and $\mykw{obs}$ (observable) groups. The controller
+provides payloads for $\mykw{gen}$ messages, while payloads in
+$\mykw{obs}$ messages are constrained only by local variables.
 
 % Then, by properly instantiate variables in $\negSCA'$
 
@@ -264,34 +386,71 @@ As shown, the property $\negSCA'$ closely resembles the controller program $P_{C
 
 
 \paragraph{Property Refinement Loop} 
-The property refinement process is crucial, as it adapts \PAT to constrain all messages in the refined property $\negSCA'$. Although $\negSCA'$ includes $6$ events, not all (e.g., $\eff{readReq}$) are directly found in the original $\negSCA$. The algorithm dynamically add new messages that need to be check as subgoal when it solving one subgoal.
-For example, when checking the type of the $\eff{readRsp}$ message, the last message in $\negSCA$ (highlighted in red), the algorithm identifies that $\eff{readRsp}$ is sent by the handler for $\eff{readReq}$ (via the first case of type of $\eff{readReq}$). Moreover, the type of $\eff{readReq}$ also indicates the payload $\Code{y}$ of $\eff{readRsq}$ should belong to a previous $\eff{writeReq}$.
-It then adds $\eff{writeReq}$ and $\eff{readReq}$ before $\eff{readRsp}$ in the refined property, also marking them as messages to be checked later.
-{\footnotesize\begin{align*}
-\negSCA''
-    \doteq
-    &\anyA^* \seqA \msg{writeReq}{v = \Code{y}} \seqA (\anyA \setminus \msg{writeReq}{\top})^* \seqA \msg{readReq}{\top} \seqA \anyA^* \seqA
-    \\&\textcolor{DeepGreen}{\msg{writeRsp}{v = \Code{x} \land st}} \seqA
-    (\anyA \setminus \msg{writeRsp}{ st})^* \seqA
-    \textcolor{red}{\msg{readRsp}{v = \Code{y} \land st \land v \not= \Code{y}}} \seqA \anyA^* \tag{after check $\eff{readRsp}$}
+The property refinement process is crucial, as it adapts \PAT\
+specifications to
+constrain all messages in the refined property $\negSCA'$. Although
+$\negSCA'$ includes six events, not all (e.g., $\eff{readReq}$) are
+directly found in the original, $\negSCA$. The algorithm dynamically
+adds new messages that need to be checked as synthesis proceeds.
+For example, when checking the type of the $\eff{readRsp}$
+message, the last message in $\negSCA$ (highlighted in red), the
+algorithm identifies that $\eff{readRsp}$ is sent by the handler for
+$\eff{readReq}$ (via the first case in the intersection type that
+defines $\eff{readReq}$). Moreover, $\eff{readReq}$'s type also indicates
+that the message payload $\Code{y}$ should belong to a previous
+$\eff{writeReq}$.  Based on these constraints, it then adds $\eff{writeReq}$ and $\eff{readReq}$ messages
+before $\eff{readRsp}$ in the refined property, also marking them as
+messages to be checked later, leading to the refined property:
+\SJ{I don't follow how the explanation above leads to the following:}
+{\footnotesize\begin{align*} \negSCA''
+  \doteq &\anyA^* \seqA \msg{writeReq}{v = \Code{y}} \seqA (\anyA
+  \setminus \msg{writeReq}{\top})^* \seqA \msg{readReq}{\top} \seqA
+  \anyA^* \seqA \\&\textcolor{DeepGreen}{\msg{writeRsp}{v = \Code{x}
+      \land st}} \seqA (\anyA \setminus \msg{writeRsp}{ st})^* \seqA
+  \textcolor{red}{\msg{readRsp}{v = \Code{y} \land st \land v \not=
+      \Code{y}}} \seqA \anyA^* \tag{after check $\eff{readRsp}$}
 \end{align*}}\noindent
 
-To achieve this, we construct a refinement loop, as shown in \autoref{fig:intuition-algo}. In each loop iteration, the algorithm selects a unsolved symbolic event $\msg{op}{\phi}$ from property $A$. Then, it selects a type $\tau$ from $\Delta$ for the operator $\eff{op}$ and merges it with $A$.
-To ensure the synthesized controller can realize at least one execution, the merged result ($A'$) must contain at least one trace, which the diamond box in \autoref{fig:intuition-algo} verifies using a standard SFA non-emptiness check. If $A'$ is non-empty, the refinement loop continues; if it is empty, the algorithm backtracks to try a different type from $\Delta$ or chooses another subgoal. This loop ends when all symbolic events in $A$ (except those within Kleene star expressions) are verified consistent with $\Delta$.
-{\footnotesize\begin{align*}
-    &\anyA^* \seqA \msg{writeReq}{v = \Code{x}} \seqA \anyA^* \seqA
-    \msg{writeReq}{v = \Code{y} \land v \not= \Code{x}} \seqA (\anyA \setminus \msg{writeReq}{\top})^* \seqA
-    \msg{readReq}{\top} \seqA \anyA^* \seqA
-    \\&\msg{writeRsp}{v = \Code{y} \land st} \seqA \anyA^* \seqA
-    \textcolor{DeepGreen}{\msg{writeRsp}{v = \Code{x} \land st}} \seqA (\anyA \setminus \msg{writeRsp}{ st})^* \seqA
-    \textcolor{red}{\msg{readRsp}{v = \Code{y} \land st \land v \not= \Code{x}}} \anyA^*
+\SJ{I'm not sure what ``unsolved'' means here.}
+In each iteration of the refinement loop, the algorithm selects an
+unsolved symbolic event $\msg{op}{\phi}$ from property $A$. Then, it
+selects a type $\tau$ from $\Delta$ for the operator $\eff{op}$ and
+merges it with $A$.  To ensure the synthesized controller can realize
+at least one execution, the merged result ($A'$) must contain at least
+one trace, which the diamond box in \autoref{fig:intuition-algo}
+verifies using a standard SFA non-emptiness check~\cite{...}. If $A'$ is
+non-empty, the refinement loop continues; if it is empty, the
+algorithm backtracks to try a different type from $\Delta$ or chooses
+another subgoal. The loop ends when all symbolic events in $A$
+(except those within Kleene star expressions) are verified to be consistent
+with $\Delta$.
+\SJ{What does this type signify?}
+{\footnotesize\begin{align*} &\anyA^* \seqA
+  \msg{writeReq}{v = \Code{x}} \seqA \anyA^* \seqA \msg{writeReq}{v =
+    \Code{y} \land v \not= \Code{x}} \seqA (\anyA \setminus
+  \msg{writeReq}{\top})^* \seqA \msg{readReq}{\top} \seqA \anyA^*
+  \seqA \\&\msg{writeRsp}{v = \Code{y} \land st} \seqA \anyA^* \seqA
+  \textcolor{DeepGreen}{\msg{writeRsp}{v = \Code{x} \land st}} \seqA
+  (\anyA \setminus \msg{writeRsp}{ st})^* \seqA
+  \textcolor{red}{\msg{readRsp}{v = \Code{y} \land st \land v \not=
+      \Code{x}}} \anyA^*
 \end{align*}}\noindent
-Our algorithm choose shorter programs that satisfy the violation property; thus, it specializes all Kleene stars to $\epsilon$, resulting in the final refined property.
+Our algorithm chooses shorter programs that satisfy the property (i.e,
+violate a desired safety condition); thus, it specializes all Kleene
+stars ($^*$) to $\epsilon$, resulting in the final refined property.
 
-Viewed from another perspective, our approach functions as a trace-exploration algorithm, exploring traces consistent with violation property until one align with $\Delta$. The primary challenge lies in handling the Kleene star, which allows for arbitrary unrolling. The algorithm in \autoref{fig:intuition-algo} takes a lazy approach, unrolling the Kleene star only as necessary. For instance, refining $\negSCA$ to include an additional $\eff{writeReq}$ and $\eff{readReq}$ results in $\negSCA'$ by forcing the first $\anyA^*$ in $\negSCA$ to refine as $\anyA^* \seqA \msg{writeReq}{v = \Code{y}} \seqA (\anyA \setminus \msg{writeReq}{\top})^* \seqA \msg{readReq}{\top} \seqA \anyA^*$
-which also unrolls the Kleene star.
-
-The details of algorithm will explained in \autoref{sec:algo}.
+Viewed from another perspective, our approach functions as a
+trace-exploration algorithm, searching for traces that witness a
+property violation until one is found that aligns with $\Delta$. The
+primary challenge lies in handling Kleene star in the SRE
+corresponding to the s-LTL$_f$ formula, which allows for arbitrary
+unrolling.  To address this, we unroll lazily, as necessary.  For
+instance, refining $\negSCA$ to include an additional $\eff{writeReq}$
+and $\eff{readReq}$ results in $\negSCA'$ by forcing the first
+$\anyA^*$ in $\negSCA$ to be refined as $\anyA^* \seqA \msg{writeReq}{v =
+  \Code{y}} \seqA (\anyA \setminus \msg{writeReq}{\top})^* \seqA
+\msg{readReq}{\top} \seqA \anyA^*$ which also unrolls the Kleene star.
+We present further details in \autoref{sec:algo}.
 
 % In another perspective, our approach can be treat as a smart trace exploring algorithm, i.e., where we explore traces that included by violation property, and until it is consistent with $\Delta$. The most difficult part is dealing the Kleene star, which may lead arbitrary times of unrolling. Then, the algorithm in \autoref{fig:intuition-algo} takes a lazy manner, which means the Kleene star is unrolled by need. For example, the property $\negSCA'$ that is result of inserting a $\eff{readReq}$ into $\negSCA$, which force the first $\anyA^*$ in $\negSCA$ to be refined into $\anyA^* \seqA \eff{readReq} \seqA \anyA^*$.
 
