@@ -114,23 +114,20 @@ We can formalize our expectations of how we expect request and responses
 to behave through the following \PAT type:
 {\footnotesize\begin{align*}
     % \Code{y{:}int} \garr 
-    \rg{\underbrace{\anyA^* \seqA \msg{writeReq}{k = \Code{key} \land v = \Code{x}} \seqA (\anyA \setminus \msg{writeReq}{k = \Code{key}})^*}_\texttt{history automata}}{\underbrace{\msg{readReq}{k = \Code{key}}}_\texttt{current automata}}{ \underbrace{\anyA^* \seqA \msg{readRsp}{k = \Code{key} \land v = \Code{x}} \seqA \anyA^* }_\texttt{prophecy automata} }
+    \rg{\underbrace{\finalA \msg{writeReq}{k = \Code{key} \land v = \Code{x}} \land \nextA \neg \finalA \msg{writeReq}{k = \Code{key}}}_\texttt{history automaton}}{\underbrace{\lastA \msg{readReq}{k = \Code{key}}}_\texttt{current automaton}}{ \underbrace{\finalA \msg{readRsp}{k = \Code{key} \land v = \Code{x}} }_\texttt{prophecy automaton} }
 \end{align*}}\noindent
 This type, parameterized by a key variable $\Code{key}$ and a variable
 $\Code{x}$ that defines the value associated with a key, is comprised
-of a \emph{history} automata (i.e., a specification that constrains
+of a \emph{history} automaton (i.e., a specification that constrains
 the set of traces that describe the allowed actions of the system
-prior to handling of an $\eff{readReq}$) event.  This specification
+prior to handling of an $\eff{readReq}$ event). We use
+the standard LTL final modality $\finalA$ and next modality $\nextA$ to express temporal dependencies. This specification
 permits any trace whose last write to key $\Code{key}$ is a value that
 is equal to $\Code{x}$, where we use variables $k$ and $v$ to indicate
-the key and value payload of the message.  We use standard regular
-expression operators to express the automata: $\anyA$ represents any
-arbitrary message, $^*$ denotes the Kleene star, $\seqA$ is
-concatenation, and $\setminus$ represents set difference. The action
-to be taken, specfied by the \emph{current} automata, is a
-$\eff{readReq}$ event that imposes no additional constraints.
+the key and value payload of the message.
+The action to be taken, specified by the \emph{current} automaton containing singleton traces on $\eff{readReq}$ event (expressed via singleton modality $\lastA$), which imposes no additional constraints.
 Finally, the set of traces that can follow this action is defined by a
-\emph{prophecy} automata that specifies that a $\eff{readRsp}$ message
+\emph{prophecy} automaton that specifies that a $\eff{readRsp}$ message
 whose payload contains the key-value pair $\Code{(key, x)}$ must
 appear in any trace following $\eff{readReq}$, thus guaranteeing that
 every $\eff{readReq}$ message is paired with a $\eff{readRsp}$ message
@@ -139,6 +136,11 @@ enforce an atomicity property on reads to the database - even though
 requests and responses may occur far apart in time, reflecting the
 database's asynchronous semantics, the desired behavior specified by this
 type requires all correct executions to be strongly consistent.
+
+% We use standard regular
+% expression operators to express the automata: $\anyA$ represents any
+% arbitrary message, $^*$ denotes the Kleene star, $\seqA$ is
+% concatenation, and $\setminus$ represents set difference.
 
 However, this property does not hold if the database provides weaker
 guarantees than strong consistency.  For example, it might only

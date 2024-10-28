@@ -1,0 +1,55 @@
+\section{Synthesis Algorithm}\label{sec:synthesis}
+
+\paragraph{Property Refinement Loop} 
+The property refinement process is crucial, as it adapts \PAT\
+specifications to
+constrain all messages in the refined property $\negSCA'$. Although
+$\negSCA'$ includes six events, not all (e.g., $\eff{readReq}$) are
+directly found in the original, $\negSCA$. The algorithm dynamically
+adds new messages that need to be checked as synthesis proceeds.
+For example, when checking the type of the $\eff{readRsp}$
+message, the last message in $\negSCA$ (highlighted in red), the
+algorithm identifies that $\eff{readRsp}$ is sent by the handler for
+$\eff{readReq}$ (via the first case in the intersection type that
+defines $\eff{readReq}$). Moreover, $\eff{readReq}$'s type also indicates
+that the message payload $\Code{y}$ should belong to a previous
+$\eff{writeReq}$.  Based on these constraints, it then adds $\eff{writeReq}$ and $\eff{readReq}$ messages
+before $\eff{readRsp}$ in the refined property, also marking them as
+messages to be checked later, leading to the refined property:
+\SJ{I don't follow how the explanation above leads to the following:}
+{\footnotesize\begin{align*} \negSCA''
+  \doteq &\anyA^* \seqA \msg{writeReq}{v = \Code{y}} \seqA (\anyA
+  \setminus \msg{writeReq}{\top})^* \seqA \msg{readReq}{\top} \seqA
+  \anyA^* \seqA \\&\textcolor{DeepGreen}{\msg{writeRsp}{v = \Code{x}
+      \land st}} \seqA (\anyA \setminus \msg{writeRsp}{ st})^* \seqA
+  \textcolor{red}{\msg{readRsp}{v = \Code{y} \land st \land v \not=
+      \Code{y}}} \seqA \anyA^* \tag{after check $\eff{readRsp}$}
+\end{align*}}\noindent
+
+\SJ{I'm not sure what ``unsolved'' means here.}
+In each iteration of the refinement loop, the algorithm selects an
+unsolved symbolic event $\msg{op}{\phi}$ from property $A$. Then, it
+selects a type $\tau$ from $\Delta$ for the operator $\eff{op}$ and
+merges it with $A$.  To ensure the synthesized controller can realize
+at least one execution, the merged result ($A'$) must contain at least
+one trace, which the diamond box in \autoref{fig:intuition-algo}
+verifies using a standard SFA non-emptiness check~\cite{...}. If $A'$ is
+non-empty, the refinement loop continues; if it is empty, the
+algorithm backtracks to try a different type from $\Delta$ or chooses
+another subgoal. The loop ends when all symbolic events in $A$
+(except those within Kleene star expressions) are verified to be consistent
+with $\Delta$.
+\SJ{What does this type signify?}
+{\footnotesize\begin{align*} &\anyA^* \seqA
+  \msg{writeReq}{v = \Code{x}} \seqA \anyA^* \seqA \msg{writeReq}{v =
+    \Code{y} \land v \not= \Code{x}} \seqA (\anyA \setminus
+  \msg{writeReq}{\top})^* \seqA \msg{readReq}{\top} \seqA \anyA^*
+  \seqA \\&\msg{writeRsp}{v = \Code{y} \land st} \seqA \anyA^* \seqA
+  \textcolor{DeepGreen}{\msg{writeRsp}{v = \Code{x} \land st}} \seqA
+  (\anyA \setminus \msg{writeRsp}{ st})^* \seqA
+  \textcolor{red}{\msg{readRsp}{v = \Code{y} \land st \land v \not=
+      \Code{x}}} \anyA^*
+\end{align*}}\noindent
+Our algorithm chooses shorter programs that satisfy the property (i.e,
+violate a desired safety condition); thus, it specializes all Kleene
+stars ($^*$) to $\epsilon$, resulting in the final refined property.
