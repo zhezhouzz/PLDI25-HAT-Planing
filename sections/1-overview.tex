@@ -232,12 +232,12 @@ that are received after the handler returns.
     \\&\interty  \rg{\neg\finalA \msg{writeRsp}{\top}}{\lastA\msg{readReq}{\top}}{\finalA\msg{readRsp}{ \neg st}}
     \\\eff{readRsp}:& \Code{x}\hasnty{int}\sarr \Code{s}\hasnty{bool} \sarr \rg{\allTL}{\lastA\msg{readRsp}{v = \Code{x} \land st = \Code{s}}}{\allTL}
 \end{align*}}
-    \caption{Handler Specification $\Delta$ that is expressed in Prophecy Automata Type (\PAT) of messages }
+    \caption{Handler specifications expressed using Prophecy Automata Types (\PAT). }
     \label{fig:spec}
 \end{figure}
 
 \paragraph{History, current, and prophecy automata}   Handler
-specifications $\Delta$ for our motivating example is shown in
+specifications for our motivating example is shown in
 \autoref{fig:spec}. The return type of an event has the form
 $\rg{H}{A}{F}$, where $H$, $A$, and $F$ represent the history,
 current, and prophecy automata, resp. that establishes the context and
@@ -332,7 +332,7 @@ messages to be received in the future ($\globalA\evparenth{\bot}$).
 By treating messages as invocations of component handlers, we can
 formulate a type-guided, component-based synthesis problem, where the
 types of component methods are provided as handler specifications, as
-in $\Delta$ in our running example. Because na\"{\i}ve enumeration of
+shown in~\autoref{fig:spec}. Because na\"{\i}ve enumeration of
 these message invocations is impractical, our synthesis procedure
 instead incrementally refines the violation property to increase the
 number of infeasible or unrealizable traces that should not be
@@ -340,15 +340,9 @@ considered.  As illustrated in \autoref{fig:intuition-algo}, our
 algorithm consists of two parts. First, it systematically refines the
 given property $A$ that we are interested in violating to a stronger
 property $A'$, where $A' \impl A$, ensuring that all message
-invocations in $A'$ align with $\Delta$. Second, it derives a
-corresponding controller program from $A'$. For instance, 
-a symbolic regular expression (SRE) that captures the set of
-traces admitted by $\negSCA$:
-{\footnotesize\begin{align*} \negSCA \doteq &\finalA (\textcolor{DeepGreen}{\msg{writeRsp}{v = \Code{x} \land st = \true}}
-    \land (\neg \msg{writeRsp}{st = \true}) \untilA \textcolor{red}{\msg{readRsp}{v =
-      \Code{y} \land \Code{y} \not= \Code{x}}})
-\end{align*}}
-can be refined into:
+invocations in $A'$ align with provided specifications. Second, it derives a
+corresponding controller program from $A'$. For instance, the set of
+traces denoted by $\negSCA$ can be refined into:
 {\footnotesize\begin{align*} 
   \negSCA'
   \doteq &\msg{writeReq}{v = \Code{x}} \seqA \msg{writeReq}{v =
@@ -358,15 +352,18 @@ can be refined into:
   \textcolor{red}{\msg{readRsp}{v = \Code{y} \land st = \true \land v \not=
       \Code{x}}}
 \end{align*}}\noindent
-To emphasize that all traces consistent with $\negSCA'$ also satisfy
+This trace specializes the set of messages admitted by the s-LTL$_f$
+formula enclosed within the $\finalA$ modality in $\negSCA$ with
+specific instances of $\eff{writeReq}$ and $\eff{readReq}$ messages.
+To highlight that all traces consistent with $\negSCA'$ also satisfy
 $\negSCA$, we highlight two key symbolic events, $\effGreen{writeRsp}$
-and $\effRed{readRsp}$, which violate the RYW
-consistency policy.  As shown, the property $\negSCA'$ closely
-resembles the controller program $P_{C}$. The main difference is that
-$P_{C}$ is more operational, divides messages into $\mykw{gen}$
-(generatable) and $\mykw{obs}$ (observable) groups. The controller
-provides payloads for $\mykw{gen}$ messages, while payloads in
-$\mykw{obs}$ messages are constrained only by local variables.
+and $\effRed{readRsp}$, which violate the RYW consistency policy.  As
+shown, the property $\negSCA'$ closely resembles the controller
+program $P_{C}$. The main difference is that $P_{C}$ is more
+operational, dividing messages into $\mykw{gen}$ (generatable) and
+$\mykw{obs}$ (observable) groups. The controller also provides
+payloads for $\mykw{gen}$ messages, while payloads in $\mykw{obs}$
+messages are constrained only by local variables.
 
 % Then, by properly instantiate variables in $\negSCA'$
 
@@ -385,71 +382,68 @@ $\mykw{obs}$ messages are constrained only by local variables.
 
 
 \paragraph{Property Refinement Loop} 
-The property refinement process is crucial, as it adapts \PAT\
-specifications to
-constrain all messages in the refined property $\negSCA'$. Although
-$\negSCA'$ includes six events, not all (e.g., $\eff{readReq}$) are
-directly found in the original, $\negSCA$. The algorithm dynamically
-adds new messages that need to be checked as synthesis proceeds.
-For example, when checking the type of the $\eff{readRsp}$
-message, the last message in $\negSCA$ (highlighted in red), the
-algorithm identifies that $\eff{readRsp}$ is sent by the handler for
-$\eff{readReq}$ (via the first case in the intersection type that
-defines $\eff{readReq}$). Moreover, $\eff{readReq}$'s type also indicates
-that the message payload $\Code{y}$ should belong to a previous
-$\eff{writeReq}$.  Based on these constraints, it then adds $\eff{writeReq}$ and $\eff{readReq}$ messages
-before $\eff{readRsp}$ in the refined property, also marking them as
-messages to be checked later, leading to the refined property:
-\SJ{I don't follow how the explanation above leads to the following:}
-{\footnotesize\begin{align*} \negSCA''
-  \doteq &\anyA^* \seqA \msg{writeReq}{v = \Code{y}} \seqA (\anyA
-  \setminus \msg{writeReq}{\top})^* \seqA \msg{readReq}{\top} \seqA
-  \anyA^* \seqA \\&\textcolor{DeepGreen}{\msg{writeRsp}{v = \Code{x}
-      \land st}} \seqA (\anyA \setminus \msg{writeRsp}{ st})^* \seqA
-  \textcolor{red}{\msg{readRsp}{v = \Code{y} \land st \land v \not=
-      \Code{y}}} \seqA \anyA^* \tag{after check $\eff{readRsp}$}
-\end{align*}}\noindent
+The property refinement process is crucial, as it adapts
+\PAT\ specifications to constrain all messages in the refined property
+$\negSCA'$. Although $\negSCA'$ includes six events, not all (e.g.,
+$\eff{readReq}$) are directly found in the original, $\negSCA$. The
+algorithm dynamically adds new messages that need to be checked as
+synthesis proceeds.  Viewed from another perspective, our approach
+functions as a trace-exploration algorithm, searching for traces that
+witness a property violation until one is found that aligns with
+provided specifications. The primary challenge lies in handling
+temporal modalities like $\finalA$ and $\untilA$ that admit an
+arbitrary number of possible messages in the trace before the messages
+of interest occur.  To address this, our synthesis procedure injects
+new messages in the controller program lazily.  For example, when
+checking the type of the $\eff{readRsp}$ message, the last message in
+$\negSCA$, the algorithm identifies that it is issued by the handler
+for $\eff{readReq}$ (via the first case in the intersection type that
+defines $\eff{readReq}$). Moreover, $\eff{readReq}$'s type also
+indicates that the message payload $\Code{y}$ should belong to a
+previous $\eff{writeReq}$.  Based on these constraints, it then adds
+$\eff{writeReq}$ and $\eff{readReq}$ messages before $\eff{readRsp}$
+in the refined property, also marking them as messages whose
+constraints must subsequently also need to be satisfied, ultimately
+leading to the refined property.
 
-\SJ{I'm not sure what ``unsolved'' means here.}
-In each iteration of the refinement loop, the algorithm selects an
-unsolved symbolic event $\msg{op}{\phi}$ from property $A$. Then, it
-selects a type $\tau$ from $\Delta$ for the operator $\eff{op}$ and
-merges it with $A$.  To ensure the synthesized controller can realize
-at least one execution, the merged result ($A'$) must contain at least
-one trace, which the diamond box in \autoref{fig:intuition-algo}
-verifies using a standard SFA non-emptiness check~\cite{...}. If $A'$ is
-non-empty, the refinement loop continues; if it is empty, the
-algorithm backtracks to try a different type from $\Delta$ or chooses
-another subgoal. The loop ends when all symbolic events in $A$
-(except those within Kleene star expressions) are verified to be consistent
-with $\Delta$.
-\SJ{What does this type signify?}
-{\footnotesize\begin{align*} &\anyA^* \seqA
-  \msg{writeReq}{v = \Code{x}} \seqA \anyA^* \seqA \msg{writeReq}{v =
-    \Code{y} \land v \not= \Code{x}} \seqA (\anyA \setminus
-  \msg{writeReq}{\top})^* \seqA \msg{readReq}{\top} \seqA \anyA^*
-  \seqA \\&\msg{writeRsp}{v = \Code{y} \land st} \seqA \anyA^* \seqA
-  \textcolor{DeepGreen}{\msg{writeRsp}{v = \Code{x} \land st}} \seqA
-  (\anyA \setminus \msg{writeRsp}{ st})^* \seqA
-  \textcolor{red}{\msg{readRsp}{v = \Code{y} \land st \land v \not=
-      \Code{x}}} \anyA^*
-\end{align*}}\noindent
-Our algorithm chooses shorter programs that satisfy the property (i.e,
-violate a desired safety condition); thus, it specializes all Kleene
-stars ($^*$) to $\epsilon$, resulting in the final refined property.
+%% \SJ{I don't follow how the explanation above leads to the following:}
+%% {\footnotesize\begin{align*} \negSCA''
+%%   \doteq &\anyA^* \seqA \msg{writeReq}{v = \Code{y}} \seqA (\anyA
+%%   \setminus \msg{writeReq}{\top})^* \seqA \msg{readReq}{\top} \seqA
+%%   \anyA^* \seqA \\&\textcolor{DeepGreen}{\msg{writeRsp}{v = \Code{x}
+%%       \land st}} \seqA (\anyA \setminus \msg{writeRsp}{ st})^* \seqA
+%%   \textcolor{red}{\msg{readRsp}{v = \Code{y} \land st \land v \not=
+%%       \Code{y}}} \seqA \anyA^* \tag{after check $\eff{readRsp}$}
+%% \end{align*}}\noindent
 
-Viewed from another perspective, our approach functions as a
-trace-exploration algorithm, searching for traces that witness a
-property violation until one is found that aligns with $\Delta$. The
-primary challenge lies in handling Kleene star in the SRE
-corresponding to the s-LTL$_f$ formula, which allows for arbitrary
-unrolling.  To address this, we unroll lazily, as necessary.  For
-instance, refining $\negSCA$ to include an additional $\eff{writeReq}$
-and $\eff{readReq}$ results in $\negSCA'$ by forcing the first
-$\anyA^*$ in $\negSCA$ to be refined as $\anyA^* \seqA \msg{writeReq}{v =
-  \Code{y}} \seqA (\anyA \setminus \msg{writeReq}{\top})^* \seqA
-\msg{readReq}{\top} \seqA \anyA^*$ which also unrolls the Kleene star.
-We present further details in \autoref{sec:algo}.
+%% \SJ{I'm not sure what ``unsolved'' means here.}
+%% In each iteration of the refinement loop, the algorithm selects an
+%% unsolved symbolic event $\msg{op}{\phi}$ from property $A$. Then, it
+%% selects a type $\tau$ from $\Delta$ for the operator $\eff{op}$ and
+%% merges it with $A$.  To ensure the synthesized controller can realize
+%% at least one execution, the merged result ($A'$) must contain at least
+%% one trace, which the diamond box in \autoref{fig:intuition-algo}
+%% verifies using a standard SFA non-emptiness check~\cite{...}. If $A'$ is
+%% non-empty, the refinement loop continues; if it is empty, the
+%% algorithm backtracks to try a different type from $\Delta$ or chooses
+%% another subgoal. The loop ends when all symbolic events in $A$
+%% (except those within Kleene star expressions) are verified to be consistent
+%% with $\Delta$.
+%% \SJ{What does this type signify?}
+%% {\footnotesize\begin{align*} &\anyA^* \seqA
+%%   \msg{writeReq}{v = \Code{x}} \seqA \anyA^* \seqA \msg{writeReq}{v =
+%%     \Code{y} \land v \not= \Code{x}} \seqA (\anyA \setminus
+%%   \msg{writeReq}{\top})^* \seqA \msg{readReq}{\top} \seqA \anyA^*
+%%   \seqA \\&\msg{writeRsp}{v = \Code{y} \land st} \seqA \anyA^* \seqA
+%%   \textcolor{DeepGreen}{\msg{writeRsp}{v = \Code{x} \land st}} \seqA
+%%   (\anyA \setminus \msg{writeRsp}{ st})^* \seqA
+%%   \textcolor{red}{\msg{readRsp}{v = \Code{y} \land st \land v \not=
+%%       \Code{x}}} \anyA^*
+%% \end{align*}}\noindent
+%% Our algorithm chooses shorter programs that satisfy the property (i.e,
+%% violate a desired safety condition); thus, it specializes all Kleene
+%% stars ($^*$) to $\epsilon$, resulting in the final refined property.
+
 
 % In another perspective, our approach can be treat as a smart trace exploring algorithm, i.e., where we explore traces that included by violation property, and until it is consistent with $\Delta$. The most difficult part is dealing the Kleene star, which may lead arbitrary times of unrolling. Then, the algorithm in \autoref{fig:intuition-algo} takes a lazy manner, which means the Kleene star is unrolled by need. For example, the property $\negSCA'$ that is result of inserting a $\eff{readReq}$ into $\negSCA$, which force the first $\anyA^*$ in $\negSCA$ to be refined into $\anyA^* \seqA \eff{readReq} \seqA \anyA^*$.
 
