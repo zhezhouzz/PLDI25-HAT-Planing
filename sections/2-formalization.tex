@@ -141,24 +141,31 @@ safety.
 \end{flalign*}
 }
 \\ \
-\mprooftr{55mm}
+\mprooftr{42mm}
 {$\Gamma \vdash H_2 \subseteq H_1$ \quad
 $\Gamma \vdash A_1 \subseteq A_2$ \quad
 $\Gamma \vdash F_1 \subseteq F_2$ }
 {SubHAF}
 {$\Gamma \vdash \rg{H_1}{A_1}{F_1} <: \rg{H_2}{A_2}{F_2}$}
-\quad 
-\mprooftr{45mm}
+\ 
+\mprooftr{38mm}
+{$\Gamma \vdash \rg{H}{A_1}{F} \termsyn e_1$ \quad
+$\Gamma \vdash \rg{H}{A_2}{F} \termsyn e_2$}
+{TUnion}
+{$\Gamma \vdash \rg{H}{A_1 \lorA A_2}{F} \termsyn e_1 \oplus e_2$}
+\ 
+\mprooftr{18mm}
 {$\Gamma \vdash \tau \termsyn e$ \quad
 $\Gamma \vdash \tau <: \tau'$ \quad
 $\Gamma \wellfoundedvdash \tau'$}
 {TSub}
 {$\Gamma \vdash \tau' \termsyn e$}
 \\ \ \\ \ \\ \ 
-\mprooftr{48mm}
-{$(\eff{op}, \overline{x{:}t}\sarr \rg{H}{A}{F}) \in \Delta$ \\  
-$\Gamma \vdash F' \subseteq F$ \quad $\Gamma \wellfoundedvdash \overline{x{:}t}\sarr \rg{H}{A}{F'}$}
-{TEOp}
+\mprooftr{55mm}
+{$(\eff{op}, \overline{x{:}t}\sarr \rg{H}{A}{\bigwedge_{i = 1 ... n} \finalA \msg{op_i}{\phi_i}}) \in \Delta$ \\
+$F' = F_1 \seqA \msg{op_1}{\phi_1} \seqA ... F_n \seqA \msg{op_n}{\phi_n} \seqA F_{n+1} $ \\  
+$\Gamma \wellfoundedvdash \overline{x{:}t}\sarr \rg{H}{A}{F'}$}
+{TEOpFrame}
 {$\Gamma \vdash \eff{op} : \overline{x{:}t}\sarr \rg{H}{A}{F'}$}
 \quad 
 \mprooftr{27mm}
@@ -197,13 +204,17 @@ $\Gamma \vdash \eff{op} : \overline{x{:}t}\sarr \rg{H}{\msgB{op}{\overline{y}}{\
 \autoref{fig:selected-typing-rules} highlights key subtyping rules $\textsc{SubHAF}$ that are over two base \PAT{}s. This rules checks inclusion
 between the languages of the automata under type context $\Gamma$, while the history automata are in contravariant, current and prophecy automata are in covariant. The intuition here is that the asynchronous semantics ``delay'' the return result of a computation as message that expected to be received in the future, thus both current and prophecy automata are the effect caused by execution. the include relation over automata $\Gamma \vdash A \subseteq A$ and is defined in the next subsection.
 
-\paragraph{Type-guided Deductive Synthesis} Our typing rules has form $\Gamma \vdash \tau \termsyn e$ establish a type-guided synthesis, which means ``synthesize a term $e$ that has type $\tau$ under type context $\Gamma$''. A subset of our synthesis rules\footnote{The complete set of typing rules is included in the \techreport{}.} is shown
+\paragraph{Effect Operator Framing} The types of operator $\eff{op}$ in handler specification can use prophecy automata to predict the things happens in the future which is very powerful, however, this power should be limited to only constrain that new message sent by $\eff{op}$ handler will \emph{eventually} ($\finalA$) be received. The events sent by other handlers is independent from $\eff{op}$ handler, also, the scheduling order is decided by controller instead of handler. Then,  a well-formed handler specification (defined in next subsection) should have prophecy automata in a form $\bigwedge_{i = 1 ... n} \finalA \msg{op_i}{\phi_i}$. In order to allow these type to ``adapt'' the events independently happens in the future, we introduce a framing rule \textsc{TEOpFrame} for operators, where intuitively, we can insert arbitrary automata ($F_1 ... F_{n+1}$) between $\msg{op_i}{\phi_i}$.
+
+\paragraph{Type-guided Deductive Synthesis} Our main set of rules having form $\Gamma \vdash \tau \termsyn e$ establish a type-guided synthesis, which means ``synthesize a term $e$ that has type $\tau$ under type context $\Gamma$''. A subset of our synthesis rules\footnote{The complete set of typing rules is included in the \techreport{}.} is shown
 in \autoref{fig:selected-typing-rules}. The synthesis rules are indeed structured over the shape of current automata $A$ in \PAT $\rg{H}{A}{F}$. Recall that our original synthesis judgment is $\rg{\epsilon}{A}{\epsilon}$ (in SRE) wile both history and future automata are empty context. Then, the typing rule consecutively realize symbolic events in $A$ as effect operator applications and move them into history automata. To realize a current automata with first symbolic event be generatable or observable message, we adapt the rule \textsc{TGen} or \textsc{TObs}. For observable message $\eff{op}$ in type $\rg{H}{\msgB{op}{\overline{y}}{\phi} \seqA A}{F}$, the rule \textsc{TObs} select the type of $\eff{op}$. The rule requires the select type $\rg{H}{\msgB{op}{\overline{y}}{\phi}}{A \seqA F}$ has exactly the same global view, i.e.,
 {\small\begin{align*}
 \underbrace{ H }_\texttt{history}\;\seqA\;\underbrace{ \msgB{op}{\overline{y}}{\phi} \seqA A }_\texttt{current} \;\seqA\; \underbrace{ F }_\texttt{prophecy} \equiv
 \underbrace{ H }_\texttt{history}\;\seqA\;\underbrace{ \msgB{op}{\overline{y}}{\phi} }_\texttt{current} \;\seqA\; \underbrace{ A \seqA F }_\texttt{prophecy}
 \end{align*}}\noindent
-Then we move the event $\eff{op}$ from the head of current automata into tail of history automata and adding the constraint $\overline{y = x}$ to ensure the local payloads $\overline{y}$ are consistent with the parameters $\overline{x}$, then continuing synthesize the rest of program. The rule \textsc{TObs} has the similar manner besides the payload of messages are provided by controller ($\overline{y = v}$), thus we need to enforce both operator type and program type consistent with it. Notably, we can always use the standard subsumption rule \textsc{TSub} to change the shape of types. The synthesis procedure ends with rule \textsc{TEps} when all symbolic events in current automata are synthesized. At last, we would like to highlight a special prophecy strengthening rule for operator type (\textsc{TEOp}) come from the asynchronous semantics. The intuition here is that the asynchronous semantics ``delay'' the return result of a computation as message that has non-zero chance to be received at \emph{any possible step} in the future. The well-formed handler specification $\Delta$ (define in next subsection) always capture all possible situation in the prophecy automata. Then, any automata $F'$ that included by prophecy automata $F$ can leads to another valid operator type.
+Then we move the event $\eff{op}$ from the head of current automata into tail of history automata and adding the constraint $\overline{y = x}$ to ensure the local payloads $\overline{y}$ are consistent with the parameters $\overline{x}$, then continuing synthesize the rest of program. The rule \textsc{TObs} has the similar manner besides the payload of messages are provided by controller ($\overline{y = v}$), thus we need to enforce both operator type and program type consistent with it. Notably, we can always use the standard subsumption rule \textsc{TSub} to change the shape of types. The synthesis procedure ends with rule \textsc{TEps} when all symbolic events in current automata are synthesized. At last, our deductive synthesis can synthesize different controller and union them together via \textsc{TUnion}, which enable to capture different message orders.
+
+% At last, we would like to highlight a special prophecy strengthening rule for operator type (\textsc{TEOp}) come from the asynchronous semantics. The intuition here is that the asynchronous semantics ``delay'' the return result of a computation as message that has non-zero chance to be received at \emph{any possible step} in the future. The well-formed handler specification $\Delta$ (define in next subsection) always capture all possible situation in the prophecy automata. Then, any automata $F'$ that included by prophecy automata $F$ can leads to another valid operator type.
 
 \begin{example}[Type-guided Deductive Synthesis] We provide the simple intuition of synthesize the program $P_C$ in \autoref{sec:overview} from given type $\rg{\epsilon}{\negSCA}{\epsilon}$ that encodes the violation of WYR policy under type context $\Gamma \doteq \Code{x}\hasoty{int}{\top}, \Code{y}\hasoty{int}{v \not= x}$. We first apply the subsumption rule (\textsc{Tsub}) to convert into its subtype $\rg{\epsilon}{\negSCA'}{\epsilon}$ as the new program type.
 {\footnotesize\begin{align*} 
@@ -216,14 +227,14 @@ Then we move the event $\eff{op}$ from the head of current automata into tail of
   \msg{readRsp}{v = \Code{y} \land st = \true \land v \not=
       \Code{x}}  }_\texttt{$A_4$}
 \end{align*}}\noindent
-For the first symbolic event $\msg{writeReq}{v = \Code{x}}$ which is generatable, we select the desugared type of $\eff{writeReq}$ from handler specification $\Delta$, then use \textsc{TEOp} and \textsc{TSub} to adjust the shape the types to be consistent with $\negSCA'$.
+For the first symbolic event $\msg{writeReq}{v = \Code{x}}$ which is generatable, we select the desugared type of $\eff{writeReq}$ from handler specification $\Delta$, then use \textsc{TEOpFrame} and \textsc{TSub} to adjust the shape the types to be consistent with $\negSCA'$.
 {\footnotesize\begin{align*}
 &(\eff{writeReq},  \Code{x}\hasnty{int} \sarr \rg{\allTL}{\lastA\msg{writeReq}{v = \Code{x}}}{\finalA\msg{writeRsp}{v = \Code{x}}}) \in \Delta
 \\&(\eff{writeReq}, \Code{x}\hasnty{int} \sarr \rg{\anyA^*}{\msg{writeReq}{v = \Code{x}}}{\anyA^* \seqA \msg{writeRsp}{v = \Code{x}} \seqA \anyA^*}) \in \Delta \tag{desugar into SRE}
-\\&\Gamma \vdash \eff{writeReq}: \Code{x}\hasnty{int} \sarr \effLR{\anyA^*}\ \effLR{\msg{writeReq}{v = \Code{x}}}\ \effLR{A_2 \seqA \msg{writeRsp}{v = \Code{x} \land st = \true} \seqA A_4} \tag{\textsc{TEOp}}
+\\&\Gamma \vdash \eff{writeReq}: \Code{x}\hasnty{int} \sarr \effLR{\anyA^*}\ \effLR{\msg{writeReq}{v = \Code{x}}}\ \effLR{A_2 \seqA \msg{writeRsp}{v = \Code{x} \land st = \true} \seqA A_4} \tag{\textsc{TEOpFrame}}
 \\&\Gamma \vdash \eff{writeReq}: \Code{x}\hasnty{int} \sarr \effLR{\epsilon}\ \effLR{\msg{writeReq}{v = \Code{x}}}\ \effLR{A_2 \seqA \msg{writeRsp}{v = \Code{x} \land st = \true} \seqA A_4} \tag{\textsc{TSub}}
 \end{align*}}\noindent
-where in this case $\textsc{TEOp}$ refine the prophecy automata and $\textsc{TSub}$ refine the history automata. Since the type of $\eff{writeReq}$ is exactly align with the program type $\rg{\epsilon}{A_1\seqA A_2\seqA A_3\seqA A_4}{\epsilon}$, it is safe to apply rule \textsc{TGen}, and derive a term $\zgen{writeReq}{\Code{x}}{e}$, where $e$ should be synthesized from program type $\rg{A_1}{A_2\seqA A_3\seqA A_4}{\epsilon}$.
+where in this case $\textsc{TEOpFrame}$ refine the prophecy automata and $\textsc{TSub}$ refine the history automata. Since the type of $\eff{writeReq}$ is exactly align with the program type $\rg{\epsilon}{A_1\seqA A_2\seqA A_3\seqA A_4}{\epsilon}$, it is safe to apply rule \textsc{TGen}, and derive a term $\zgen{writeReq}{\Code{x}}{e}$, where $e$ should be synthesized from program type $\rg{A_1}{A_2\seqA A_3\seqA A_4}{\epsilon}$.
 \end{example}
 
 \subsection{Type Soundness}
@@ -234,14 +245,14 @@ where in this case $\textsc{TEOp}$ refine the prophecy automata and $\textsc{TSu
 % \end{align*}}\noindent
 The details of these definition can be find in our \techreport{}.
 
-\paragraph{Handler specification} As we mentioned, the handler specification need to be complete, that is, general enough to contain all possible message scheduling order. On the other hand, the prophecy automata that predict the things happens in the future is very powerful, one can even encodes the all reliable traces in it, which is not precritical, as discussed in \autoref{sec:overview}. Then, the well-formed handler specification should just use prophecy automata to express new sending messages, formally defined in the following.
+\paragraph{Well-formed Handler specification} As we mentioned, the handler specification should have prophecy automata that only have eventual modality, moreover, its current automata should be singleton ($\lastA$), and also consistent with the auxiliary semantics of handler introduced in \autoref{fig:fig:selected-semantics}. The well-formedness formally defined as the following.
 
 \begin{definition}[Well-formed handler specification]
   \label{lemma:built-in-typing}
   The handler specification $\Delta$ is well-formed
   iff its type in the following shape
 {\small\begin{align*}
-    \Delta(\eff{op}) ~ = ~ \overline{x{:}t} \sarr \rg{H}{\msgB{op}{\overline{y}}{\overline{y = x}}}{F \doteq \bigwedge_{i = 1 ... n} \finalA \msg{op_i}{\phi_i}}
+    \Delta(\eff{op}) ~ = ~ \overline{x{:}t} \sarr \rg{H}{\lastA\msgB{op}{\overline{y}}{\overline{y = x}}}{F \doteq \bigwedge_{i = 1 ... n} \finalA \msg{op_i}{\phi_i}}
 \end{align*}}\noindent
 Moreover, these types should consistent with the auxiliary semantics of message handler:
 {\small\begin{align*}
