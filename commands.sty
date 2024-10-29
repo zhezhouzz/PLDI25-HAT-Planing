@@ -117,6 +117,37 @@
     },
   }
 
+\newcommand{\submissionMode}{true}
+
+\ifdefined\diffmode
+\newcommand{\cbnewadding}[1]{
+\cbstart{\textcolor{blue}{#1}}\cbend}
+\newcommand{\cbst}{\cbstart}
+\newcommand{\cbed}{\cbend}
+\newcommand{\cbcontent}[1]{\textcolor{blue}{#1}}
+\newcommand{\techreport}{supplemental material\xspace}
+\else
+\ifdefined\submissionMode
+\newcommand{\cbnewadding}[1]{{#1}}
+\newcommand{\cbst}{}
+\newcommand{\cbed}{}
+\newcommand{\cbcontent}[1]{{#1}}
+\newcommand{\techreport}{supplemental material\xspace}
+\else
+\ifdefined\originalmode
+\newcommand{\cbnewadding}[1]{{#1}}
+\newcommand{\cbst}{}
+\newcommand{\cbed}{}
+\newcommand{\cbcontent}[1]{{#1}}
+\newcommand{\techreport}{technical report~\cite{FullVersion}\xspace }
+\else
+\newcommand{\cbnewadding}[1]{{#1}}
+\newcommand{\cbst}{}
+\newcommand{\cbed}{}
+\newcommand{\cbcontent}[1]{{#1}}
+\newcommand{\techreport}{appendix\xspace}
+\fi
+\fi
 
 \newcommand{\Pair}[2]{\mbox{$\langle\,#1,#2\,\rangle$}}
 
