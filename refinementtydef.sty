@@ -81,9 +81,9 @@
 % Lambda Calculus
 \newcommand{\zlet}[3]{\mykw{let}\ {#1}\ {=}\ {#2} \  \mykw{in}\ {#3}}
 \newcommand{\zrandom}[1]{\mykw{random}\ {#1}}
-\newcommand{\zobs}[3]{\mykw{let}\ {#1}\ {=}\ \mykw{observe}\ \eff{#2}\ \mykw{in}\ {#3}}
-\newcommand{\zobsPhi}[4]{\mykw{let}\ {#1}\ {=}\ \mykw{observe}\ \eff{#2}\ {#3}\ \mykw{in}\ {#4}}
-\newcommand{\zgen}[3]{\mykw{generate}\ \eff{#1} \ {#2} \ \mykw{in}\ {#3}}
+\newcommand{\zobs}[3]{\mykw{let}\ {#1}\ {=}\ \mykw{obs}\ \eff{#2}\ \mykw{in}\ {#3}}
+\newcommand{\zobsPhi}[4]{\mykw{let}\ {#1}\ {=}\ \mykw{obs}\ \eff{#2}\ {#3}\ \mykw{in}\ {#4}}
+\newcommand{\zgen}[3]{\mykw{gen}\ \eff{#1} \ {#2} \ \mykw{in}\ {#3}}
 \newcommand{\zevent}[2]{(\eff{#1}\;{#2})}
 \newcommand{\zrecv}[3]{\mykw{receive}\ {#1}\ {#2} \ \mykw{in}\ {#3}}
 \newcommand{\zassume}[2]{\mykw{assume}\ {#1} \  \mykw{in}\ {#2}}
@@ -99,7 +99,7 @@
 % Impertive Language
 \newcommand{\ilet}[2]{\mykw{let}\ {#1}\ {=}\ {#2}}
 \newcommand{\iobs}[2]{\mykw{let}\ {#1}\ {=}\ \mykw{observe}\ \eff{#2}}
-\newcommand{\igen}[2]{\mykw{generate}\ \eff{#1} \ {#2}}
+\newcommand{\igen}[2]{\mykw{gen}\ \eff{#1} \ {#2}}
 \newcommand{\iassume}[1]{\mykw{assume}\ {#1}}
 \newcommand{\zletassume}[3]{\mykw{let}\ {#1}\ \mykw{assume}\ {#2}\ \mykw{in}\ {#3}}
 \newcommand{\iassert}[1]{\mykw{assert}\ {#1}}
@@ -585,3 +585,4 @@
 \newcommand{\negSCA}{A_\Code{violateRYW}}
 
 \newcommand{\PAT}{\mbox{{\sc Pat}}\xspace}
+\newcommand{\DSL}{\boldsymbol{\lambda}^{C}}
