@@ -14,7 +14,7 @@
     \\ \text{\textbf{Controllers (Expressions)}}& \quad & e ::=\quad & v ~|~ \zlet{x{:}b}{\primop\ \overline{v}}{e} ~|~ \zgen{op}{\overline{v}}{e} ~|~ \zobs{\overline{x{:}b}}{op}{e} 
     \\ & & \quad & ~|~  \zassert{\phi}{e} ~|~ e \oplus e
   \end{alignat*}}
-\caption{$\DSL$ term and trace Syntax. }
+\caption{$\DSL$ term and trace syntax. }
 \label{fig:term-syntax}
 \end{figure}
 
@@ -144,7 +144,7 @@ defined at line 4 in $P_C$.
 \vspace{-.2cm}
 \end{figure}
 
-The syntax of $\DSL$'s type system is shown in
+The syntax of $\DSL{}$'s type system is shown in
 \autoref{fig:type-syntax}.  Types include \emph{pure} refinement types
 to describe pure computations and Prophecy Automata Types (\PAT{}s) to
 describe effectful computations.  Pure refinement types are similar to
@@ -179,7 +179,7 @@ singleton trace.
 In addition to the temporal next ($\nextA A$) and until operators ($A
 \untilA A$), the syntax of HATs includes negation ($\neg A$),
 intersection ($A \landA A$), union ($A \lorA A$), and concatenation
-($A;A$).  These operators are sufficient to encode other useful
+($A\seqA A$).  These operators are sufficient to encode other useful
 logical and temporal operators including logical implication,
 eventually ($\finalA$), globally ($\globalA$), and last ($\lastA$),
 which describes a singleton trace, that prohibits any other
@@ -242,7 +242,7 @@ $\Gamma \wellfoundedvdash \tau'$}
 \\ \ \\ \ \\ \ 
 \mprooftr{55mm}
 {$(\eff{op}, \overline{x{:}t}\sarr \rg{H}{A}{\bigwedge_{i = 1 ... n} \finalA \msg{op_i}{\phi_i}}) \in \Delta$ \\
-$F' = F_1 \seqA \msg{op_1}{\phi_1} \seqA ... F_n \seqA \msg{op_n}{\phi_n} \seqA F_{n+1} $ \\  
+$F' = F_1 \seqA \lastA\msg{op_1}{\phi_1} \seqA ... F_n \seqA \lastA\msg{op_n}{\phi_n} \seqA F_{n+1} $ \\  
 $\Gamma \wellfoundedvdash \overline{x{:}t}\sarr \rg{H}{A}{F'}$}
 {TEOpFrame}
 {$\Gamma \vdash \eff{op} : \overline{x{:}t}\sarr \rg{H}{A}{F'}$}
@@ -250,29 +250,29 @@ $\Gamma \wellfoundedvdash \overline{x{:}t}\sarr \rg{H}{A}{F'}$}
 \mprooftr{33mm}
 {}
 {TEps}
-{$\Gamma \vdash \rg{H}{\negA\nextA(\top)}{F} \termsyn ()$}
+{$\Gamma \vdash \rg{H}{\epsTL}{F} \termsyn ()$}
 \\ \ \\ \ \\ \ 
-\mprooftr{57mm}
+\mprooftr{59mm}
 {
-$\Gamma \vdash \eff{op} : \overline{x{:}t}\sarr \rg{H}{\msgB{op}{\overline{y}}{\bigwedge \overline{y = v}}}{A \seqA F}$ 
+$\Gamma \vdash \eff{op} : \overline{x{:}t}\sarr \rg{H}{\lastA\msgB{op}{\overline{y}}{\bigwedge \overline{y = v}}}{A \seqA F}$ 
 \quad
- $\Gamma \vdash \rg{H \seqA \msgB{op}{\overline{y}}{\bigwedge \overline{y = v}}}{A}{F} \termsyn e$
+ $\Gamma \vdash \rg{H \seqA \lastA\msgB{op}{\overline{y}}{\bigwedge \overline{y = v}}}{A}{F} \termsyn e$
  \quad
-$\Gamma \wellfoundedvdash \rg{H}{\msgB{op}{\overline{y}}{\bigwedge \overline{y = v}} \seqA A}{F}$
+$\Gamma \wellfoundedvdash \rg{H}{\lastA\msgB{op}{\overline{y}}{\bigwedge \overline{y = v}} \seqA A}{F}$
  }
-{TGen}
-{$\Gamma \vdash \rg{H}{\msgB{op}{\overline{y}}{\bigwedge \overline{y = v}} \seqA A}{F}  \termsyn \zgen{op}{\overline{v}}{e}$}
-\quad
-\mprooftr{57mm}
+{\footnotesize TGen}
+{$\Gamma \vdash \rg{H}{\lastA\msgB{op}{\overline{y}}{\bigwedge \overline{y = v}} \seqA A}{F}  \termsyn \zgen{op}{\overline{v}}{e}$}
+\ 
+\mprooftr{59mm}
 {
-$\Gamma \vdash \eff{op} : \overline{x{:}t}\sarr \rg{H}{\msgB{op}{\overline{y}}{\phi}}{A \seqA F}$ 
+$\Gamma \vdash \eff{op} : \overline{x{:}t}\sarr \rg{H}{\msgB{op}{\lastA\overline{y}}{\phi}}{A \seqA F}$ 
 \quad
- $\Gamma, \overline{x{:}t} \vdash \rg{H \seqA \msgB{op}{\overline{y}}{\phi \land \overline{y = x}}}{A}{F} \termsyn e$
+ $\Gamma, \overline{x{:}t} \vdash \rg{H \seqA \lastA\msgB{op}{\overline{y}}{\phi \land \overline{y = x}}}{A}{F} \termsyn e$
  \quad
- $\Gamma \wellfoundedvdash \rg{H}{\msgB{op}{\overline{x}}{\phi} \seqA A}{F}$
+ $\Gamma \wellfoundedvdash \rg{H}{\lastA\msgB{op}{\overline{x}}{\phi} \seqA A}{F}$
  }
 {TObs}
-{$\Gamma \vdash \rg{H}{\msgB{op}{\overline{y}}{\phi} \seqA A}{F} \termsyn \zobs{\overline{x}}{op}{e}$}
+{$\Gamma \vdash \rg{H}{\lastA\msgB{op}{\overline{y}}{\phi} \seqA A}{F} \termsyn \zobs{\overline{x}}{op}{e}$}
 }
 \caption{Selected typing rules.}
 \label{fig:selected-typing-rules}
@@ -328,10 +328,10 @@ requires that the selected type $\rg{H}{\msgB{op}{\overline{y}}{\phi}}{A
 synthesis is being performed, i.e.:
 {\small\begin{align*} \underbrace{ H
   }_\texttt{history}\;\seqA\;\underbrace{
-    \msgB{op}{\overline{y}}{\phi} \seqA A }_\texttt{current} \;\seqA\;
+    \lastA \msgB{op}{\overline{y}}{\phi} \seqA A }_\texttt{current} \;\seqA\;
   \underbrace{ F }_\texttt{prophecy} \equiv \underbrace{ H
   }_\texttt{history}\;\seqA\;\underbrace{
-    \msgB{op}{\overline{y}}{\phi} }_\texttt{current} \;\seqA\;
+    \lastA \msgB{op}{\overline{y}}{\phi} }_\texttt{current} \;\seqA\;
   \underbrace{ A \seqA F }_\texttt{prophecy}
 \end{align*}}\noindent
 If this is the case, we move the event $\eff{op}$ from the head of the
@@ -347,39 +347,39 @@ values.  Notably, we can always use the standard subsumption rule
 \textsc{TSub} to change the shape of types. The synthesis procedure
 ends with rule \textsc{TEps} when all symbolic events in the current
 automata are synthesized; note that the LTL$_f$ formula
-$\negA\nextA(\top)$ specifies that automata that only accepts an empty
+$\epsTL$ specifies that automata that only accepts an empty
 trace. Finally, our deductive synthesis can synthesize different
 controller and union them together via \textsc{TUnion}, which enable
 it to explore different message orderings.
 
 % At last, we would like to highlight a special prophecy strengthening rule for operator type (\textsc{TEOp}) come from the asynchronous semantics. The intuition here is that the asynchronous semantics ``delay'' the return result of a computation as message that has non-zero chance to be received at \emph{any possible step} in the future. The well-formed handler specification $\Delta$ (define in next subsection) always capture all possible situation in the prophecy automata. Then, any automata $F'$ that included by prophecy automata $F$ can leads to another valid operator type.
 
-\SJ{Needs to be rewritten to use SFAs not SREs}
+% \SJ{Needs to be rewritten to use SFAs not SREs}
 \begin{example}[Type-guided Deductive Synthesis] We provide
   an informal derivation of how the typing rules enable the synthesis of program $P_C$
   fron a given type
-  $\rg{\negA\nextA(\top)}{\negSCA}{\negA\nextA(\top)}$ that encodes the violation of RYR
+  $\rg{\epsTL}{\negSCA}{\epsTL}$ that encodes the violation of RYR
   policy under type context $\Gamma \doteq \Code{x}\hasoty{int}{\top},
   \Code{y}\hasoty{int}{v \not= x}$. We first apply the subsumption
   rule (\textsc{Tsub}) to convert into its subtype
-  $\rg{\epsilon}{\negSCA'}{\epsilon}$ as the new program type.
+  $\rg{\epsTL}{\negSCA'}{\epsTL}$ as the new program type.
   {\footnotesize\begin{align*} \negSCA' \doteq &\underbrace{
-      \msg{writeReq}{v = \Code{x}} }_\texttt{$A_1$} \seqA \underbrace{
-      \msg{writeReq}{v = \Code{y} \land v \not= \Code{x}} \seqA
-      \msg{readReq}{\top} }_\texttt{$A_2$} \seqA \\&\underbrace{
-      \msg{writeRsp}{v = \Code{y} \land st = \true} }_\texttt{$A_3$}
-    \seqA \underbrace{ \msg{writeRsp}{v = \Code{x} \land st = \true}
-      \seqA \msg{readRsp}{v = \Code{y} \land st = \true \land v \not=
+      \lastA\msg{writeReq}{v = \Code{x}} }_\texttt{$A_1$} \seqA \underbrace{
+      \lastA\msg{writeReq}{v = \Code{y} \land v \not= \Code{x}} \seqA
+      \lastA\msg{readReq}{\top} }_\texttt{$A_2$} \seqA \\&\underbrace{
+      \lastA\msg{writeRsp}{v = \Code{y} \land st = \true} }_\texttt{$A_3$}
+    \seqA \underbrace{ \lastA\msg{writeRsp}{v = \Code{x} \land st = \true}
+      \seqA \lastA\msg{readRsp}{v = \Code{y} \land st = \true \land v \not=
         \Code{x}} }_\texttt{$A_4$}
 \end{align*}}\noindent
 For the first symbolic event $\msg{writeReq}{v = \Code{x}}$ which is generatable, we select the desugared type of $\eff{writeReq}$ from handler specification $\Delta$, then use \textsc{TEOpFrame} and \textsc{TSub} to adjust the shape the types to be consistent with $\negSCA'$.
 {\footnotesize\begin{align*}
 &(\eff{writeReq},  \Code{x}\hasnty{int} \sarr \rg{\allTL}{\lastA\msg{writeReq}{v = \Code{x}}}{\finalA\msg{writeRsp}{v = \Code{x}}}) \in \Delta
-\\&(\eff{writeReq}, \Code{x}\hasnty{int} \sarr \rg{\anyA^*}{\msg{writeReq}{v = \Code{x}}}{\anyA^* \seqA \msg{writeRsp}{v = \Code{x}} \seqA \anyA^*}) \in \Delta \tag{desugar into SRE}
-\\&\Gamma \vdash \eff{writeReq}: \Code{x}\hasnty{int} \sarr \effLR{\anyA^*}\ \effLR{\msg{writeReq}{v = \Code{x}}}\ \effLR{A_2 \seqA \msg{writeRsp}{v = \Code{x} \land st = \true} \seqA A_4} \tag{\textsc{TEOpFrame}}
-\\&\Gamma \vdash \eff{writeReq}: \Code{x}\hasnty{int} \sarr \effLR{\epsilon}\ \effLR{\msg{writeReq}{v = \Code{x}}}\ \effLR{A_2 \seqA \msg{writeRsp}{v = \Code{x} \land st = \true} \seqA A_4} \tag{\textsc{TSub}}
+% \\&(\eff{writeReq}, \Code{x}\hasnty{int} \sarr \rg{\anyA^*}{\msg{writeReq}{v = \Code{x}}}{\anyA^* \seqA \msg{writeRsp}{v = \Code{x}} \seqA \anyA^*}) \in \Delta \tag{desugar into SRE}
+\\&\Gamma \vdash \eff{writeReq}: \Code{x}\hasnty{int} \sarr \effLR{\allTL}\ \effLR{\lastA\msg{writeReq}{v = \Code{x}}}\ \effLR{A_2 \seqA \lastA \msg{writeRsp}{v = \Code{x} \land st = \true} \seqA A_4} \tag{\textsc{TEOpFrame}}
+\\&\Gamma \vdash \eff{writeReq}: \Code{x}\hasnty{int} \sarr \effLR{\epsTL}\ \effLR{\lastA\msg{writeReq}{v = \Code{x}}}\ \effLR{A_2 \seqA \lastA\msg{writeRsp}{v = \Code{x} \land st = \true} \seqA A_4} \tag{\textsc{TSub}}
 \end{align*}}\noindent
-where in this case $\textsc{TEOpFrame}$ refine the prophecy automata and $\textsc{TSub}$ refine the history automata. Since the type of $\eff{writeReq}$ is exactly align with the program type $\rg{\epsilon}{A_1\seqA A_2\seqA A_3\seqA A_4}{\epsilon}$, it is safe to apply rule \textsc{TGen}, and derive a term $\zgen{writeReq}{\Code{x}}{e}$, where $e$ should be synthesized from program type $\rg{A_1}{A_2\seqA A_3\seqA A_4}{\epsilon}$.
+where in this case $\textsc{TEOpFrame}$ refine the prophecy automata and $\textsc{TSub}$ refine the history automata. Since the type of $\eff{writeReq}$ is exactly align with the program type $\rg{\epsTL}{A_1\seqA A_2\seqA A_3\seqA A_4}{\epsTL}$, it is safe to apply rule \textsc{TGen}, and derive a term $\zgen{writeReq}{\Code{x}}{e}$, where $e$ should be synthesized from program type $\rg{A_1}{A_2\seqA A_3\seqA A_4}{\epsTL}$.
 \end{example}
 
 \subsection{Type Soundness}
@@ -432,7 +432,7 @@ Moreover, these types should consistent with the auxiliary semantics of message 
   a handler specification, with ghost variables $\overline{x{:}b}$,
   that is well-formed, and a property $A$ that expresses a violation
   of a safety condition, a synthesized controller $e$ that satisfies
-  $\overline{x{:\rawnuot{b}{\top}}} \vdash \rg{\epsilon}{A}{\epsilon}
+  $\overline{x{:\rawnuot{b}{\top}}} \vdash \rg{\epsTL}{A}{\epsTL}
   \termsyn e$ will have its execution traces always be consistent with
   consistent with $A$: {\small\begin{align*} \forall
     \overline{c{:}b}. \forall \alpha. \msteptr{[]}{([],
