@@ -1,0 +1,37 @@
+
+\begin{algorithm}[t!]
+\Params{Effect operator type context $\Delta$, type context $\Gamma$, history automata $B_h$, current symbolic event $\msgB{op_{init}}{\overline{y}}{\phi_\Code{init}}$, future automata $B_f$, checked message set $\Gchecked$,}
+\Output{refined type context $\Gamma$, violation property $B$, and checked message set $\Gchecked$ }
+$S \leftarrow \emptyset$ \tcp*[l]{A set of all synthesized results}
+$\Gamma \leftarrow \Gamma, \overline{y{:}\rawnuot{b}{\top}},\_\hasoty{unit}{\phi_\Code{init}}$\;
+\Match{$\S{Abduction}(\Gamma, B')$}{
+    \lCase{$\Code{None}$}{ \Return{$\emptyset$} }
+    \lCase{$\Code{Some}\;\Gamma$}{\Continue{}}}
+$G_\Code{fwChecked} = \emptyset$\;
+\While{$\true$}{
+    \If{$\exists \msg{op}{\phi}. B_f = B_{f1} \seqA \lastA \msg{op}{\phi} \seqA B_{f2} \text{ and } \msg{op}{\phi} \not\in (G_\Code{fwChecked} \cup \Gchecked)$}{
+    \ForEach{$(\eff{op}, \overline{z{:}b}\garr\overline{y{:}t}\sarr\rg{H}{\lastA \eff{op}(\overline{y})}{F}) \in \Delta$}{
+        $\Gamma \leftarrow \Gamma, \overline{z{:}\rawnuot{b}{\top}}, \overline{y{:}t}, \_{:}\nuot{unit}{\phi}$ \tcp*[l]{add constraint of $\eff{op}$}
+        \ForEach{$\Pi_1' \seqA \Pi_{21}' \in \S{merge}(\Pi_1 \seqA \Pi_{21},\; \Pi_h)$}{
+            $B_\Code{global} \leftarrow B_h \seqA \lastA \eff{op_{init}}(\overline{x}) \seqA B_{f1} \seqA \lastA \eff{op}(\overline{y}) \seqA B_{f2}$\;
+            $A_\Code{global} \leftarrow H \seqA \lastA \eff{op}(\overline{y}) \seqA F $\;
+            \ForEach{$B' \in \S{mergeOn}(\eff{op}(\overline{x}), B_\Code{global}, A_\Code{global})$}{
+                \Match{$\S{Abduction}(\Gamma, B')$}{
+                    \lCase{$\Code{None}$}{ \Continue }
+                    \Case{$\Code{Some}\;\Gamma$}{
+                        $G \leftarrow \eff{op}(\overline{x}) \cup G_\Code{fwChecked}$\;
+                        $B_h \seqA \lastA \eff{op_{init}}
+(\overline{y}) \seqA B_f \leftarrow B'$\;
+                    }
+                }
+            }
+        }}
+    }
+    \lElse{\Return{$(\Gamma, B_h, \eff{op_{init}}
+(\overline{y}), B_f, \Gchecked \cup G_\Code{fwChecked} \setminus \eff{op_{init}}
+(\overline{y}))$}}
+}
+\Return{$S$}\;
+    \caption{Forward Synthesis}
+    \label{algo:top-syn}
+\end{algorithm}
