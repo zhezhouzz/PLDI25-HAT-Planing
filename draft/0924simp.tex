@@ -480,7 +480,7 @@ $\Gamma \vdash \rg{H_2}{A_2 \seqA \msg{op_2}{\phi}}{F_2} \termsyn e_2$}
   % \\&&& \qquad \qquad(\alpha, \beta, e) \hookrightarrow^* (\alpha \listconcat \alpha', \beta', c) \impl \alpha'\in\denot{A'} \land \beta'\in\denot{B'} \land c \in \denot{t} \}
   % \\&\denot{\alpha}_\Code{history} &&\doteq \{ \beta ~|~ \exists e. \emptyset \basicvdash e \land  [] \vDash ([], e) \mharr{\alpha} (\beta, ()) \}
   % \\&\denot{(\alpha_1, \alpha_2)}_\Code{prophecy} &&\doteq \{ \beta ~|~ \exists e. \emptyset \basicvdash e \land \alpha_1 \vDash (\beta, e) \mharr{\alpha_2} ([], ()) \}
-  % \\ &\denot{\rg{H}{A}{F}} &&\doteq \{e ~|~ \emptyset \basicvdash e \land \forall \alpha_H\;\alpha_F\;\alpha\;e_H\;\beta_H\;e_F\;\beta_F.
+  \\ &\denot{\rg{H}{A}{F}} &&\doteq \{e ~|~ \emptyset \basicvdash e \land \forall \alpha_H\;\alpha_F\;\alpha\;e_H\;\beta_H\;e_F\;\beta_F.
   \\&&& \qquad\qquad [] \vDash ([], e_H;e;e_F) \mharr{\alpha_H} (\beta_H, e;e_F) \mharr{\alpha} (\beta_F, e_F) \mharr{\alpha_F} ([], ()) \impl
   \\&&& \qquad\qquad (\alpha_H \in\denot{H} \impl \alpha \in\denot{A} \land \alpha_F\in\denot{F}) \}
   \\ &\denot{ \tau_1 \interty \tau_2 } &&\doteq \denot{\tau_1} \cap \denot{\tau_2}
