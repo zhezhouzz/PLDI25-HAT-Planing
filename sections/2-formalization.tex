@@ -14,14 +14,14 @@
     \\ \text{\textbf{Controllers (Expressions)}}& \quad & e ::=\quad & v ~|~ \zlet{x{:}b}{\primop\ \overline{v}}{e} ~|~ \zgen{op}{\overline{v}}{e} ~|~ \zobs{\overline{x{:}b}}{op}{e} 
     \\ & & \quad & ~|~  \zassert{\phi}{e} ~|~ e \oplus e
   \end{alignat*}}
-\caption{$\DSL$ term and trace Syntax. }
+\caption{$\DSL$ term and trace syntax. }
 \label{fig:term-syntax}
 \end{figure}
 
 To formalize our approach, we first introduce $\DSL$, a Domain-Specific Language (DSL) for controller programs.
 
 \paragraph{Controllers Syntax} Our DSL is a call-by-value and asynchronous first-class calculus with non-deterministic choices ($\oplus$), assertions over first-order qualifiers ($\phi$) over linear arithmetic operations
-($\primop$), as well as pure and effectful operators (i.e., message names). Its syntax is shown in \autoref{fig:term-syntax}, which is in a standard A-normal form\cite{?}. The terms in $\DSL$ are syntactically divided into two classes: value $v$ and expression $e$, where the controller are expressed by the latter. $\DSL$ is parameterized over two sets of primitive operators: pure operators (e.g., $>$) include basic arithmetic and logical operators, while effectful operators ($\eff{op}$) indicates \emph{generative} (e.g., $\eff{readReq^{gen}}$) and \emph{observable} messages (e.g., $\eff{readReq^{obs}}$). When context is clear, we omit the superscript of effect operators. The message handling are then simply be effect operator applications in $\DSL$. Precisely, the controller can generate new messages (i.e., $\zgen{op}{\overline{v}}{e}$) to components, and also \emph{observe} messages (i.e., $\zobs{\overline{x}}{op}{e}$) from components and bind corresponding payload to local variables $\overline{x}$.
+($\primop$), as well as effectful operators (i.e., message names). Its syntax is shown in \autoref{fig:term-syntax}, which is in a standard A-normal form\cite{?}. The terms in $\DSL$ are syntactically divided into two classes: value $v$ and expression $e$, where the controller are expressed by the latter. $\DSL$ is parameterized over two sets of primitive operators: pure operators (e.g., $>$) include basic arithmetic and logical operators, while effectful operators ($\eff{op}$) indicates \emph{generative} (e.g., $\eff{readReq^{gen}}$) and \emph{observable} messages (e.g., $\eff{readReq^{obs}}$). When context is clear, we omit the superscript of effect operators. The message handling are then simply be effect operator applications in $\DSL$. Precisely, the controller can generate new messages (i.e., $\zgen{op}{\overline{v}}{e}$) to components, and also \emph{observe} messages (i.e., $\zobs{\overline{x}}{op}{e}$) from components and bind corresponding payload to local variables $\overline{x}$.
 
 \begin{figure}[ht!]
 {\footnotesize
