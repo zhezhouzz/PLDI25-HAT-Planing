@@ -577,9 +577,9 @@
 \newcommand{\exReadReq}{\msg{ReadReq}{\top}}
 \newcommand{\exReadRsp}[1]{\msg{ReadRsp}{#1}}
 \newcommand{\exArw}{A_\Code{WR}}
-\newcommand{\effBlue}[1]{\textcolor{CobaltBlue}{\eff{#1}}}
-\newcommand{\effRed}[1]{\textcolor{red}{\eff{#1}}}
-\newcommand{\effGreen}[1]{\textcolor{DeepGreen}{\eff{#1}}}
+\newcommand{\effBlue}[1]{\eff{#1}}%{\textcolor{CobaltBlue}{\eff{#1}}}
+\newcommand{\effRed}[1]{\eff{#1}}% {\textcolor{red}{\eff{#1}}}
+\newcommand{\effGreen}[1]{\eff{#1}}%{\textcolor{DeepGreen}{\eff{#1}}}
 
 \newcommand{\allTL}{\globalA\evparenth{\top}}
 \newcommand{\negSCA}{A_\Code{violateRYW}}
