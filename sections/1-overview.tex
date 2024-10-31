@@ -348,12 +348,12 @@ second phase, we use $A'$ to derive a controller program. As an
 example, the set of traces captured by \ref{eqn:autoEx} can be refined
 into: %
 {\footnotesize
-  \begin{align} \msg{writeReq}{v = \Code{x}} \seqA \msg{writeReq}{v =
-      \Code{y} \land v \not=
-    \Code{x}} \seqA \msg{readReq}{\top} \seqA \\
-    \msg{writeRsp}{v = \Code{y} \land st = \true} \seqA
-    \msg{writeRsp}{v = \Code{x} \land st = \true} \seqA
-    \msg{readRsp}{v = \Code{y} \land st = \true \land v \not=
+  \begin{align} 
+  &\lastA \msg{writeReq}{v = \Code{x}} \seqA 
+   \lastA \msg{writeReq}{v =\Code{y} \land v \not=\Code{x}} \seqA \lastA \msg{readReq}{\top} \seqA \\
+    &\lastA \msg{writeRsp}{v = \Code{y} \land st = \true} \seqA
+    \lastA \msg{writeRsp}{v = \Code{x} \land st = \true} \seqA
+    \lastA \msg{readRsp}{v = \Code{y} \land st = \true \land v \not=
     \Code{x}}
     \label{eqn:autoEx2}\tag{$\negSCA'$}
   \end{align}}

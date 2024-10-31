@@ -18,7 +18,7 @@ difficulty when testing these systems is that the set of possible
 executions is intractably large, due to inherent nondeterminism both
 in the order in which messages are sent and received, and the large
 (often infinite) number of possible payloads that each message can
-carry. In a typical testing framework, however, the search for a
+carry. In a typical testing framework, however, the search for an
 unsafe execution often proceeds without the help of any
 application-specific constraints, which may have otherwise pruned the
 set of executions that are worth considering. This is due, in large
@@ -117,13 +117,13 @@ expectation we can encode via the following \PAT:
     \rg{\underbrace{\finalA \msg{putReq}{k = \Code{key}\land v=\Code{val}}}_\texttt{history automaton}} %
     {\underbrace{\lastA \msg{getReq}{k = \Code{key}}}_\texttt{current automaton}}%
     { \underbrace{\finalA \msg{getRsp}{k = \Code{key} \land v = \Code{val}} }_\texttt{prophecy automaton} }
-  \end{align*}}
-\noindent This type is parameterized by two variables, $\Code{key}$
+  \end{align*}}\noindent 
+This type is parameterized by two variables, $\Code{key}$
 and $\Code{val}$, and is comprised of three automata which use
 standard LTL temporal operators, e.g., the eventually operator
 $\finalA$, to express temporal dependencies between messages. The
 first automaton specifies the \emph{history} of messages that occurred
-prior to the handling of a $\eff{getReq}$ event. This specification
+prior to the handling of a $\eff{putReq}$ event. This specification
 captures any trace that has stored the value $\Code{val}$ in key
 $\Code{key}$.  The second automaton describes the \emph{current}
 event, captured in this case as singleton trace that includes the
