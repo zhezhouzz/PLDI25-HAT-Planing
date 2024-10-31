@@ -1,79 +1,239 @@
 \section{Implementation And Evaluation}\label{sec:impl}
 
 We have implemented a tool based on the above approach, called
-\name{}, that targets distributed system that modeled as actors (i.e., message-passing over components). \name{} consists of approximately 14K lines of OCaml code and uses Z3~\cite{de2008z3} as its backend solver for SMT queries.\footnote{Our \techreport{} provides a docker image that contains the source code of \name{} and all our benchmarks.}
+\name{}, that targets reactive distributed system models (i.e.,
+message-passing systems defined as a collection of actors). \name{}
+consists of approximately 14K lines of OCaml code and uses
+Z3~\cite{de2008z3} as its backend solver for SMT queries.\footnote{Our
+  \techreport{} provides a docker image that contains the source code
+  of \name{} and all our benchmarks.}
 
-\paragraph{Evaluation setting} \name{} takes a safety property in s-LTL$_f$ that is expected to be violated, and handler specification $\Delta$ that is a set of messages labeled with generatable or observable as well as corresponding \PAT{}s (e.g., the types shown in \autoref{fig:spec}). The typing context used by \name{} includes signatures for a number of arithmetic primitives, including the pure operators listed in
-\autoref{fig:term-syntax}.
-During synthesis, \name{} will first negate the given property as an violation property (e.g., $\negSCA$ in \autoref{sec:overview}), and consecutively explore controllers that guides the components that consistent with $\Delta$ to produce traces consistent with the violation property. Each explored controller indicates a specific message order, and \name{} returns union of these controller as the final synthesized result.
+\paragraph{Evaluation setting} \name{} takes a safety property in s-LTL$_f$
+that is expected to be violated, and handler specifications $\Delta$,
+that describe the behavior of messages in terms of \PAT{}s (e.g., the
+types shown in \autoref{fig:spec}). The typing context used by \name{}
+includes signatures for a number of primitives, including the pure
+operators listed in \autoref{fig:term-syntax}.  During synthesis,
+\name{} first negates the given property to treat it as a violation
+property (e.g., $\negSCA$ in \autoref{sec:overview}), and
+systematically explores the space of possible controllers (upto some
+fixed time bound) for those that can guide execution to a state
+consistent with both $\Delta$ and the violation property. Each
+synthesized controller indicates a specific message order and payload
+for generated (environment) messages.  \name{} returns an union of
+these controller as the final synthesized result.
 
-The synthesized controller is directly executable with a interpreter implementing the operational semantics in \autoref{fig:selected-semantics}, where the auxiliary handler semantics ($\alpha \vDash \zevent{op}{\overline{c}} \Downarrow \beta$) can be implemented as a random sampler to provide messages $\beta$ that align with handler specifications. However, to evaluate our approach in a more realistic setting, we actually adapted our synthesized controller to run alongside a third-party message handler implementation.
-Specifically, we used handlers implemented in the P language\cite{?}, a trace-based, actor-model programming language tailored for modeling distributed systems and testing user-defined safety properties. Similar to our setup, P language monitors inter-component messages, dynamically producing a trace which it evaluates against safety criteria. Unlike our method, however, P’s runtime scheduler explores arbitrary message interleavings randomly during execution.
-To test our synthesized controller with P language handlers while retaining scheduling control, we compile the controller as a special component in P that works like a ``coordinator''. In this setup, messages between components are first routed to our controller, where they are buffered and then being forwarded to the actual handlers. The forwarding order is determined by the $\mykw{obs}$ statements in the controller program, allowing it to control the message scheduling.
+A synthesized controller is directly executable with an interpreter
+implementing the operational semantics in
+\autoref{fig:selected-semantics}, where the auxiliary handler
+semantics ($\alpha \vDash \zevent{op}{\overline{c}} \Downarrow \beta$)
+can be implemented as a random sampler to provide messages $\beta$
+that align with handler specifications. However, to evaluate our
+approach in a more realistic setting, we adapt our synthesized
+controller to run alongside a third-party message handler
+implementation.  Specifically, we used handlers implemented in the P
+language\cite{DGJ+13,DQ17}, a trace-based, actor-model programming
+language tailored for modeling distributed systems and testing
+user-defined safety properties.  Similar to our setup, the P runtime
+monitors inter-component message traffic, and produces a trace which
+it evaluates against safety criteria.  Unlike our method, however, P’s
+runtime scheduler explores arbitrary message interleavings randomly
+during execution.
+
+To test our synthesized controller with P handlers while also
+retaining scheduling control, we compile the controller as a special
+component in P that works like a \emph{coordinator}. In this setup,
+messages between components are first routed to our controller, where
+they are buffered and then forwarded to the actual handlers in
+accordance with the order found in the synthesized output.  In other
+words, the order in which messages are forwarded from the controller
+is determined by the $\mykw{obs}$ statements in the controller
+program, allowing it to control the message scheduling.  Additionally,
+the coordinator is also responsible for generating messages from
+environment components (e.g., a logical user) to the components under
+test, again respecting the order in which these messages appear in the
+synthesized program.
 
 Our experimental evaluation addresses three research questions:
 \begin{itemize}
-\item[\textbf{Q1}:] Is \name{} \emph{expressive}? Can it synthesizes controller for a diverse range of protocols in distributed system with variety of safety properties?
-\item[\textbf{Q2}:] Is \name{} \emph{effective}? Do synthesized controller programs realize violation of safety property and are also in a reasonable size?
-\item[\textbf{Q3}:] Is \name{} \emph{efficient}? Is it able to synthesize controller programs in a reasonable amount of time?
+\item[\textbf{Q1}:] Is \name{} \emph{expressive}? Can it synthesizes
+  controllers for a diverse set of distributed protocols with
+  realistic safety properties?
+\item[\textbf{Q2}:] Is \name{} \emph{effective}? Do synthesized
+  controller programs enable more targeted exploration of the state
+  space to witness violations of provided safety properties than
+  existing techniques?
+\item[\textbf{Q3}:] Is \name{} \emph{efficient}? Is it able to
+  synthesize meaningful controller programs in a reasonable amount
+  of time?
 \end{itemize} %
 
 \begin{table}[ht!]
   \renewcommand{\arraystretch}{0.8}
   % \vspace*{-.1in}
-  \caption{\small Experimental results of using \name{} to synthesize controller for reactive distributed systems. Benchmarks from prior works are annotated with their source: P Language~\cite{?}($^{\dagger}$), ModP~\cite{?}($^{\diamond}$), and MessageChain~\cite{?}($^{\star}$). We also include the an real world model (\textsf{Kermit2PCModel}$^{\square}$) written in P language that models 2PC protocol used in Amazon Web Services (AWS). The components under test are original written in P language, where the handler specification are manually defined as \PAT{}s. The synthesized controller program is then compiled into P language and run with components under test in P language runtime. \name{} can synthesize union of controllers that indicates one specific message order. For efficiency result, we set a $2$ min time bound where the synthesis time (i.e., t$_\text{total}$) is the average time to find a single controller. }
+  \caption{\small Experimental results of using \name{} to synthesize
+    controller for reactive distributed systems. Benchmarks from prior
+    works are annotated with their source:
+    P~\cite{DGJ+13}($^{\dagger}$), ModP~\cite{ModP}($^{\diamond}$) the modular version of P language, and
+    MessageChain~\cite{MessageChain}($^{\star}$) that is automated specification mining and verification tool built for P language. We also include a real world
+    model (\textsf{Kermit2PCModel}$^{\square}$) written in P that
+    models a 2PC protocol used by a major cloud vendor.  The
+    components under test are written in P, whereas handler
+    specifications are manually defined as \PAT{}s in our DSL. The
+    synthesized controller program is then transpired into P and run
+    alongside the other components.  \name{} can synthesize a set of
+    controllers, each of which specifies a specific scheduling order
+    for messages, all consistent with provided specifications.  We set
+    a $2$ minute time bound for the synthesis procedure (i.e.,
+    t$_\text{total}$) is the average time to find a single
+    controller. 
+    % \SJ{Should we also include the number of controllers that were synthesized in the two minute bound?}
+    }
 \vspace*{-.1in}
 \footnotesize
 \setlength{\tabcolsep}{2.3pt}
-\begin{tabular}{c||cc||ccc|c||c|ccccc}
+\begin{tabular}{c||cc||ccc|c||c|ccc}
   \toprule
- Benchmark & \#$\eff{op}$ & \#qualifier & \#var &(\#$\mykw{gen}$, \#$\mykw{obs}$) & \#$\mykw{assert}$ & \#try & t$_\text{total}$(s) & t$_\text{SAT}$(s) & t$_\text{refine}$(s) & \#SAT & \#FW & \#BW \\
+ Benchmark & \#$\eff{op}$ & \#qualifier & \#var &(\#$\mykw{gen}$, \#$\mykw{obs}$) & \#$\mykw{assert}$ & \#try & t$_\text{total}$(s)  & \#SMT & \#forward & \#backward \\
  \midrule
-\textsf{Database} & $4$ & $7$ & $8$ & ($3$, $3$) & $4$ & $2.0$ & $6.02$ & $5.99$ & $5.88$ & $905$ & $4$ & $6$\\
+\textsf{Database} & $4$ & $7$ & $8$ & ($3$, $3$) & $4$ & $2.0$ & $6.02$  & $905$ & $4$ & $6$\\
 \midrule
-\textsf{EspressoMachine}$^{\dagger}$ & $13$ & $3$ & $1$ & ($2$, $8$) & $1$ & $4.0$ & $1.15$ & $1.12$ & $0.99$ & $165$ & $2$ & $11$\\
+\textsf{EspressoMachine}$^{\dagger}$ & $13$ & $3$ & $1$ & ($2$, $8$) & $1$ & $4.0$ & $1.15$  & $165$ & $2$ & $11$\\
 \midrule
-\textsf{Simplified2PC}$^{\dagger}$ & $9$ & $14$ & $7$ & ($2$, $6$) & $5$ & $1.9$ & $6.83$ & $6.80$ & $6.66$ & $1043$ & $3$ & $8$\\
+\textsf{Simplified2PC}$^{\dagger}$ & $9$ & $14$ & $7$ & ($2$, $6$) & $5$ & $1.9$ & $6.83$ & $1043$ & $3$ & $8$\\
 \midrule
-\textsf{HeartBeat}$^{\dagger}$ & $7$ & $18$ & $9$ & ($4$, $10$) & $9$ & $1.0$ & $7.05$ & $6.99$ & $6.46$ & $1073$ & $4$ & $20$\\
+\textsf{HeartBeat}$^{\dagger}$ & $7$ & $18$ & $9$ & ($4$, $10$) & $9$ & $1.0$ & $7.05$ & $1073$ & $4$ & $20$\\
 \midrule
-\textsf{BankServer}$^{\dagger}$ & $6$ & $17$ & $15$ & ($2$, $3$) & $5$ & $1.0$ & $8.24$ & $8.21$ & $7.08$ & $1191$ & $2$ & $5$\\
+\textsf{BankServer}$^{\dagger}$ & $6$ & $17$ & $15$ & ($2$, $3$) & $5$ & $1.0$ & $8.24$ & $1191$ & $2$ & $5$\\
 \midrule
-\textsf{RingLeaderElection}$^{\star}$ & $3$ & $19$ & $12$ & ($2$, $6$) & $8$ & $1.0$ & $6.37$ & $6.32$ & $6.18$ & $964$ & $2$ & $18$\\
+\textsf{RingLeaderElection}$^{\star}$ & $3$ & $19$ & $12$ & ($2$, $6$) & $8$ & $1.0$ & $6.37$ & $964$ & $2$ & $18$\\
 \midrule
-\textsf{Firewall}$^{\star}$ & $5$ & $17$ & $12$ & ($2$, $8$) & $9$ & $1.0$ & $5.26$ & $5.21$ & $5.07$ & $788$ & $5$ & $8$\\
+\textsf{Firewall}$^{\star}$ & $5$ & $17$ & $12$ & ($2$, $8$) & $9$ & $1.0$ & $5.26$  & $788$ & $5$ & $8$\\
 \midrule
-\textsf{ChainReplication}$^{\diamond}$ & $7$ & $32$ & $26$ & ($4$, $9$) & $10$ & $1.0$ & $27.06$ & $26.89$ & $26.76$ & $4016$ & $6$ & $19$\\
+\textsf{ChainReplication}$^{\diamond}$ & $7$ & $32$ & $26$ & ($4$, $9$) & $10$ & $1.0$ & $27.06$  & $4016$ & $6$ & $19$\\
 \midrule
-\textsf{Paxos}$^{\diamond}$ & $10$ & $30$ & $36$ & ($4$, $10$) & $13$ & $1.0$ & $59.71$ & $59.27$ & $59.24$ & $8763$ & $4$ & $16$\\
+\textsf{Paxos}$^{\diamond}$ & $10$ & $30$ & $36$ & ($4$, $10$) & $13$ & $1.0$ & $59.71$ & $8763$ & $4$ & $16$\\
 \midrule
-\textsf{Raft} & $9$ & $26$ & $29$ & ($3$, $14$) & $14$ & $1.0$ & $55.62$ & $55.14$ & $55.25$ & $8356$ & $10$ & $22$\\
+\textsf{Raft} & $9$ & $26$ & $29$ & ($3$, $14$) & $14$ & $1.0$ & $55.62$  & $8356$ & $10$ & $22$\\
 \midrule
-\textsf{Kermit2PCModel}$^{\square}$ & $17$ & $70$ & $36$ & ($4$, $10$) & $10$ & $1.0$ & $63.69$ & $63.33$ & $63.46$ & $9023$ & $6$ & $12$\\
+\textsf{Kermit2PCModel}$^{\square}$ & $17$ & $70$ & $36$ & ($4$, $10$) & $10$ & $1.0$ & $63.69$  & $9023$ & $6$ & $12$\\
 \bottomrule
 \end{tabular}
-
 \label{tab:evaluation}
 % \vspace*{-.15in}
 \end{table}
 
-We have evaluated \name{} on a corpus of complex reactive distributed system model drawn from a variety of sources (shown in the title of \autoref{tab:evaluation}), including molding of variety of applications such as database (the motivating example in \autoref{sec:overview}), espresso machine, banker server, and firewall, as well as well-known distributed protocols and algorithm including two-phase commit (2PC)\cite{?}, ring leader election\cite{?}, chain replication\cite{?}, Paxos\cite{?}, and Raft\cite{?}(\textbf{Q1}). We expect these reactive distributed system model to violate variety safety properties, include Read-Your-Writes (WRY) policy introduced in \autoref{sec:overview}, strong consistency, and unique leader invariants. We would like to highlight that \PAT{} is able to express communication over multiple nodes that playing the similar roles. For example, the \textsc{RingLeaderElection} models the election algorithm elects a leader among a set of nodes. We add additional source ($\I{src}$) and destination ($\I{dest}$) into the message payload to distinguish messages from different nodes. Then, handler of message $\eff{elect}$ has the following \PAT{}:
-{\small\begin{align*}
-    &\Code{n}\hasoty{tNode}{\top} \sarr \Code{m}\hasoty{tNode}{\top} \sarr \Code{ld}\hasoty{tNode}{v = \Code{m}} \sarr
-    \\&\rg{\globalA\evparenth{\top}}{\lastA\msgB{elect}{\I{src}\;\I{dest}\;\I{leader}}{ \I{src} = \Code{n} \land \I{dest} = \Code{m} \land \I{leader} = \Code{m} }}{\finalA\msgB{beLeader}{\I{leader}}{\I{leader} = \Code{m}}}
+We have evaluated \name{} on a corpus of complex reactive distributed
+system models drawn from a variety of sources (described in the
+caption of \autoref{tab:evaluation}) (\textbf{Q1}). We test the
+correctness of these models against a number of consistency and safety
+properties, including Read-Your-Writes (RYW) consistency introduced in
+\autoref{sec:overview}, strong consistency, and unique leader
+invariants, among others.  For example, \textsc{RingLeaderElection}
+models a leader election algorithm.  Each message transmitted by the
+model's actors contain a source ($\I{src}$) and destination
+($\I{dest}$), to allow recipient's to distinguish
+messages from different nodes. Then, an $\eff{elect}$ handler can
+be given the following \PAT{}: {\small\begin{align*}
+  &\Code{n}\hasoty{tNode}{\top} \sarr \Code{m}\hasoty{tNode}{\top}
+  \sarr \Code{ld}\hasoty{tNode}{v = \Code{m}} \sarr
+  \\&\rg{\globalA\evparenth{\top}}{\lastA\msgB{elect}{\I{src}\;\I{dest}\;\I{leader}}{
+      \I{src} = \Code{n} \land \I{dest} = \Code{m} \land \I{leader} =
+      \Code{m} }}{\finalA\msgB{beLeader}{\I{leader}}{\I{leader} =
+      \Code{m}}}
 \end{align*}}\noindent
-which capture the following principle in ring leader election: when a node $\Code{m}$ received a message that elects ($\eff{elect}$) itself as leader ($\I{leader} = \Code{m}$) from another node $\Code{n}$, then node $\Code{m}$ can announce itself to be the leader ($\eff{beLeader}$).
-Details about the reactive distributed system and safety properties used in our benchmarks are provided in \techreport{}.
+This specification captures a useful property of a leader
+election algorithm: when a node $\Code{m}$ receive a message that elects
+($\eff{elect}$) itself as leader ($\I{leader} = \Code{m}$) from
+another node $\Code{n}$, then node $\Code{m}$ can announce itself to
+be the leader ($\eff{beLeader}$).  Details about the reactive
+distributed system and safety properties used in our benchmarks are
+provided in \techreport{}.
 
 \autoref{tab:evaluation} divides the results of our experiments into
-three three categories, separated by the double bars. The first gives the complexity of benchmarks with respect to the number of messages (\#$\eff{op}$) involved and the number of qualifiers used in the both \PAT{}s and safety property that expressed in s-LTL$_f$. Our approach is able to model these reactive distributed system with $3$ - $17$ different messages and the handler specification sand safety property uses $3$ - $70$ qualifiers (\textbf{Q1}). The second group of columns describes the size of synthesized controller, including the number of variables (\#var), generative messages (\#$\mykw{gen}$), observable messages (\#$\mykw{obs}$), and assertions (\#$\mykw{assert}$) used in the controller program. Our synthesized controllers has $1$ - $36$ variables, $5$ - $17$ messages in total, and $1$ - $14$ assertions, which is a reasonable size. Note that, the size of synthesized program is roughly proportional to the complexity of the benchmarks (\textbf{Q2}), where the number of qualifiers most interfere the number of variables and assertions, while the controller with more effect applications caused by the total number of message in the system. As mentioned in \autoref{fig:algo}, our algorithm bias to the shorter controller program and avoiding the events that has no contribution to the safety property violation. Thus, the controller uses the messages in an efficient way where the total effect applications is close to total number of message in the system. The last column (\#try) in the second group reports the average number of try times that a synthesized program to violate the safety property in dynamic. For all reactive system that has deterministic handlers, the synthesized controller doesn't need to try (\#try is equal to $1$). On the other hand, for example, the handler of $\eff{writeReq}$ in \textsc{Database} introduced in \autoref{sec:overview} is allowed to accept of reject the write request, which is modeled as an non-deterministic choice with equal distribution in the implementation written in P language, which leads $2$ runs to violate the RYW policy.
+three categories, separated by double bars. The first measures the
+complexity of benchmarks with respect to the number of messages
+(\#$\eff{op}$) involved and the number of qualifiers used in \PAT{}
+specifications and the safety property expressed in s-LTL$_f$.  Our
+results show that we are able to specify controller-relevant behavior
+using anywhere from $3$ - $17$ different messages, $3$ - $70$ different
+kinds of qualifiers (\textbf{Q1}).
 
-The last group of columns in \autoref{tab:evaluation} reports the complexity of our synthesis algorithm. The first column indicate total synthesis time (t$_\text{total}$), which shows that \name{} performs quite reasonably on all of our benchmarks, taking between $1.15$ to $63.69$ seconds for synthesis a controller (\textbf{Q3}). As expected, more complicated reactive distributed system (i.e., those with larger values in the \#$\eff{op}$ and \#qualifier columns), take longer to synthesis. The last two columns indicate time cost by SAT queries solving (t$_\text{SAT}$) and the property refinement loop (t$_\text{refine}$), which has close number to the total synthesis time. It means that the most of time cost comes from the SAT queries, moreover, the property refinement loop take much more time than term derivation, which is consistent with our previous discussion in \autoref{sec:algo}. The last three columns additionally analyze the behaviors of \name{} with respect to the number of SAT queries (\#SAT), as well as forward synthesis (\#FW) and backward synthesis step (\#BW) preformed by the property refinement loop. Unsurprisingly, generating more
-SMT queries (\#SAT) result in a longer synthesis time, where \#SAT is depends on the iteration of property refinement loop (i.e., the sum of \#FW and \#BW). Intuitively, the synthesizing longer program (the sum of \#$\mykw{gen}$ and \#$\mykw{obs}$) needs more iterations. Often, the forward and backward synthesis steps exceed the number of messages in the controller program in most of benchmarks, as \name{} may need to backtrack when a wrong type or message interleaving is selected, which future iterations cannot resolve.
+The second group of columns describes the size of synthesized
+controllers, including the number of variables (\#var), $\mykw{gen}$
+messages (\#$\mykw{gen}$), $\mykw{obs}$ messages (\#$\mykw{obs}$), and
+assertions (\#$\mykw{assert}$) used in the program. Our synthesized
+controllers have anywhere from $1$ - $36$ variables, $5$ - $17$
+messages in total, and $1$ - $14$ assertions.  Note that the size of
+synthesized program is roughly proportional to the complexity of the
+benchmarks (\textbf{Q2}), where the number of qualifiers correlate
+with the number of variables and assertions.  As mentioned in
+\autoref{sec:synthesis}, our algorithm is biased towards synthesizing
+shorter controller program, avoiding synthesizing messages that do not
+directly affect the safety property.  The last column (\#try) in the
+second group reports the average number of times that executing the
+synthesized program violate the safety property during testing. For
+benchmarks that have deterministic handlers where e.g., the payload in
+messages generated by the handler does not affect the likelihood of
+witnessing a violation, the synthesized controller does not need to
+run multiple times (\#try is equal to $1$). On the other hand, for
+benchmarks like \textsc{Database} introduced in
+\autoref{sec:overview}, the $\eff{writeReq}$ handler is allowed to
+accept or reject the write request with equal probability, leading to
+two runs.
 
-\paragraph{Case study} We aim to demonstrate that \name{} can be applied to real-world scenarios, as illustrated in the \textsf{Kermit2PCModel} benchmark, which models the two-phase commit (2PC) protocol used in Amazon S3 storage systems \cite{?} in the P language. The original model checks a consistency property for transactions in 2PC, specifically that if there exists a key $\Code{k}$ updated within a transaction $\Code{i}$, any successful read response to the user should return the latest written value $\Code{x}$ from that transaction. In our approach, the corresponding violation property is defined as follows:
-{\small\begin{align*}
-    \finalA (&\msg{updateRsp}{tid = \Code{i} \land key = \Code{k} \land v = \Code{x} \land st = \Code{OK}} \land 
-    \\&\nextA \neg \msg{updateRsp}{tid = \Code{i} \land key = \Code{k} \land st = \Code{OK}} \untilA \msg{readRsp}{tid = \Code{i} \land key = \Code{k} \land v \not= \Code{x} \land st = \Code{OK}})
+The last group of columns in \autoref{tab:evaluation} provides details
+on the cost of our synthesis procedure. The first column indicate
+total synthesis time (t$_\text{total}$), which takes between $1.15$ to
+$63.69$ seconds (\textbf{Q3}); synthesis time is proportional to
+benchmark complexity, as reflected in the \#$\eff{op}$ and \#qualifier
+columns.  The last three columns additionally analyze the behaviors of
+\name{} with respect to the number of SAT queries (\#SAT), as well as
+the number of forward synthesis (\#forward) and backward synthesis steps
+(\#backward) performed by the property refinement loop. Unsurprisingly,
+generating more SMT queries (\#SMT) results in longer synthesis times;
+the number of these queries directly depends on the number of
+iterations of the property refinement loop (i.e., the sum of \#forward and
+\#backward).  Oftentimes, the number of forward and backward synthesis steps
+exceeds the total number of messages in the controller program because
+\name{} may need to backtrack when a wrong type or message
+interleaving is selected, which future iterations cannot resolve.
+
+\paragraph{Case study}
+We demonstrate that \name{} can be applied to real-world
+scenarios, as illustrated in the \textsf{Kermit2PCModel} benchmark,
+which models a two-phase commit (2PC) protocol used by a major cloud
+provider. The original P model checks a consistency property for 2PC
+transactions, specifically that if there exists a key $\Code{k}$
+updated within a transaction $\Code{i}$, any successful read response
+to the user should return the latest written value $\Code{x}$ from
+that transaction. In our approach, the corresponding violation
+property is defined as follows: {\small\begin{align*} \finalA
+  (&\msg{updateRsp}{tid = \Code{i} \land key = \Code{k} \land v =
+    \Code{x} \land st = \Code{OK}} \land \\&\nextA \neg
+  \msg{updateRsp}{tid = \Code{i} \land key = \Code{k} \land st =
+    \Code{OK}} \untilA \msg{readRsp}{tid = \Code{i} \land key =
+    \Code{k} \land v \not= \Code{x} \land st = \Code{OK}})
 \end{align*}}\noindent
-where the field $tid$ represents the transaction id, while other fields have the same meanings as in the example from \autoref{sec:intro}. This scenario is challenging because the violation requires observing a successful $\eff{readRsp}$ with an incorrect value ($v \neq \Code{x}$). This misread can only occur when the preceding $\eff{readReq}$ selects a valid transaction id $\Code{i}$, which is the storage system manages rather than the user. Without explicitly requesting a new transaction, random testing has virtually no chance of ``guessing'' a valid transaction id. However, since the \PAT for $\eff{readReq}$ includes a history automaton $\finalA \msg{startTxnRsp}{tid = \Code{i}}$, requiring that the user previously received a valid transaction id $\Code{i}$, \name{} can synthesize a controller program that strategically requests a new transaction to trigger the intended violation.
+where the field $tid$ represents the transaction id, while other
+fields have the same meanings as in the example from
+\autoref{sec:intro}. This scenario is challenging because the
+violation requires observing a successful $\eff{readRsp}$ with an
+incorrect value ($v \neq \Code{x}$), the failed $\eff{readRsp}$ won't violate the safety property. The successful response can only occur when the
+preceding $\eff{readReq}$ selects a transaction id $\Code{i}$ that maintained by server, where user can send $\eff{startTxnReq}$ to get new transaction id from server with corresponding response ($\eff{startTxnRsq}$).
+% which is managed by the underlying storage system rather than the
+% user.
+% \SJ{This is sentence is confusing - what does it mean for a transaction
+%   id to be managed by the storage system and not the user?  Can you
+%   provide an explicit scenario where this can happen?}
+% This can only occur when the
+% preceding $\eff{readReq}$ selects a valid transaction id $\Code{i}$,
+% which is managed by the underlying storage system rather than the
+% user. 
+Without explicitly requesting a new transaction, random testing
+has virtually no chance of ``guessing'' a valid transaction
+id. However, since the \PAT for $\eff{readReq}$ includes a history
+automaton $\finalA \msg{startTxnRsp}{tid = \Code{i}}$, requiring that
+the user previously received a valid transaction id $\Code{i}$,
+\name{} can synthesize a controller program that strategically
+requests a new transaction to trigger the intended violation.
