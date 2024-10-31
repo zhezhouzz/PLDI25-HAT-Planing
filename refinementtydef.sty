@@ -319,6 +319,8 @@
 \newcommand{\evop}[3]{ \ev{\S{#1}\,{#2}}{#3} }
 
 \newcommand{\msgB}[3]{ \evparenth{\eff{#1}\;{#2}~|~{#3}} }
+\newcommand{\msgA}[2]{ \evparenth{\eff{#1}(\Code{#2})}}
+\newcommand{\msgAGreen}[2]{\textcolor{DeepGreen}{\msgA{#1}{#2}}}
 \newcommand{\msg}[2]{ \evparenth{\eff{#1}~|~{#2}} }
 \newcommand{\msgC}[1]{ \evparenth{#1}}
 % \newcommand{\acSe}[2]{ \evparenth{\mykw{app}\;\eff{#1}({#2})} }
@@ -386,7 +388,7 @@
 % \newcommand{\lastA}{{\mathbf{LAST}}}
 %\newcommand{\lastA}{{\mbox{$\mathbf{SINGLE}$}}}
 % \newcommand{\lastA}{{\mathbf{SINGLE}}}
-\newcommand{\lastA}{{\mathcal{S}}}
+\newcommand{\lastA}{\,{\mathcal{S}}\,}
 \newcommand{\allA}{{\mathbf{All}}}
 \newcommand{\singletonA}{{\mathbf{Single}}}
 \newcommand{\untilA}{\,\mathcal{U}\,}
@@ -584,8 +586,10 @@
 \newcommand{\effGreen}[1]{\eff{#1}}%{\textcolor{DeepGreen}{\eff{#1}}}
 
 \newcommand{\allTL}{\globalA\evparenth{\top}}
-\newcommand{\epsTL}{\evparenth{\bot}}
+\newcommand{\epsTL}{\globalA\evparenth{\bot}}
 \newcommand{\negSCA}{A_\Code{violateRYW}}
 
 \newcommand{\PAT}{\mbox{{\sc Pat}}\xspace}
 \newcommand{\DSL}{\boldsymbol{\lambda}^{C}}
+\newcommand{\Gchecked}{G_\Code{checked}}
+\newcommand{\biSyn}{\S{BidirectionalSyn}}
