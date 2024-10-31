@@ -218,15 +218,16 @@ that are received after the handler returns.
 \begin{figure}[t!]
     \centering
 {\footnotesize\begin{align*}
-    \eff{writeReq}:&  \Code{x}\hasnty{int} \sarr \rg{\allTL}{\lastA\msg{writeReq}{v = \Code{x}}}{\finalA\msg{writeRsp}{v = \Code{x}}}
-    \\\eff{writeRsp}:& \Code{x}\hasnty{int} \sarr \Code{s}\hasnty{bool} \sarr \rg{\allTL}{\lastA\msg{writeRsp}{v = \Code{x} \land st = \Code{s}}}{\allTL}
+                \mykw{gen} \eff{writeReq}:&  \Code{x}\hasnty{int} \sarr \rg{\allTL}{\lastA\msg{writeReq}{v = \Code{x}}}{\finalA\msg{writeRsp}{v = \Code{x}}}
+                \\
+                \mykw{obs} \eff{writeRsp}:& \Code{x}\hasnty{int} \sarr \Code{s}\hasnty{bool} \sarr \rg{\allTL}{\lastA\msg{writeRsp}{v = \Code{x} \land st = \Code{s}}}{\allTL}
     \\
-    \\\eff{readReq}:&  \Code{x}\hasnty{int}\garr \rg{\finalA \msg{writeReq}{v = \Code{x}} \land \neg\nextA\finalA\msg{writeReq}{\top}}{\lastA\msg{readReq}{\top}}{\finalA\msg{readRsp}{v = \Code{x} \land st}}
+    \\\mykw{gen} \eff{readReq}:&  \Code{x}\hasnty{int}\garr \rg{\finalA \msg{writeReq}{v = \Code{x}} \land \neg\nextA\finalA\msg{writeReq}{\top}}{\lastA\msg{readReq}{\top}}{\finalA\msg{readRsp}{v = \Code{x} \land st}}
     \\&\interty  \rg{\neg\finalA \msg{writeRsp}{\top}}{\lastA\msg{readReq}{\top}}{\finalA\msg{readRsp}{ \neg st}}
-    \\\eff{readRsp}:& \Code{x}\hasnty{int}\sarr \Code{s}\hasnty{bool} \sarr \rg{\allTL}{\lastA\msg{readRsp}{v = \Code{x} \land st = \Code{s}}}{\allTL}
+    \\\mykw{obs} \eff{readRsp}:& \Code{x}\hasnty{int}\sarr \Code{s}\hasnty{bool} \sarr \rg{\allTL}{\lastA\msg{readRsp}{v = \Code{x} \land st = \Code{s}}}{\allTL}
 \end{align*}}
-    \caption{Handler specifications expressed using Prophecy Automata Types (\PAT). }
-    \label{fig:spec}
+\caption{Prophecy Automata Type specifications of message handlers. }
+\label{fig:spec}
 \end{figure}
 
 \paragraph{History, current, and prophecy automata}   Handler
