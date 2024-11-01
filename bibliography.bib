@@ -14,6 +14,44 @@ doi="10.1007/BFb0027047",
 url="https://doi.org/10.1007/BFb0027047"
 }
 
+@article{ModP,
+author = {Desai, Ankush and Phanishayee, Amar and Qadeer, Shaz and Seshia, Sanjit A.},
+title = {Compositional programming and testing of dynamic distributed systems},
+year = {2018},
+issue_date = {November 2018},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+volume = {2},
+number = {OOPSLA},
+url = {https://doi.org/10.1145/3276529},
+doi = {10.1145/3276529},
+abstract = {A real-world distributed system is rarely implemented as a standalone monolithic system. Instead, it is composed of multiple independent interacting components that together ensure the desired system-level specification. One can scale systematic testing to large, industrial-scale implementations by decomposing the system-level testing problem into a collection of simpler component-level testing problems.  This paper proposes techniques for compositional programming and testing of distributed systems with two central contributions: (1) We propose a module system based on the theory of compositional trace refinement for dynamic systems consisting of asynchronously-communicating state machines, where state machines can be dynamically created, and communication topology of the existing state machines can change at runtime; (2) We present ModP, a programming system that implements our module system to enable compositional reasoning (assume-guarantee) of distributed systems.  We demonstrate the efficacy of our framework by building two practical fault-tolerant distributed systems, a transaction-commit service and a replicated hash-table. ModP helps implement these systems modularly and validate them via compositional testing. We empirically demonstrate that the abstraction-based compositional reasoning approach helps amplify the coverage during testing and scale it to real-world distributed systems. The distributed services built using ModP achieve performance comparable to open-source equivalents.},
+journal = {Proc. ACM Program. Lang.},
+month = oct,
+articleno = {159},
+numpages = {30},
+keywords = {systematic testing, module system, event-driven programming, domain-specific language, distributed systems, compositional verification, actors}
+}
+
+@article{MessageChain,
+author = {Mora, Federico and Desai, Ankush and Polgreen, Elizabeth and Seshia, Sanjit A.},
+title = {Message Chains for Distributed System Verification},
+year = {2023},
+issue_date = {October 2023},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+volume = {7},
+number = {OOPSLA2},
+url = {https://doi.org/10.1145/3622876},
+doi = {10.1145/3622876},
+abstract = {Verification of asynchronous distributed programs is challenging due to the need to reason about numerous control paths resulting from the myriad interleaving of messages and failures. In this paper, we propose an automated bookkeeping method based on message chains. Message chains reveal structure in asynchronous distributed system executions and can help programmers verify their systems at the message passing level of abstraction. To evaluate our contributions empirically we build a verification prototype for the P programming language that integrates message chains. We use it to verify 16 benchmarks from related work, one new benchmark that exemplifies the kinds of systems our method focuses on, and two industrial benchmarks. We find that message chains are able to simplify existing proofs and our prototype performs comparably to existing work in terms of runtime. We extend our work with support for specification mining and find that message chains provide enough structure to allow existing learning and program synthesis tools to automatically infer meaningful specifications using only execution examples.},
+journal = {Proc. ACM Program. Lang.},
+month = oct,
+articleno = {300},
+numpages = {27},
+keywords = {Formal verification, distributed systems, message passing}
+}
+
 @incollection{ReactiveSynthesis,
   title={Synthesis of reactive systems},
   author={Finkbeiner, Bernd},

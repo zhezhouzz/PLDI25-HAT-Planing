@@ -20,7 +20,7 @@ systematically explores the space of possible controllers (upto some
 fixed time bound) for those that can guide execution to a state
 consistent with both $\Delta$ and the violation property. Each
 synthesized controller indicates a specific message order and payload
-for generated (environment) messages.  \name{} returns a union of
+for generated (environment) messages.  \name{} returns an union of
 these controller as the final synthesized result.
 
 A synthesized controller is directly executable with an interpreter
@@ -74,27 +74,27 @@ Our experimental evaluation addresses three research questions:
   \caption{\small Experimental results of using \name{} to synthesize
     controller for reactive distributed systems. Benchmarks from prior
     works are annotated with their source:
-    P~\cite{DGJ+13}($^{\dagger}$), ModP~\cite{?}($^{\diamond}$), and
-    MessageChain~\cite{?}($^{\star}$).  \SJ{Some explanation of what ModP and
-      MessageChain are is necessary - are they just papers?}  We also include a real world
+    P~\cite{DGJ+13}($^{\dagger}$), ModP~\cite{ModP}($^{\diamond}$) the modular version of P language, and
+    MessageChain~\cite{MessageChain}($^{\star}$) that is automated specification mining and verification tool built for P language. We also include a real world
     model (\textsf{Kermit2PCModel}$^{\square}$) written in P that
     models a 2PC protocol used by a major cloud vendor.  The
     components under test are written in P, whereas handler
     specifications are manually defined as \PAT{}s in our DSL. The
-    synthesized controller program is then transpiled into P and run
+    synthesized controller program is then transpired into P and run
     alongside the other components.  \name{} can synthesize a set of
     controllers, each of which specifies a specific scheduling order
     for messages, all consistent with provided specifications.  We set
     a $2$ minute time bound for the synthesis procedure (i.e.,
     t$_\text{total}$) is the average time to find a single
-    controller. \SJ{Should we also include the number of controllers
-    that were synthesized in the two minute bound?}}
+    controller. 
+    % \SJ{Should we also include the number of controllers that were synthesized in the two minute bound?}
+    }
 \vspace*{-.1in}
 \footnotesize
 \setlength{\tabcolsep}{2.3pt}
 \begin{tabular}{c||cc||ccc|c||c|ccc}
   \toprule
- Benchmark & \#$\eff{op}$ & \#qualifier & \#var &(\#$\mykw{gen}$, \#$\mykw{obs}$) & \#$\mykw{assert}$ & \#try & t$_\text{total}$(s)  & \#SMT & \#FW & \#BW \\
+ Benchmark & \#$\eff{op}$ & \#qualifier & \#var &(\#$\mykw{gen}$, \#$\mykw{obs}$) & \#$\mykw{assert}$ & \#try & t$_\text{total}$(s)  & \#SMT & \#forward & \#backward \\
  \midrule
 \textsf{Database} & $4$ & $7$ & $8$ & ($3$, $3$) & $4$ & $2.0$ & $6.02$  & $905$ & $4$ & $6$\\
 \midrule
@@ -160,15 +160,15 @@ using anywhere from $3$ - $17$ different messages, $3$ - $70$ different
 kinds of qualifiers (\textbf{Q1}).
 
 The second group of columns describes the size of synthesized
-controllers, including the number of variables (\#var), $\eff{gen}$
-messages (\#$\mykw{gen}$), $\eff{obs}$ messages (\#$\mykw{obs}$), and
+controllers, including the number of variables (\#var), $\mykw{gen}$
+messages (\#$\mykw{gen}$), $\mykw{obs}$ messages (\#$\mykw{obs}$), and
 assertions (\#$\mykw{assert}$) used in the program. Our synthesized
-controllers have anywhere from $1$ - $36$ ghost variables, $5$ - $17$
+controllers have anywhere from $1$ - $36$ variables, $5$ - $17$
 messages in total, and $1$ - $14$ assertions.  Note that the size of
 synthesized program is roughly proportional to the complexity of the
 benchmarks (\textbf{Q2}), where the number of qualifiers correlate
 with the number of variables and assertions.  As mentioned in
-\autoref{fig:algo}, our algorithm is biased towards synthesizing
+\autoref{sec:synthesis}, our algorithm is biased towards synthesizing
 shorter controller program, avoiding synthesizing messages that do not
 directly affect the safety property.  The last column (\#try) in the
 second group reports the average number of times that executing the
@@ -189,12 +189,12 @@ $63.69$ seconds (\textbf{Q3}); synthesis time is proportional to
 benchmark complexity, as reflected in the \#$\eff{op}$ and \#qualifier
 columns.  The last three columns additionally analyze the behaviors of
 \name{} with respect to the number of SAT queries (\#SAT), as well as
-the number of forward synthesis (\#FW) and backward synthesis steps
-(\#BW) performed by the property refinement loop. Unsurprisingly,
+the number of forward synthesis (\#forward) and backward synthesis steps
+(\#backward) performed by the property refinement loop. Unsurprisingly,
 generating more SMT queries (\#SMT) results in longer synthesis times;
 the number of these queries directly depends on the number of
-iterations of the property refinement loop (i.e., the sum of \#FW and
-\#BW).  Oftentimes, the number of forward and backward synthesis steps
+iterations of the property refinement loop (i.e., the sum of \#forward and
+\#backward).  Oftentimes, the number of forward and backward synthesis steps
 exceeds the total number of messages in the controller program because
 \name{} may need to backtrack when a wrong type or message
 interleaving is selected, which future iterations cannot resolve.
@@ -219,14 +219,18 @@ where the field $tid$ represents the transaction id, while other
 fields have the same meanings as in the example from
 \autoref{sec:intro}. This scenario is challenging because the
 violation requires observing a successful $\eff{readRsp}$ with an
-incorrect value ($v \neq \Code{x}$).
-\SJ{This is sentence is confusing - what does it mean for a transaction
-  id to be managed by the storage system and not the user?  Can you
-  provide an explicit scenario where this can happen?}
-This can only occur when the
-preceding $\eff{readReq}$ selects a valid transaction id $\Code{i}$,
-which is managed by the underlying storage system rather than the
-user. Without explicitly requesting a new transaction, random testing
+incorrect value ($v \neq \Code{x}$), the failed $\eff{readRsp}$ won't violate the safety property. The successful response can only occur when the
+preceding $\eff{readReq}$ selects a transaction id $\Code{i}$ that maintained by server, where user can send $\eff{startTxnReq}$ to get new transaction id from server with corresponding response ($\eff{startTxnRsq}$).
+% which is managed by the underlying storage system rather than the
+% user.
+% \SJ{This is sentence is confusing - what does it mean for a transaction
+%   id to be managed by the storage system and not the user?  Can you
+%   provide an explicit scenario where this can happen?}
+% This can only occur when the
+% preceding $\eff{readReq}$ selects a valid transaction id $\Code{i}$,
+% which is managed by the underlying storage system rather than the
+% user. 
+Without explicitly requesting a new transaction, random testing
 has virtually no chance of ``guessing'' a valid transaction
 id. However, since the \PAT for $\eff{readReq}$ includes a history
 automaton $\finalA \msg{startTxnRsp}{tid = \Code{i}}$, requiring that
