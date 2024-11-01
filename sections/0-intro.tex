@@ -1,107 +1,110 @@
 \section{Introduction}\label{sec:intro}
 
-Tools like P~\cite{DGJ+13,DQ17} and TLA+~\cite{Lam02,LDGP09} enable
-modeling the design of distributed applications, and allow users to
-rigorously to check that their design is consistent with a rigorous
-specification of its intended behaviors. To validate the correctness
-of these models, these tools support various mechanisms for
-automatically searching for potential violations of expected
-behaviors, by systematic (as in TLA+) or random (as in P) exploration
-of the model's state space.
-% Examples of such techniques include enumerative methods for
-% state space exploration as found in (bounded) model-checking
-% systems~\cite{...} or precondition-aware input generators used in
-% property-based testing (PBT) frameworks~\cite{...}.
-Automated testing of this kind has proven to be an effective technique
-for finding errors in distributed applications and their design. A key
-difficulty when testing these systems is that the set of possible
-executions is intractably large, due to inherent nondeterminism both
-in the order in which messages are sent and received, and the large
-(often infinite) number of possible payloads that each message can
-carry. In a typical testing framework, however, the search for an
-unsafe execution often proceeds without the help of any
-application-specific constraints, which may have otherwise pruned the
-set of executions that are worth considering. This is due, in large
-part, to the complex interdependencies that exist between individual
-components in a distributed system, whose behaviors are influenced by
-their interactions with their peers.  As a result, it is difficult to
-\emph{a priori} determine how effective a particular search strategy
-might be at manifesting design flaws in the model.
+Testing a model of a distributed systems can help to find design flaws
+early in the development cycle~\cite{BJA+21,DGJ+13}.  These models
+typically are specified as communicating state machines (or actors)
+that implement high-level (executable) logic, but which abstract away
+low-level details that a concrete implementation must address.  The
+actors comprising a model are also responsible for sending and
+responding to messages from other actors, or from messages sent by the
+external environment (i.e., by components not under test).  To drive
+the search for a safety or liveness property violation, testing
+frameworks often rely on random exploration of the model's state space
+to determine the payload of messages generated from the environment as
+well as fixing message delivery and receipt ordering.  For example,
+randomly choosing to delay delivery of a message sent from one actor
+to another can be used to simulate a weak consistency
+semantics~\cite{Session} in a model of replicated state.  However,
+although conceptually simple, random exploration makes it problematic
+to \emph{a priori} determine if the testing framework will be
+effective in finding a model-specific design bug, given the typically
+very large state space of feasible executions that may have to be
+considered.
 
-% BD: Would like to mention that we do not assume access to the
-% internal states of these components.
+%% when testing these systems is that the set of
+%% possible executions is intractably large, due to inherent
+%% nondeterminism both in the order in which messages are sent and
+%% received, and the large (often infinite) number of possible payloads
+%% that each message can carry. In a typical testing framework, however,
+%% the search for an unsafe execution often proceeds without the help of
+%% any application-specific constraints, which may have otherwise pruned
+%% the set of executions that are worth considering. This is due, in
+%% large part, to the complex interdependencies that exist between
+%% individual components in a distributed system, whose behaviors are
+%% influenced by their interactions with their peers.  As a result, it is
+%% difficult to \emph{a priori} determine how effective a particular
+%% search strategy might be at manifesting design flaws in the model.
 
-In this paper, we investigate this problem in the context of reactive
-executable models of distributed applications.  The models we consider
-are comprised of a set of components that maintain internal (local)
-state, and which communicate with each other via message-passing.
-Conceptually, these components are \emph{actors} that handle input
-messages and produce output messages in response.  Typically, the
-components of the system under test also communicate with an
-\emph{environment} that abstracts the behavior of external agents.
-Such agents include the users that generate input messages that are
-handled by the model's actors, as well as other elements that interact
-with the application (e.g., low-level network or storage
-abstractions), but whose actions are not expected to be directly
-controlled by the testing framework.
+%% % BD: Would like to mention that we do not assume access to the
+%% % internal states of these components.
 
-% BD: I'm not sure what these other elements are in our problem setup?
-% An example may be helpful here.
+%% In this paper, we investigate this problem in the context of reactive
+%% executable models of distributed applications.  The models we consider
+%% are comprised of a set of components that maintain internal (local)
+%% state, and which communicate with each other via message-passing.
+%% Conceptually, these components are \emph{actors} that handle input
+%% messages and produce output messages in response.  Typically, the
+%% components of the system under test also communicate with an
+%% \emph{environment} that abstracts the behavior of external agents.
+%% Such agents include the users that generate input messages that are
+%% handled by the model's actors, as well as other elements that interact
+%% with the application (e.g., low-level network or storage
+%% abstractions), but whose actions are not expected to be directly
+%% controlled by the testing framework.
 
-A concrete execution of a distributed application is thus dictated by
-(a) how the components of the system interact with the environment and
-each other (e.g., the messages they generate in response to other
-messages), (b) what messages are generated by the environment,
-potentially in response to outputs produced by the system under test,
-and (c) which order the messages generated by components are received
-and handled by others.
+%% % BD: I'm not sure what these other elements are in our problem setup?
+%% % An example may be helpful here.
 
-When testing these frameworks, a \emph{controller} is responsible for
-answering the last two questions, i.e., determining the payloads of
-messages sent by the environment to actors, and the specific order in
-which messages are sent to and received by actors.  The simplest and
-most general implementation of a controller is one that fully
-randomizes these decisions. While possibly effective in certain
-settings, this strategy is typically ineffective when exploring large
-executions spaces. Rather than increasing the sophistication of a
-generic controller by equipping it with general (albeit complex)
-reasoning capabilities (e.g., symmetry reduction~\cite{Lam02,GKB+19}),
-we propose to instead customize the actions the controller can
-perform, tailored to the design and requirements of the application
-being modeled.
+Model-based testing of a distributed system is thus dictated by (a)
+how the actors of the system under test (SUT) interact with the
+environment and each other (e.g., the messages they generate in
+response to other messages), (b) what messages are generated by the
+environment, potentially in response to outputs produced by the SUT,
+and (c) the order in which messages generated by actors are
+received and handled by others.
+
+Testing frameworks use a \emph{controller} to answer the last two
+questions, i.e., determining the payloads of messages sent by the
+environment to actors, and the specific order in which messages are
+sent to and received by actors.  Rather than having the controller use
+randomization for payload generation and message ordering, we
+investigate an alternative approach that specializes the actions the
+controller can perform, tailored to the requirements of the model.
 
 There are two immediate challenges that need to be overcome to realize
-this goal. First, we need to identify a specification that is
-expressive enough to capture meaningful schedules and payloads and to
-constrain the behaviors of components with opaque local state. Second,
-we need to be able to leverage these specifications to bias our search
-towards executions that are likely to evince a violation of a desired
-behavior. In this paper, we present a unified solution to both these
-challenges. The result is a novel framework for testing distributed
-system designs, driven by a \emph{bespoke} controller expressed as a
-program written in solver-aided~\cite{TB13,TB14} DSL. These
-controllers are automatically synthesized from scheduling and payload
+this goal. First, we need to provide specifications expressive enough
+to capture interesting kinds of payloads and message orderings (i.e.,
+those that are relevant to the behaviors the model is expected to
+exhibit).  Second, we need to be able to leverage these specifications
+to bias our search procedure appropriately towards executions that are
+likely to evince a violation of a desired behavior. In this paper, we
+present a unified solution to both these challenges. The result is a
+novel framework for testing distributed system models, driven by a
+\emph{bespoke} controller expressed as a program written in a
+solver-aided~\cite{TB13,TB14} DSL.  These controllers are
+\emph{automatically synthesized} from scheduling and payload
 constraints provided by the model designer.  Each controller program
 encodes a set of possible executions; concrete elements of this set
 can then be produced by querying a constraint solver to instantiate a
 specific order of message delivery and receipt amongst actors, and the
-contents of these messages.
+contents of messages from the environment to these actors.
 
-To enable synthesis of controllers, we equip components with rich
+To enable controller synthesis, we equip actors with rich
 specifications in the form of \emph{prophecy automata types}
 (\PAT{}s), a new form of type abstraction that augments refinement
 types with automata in order to describe programs with opaque internal
 state~\cite{ZYDJ24}. Our \PAT{}-based specifications serve dual purposes,
   describing both how the current global context impacts how a message
-  is handled, and the shape of the set of traces that stem from
-  processing a message.
+  is handled, and how executing a message impacts future actions the
+  system can take.
 % BD: This footnote seems out of place in the current
 % framing. \footnote{In the following, we use the term message to
 % refer to an application of an event constructor
 % (e.g., $\eff{send}$ or $\eff{recv}$) to its arguments.}
-Our trace language is expressed as formula in a symbolic variant of
-linear temporal logic over finite traces (s-LTL$_f$), which is
-equipped with efficient decision procedures~\cite{LTLf}.
+\PAT{} automata are acceptors over LTL$_f$, the language linear
+temporal logic over finite traces (s-LTL$_f$); notably, this language
+is equipped with efficient decision procedures~\cite{LTLf}, enabling
+automation of our synthesis procdure.
 
 To ground the discussion, consider the specification of a handler for
 a $\eff{getReq}(\mathit{key})$ message that queries a key-value store
@@ -129,7 +132,7 @@ $\Code{key}$.  The second automaton describes the \emph{current}
 event, captured in this case as singleton trace that includes the
 $\eff{getReq}$ event for the key $\Code{key}$ (expressed via singleton
 modality $\lastA$).  The traces that may follow this event is captured
-by a final \emph{prophecy} automaton which stipulates that a
+by a final \emph{prophecy} automaton that stipulates that a
 $\eff{getRsp}$ message whose payload contains the key $\Code{key}$ and
 value $\Code{val}$ will eventually appear, thus guaranteeing that
 every $\eff{getReq}$ message is paired with a $\eff{getRsp}$ message
@@ -145,39 +148,53 @@ guarantees~\cite{Burckhardt2014,Session}; as the store is free to
 buffer and respond to read and write requests arbitrarily. While
 performant, this policy can be too permissive for users, who may want
 a strongly consistent (SC) store, i.e., one that always return the
-value of a key at the point their request message is handled. Observe
-that probing if a store is SC cannot be done by testing how messages
-are handled in isolation, as a violation of SC crucially depends on a
-specific sequence of get and put messages with appropriate
-payloads. Our tool, \name{}, generates such sequences by synthesizing
-a controller program consistent with a user's specification of the
-handlers' behaviors. Note that not all such schedules will necessarily
-produce a violation, as components may provide stronger guarantees
-(e.g., SC) than the users expect. Nevertheless, our experimental
-results demonstrate that a testing framework based on our synthesized
-scheduler programs significantly reduces the number of tests that need
-to be executed before a violation is witnessed, compared to a
-controller that generates and orders messages at random.
+value of a key at the point their request message is handled.  We
+can specify this safety property as the following LTL$_f$ formula:
+ {\footnotesize
+  \begin{align*}
+\neg (\msg{putReq}{k = \Code{key} \land v = \Code{val}} \land \nextA (\neg \msg{putReq}{k = \Code{key}} \untilA \msg{getRsp}{k = \Code{key} \land v \not= \Code{val}}))
+  \end{align*}}\noindent 
+Observe that probing if a store is SC cannot be done by testing how
+messages are handled in isolation, as a violation of SC crucially
+depends on a specific sequence of get and put messages with
+appropriate payloads.  The above specification identifies an erroneous
+execution as one whose last $\eff{putReq}$ binds $\Code{key}$ to
+$\Code{val}$ but in which a following $\eff{getRsp}$ message on
+$\Code{key}$ generated in response to a previously issued
+$\eff{getReq}$ message returns a value other than $\Code{key}$.
+
+Our tool, \name{}, generates such executions by synthesizing a
+controller program consistent with specifications provided for
+handlers, that nonetheless violate a global safety property like SC
+above.  Note that not all such schedules produced by the controller
+will necessarily produce a violation.  For example, the weak
+specification for $\eff{getReq}$ clearly also subsumes execution
+traces that are consistent with SC (and the safety property).
+Nevertheless, our experimental results demonstrate that a testing
+framework based on our synthesized scheduler programs significantly
+reduces the number of tests that need to be executed before a
+violation is witnessed, compared to a controller that generates and
+orders messages at random.
 
 We leverage \PAT{} specifications to implement a top-down,
-component-based synthesis algorithm~\cite{tygus,sypet,rbsyn} which constructs a
-bespoke controller program which models messages as invocation of
-events (e.g., $\eff{putReq}$).  Traditional top-down synthesizers
-decompose the problem by first selecting a candidate component (e.g.,
-a library method) and recursively synthesizing its arguments,
-using a component's specification to constrain the space of candidate
-arguments. In our setting, however, the choice of an appropriate
-handler depends on both the messages that precede it and the
-requirements of the handlers for the messages that follow it.  Our
+component-based synthesis algorithm~\cite{tygus,sypet,rbsyn} which
+constructs a bespoke controller program that models messages as
+invocation of events (e.g., $\eff{putReq}$).  Traditional top-down
+synthesizers decompose the problem by first selecting a candidate
+component (e.g., a library method) and recursively synthesizing its
+arguments, using a component's specification to constrain the space of
+candidate arguments. In our setting, however, the choice of an
+appropriate handler depends on both the messages that precede it and
+the requirements of the handlers for the messages that follow it.  Our
 synthesis algorithm thus uses the data-dependent temporal relations
 defined by \PAT{}s to guide the search for a controller that is
 written in a custom solver-aided DSL.  This program denotes a set of
 possible concrete traces that the system under test is permitted to
 generate, constrained by \PAT{} specifications associated with the
-components under test and a safety property we wish to falsify.  When
+actors under test and a safety property we wish to falsify.  When
 executing, the program interacts with an underlying SMT solver
-(Z3~\cite{de2008z3}) to instantiate concrete values for message payloads as
-execution proceeds to finally yield a concrete schedule.
+(Z3~\cite{de2008z3}) to instantiate concrete values for message
+payloads as execution proceeds to finally yield a concrete schedule.
 
 This paper makes the following contributions:
 
@@ -187,8 +204,8 @@ This paper makes the following contributions:
   synthesis algorithm for representing sets of feasible schedules and
   message payloads in reactive distributed system models.  The output
   of the algorithm is a solver-aided program in a DSL that expresses
-  executions in terms of message actions among the components under
-  test and the interaction of these components with an external
+  executions in terms of message actions among the actors under
+  test and the interaction of these actors with an external
   environment.
 
 \item To guide this algorithm, we propose \PAT{}s, a new type
