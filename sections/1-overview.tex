@@ -77,7 +77,7 @@ violation of RYW: %
     \msg{readRsp}{v = \Code{y} \land st = \true \land \Code{y} \not=
       \Code{x}})
     \label{eqn:autoEx}\tag{$\negSCA$}
-  \end{align}} %
+  \end{align}) } %
 \noindent
 Here, $\msg{writeRsp}{v = \Code{x} \land st = \true}$ is a predicate
 on messages, referred to a \emph{symbolic event}. This predicate
@@ -348,8 +348,8 @@ second phase, we use $A'$ to derive a controller program. As an
 example, the set of traces captured by \ref{eqn:autoEx} can be refined
 into: %
 {\footnotesize
-  \begin{align} 
-  &\lastA \msg{writeReq}{v = \Code{x}} \seqA 
+  \begin{align}
+  &\lastA \msg{writeReq}{v = \Code{x}} \seqA
    \lastA \msg{writeReq}{v =\Code{y} \land v \not=\Code{x}} \seqA \lastA \msg{readReq}{\top} \seqA \\
     &\lastA \msg{writeRsp}{v = \Code{y} \land st = \true} \seqA
     \lastA \msg{writeRsp}{v = \Code{x} \land st = \true} \seqA
