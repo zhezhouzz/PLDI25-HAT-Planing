@@ -99,13 +99,13 @@ model, as it does not contain request messages for either responses.
 \begin{figure}
     \centering
 \begin{minted}[xleftmargin=5pt, numbersep=4pt, linenos = true, fontsize = \footnotesize, escapeinside=??]{OCaml}
-?$\mykw{assert}$? (x != y);
-?$\mykw{gen}$? ?$\eff{writeReq}$? x;
-?$\mykw{gen}$? ?$\eff{writeReq}$? y;
-let (y1: int) (s1: bool) = ?$\mykw{obs}$? ?$\eff{writeRsp}$?; ?$\mykw{assert}$? (y1 == y && s1 == true);
-?$\mykw{gen}$? ?$\eff{readReq}$?;
-let (x1: int) (s2: bool) = ?$\mykw{obs}$? ?$\eff{writeRsp}$?; ?$\mykw{assert}$? (x1 == x && s2 == true);
-let (y2: int) (s3: bool) = ?$\mykw{obs}$? ?$\eff{readRsp}$?; ?$\mykw{assert}$? (y2 == y && s3 == true)
+?$\mykw{assert}$? (x != y) in
+?$\mykw{gen}$? ?$\eff{writeReq}$? x in
+?$\mykw{gen}$? ?$\eff{writeReq}$? y in
+let (y1: int) (s1: bool) = ?$\mykw{obs}$? ?$\eff{writeRsp}$? in ?$\mykw{assert}$? (y1 == y && s1 == true) in
+?$\mykw{gen}$? ?$\eff{readReq}$? in
+let (x1: int) (s2: bool) = ?$\mykw{obs}$? ?$\eff{writeRsp}$? in ?$\mykw{assert}$? (x1 == x && s2 == true) in
+let (y2: int) (s3: bool) = ?$\mykw{obs}$? ?$\eff{readRsp}$? in ?$\mykw{assert}$? (y2 == y && s3 == true)
 \end{minted}
     \caption{A controller $P_{C}$ that is consistent with \ref{eqn:autoEx}. }
     \label{fig:2pc-term}
