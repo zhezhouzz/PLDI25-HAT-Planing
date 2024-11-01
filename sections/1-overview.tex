@@ -73,11 +73,12 @@ The following symbolic LTL$_f$ formula~\cite{...}: formally captures a
 violation of RYW: %
 {\footnotesize
   \begin{align} \finalA (\msg{writeRsp}{v = \Code{x} \land st = \true}
-    \land \nextA (\neg \msg{writeRsp}{st = \true} \untilA
-    \msg{readRsp}{v = \Code{y} \land st = \true \land \Code{y} \not=
-      \Code{x}})
+    \land \nextA (\neg \msg{writeRsp}{st = \true{}} \untilA
+    \msg{readRsp}{v = \Code{y} \land st = \true{} \land \Code{y} \not =
+    \Code{x}})
+    )
     \label{eqn:autoEx}\tag{$\negSCA$}
-  \end{align}) } %
+  \end{align} } %
 \noindent
 Here, $\msg{writeRsp}{v = \Code{x} \land st = \true}$ is a predicate
 on messages, referred to a \emph{symbolic event}. This predicate
