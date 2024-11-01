@@ -73,11 +73,12 @@ The following symbolic LTL$_f$ formula~\cite{...}: formally captures a
 violation of RYW: %
 {\footnotesize
   \begin{align} \finalA (\msg{writeRsp}{v = \Code{x} \land st = \true}
-    \land \nextA (\neg \msg{writeRsp}{st = \true} \untilA
-    \msg{readRsp}{v = \Code{y} \land st = \true \land \Code{y} \not=
-      \Code{x}})
+    \land \nextA (\neg \msg{writeRsp}{st = \true{}} \untilA
+    \msg{readRsp}{v = \Code{y} \land st = \true{} \land \Code{y} \not =
+    \Code{x}})
+    )
     \label{eqn:autoEx}\tag{$\negSCA$}
-  \end{align}} %
+  \end{align} } %
 \noindent
 Here, $\msg{writeRsp}{v = \Code{x} \land st = \true}$ is a predicate
 on messages, referred to a \emph{symbolic event}. This predicate
@@ -99,13 +100,13 @@ model, as it does not contain request messages for either responses.
 \begin{figure}
     \centering
 \begin{minted}[xleftmargin=5pt, numbersep=4pt, linenos = true, fontsize = \footnotesize, escapeinside=??]{OCaml}
-?$\mykw{assert}$? (x != y);
-?$\mykw{gen}$? ?$\eff{writeReq}$? x;
-?$\mykw{gen}$? ?$\eff{writeReq}$? y;
-let (y1: int) (s1: bool) = ?$\mykw{obs}$? ?$\eff{writeRsp}$?; ?$\mykw{assert}$? (y1 == y && s1 == true);
-?$\mykw{gen}$? ?$\eff{readReq}$?;
-let (x1: int) (s2: bool) = ?$\mykw{obs}$? ?$\eff{writeRsp}$?; ?$\mykw{assert}$? (x1 == x && s2 == true);
-let (y2: int) (s3: bool) = ?$\mykw{obs}$? ?$\eff{readRsp}$?; ?$\mykw{assert}$? (y2 == y && s3 == true)
+?$\mykw{assert}$? (x != y) in
+?$\mykw{gen}$? ?$\eff{writeReq}$? x in
+?$\mykw{gen}$? ?$\eff{writeReq}$? y in
+let (y1: int) (s1: bool) = ?$\mykw{obs}$? ?$\eff{writeRsp}$? in ?$\mykw{assert}$? (y1 == y && s1 == true) in
+?$\mykw{gen}$? ?$\eff{readReq}$? in
+let (x1: int) (s2: bool) = ?$\mykw{obs}$? ?$\eff{writeRsp}$? in ?$\mykw{assert}$? (x1 == x && s2 == true) in
+let (y2: int) (s3: bool) = ?$\mykw{obs}$? ?$\eff{readRsp}$? in ?$\mykw{assert}$? (y2 == y && s3 == true)
 \end{minted}
     \caption{A controller $P_{C}$ that is consistent with \ref{eqn:autoEx}. }
     \label{fig:2pc-term}
@@ -348,8 +349,8 @@ second phase, we use $A'$ to derive a controller program. As an
 example, the set of traces captured by \ref{eqn:autoEx} can be refined
 into: %
 {\footnotesize
-  \begin{align} 
-  &\lastA \msg{writeReq}{v = \Code{x}} \seqA 
+  \begin{align}
+  &\lastA \msg{writeReq}{v = \Code{x}} \seqA
    \lastA \msg{writeReq}{v =\Code{y} \land v \not=\Code{x}} \seqA \lastA \msg{readReq}{\top} \seqA \\
     &\lastA \msg{writeRsp}{v = \Code{y} \land st = \true} \seqA
     \lastA \msg{writeRsp}{v = \Code{x} \land st = \true} \seqA

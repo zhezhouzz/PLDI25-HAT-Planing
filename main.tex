@@ -75,7 +75,12 @@
 %%
 %% end of the preamble, start of the body of the document source.
 
-\usepackage{hyperref,wrapfig, amsthm, pict2e, booktabs, subcaption, subfiles, rotating, pifont, indentfirst, amsmath, mathbbol, amsfonts, mathrsfs, adjustbox, mathtools,booktabs, microtype, ebproof, enumitem, multirow, multicol, setspace, xcolor, lineno, listings, stmaryrd, xspace, stackengine}
+\usepackage{hyperref,wrapfig, amsthm, pict2e, booktabs, subcaption,
+  subfiles, rotating, pifont, indentfirst, amsmath,
+  amsfonts, mathrsfs, adjustbox, mathtools,booktabs, microtype,
+  ebproof, enumitem, multirow, multicol, setspace, xcolor, lineno,
+  listings, stmaryrd, xspace, stackengine}
+
 \usepackage{empheq}
 \newcommand*\widefbox[1]{\fbox{\hspace{2em}#1\hspace{2em}}}
 \usepackage[tableposition=top]{caption}
@@ -150,37 +155,66 @@
 %%
 %% The abstract is a short summary of the work to be presented in the
 %% article.
+
+
+\begin{abstract}
+  Automated testing frameworks like P have proven to be an effective
+  technique for finding errors in the design and implementation of
+  distributed applications. A key challenge in this setting is that it
+  difficult for such frameworks to effectively explore the set of
+  possible executions for violations of desired properties, as these
+  typically represent an infinitesimally small fragment of the set of
+  possible executions. In this paper, we propose a technique for
+  automatically synthesizing a controller--- a program that guides the
+  search for buggy executions--- tailored to the design of the system
+  under test and the target property. Our approach rests on two
+  technical innovations: first, a novel trace-based refinement type
+  system called \emph{Prophecy Automata Types} which describe both the
+  history of the system and its future behaviors using a symbolic
+  variant of linear temporal logic. Second, we use these types to
+  design a type-guided synthesis algorithm that constructs a
+  solver-aided program in a DSL that captures feasible executions in
+  the target system in terms of message actions among the components
+  under test and the interaction of these components with an external
+  environment. We describe the implementation of our approach in a
+  tool, \name{}, and present a comprehensive evaluation on a set of
+  diverse, non-trivial benchmarks, including a case study from
+  application models developed by a major cloud vendor.
+\end{abstract}
+
 % \begin{abstract}
-%   Functional programs typically interact with effectful libraries that
-%   hide state behind typed abstractions.  Not suprisingly, the
-%   specification of methods that comprise these libraries are
-%   necessarily quite general and rarely specialized to the needs of any
-%   specific client.  Consequently, applications often must implement
-%   their own \emph{ad hoc} protocols that impose additional constraints
-%   on this state, indirectly, in terms of call (and return) sequences
-%   to (and from) library methods.  In this paper, we consider the
-%   specification and verification of such protocols using
-%   \emph{symbolic finite automata} (SFA).  We show that SFAs can be
-%   used as a convenient representation to capture fine-grained
-%   histories of interactions between functional clients and effectful
-%   libraries.  To enable modular and compositional reasoning, we
-%   integrate SFAs within an expressive refinement type system.  The
-%   particular instantiation we consider, \emph{Hoare Automata Types}
-%   (HATs), allows us to both specify and type-check client-side
-%   protocols over functions that internally make calls to effectful
-%   library methods.  A HAT characterizes the behavior of such functions
-%   in terms of both precondition traces, i.e., the specific protocol
-%   structure that must hold at any of its call points immediately prior
-%   to its invocation, as well as postcondition ones, i.e., the portion
-%   of the protocol that dictates allowed effectful actions of library
-%   methods invoked by the function as it executes.  We also develop a
-%   new bidirectional type checking algorithm that implements an
-%   efficient subtyping inclusion check over HATs enabling their
-%   translation into a form amenable for SMT-based automated
-%   verification.  We provide extensive experimental results
-%   demonstrating the feasibility of type-checking HAT-specified OCaml
-%   clients that interact with a variety of effectful database,
-%   key-value store, and data structure libraries.
+%   Distributed systems are commonly modeled as sets of components that
+%   communicate through message-passing, where messages may be received
+%   at any time after being sent, simulating realistic network
+%   behavior. Due to this inherent non-determinism, model checking and
+%   automated testing of distributed systems face challenges from the
+%   complexity of exploring numerous potential message
+%   orderings. Meanwhile, distributed system safety properties often
+%   describe user-desired message sequences as traces, which are
+%   typically imperceptible by the exploration procedure of these tools.
+%   In this paper, we enable trace-specification-guided automated
+%   testing for distributed systems by introducing a solver-aided
+%   domain-specific language (DSL) for \emph{controller} programs, which
+%   ensures messages are scheduled in specific order violating the
+%   safety property. This controller selectively filters out cases that,
+%   under random scheduling, would not trigger the safety violations. We
+%   frame this as a controller synthesis problem, with input that
+%   includes both the specification of distributed components and the
+%   target safety properties.  To express asynchronous message-passing
+%   semantics, we introduce a novel trace-based refinement type system
+%   called \emph{Prophecy Automata Types} (\PAT{}). A \PAT{}
+%   characterizes the precondition (i.e., trace of prior messages) under
+%   which a program can be invoked and also acts as a prophecy,
+%   predicting which new messages should be received in future
+%   computations (i.e., traces of messages may happen in future). With
+%   \PAT{}, we devise an efficient bidirectional, component-based
+%   synthesis algorithm that ensures the synthesized controller can lead
+%   distributed components to realize at least one trace that violates
+%   the specified safety property.  We describe the implementation of
+%   our approach in a tool, \name{}, and present a comprehensive
+%   evaluation on a set of diverse, non-trivial benchmarks, including a
+%   case study from application models developed by a major cloud
+%   vendor.
 % \end{abstract}
 
 %%
