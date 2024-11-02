@@ -2,18 +2,18 @@
 
 Testing a model of a distributed systems can help to find design flaws
 early in the development cycle~\cite{BJA+21,DGJ+13}.  These models
-typically are specified as communicating state machines (or actors)
-that implement high-level (executable) logic, but which abstract away
-low-level details that a concrete implementation must address.  The
-actors comprising a model are also responsible for sending and
-responding to messages from other actors, or from messages sent by the
-external environment (i.e., by components not under test).  To drive
-the search for a safety or liveness property violation, testing
-frameworks often rely on random exploration of the model's state space
-to determine the payload of messages generated from the environment as
-well as fixing message delivery and receipt ordering.  For example,
-randomly choosing to delay delivery of a message sent from one actor
-to another can be used to simulate a weak consistency
+typically are specified as (reactive) communicating state machines (or
+actors) that implement high-level (executable) logic, but which
+abstract away low-level details that a concrete implementation must
+address.  The actors comprising a model are also responsible for
+sending and responding to messages from other actors, or from messages
+sent by the external environment (i.e., by components not under test).
+To drive the search for a safety or liveness property violation,
+testing frameworks often rely on random exploration of the model's
+state space to determine the payload of messages generated from the
+environment as well as fixing message delivery and receipt ordering.
+For example, randomly choosing to delay delivery of a message sent
+from one actor to another can be used to simulate a weak consistency
 semantics~\cite{Session} in a model of replicated state.  However,
 although conceptually simple, random exploration makes it problematic
 to \emph{a priori} determine if the testing framework will be
