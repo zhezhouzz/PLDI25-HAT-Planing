@@ -7,7 +7,7 @@
     \text{\textbf{Variables }}& \quad &\quad& x, y, z, \vnu, ...
     \\\text{\textbf{Base Types}}& \quad & b  ::= \quad &  \Code{unit} ~|~ \Code{bool} ~|~ \Code{nat} ~|~ \Code{int} ~|~ ...
     \\\text{\textbf{Pure Operations}}& \quad & \primop ::= \quad & {+} ~|~ {-} ~|~ {==} ~|~ {<} ~|~ {\leq} ~|~ ...
-    \\ \text{\textbf{Constants }}& \quad &c ::= \quad & \mathbb{1} ~|~ \mathbb{B} ~|~ \mathbb{Z} ~|~ ...
+    \\ \text{\textbf{Constants }}& \quad &c ::= \quad & () ~|~ \mathbb{B} ~|~ \mathbb{Z} ~|~ ...
     \\ \text{\textbf{Values }}& \quad  & v ::= \quad & c ~|~ x
     \\ \text{\textbf{Qualifiers}}& \quad & \phi ::= \quad & v ~|~ \primop\;\overline{v} ~|~ \bot ~|~ \top  ~|~ \neg \phi ~|~ \phi \land \phi ~|~ \phi \lor \phi ~|~ \phi \impl \phi ~|~ \forall x{:}b.\, \phi
     \\\text{\textbf{Effectful Operations }}& \quad & \eff{op} ::= \quad & \eff{readReq} ~|~ \eff{readRsp} ~|~  ...
@@ -32,11 +32,13 @@ operations ($\primop$ and $\eff{op}$), non-deterministic choice
 
 \begin{figure}[ht!]
 {\footnotesize
-{\small\begin{alignat*}{2}
- \quad\quad\text{\textbf{Traces}}& \quad &\alpha,\beta ::= \quad &
+{\small\begin{align*}
+\text{\textbf{Buffer}}& \quad &\beta ::= \quad & \text{multi-set of $\zevent{op}{\overline{c}}$}
+\qquad\qquad\quad
+\text{\textbf{Traces}}& \quad &\alpha ::= \quad &
     \emptr ~|~ \zevent{op}{\overline{c}} \;{::}\; \alpha ~|~ \alpha
-    \listconcat \alpha
-\end{alignat*}
+    \listconcat \alpha 
+\end{align*}
 \begin{align*}
   \text{\textbf{Handler Semantics }} & \fbox{$\alpha \vDash
                                        \zevent{op}{\overline{c}}
@@ -68,12 +70,10 @@ operations ($\primop$ and $\eff{op}$), non-deterministic choice
   \label{fig:selected-semantics}
 \end{figure}
 
-\paragraph{Operational Semantics} Evaluating a $\DSL$ program depends
+\paragraph{Operational Semantics} The message-passing semantics of $\DSL$ relies on \emph{message buffers}, which are multi-set of events $\zevent{op}{\overline{c}}$. Evaluating a $\DSL$ program depends
 on an input \emph{trace}, i.e., a sequence of effectful operations, and
 produces an output trace.  Traces support the standard list operations
-(i.e., cons ${::}$ and concatenation $\listconcat{}$). % Traces are
-% lists of messages $\zevent{op}{\overline{c}}$ that record the message
-% name $\eff{op}$ and its payloads $\overline{c}$.
+(i.e., cons ${::}$ and concatenation $\listconcat{}$).
 We define the operational semantics of $\DSL$ as a small-step
 reduction relation:
 \[\steptr{\alpha}{(\beta, e)}{~\alpha'}{(\beta', e')}\]
