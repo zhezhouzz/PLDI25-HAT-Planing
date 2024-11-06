@@ -189,7 +189,8 @@ procedures execute.
 % \Params{A 5-tuple $(\Gamma, \Pi_h, \lastA \msgA{op}{\overline{x}}, \Pi_f, \Gchecked)$ that are type context, history, current, and future automata, as well as checked message set.}
 % \Output{Set of refined 5-tuples }
 \Procedure{$\forward(\Gamma, \Pi_h, \lastA \msgA{op}{\overline{x}}, \Pi_f, \Mfw, \Mbw)$}{
-    \tcp{Select the \PAT of $\eff{op}$ from handler specification}
+  \tcp{Select the \PAT of $\eff{op}$ from handler specification}
+    \SJ{I don't understand this form - the braces at the end are not part of a PAT}
     \If{exists $(\eff{op}, \overline{z{:}b}\garr\overline{y{:}t}\sarr\rg{H}{\msg{op}{\phi}}{F} \bufLR{\overline{\msg{op_i}{\phi_i}}}) \in \Delta$}{
         \tcp{add qualifier of $\eff{op}$ event into type context}
         $\Gamma \leftarrow \Gamma, \overline{z{:}\rawnuot{b}{\top}}, \overline{y{:}t}, \_{:}\nuot{unit}{\phi \land \overline{y = x} }$\;
