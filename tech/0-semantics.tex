@@ -1,3 +1,41 @@
+\begin{figure}[ht!]
+{\footnotesize
+{\small\begin{alignat*}{2}
+ \quad\quad\text{\textbf{Traces}}& \quad &\alpha,\beta ::= \quad &
+    \emptr ~|~ \zevent{op}{\overline{c}} \;{::}\; \alpha ~|~ \alpha
+    \listconcat \alpha
+\end{alignat*}
+\begin{align*}
+  \text{\textbf{Handler Semantics }} & \fbox{$\alpha \vDash
+                                       \zevent{op}{\overline{c}}
+                                       \Downarrow \beta$} &
+                                                            \quad\quad\quad \text{\textbf{Operational Semantics }} & \fbox{$\steptr{\alpha}{(\buf, e)}{\alpha}{(\buf, e)}$}
+\end{align*}}
+    \begin{prooftree}
+    \mhypo{50mm}
+    {$\buf = \{\zevent{op}{\overline{c}}\} \cup \buf_1 $ \quad
+      $\alpha \vDash \zevent{op}{\overline{c}} \Downarrow \buf_2$ \quad
+      % $\select{\buf, \zevent{op}{\overline{v}}, \buf'} $ \quad
+      $e' = e[\overline{x \mapsto c}]$
+    }
+      \infer1[\textsc{\small StObs}]{
+        \steptr{\alpha}{(\buf,
+          \zobs{\overline{x}}{op}{e})}{[\zevent{op}{\overline{c}}]}{(\buf_1
+          \cup \buf_2, e')}
+      }
+    \end{prooftree}
+      \quad
+    \begin{prooftree}
+      \hypo{\alpha \vDash \zevent{op}{\overline{c}} \Downarrow \beta'}
+      \infer1[\textsc{\small StGen}]{
+        \steptr{\alpha}{(\buf, \zgen{op}{\overline{c}}{e})}{[\zevent{op}{\overline{c}}]}{(\buf \cup \beta', e)}
+      }
+    \end{prooftree}
+  }
+  \caption{Selected Operational Semantics}
+  \label{fig:selected-semantics}
+\end{figure}
+
 \begin{figure}[h!]
 {\footnotesize
 {\small\begin{flalign*}
