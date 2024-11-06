@@ -1,0 +1,21 @@
+Our synthesis algorithm is sound, ensuring that it always produces type-safe controllers. Furthermore, the synthesized controller can realize an execution trace when the handler specification $\Delta$ is complete, meaning that all behaviors permitted by $\Delta$ are realizable.
+
+\begin{theorem}\label{theorem:algo-well-typed}[Well-type-ness]
+The controller synthesized by the algorithm can also be derived using our declarative rules.
+\end{theorem}
+
+\begin{definition}[Complete Handler Specification] A well-formed handler specification $\Delta$ is complete iff for all $\Delta(\eff{op}) = \overline{x{:}t} \sarr \rg{H}{A}{\bigwedge_{i = 1 ... n} \finalA \msg{op_i}{\phi_i}}$,
+{\small\begin{align*}
+    \forall \alpha \in \denot{A}. \forall \overline{c \in \denotation{t}}. \forall \beta. \beta \in \denot{\seqA \overline{\lastA \msg{op_i}{\phi_i}}} \impl \alpha \vDash \zevent{op}{\overline{c}} \Downarrow \beta
+\end{align*}}
+\end{definition}
+
+
+
+\begin{theorem}\label{theorem:algo-sound}[Algorithm Soundness] Under a complete handler specification, with ghost variables $\overline{x{:}b}$ and a safety property $A$, the synthesized program $e$ realizes at least one trace that violate $A$, i.e.,
+{\small\begin{align*} 
+\exists \overline{c{:}b}. \exists \alpha. 
+\msteptr{[]}{([],e[\overline{x\mapsto c}])}{\alpha}{([], ())} \land \alpha \not\in
+    \denot{A[\overline{x\mapsto c}]}
+\end{align*}}
+\end{theorem}
