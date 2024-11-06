@@ -1,0 +1,17 @@
+\begin{figure}[t!]
+  \vspace{-.3cm}
+{\small
+  \begin{alignat*}{2}
+    \text{\textbf{Variables }}& \quad &\quad& x, y, z, \vnu, ...
+    \\\text{\textbf{Base Types}}& \quad & b  ::= \quad &  \Code{unit} ~|~ \Code{bool} ~|~ \Code{nat} ~|~ \Code{int} ~|~ ... 
+    \\\text{\textbf{Pure Operations}}& \quad & \primop ::= \quad & {+} ~|~ {-} ~|~ {==} ~|~ {<} ~|~ {\leq} ~|~ ...
+    \\ \text{\textbf{Constants }}& \quad &c ::= \quad & \mathbb{1} ~|~ \mathbb{B} ~|~ \mathbb{Z} ~|~ ...
+    \\ \text{\textbf{Values }}& \quad  & v ::= \quad & c ~|~ x
+    \\ \text{\textbf{Qualifiers}}& \quad & \phi ::= \quad & v ~|~ \primop\;\overline{v} ~|~ \bot ~|~ \top  ~|~ \neg \phi ~|~ \phi \land \phi ~|~ \phi \lor \phi ~|~ \phi \impl \phi ~|~ \forall x{:}b.\, \phi
+    \\\text{\textbf{Effectful Operations }}& \quad & \eff{op} ::= \quad & \eff{readReq^{gen}} ~|~ \eff{readRsp^{obs}} ~|~  ...
+    \\ \text{\textbf{Controllers (Expressions)}}& \quad & e ::=\quad & v ~|~ \zlet{x{:}b}{\primop\ \overline{v}}{e} ~|~ \zgen{op}{\overline{v}}{e} ~|~ \zobs{\overline{x{:}b}}{op}{e} 
+    \\ & & \quad & ~|~  \zassert{\phi}{e} ~|~ e \oplus e
+  \end{alignat*}}
+\caption{$\DSL$ term and trace syntax. }
+\label{fig:term-syntax}
+\end{figure}

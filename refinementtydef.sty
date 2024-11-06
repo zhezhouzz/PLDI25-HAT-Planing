@@ -319,8 +319,11 @@
 \newcommand{\evop}[3]{ \ev{\S{#1}\,{#2}}{#3} }
 
 \newcommand{\msgB}[3]{ \evparenth{\eff{#1}\;{#2}~|~{#3}} }
-\newcommand{\msgA}[2]{ \evparenth{\eff{#1}(\Code{#2})}}
+\newcommand{\msgA}[2]{ \evparenth{\eff{#1}({#2})}}
 \newcommand{\msgAGreen}[2]{\textcolor{DeepGreen}{\msgA{#1}{#2}}}
+\newcommand{\msgABlue}[2]{\textcolor{CobaltBlue}{\msgA{#1}{#2}}}
+\newcommand{\msgAAmber}[2]{\textcolor{Amber}{\msgA{#1}{#2}}}
+\newcommand{\msgAGolden}[2]{\textcolor{DarkGolden}{\msgA{#1}{#2}}}
 \newcommand{\msg}[2]{ \evparenth{\eff{#1}~|~{#2}} }
 \newcommand{\msgC}[1]{ \evparenth{#1}}
 % \newcommand{\acSe}[2]{ \evparenth{\mykw{app}\;\eff{#1}({#2})} }
@@ -443,6 +446,7 @@
 \newcommand{\atriple}[3]{ {#1}{\times}\bufLR{#2}{\times}\effLR{#3}}
 \newcommand{\relyg}[3]{ \bufLR{#1}{#2}\effLR{#3}}
 \newcommand{\rg}[3]{ \effLR{#1}\effLR{#2}\effLR{#3}}
+\newcommand{\rgbuf}[3]{ \effLR{#1}\effLR{#2}\bufLR{#3}}
 \newcommand{\hfour}[4]{ \effLR{#1}\,\bufLR{#2}\,{#3}\,\bufLR{#4}}
 \newcommand{\hpair}[2]{ \effLR{#1}\effLR{#2} }
 \newcommand{\uhtriple}[3]{ \ueffLR{#1}\,{#2}\,\effLR{#3} }
@@ -585,11 +589,23 @@
 \newcommand{\effRed}[1]{\eff{#1}}% {\textcolor{red}{\eff{#1}}}
 \newcommand{\effGreen}[1]{\eff{#1}}%{\textcolor{DeepGreen}{\eff{#1}}}
 
+\newcommand{\efBlue}[1]{\textcolor{CobaltBlue}{\eff{#1}}}
+\newcommand{\efRed}[1]{\textcolor{red}{\eff{#1}}}
+\newcommand{\efGreen}[1]{\textcolor{DeepGreen}{\eff{#1}}}
+
 \newcommand{\allTL}{\globalA\evparenth{\top}}
 \newcommand{\epsTL}{\globalA\evparenth{\bot}}
 \newcommand{\negSCA}{A_\Code{violateRYW}}
+\newcommand{\negSCAPi}{\Pi_\Code{violateRYW}}
 
 \newcommand{\PAT}{\mbox{{\sc Pat}}\xspace}
 \newcommand{\DSL}{\boldsymbol{\lambda}^{C}}
-\newcommand{\Gchecked}{G_\Code{checked}}
+% \newcommand{\Gchecked}{M_\Code{checked}}
+% \newcommand{\Gsender}{M_\Code{hasSender}}
+\newcommand{\Gchecked}{M}
+\newcommand{\Gsender}{B}
 \newcommand{\biSyn}{\S{BidirectionalSyn}}
+\newcommand{\forward}{\textcolor{CobaltBlue}{\Code{Forward}}}
+\newcommand{\backward}{\textcolor{CobaltBlue}{\Code{Backward}}}
+\newcommand{\Mfw}{M_\Code{fw}}
+\newcommand{\Mbw}{M_\Code{bw}}
