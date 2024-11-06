@@ -192,11 +192,12 @@ procedures execute.
   \tcp{Select the \PAT of $\eff{op}$ from handler specification}
     \SJ{I don't understand this form - the braces at the end are not part of a PAT}
     \If{exists $(\eff{op}, \overline{z{:}b}\garr\overline{y{:}t}\sarr\rg{H}{\msg{op}{\phi}}{F} \bufLR{\overline{\msg{op_i}{\phi_i}}}) \in \Delta$}{
-        \tcp{add qualifier of $\eff{op}$ event into type context}
+      \tcp{add qualifier of $\eff{op}$ event into type context}
+      \SJ{Didn't we already do this at line 4 in Algorithm 1?}
         $\Gamma \leftarrow \Gamma, \overline{z{:}\rawnuot{b}{\top}}, \overline{y{:}t}, \_{:}\nuot{unit}{\phi \land \overline{y = x} }$\;
         $\Pi_h \leftarrow \Pi_h \land H$ \tcp*[l]{merge history automata} 
         $\Pi_f \leftarrow \Pi_f \land F$ \tcp*[l]{merge prophecy automata}
-        \tcp{refined type context to make violation property be non-empty}
+        \tcp{refine type context}
         \If{exists $\Gamma'$ such that $\Gamma' \sqsubseteq \Gamma$ and $\Gamma' \vdash (\Pi_h \seqA \lastA\msgA{op}{\overline{x}} \seqA \Pi_f) \not\subseteq \neg\allTL$}{
             \tcp{return type context, property, as well as updated forward and backward set}
             \Return{$(\Gamma', \Pi_h, \lastA \msgA{op}{\overline{x}}, \Pi_f, \Mfw \cup \{\eff{op}\}, \Mbw \cup \{\overline{\eff{op_i}}\})$} 
@@ -207,33 +208,43 @@ procedures execute.
 \label{algo:forward}
 \end{algorithm}
 
-\SJ{Stopped here ...}
 \paragraph{Forward and backward synthesis} The forward synthesis subroutine is
 shown in \autoref{algo:forward}. It first retrieves the \PAT\ of
 operation $\eff{op}$ on line $2$; the prophecy automata for that
 \PAT\ also indicates the children (future) events of $\eff{op}$, i.e.,
-$\overline{\eff{op_i}}$.  The algorithm then merges the selected \PAT
-into the violation property piecewise. First, the current operation
-$\eff{op}$ should be aligned (line $3$), also guarantee
-the input assumed by the violation property are consistent what in \PAT
-($\overline{y = x}$). After that, the algorithm merge the history
-trace with history automata on line $4$, as well as the future trace
-and prophecy automata (line $5$). In order to guarantee the refined
-violation property contains at least one realizable trace, we need to
-check for non-emptiness of the violation property, as previously
-discussed. Precisely, we make sure the violation property $\Pi_h \seqA
-\lastA\msgA{op}{\overline{x}} \seqA \Pi_f$ is not included by empty
-set, i.e., $\not\subseteq \neg \allTL$).  In fact, under different
-substitution $\sigma \in \denot{\Gamma}$, the violation property will
-also have different denotation. We would like to find an refined type
-context $\Gamma'$ that is only denoted with substitution guarantee the
-non-emptiness. This idea is implement on line $6$, where $\Gamma'
-\sqsubseteq \Gamma$ as the following {\small\begin{align*} \Gamma'
-  \sqsubseteq \Gamma \doteq \denot{\Gamma'} \subseteq \denot{\Gamma}
-  \land \denot{\Gamma'} \not=\emptyset
+$\overline{\eff{op_i}}$ \SJ{This isn't part of the PAT syntax?}.  The
+algorithm then merges the selected \PAT into the violation property
+piecewise. First, the current operation $\eff{op}$ should be aligned
+(line $3$), guaranteeing that the input assumed by the violation
+property is consistent with the \PAT ($\overline{y = x}$). Next, the
+algorithm merges the existing history trace of the violation property
+with the \PAT{}'s history automata on line $4$, and the violation
+property's future trace with the \PAT{}'s prophecy automata (line
+$5$). In order to guarantee the refined violation property contains at
+least one realizable trace, we also need to check for non-emptiness of
+the violation property, as previously discussed. Precisely, we make
+sure the violation property $\Pi_h \seqA \lastA\msgA{op}{\overline{x}}
+\seqA \Pi_f$ is not empty, i.e., $\not\subseteq \neg \allTL$).  Observe
+that under different substitutions, $\sigma \in \denot{\Gamma}$, the
+violation property may have have different denotations. We would like
+to find a refined type context $\Gamma'$ such that the interpretation
+of the property under this context is non-empty.  We do so   on
+line $6$, where $\Gamma' \sqsubseteq \Gamma$ is defined as:
+{\small\begin{align*} \Gamma' \sqsubseteq \Gamma \doteq
+  \denot{\Gamma'} \subseteq \denot{\Gamma} \land \denot{\Gamma'}
+  \not=\emptyset
 \end{align*}}\noindent
-Here, we apply the abduction inference technical used by existing works\cite{?}.
-Finally, the algorithm returns the refined type context, property, as well as forward and backward set on line $7$. The forward set additional contains parent message $\eff{op}$, backward set additional contains children message $\overline{\eff{op_i}}$.
+\SJ{Would like a tighter phrasing of this point that doesn't
+  involve introducing abduction}
+Here, we apply a filtering procedure to discard infeasible
+substitutions~\cite{ZYDJ24} Finally, the algorithm returns the refined
+type context, property, as well as forward and backward set on line
+$7$. The forward set additional contains parent message $\eff{op}$,
+backward set additional contains children message
+$\overline{\eff{op_i}}$.
+
+
+\SJ{Stopped here ...}
 
 \begin{algorithm}[ht!]
 \Procedure{$\backward(\Gamma, \Pi_h, \lastA \msgA{op}{\overline{x}}, \Pi_f, \Mfw, \Mbw)$}{
