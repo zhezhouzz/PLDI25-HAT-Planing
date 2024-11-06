@@ -1,158 +1,168 @@
-\section{Synthesis Algorithm}\label{sec:synthesis}
+\section{Synthesis}\label{sec:synthesis}
 
-To convert the declarative synthesis rules from \autoref{fig:selected-typing-rules} into an efficient algorithm, we must address a critical issue, i.e., finding a refined violation property (e.g., $\negSCA'$) from the original one (e.g., $\negSCA$). As explained in \autoref{sec:overview}, every symbolic event in $\negSCA'$ needs to align with the handler specification $\Delta$. The declarative subsumption rule \textsc{TSub} allows us to transform the violation property into the correct shape as an oracle, but an efficient algorithm needs to achieve this iteratively.
-Our solution is to implement a refinement loop that iteratively shapes the input property into the desired form. This refinement loop focuses on one effect operator (message) application per iteration, alternating between backward and forward synthesis as necessary, enabling it to jump to previous or future messages in subsequent iterations.
-On the other hand, while the declarative rules ensure that all traces produced by synthesized controllers may violate the safety property, they do not guarantee that the controller \emph{must} produce a trace. To address this, our algorithm employs an SFA non-emptiness check, ensuring that the synthesized controller can produce at least one trace that satisfies the violation property.
+To convert the declarative typing rules from \autoref{fig:selected-typing-rules} into an efficient synthesis algorithm, we must address a critical issue, i.e., finding a refined violation property (e.g., $\negSCA'$) from the original one (e.g., $\negSCA$). This refined property has a more sequential form which indicates an specific message order. Moreover, as explained in \autoref{sec:overview}, every symbolic event in $\negSCA'$ needs to align with the handler specification $\Delta$. The declarative subsumption rule \textsc{TSub} allows us to transform the violation property into the correct shape as an oracle, but an efficient algorithm needs to achieve this iteratively.
+Our solution is to implement a refinement loop that iteratively shapes the input property into the desired form. This refinement loop focuses on one effect operator (message) application per iteration, adapt both backward and forward synthesis as necessary, refine the violation property by adding new messages before and after current one. After getting a refined violation property, our synthesis algorithm can derive controller program mechanistically. 
+On the other hand, \textsc{TSub} also make sure ghost variables and parameters types of function \PAT are strengthen properly before adding into type context, which guarantee there at least one trace is realizable. To address this, our algorithm employs an automata non-emptiness check, which refine the type context directly.
 
-\subsection{Sequential Normal Form}
+\subsection{Abstract trace}
 
-In the declarative typing rules, the subsumption rule \textsc{TSub} reshapes the automaton into a ``sequential form'', which is a sequence of concatenated $\lastA \msg{op}{\phi}$. This sequential form allows easy extraction of history and prophecy automata for each symbolic event $\msg{op}{\phi}$. We generalize this idea into a ``Sequential Normal Form'', a structured subset of s-LTL$_f$, defined as follows:
+In the declarative typing rules, the subsumption rule \textsc{TSub} reshapes the automaton into an ``abstract trace'', which is a sequence of concatenated $\lastA \msg{op}{\phi}$. This form allows easy extraction of history and prophecy automata for each symbolic event $\msg{op}{\phi}$. We also use this form in our algorithm, where abstract trace is formally defined as the following.
 
-\begin{definition}[Sequential normal form (Seq-NF)] A SFA $B$ is in sequential normal form (Seq-NF) iff $B = \globalA A$ for some SFA $A$, or $B = \lastA \msg{op}{\phi}$, or $B = B_1 \seqA B_2$ where $B_1$ and $B_2$ is also in Seq-NF. We always use $B$ to represent SFA in Seq-NF.
+\begin{definition}[Abstract Trace] An abstract trace $\Pi$ is an automata represented as s-LTL$_f$ in the following special format,
+{\small
+\begin{alignat*}{2}
+\text{\textbf{Abstract Trace}}& \quad &\Pi  ::= \quad & \lastA \msgB{op}{\overline{x}}{\phi} ~|~ \globalA A ~|~ \Pi \seqA \Pi
+\end{alignat*}}\noindent
+In general, a s-LTL$_f$ formula can be normalized into finite number of abstract traces.
 \end{definition}
 
-\begin{example} [Sequential normal form of $\negSCA$ ] The Seq-NF of the violation property $\negSCA$ is shown as following:
+\begin{example}[Abstract trace] The violation property $\negSCA$ can be normalized into the following abstract trace:
 {\footnotesize
   \begin{align*}
-\negSCA \equiv \allTL \seqA &\lastA \msg{writeRsp}{v = \Code{x} \land st = \true} \seqA \globalA (\neg \msg{writeRsp}{st = \true}) \seqA 
+\negSCAPi \doteq \allTL \seqA &\lastA \msg{writeRsp}{v = \Code{x} \land st = \true} \seqA \globalA (\neg \msg{writeRsp}{st = \true}) \seqA 
 \\&\lastA \msg{readRsp}{v = \Code{y} \land st = \true \land \Code{y} \not= \Code{x}} \seqA \allTL
   \end{align*}}\noindent
 which clear states that there is a success $\eff{readRsp}$ with payload different with the last $\eff{writeRsp}$.
 \end{example}
 
-\subsection{Bidirectional Synthesis}
+\subsection{Synthesis Algorithm}
 
 \begin{algorithm}[t!]
-\Params{Ghost variables $\overline{x{:}b}$, and violation property $A$}
+\Params{Ghost variables $\overline{x{:}b}$, and abstract trace $\Pi$ that represent violation property}
 \Output{Synthesized controller $e$}
+$\Mfw, \Mbw \leftarrow \emptyset, \emptyset$ \tcp*[l]{The message has already preformed forward or backward synthesis}
 $\Gamma \leftarrow \overline{x{:}\rawnuot{b}{\top}}$ \tcp*[l]{initialize type context}
-$E \leftarrow \emptyset$ \tcp*[l]{A set of all synthesized program}
-\ForEach{$B \in \normPlan(A)$}{
-    $\Gchecked \leftarrow \emptyset$ \tcp*[l]{Record all messages is already checked with its handler type.}
-    \tcp{If exists a unchecked symbolic event $\msg{op}{\phi}$, do backward synthesis}
-    \While{$\exists \msg{op}{\phi}. B = B_h \seqA \lastA \msg{op}{\phi} \seqA B_f \text{ and } \msg{op}{\phi} \not\in \Gchecked$}{
-        $(\Gamma, B_h', B_c', B_f', \Gchecked) \leftarrow \biSyn{}(\Gamma, B_h, \lastA \msg{op}{\phi}, B_f, \Gchecked)$\;
-        $B \leftarrow B_h' \seqA B_c' \seqA B_f'$\;
+% $\Gsender \leftarrow \emptyset$ \tcp*[l]{A global message buffer}
+% $\Gchecked \leftarrow \emptyset$ \tcp*[l]{Record all messages that has been checked }
+\tcp{If exists a unchecked symbolic event $\msg{op}{\phi}$, and focus on it}
+\While{exists $\msgB{op}{\overline{x}}{\phi}$ s.t. $\Pi = \Pi_h \seqA \lastA \msgB{op}{\overline{x}}{\phi} \seqA \Pi_f$ and  $\msgB{op}{\overline{x}}{\phi} \not\in (\Mfw \cap \Mbw)$}{
+    $\Gamma \leftarrow \Gamma, \overline{y{:}\rawnuot{b}{\top}}, \_\hasoty{unit}{\phi[x\mapsto y]}$ \tcp*[l]{add qualifier of $\eff{op}$ event into type context}
+    \If{$\eff{op} \not\in \Mfw$}{
+        $(\Gamma, \Pi_h, \lastA \msgA{op}{\overline{y}}, \Pi_f, \Mfw, \Mbw) \leftarrow \forward(\Gamma, \Pi_h, \lastA \msgA{op}{\overline{y}}, \Pi_f, \Mfw, \Mbw)$\;
     }
-    $B \leftarrow B[\globalA A \mapsto \epsTL]$ \tcp*[l]{simplify the refined property into shortest form}
-    $e \leftarrow \S{DeriveTerm}(\Gamma, B)$ \tcp*[l]{derive controller program}
-    $E \leftarrow E \cup e$ \tcp*[l]{record all synthesized programs}
+    \If{$\eff{op} \notin \Mbw$}{
+        \lIf{$\eff{op}$ is generatable}{
+            $\Mbw \leftarrow \Mbw \cup \{\eff{op}\}$
+        }
+        \lElse {
+        $(\Gamma, \Pi_h, \lastA \msgA{op}{\overline{y}}, \Pi_f, \Mfw, \Mbw) \leftarrow \backward(\Gamma, \Pi_h, \lastA \msgA{op}{\overline{y}}, \Pi_f, \Mfw, \Mbw)$
+        }
+    }
+    % $\Gchecked \leftarrow \Gchecked \cup \{\eff{op}\}$ \tcp*[l]{now message $\eff{op}$ is check}
+    % $\Gsender \leftarrow \Gsender \setminus \Gchecked$ \tcp*[l]{removed checked message from buffer}
+    $\Pi \leftarrow \Pi_h \seqA \lastA \msgA{op}{\overline{y}} \seqA \Pi_f$ \tcp*[l]{refine violation property}
 }
-$e \leftarrow \bigoplus_{e \in E} e$ \tcp*[l]{union all synthesized programs}
+$e \leftarrow \S{DeriveTerm}(\Gamma, \Pi)$ \tcp*[l]{derive controller program}
 \Return{$e$}\;
     \caption{Synthesis}
     \label{algo:top-syn}
   \end{algorithm}
 
-The top-level synthesis algorithm is shown in \autoref{algo:top-syn}, presenting pseudocode following the intuition in \autoref{fig:intuition-algo}. The process begins by refining the violation property through a refinement loop (lines $5$ - $7$) before deriving the controller program from the refined property (lines $8$ - $9$).
-Our algorithm uses an auxiliary function $\normPlan$\footnote{A full definition of the auxiliary functions and algorithms is available in \techreport{}} to normalize an SFA $A$ into a set of SFAs $\{B_i\}$ in Seq-NF so that $A = \bigcup B_i$. The refinement loop then processes each $B_i$ with initialized type context (line $1$) and store all synthesized controllers in a set $E$ (line $2$). For each violation property in Seq-NF (line $3$), the refinement loop is executed with the aid of $\Gchecked$ (line $4$), a set that records all symbolic events already verified as consistent with the corresponding \PAT in the handler specification $\Delta$. The loop continues while there are unchecked symbolic events (line $5$), terminating once all symbolic events are verified.
+The top-level synthesis algorithm is shown \autoref{algo:top-syn}, which takes the violation property that normalized as abstract trace as input.
+For the convenience of presentation, this algorithm is expressed as a non-deterministic partial function that synthesizes controller programs that indicates a specific message order. Multiple message orders can be the union ($\oplus$) of all possible results of this algorithm. Notably, our tool actually implements a more efficient backtrack search approach. This algorithm indeed presents pseudocode following the intuition in \autoref{fig:intuition-algo}, which refines the violation property $\Pi$ through a refinement loop (lines $3$ - $10$) before deriving the controller program from the refined property (lines $11$). 
 
-An unchecked symbolic event $\msg{op}{\phi}$ divides the violation property into three segments (line $5$), defining the history automaton ($B_h$) and prophecy automaton ($B_f$) relative to its position in $B$. Using this partition, the top-level algorithm refines the violation property by invoking the subroutine $\biSyn{}$, shown in \autoref{algo:bi-syn}, which refine the violation forward and backwardly, which is introduced later.
-Each iteration of the refinement loop updates both the type context $\Gamma$ and the violation property $B$, also adding newly-checked symbolic events to $\Gchecked$. Once the refinement loop concludes, all global modalities ($\globalA$) in the refined violation property are simplified to an empty trace  ($\epsTL$), ensuring that our synthesized controller has the minimum length. Finally, all synthesized controllers are derived by auxiliary function $\S{DeriveTerm}$ (line $9$), and the union of these controllers is returned as the final result.
+\paragraph{Type context} In order to derive the the assumption and assertions over variables, we would like to gather qualifiers that distributed in different symbolic events in the violation property into the type context $\Gamma$, which can be also refined along the refinement loop.
+For example, the algorithm on line $4$ in \autoref{algo:top-syn} lifts the local variables $\overline{x}$  and qualifier $\phi$ of a symbolic event $\msgB{op}{\overline{x}}{\phi}$, as a type context $\overline{y{:}\rawnuot{b}{\top}}, \_{:}\nuot{unit}{\phi[\overline{x\mapsto y}]} \vdash \msgB{op}{\overline{x}}{\overline{x = y}}$. We use syntax sugar $\msgA{op}{\overline{y}}$ stand for $\msgB{op}{\overline{x}}{\overline{x = y}}$ in the rest of paper.
 
-\begin{example} To demonstrate the refinement of the violation property $\negSCA$ into $\negSCA'$ in our motivating example, we outline the refinement loop starting with a message $\eff{readRsp}$ in red:
-{\footnotesize\begin{align*}
-\Gamma \equiv\;& \Code{x}\hasoty{int}{\top}, \Code{y}\hasoty{int}{\top}
-\\B \equiv\;& \allTL \seqA \lastA \msg{writeRsp}{v = \Code{x} \land st} \seqA \globalA \neg \msg{writeRsp}{st} \seqA \lastA\msg{\textcolor{red}{readRsp}}{v = \Code{y} \land st \land \Code{y} \not= \Code{x}} \seqA \allTL
-\tag{before iteration $1$}
-\end{align*}}\noindent
-As specified by $\Delta$, no additional messages are sent by the handler of $\eff{readRsp}$, and $\eff{readRsp}$ is triggered by $\eff{readReq}$. Following the process outlined in \autoref{fig:intuition-algo}, the subroutine $\biSyn{}$ merges the types of these messages into the violation property, resulting in the following refined form, where checked messages ($\Gchecked$) is colored green:
-{\footnotesize\begin{align*}
-\Gamma \equiv\;& \Code{x}\hasoty{int}{\top}, \Code{y}\hasoty{int}{v \not= x}, \Code{s_0}\hasoty{bool}{v = \true}
-\\B \equiv\;& \allTL \seqA \lastA\msg{writeReq}{v =\Code{y}} \seqA \globalA \neg \msg{writeReq}{\top} \seqA \lastA\msgAGreen{readReq}{y} \seqA \allTL \seqA 
-\\&\lastA\msg{\textcolor{red}{writeRsp}}{v = \Code{x} \land st = \true} \seqA \globalA \neg \msg{writeRsp}{st} \seqA \lastA\msgAGreen{readRsp}{y,s_0} \seqA \allTL \tag{before iteration $2$}
-\end{align*}}\noindent
-Both $\eff{readReq}$ and $\eff{readRsp}$ have been checked, and their qualifiers (e.g., $\Code{x \not=y}$) are collected into type context. After merging, a new symbolic event $\msg{writeReq}{v =\Code{y}}$ appears, as required by the history automata of $\eff{readReq}$, indicating that the read value $\Code{y}$ must have been written earlier. The algorithm then selects the message $\eff{writeRsp}$ to continue the refinement, yielding the following result:
-{\footnotesize\begin{align*}
-\Gamma \equiv\;& \Code{x}\hasoty{int}{\top}, \Code{y}\hasoty{int}{v \not= x}, \Code{s_0}\hasoty{bool}{v = \true}, \Code{s_1}\hasoty{bool}{v = \true}
-\\B \equiv\;& \allTL \seqA \msgAGreen{writeReq}{x} \seqA \allTL \seqA \lastA\msg{\textcolor{red}{writeReq}}{v =\Code{y}} \seqA \globalA \neg \msg{writeReq}{\top} \seqA \lastA\msgAGreen{readReq}{y} \seqA \allTL \seqA 
-\\&\lastA\msgAGreen{writeRsp}{x, s_1} \seqA \globalA \neg \msg{writeRsp}{st} \seqA \lastA\msgAGreen{readRsp}{y,s_0} \seqA \allTL \tag{before iteration $3$}
-\end{align*}}\noindent
-Now, our algorithm refine shifts to the unchecked message $\eff{writeReq}$, and lead to the following result:
-{\footnotesize\begin{align*}
-\Gamma \equiv\;& \Code{x}\hasoty{int}{\top}, \Code{y}\hasoty{int}{v \not= x}, \Code{s_0}\hasoty{bool}{v = \true}, \Code{s_1}\hasoty{bool}{v = \true}, \Code{s_2}\hasoty{bool}{v = \true}
-\\B \equiv\;& \allTL \seqA \msgAGreen{writeReq}{x} \seqA \allTL \seqA \lastA\msgAGreen{writeReq}{y} \seqA \globalA \neg \msg{writeReq}{\top} \seqA \lastA\msgAGreen{writeReq}{y, s_2} \seqA \globalA \neg \msg{writeReq}{\top} \seqA \\&\lastA\msgAGreen{readReq}{y} \seqA \allTL \seqA \lastA\msgAGreen{writeRsp}{x, s_1} \seqA \globalA \neg \msg{writeRsp}{st} \seqA \lastA\msgAGreen{readRsp}{y,s_0} \seqA \allTL \tag{after iteration $3$}
-\end{align*}}\noindent
-Replacing all $\globalA A$ with the empty trace $\epsTL$ produces the refined violation property $\negSCA'$, from which the controller program $P_C$ can be directly derived.
+\paragraph{Message dependency} The refined property must ensure that each symbolic event has a consistent history and future trace aligned with its \PAT{} in $\Pi$, while avoiding unreliable traces, such as singleton traces like $\lastA\msg{readRsp}{\top}$ without prior requests. Simulating a message buffer with set $B$, as in declarative typing rules, is insufficient without a synthesized program, so our algorithm analyzes message dependencies directly.
+Generally, each observable message $\eff{op}$ must be sent by a handler of a preceding message, $\eff{op_{parent}}$, forming a tree-like dependency structure, as in \cite{MessageChain}. The refinement loop reconstructs these trees from selected nodes, refining the violation property into a serialized trace of these dependencies.
+
+\begin{example}[Message dependency] The refined violation property $\negSCA'$ contains three distinct group of messages, that are pairs of requests and corresponding response:
+{\footnotesize
+  \begin{align*}
+  &\lastA \msg{writeReq}{v = \Code{x}} \seqA
+   \lastA \msg{writeReq}{v =\Code{y} \land v \not=\Code{x}} \seqA \lastA \msg{readReq}{\top} \seqA \\
+    &\lastA \msg{writeRsp}{v = \Code{y} \land st = \true} \seqA
+    \lastA \msg{writeRsp}{v = \Code{x} \land st = \true} \seqA
+    \lastA \msg{readRsp}{v = \Code{y} \land st = \true \land v \not=
+    \Code{x}}
+  \end{align*}}\noindent
+while the violation property $\negSCAPi$ only two events if different groups, i.e., the last two events.
 \end{example}
 
-\begin{algorithm}[t!]
-\Params{A 5-tuple $(\Gamma, B_h, \lastA \msg{op}{\phi}, B_f, \Gchecked)$ that are type context, history, current, and future automata, as well as checked message set.}
-\Output{Set of refined 5-tuples }
-$R \leftarrow \emptyset$ \tcp*[l]{A set of all synthesized results}
-$R_\Code{forward} \leftarrow \S{Forward}(\Delta, \Gamma, B_h, \lastA \msg{op}{\phi}, B_f, \Gchecked)$ \tcp*[l]{forward synthesis }
-\lIf{$\eff{op}$ is generatable}{
-    \Return{$R_\Code{forward}$}
-}
-\ForEach{$(\Gamma, B_h, \lastA \msgA{op}{\overline{x}}, B_f, \Gchecked) \in R_\Code{forward}$}{
-    \ForEach{$(\eff{op_{prev}}, \overline{z{:}b}\garr\overline{y{:}t}\sarr\rg{H}{\eff{op_{prev}}(\overline{y})}{F}) \in \Delta$}{
-        \If{$F = \finalA \msgB{op}{\overline{x'}}{\phi'} \land F'$}{
-            $\Gamma \leftarrow \Gamma, \overline{z{:}\rawnuot{b}{\top}}, \overline{y{:}t}, \_{:}\nuot{unit}{\phi'\overline{[x'\mapsto x]}}$ \tcp*[l]{add constraint of $\eff{op_{prev}}$ and $\eff{op}$}
-            \ForEach{$B' \in \S{merge}(B_h \seqA \lastA \msgA{op}
-{\overline{x}} \seqA B_f\;,\; H \seqA \lastA \msgA{op_{prev}}{\overline{y}} \seqA (\finalA \msgA{op}{\overline{x}} \land F'))$}{
-                \Match{$\S{NonemptinessAbduction}(\Gamma, B')$}{
-                    \lCase{$\Code{None}$}{ \Continue }
-                    \Case{$\Code{Some}\;\Gamma'$}{
-                        $\Gchecked' \leftarrow \Gchecked \cup \msgA{op}{\overline{x}}\}$ \tcp*[l]{now $\eff{op_1}$ is checked.}
-                        $B_h' \seqA \lastA \eff{op_{prev}}
-(\overline{y}) \seqA B_f' \leftarrow B'$\;
-                        $R \leftarrow R \cup \biSyn(\Gamma', B_h', \eff{op_{prev}}
-(\overline{y}) , B_f', \Gchecked')$\;
-                    }
-                }
-            }
+\paragraph{Property refinement loop} Adapting this new tree-like structure expressing message dependency, for a message, we should explore both its parent and its children, which we called \emph{backward} and \emph{forward} synthesis. Note that, if the handler of message $\eff{op_{parent}}$ sends a new message $\eff{op}$, preform forward synthesis on $\eff{op_{parent}}$ is the same as preform backward synthesis on $\eff{op}$. To avoid apply the synthesis step twice on the same message dependency relation, we introduce two sets $\Mfw$ and $\Mbw$ to record messages that already performed forward or backward synthesis. The intersection of these two sets ($\Mfw \cap \Mbw$) indicates message that is checked to has parent and children messages in abstract trace. The idea is implemented as the refinement loop shown in \autoref{algo:top-syn}. The $\Mfw$ and $\Mbw$ are initialized as empty set (line $1$), then refinement loop starts with an initial type context with all ghost variable with $\top$ qualifier (line $2$). During each iteration, it pick an unchecked symbolic event ($\msg{op}{\phi} \not\in \Mfw \cap \Mbw$ on line $3$) within the abstract trace $\Gamma$, terminating once all symbolic events are check. Within each refinement iteration that focusing on symbolic event $\msgB{op}{\overline{x}}{\phi}$ with its history trace $\Pi_{h}$ and future trace $\Pi_f$, the algorithm first gather its qualifier into type context (line $4$), then try to perform forward (resp., backward) synthesis when current message is not in $\Mfw$ (resp., $\Mbw$). Notably, if a message is generable, it is the ``root'' of the tree-like structure, thus we don't need preform backward synthesis, but just add it in $\Mbw$ for instead (line $8$). Both forward and backward synthesis are endo functions that refines a 6-tuple $(\Gamma, \Pi_h, \lastA \msgA{op}{\overline{x}}, \Pi_f, \Mfw, \Mbw)$.
+Then, refined abstract trace is the concatenation of history trace, current message, and future trace ($\Pi_h \seqA \lastA \msgA{op}{\overline{x}} \seqA \Pi_f$ on line $10$).
+
+\begin{algorithm}[ht!]
+% \Params{A 5-tuple $(\Gamma, \Pi_h, \lastA \msgA{op}{\overline{x}}, \Pi_f, \Gchecked)$ that are type context, history, current, and future automata, as well as checked message set.}
+% \Output{Set of refined 5-tuples }
+\Procedure{$\forward(\Gamma, \Pi_h, \lastA \msgA{op}{\overline{x}}, \Pi_f, \Mfw, \Mbw)$}{
+    \tcp{Select the \PAT of $\eff{op}$ from handler specification}
+    \If{exists $(\eff{op}, \overline{z{:}b}\garr\overline{y{:}t}\sarr\rg{H}{\msg{op}{\phi}}{F} \bufLR{\overline{\msg{op_i}{\phi_i}}}) \in \Delta$}{
+        \tcp{add qualifier of $\eff{op}$ event into type context}
+        $\Gamma \leftarrow \Gamma, \overline{z{:}\rawnuot{b}{\top}}, \overline{y{:}t}, \_{:}\nuot{unit}{\phi \land \overline{y = x} }$\;
+        $\Pi_h \leftarrow \Pi_h \land H$ \tcp*[l]{merge history automata} 
+        $\Pi_f \leftarrow \Pi_f \land F$ \tcp*[l]{merge prophecy automata}
+        \tcp{refined type context to make violation property be non-empty}
+        \If{exists $\Gamma'$ such that $\Gamma' \sqsubseteq \Gamma$ and $\Gamma' \vdash (\Pi_h \seqA \lastA\msgA{op}{\overline{x}} \seqA \Pi_f) \not\subseteq \neg\allTL$}{
+            \tcp{return type context, property, as well as updated forward and backward set}
+            \Return{$(\Gamma', \Pi_h, \lastA \msgA{op}{\overline{x}}, \Pi_f, \Mfw \cup \{\eff{op}\}, \Mbw \cup \{\overline{\eff{op_i}}\})$} 
         }
     }
-    \Return{$R$}\;
 }
-    \caption{Bidirectional Synthesis}
-    \label{algo:bi-syn}
+\caption{Forward Synthesis}
+\label{algo:forward}
 \end{algorithm}
 
-\paragraph{Bidirectional synthesis loop} In the example above, our algorithm begins with the messages $\eff{readRsp}$ and $\eff{writeRsp}$, inferring previous messages like $\eff{readReq}$ and $\eff{writeReq}$. Additionally, it infers future messages in the third iteration, i.e., from $\eff{writeReq}$ to $\eff{writeRsp}$.
-To illustrate, consider a chain of messages $\eff{op_1}, \eff{op_2}, \eff{op_3}, \ldots, \eff{op_n}$, where the handler of message $\eff{op_i}$ sends the message $\eff{op_{i+1}}$. The bidirectional synthesis algorithm initiated from $\eff{op_i}$ will perform forward synthesis to examine messages $\eff{op_{i}}$ through $\eff{op_{n}}$, while also conducting backward synthesis to investigate messages from $\eff{op_{i}}$ back to $\eff{op_1}$.
-
-This switching mechanism is implemented in our bidirectional synthesis algorithm, as shown in \autoref{algo:bi-syn}. The algorithm always starts with forward synthesis (line $2$) and then proceeds to backward synthesis (the loop from line $4$ to line $17$), ending when the current message $\eff{op}$ can be directly generated by the controller (line $3$). Since the forward and backward processes have similar intuitions, we will focus on the latter.
-In the backward synthesis, the algorithm iterates through all \PAT{}s in the handler specification $\Delta$ (line $5$) to identify the handler of the message $\eff{op_{prev}}$ that will send the message $\eff{op}$ (line $6$), ensuring that the corresponding prophecy automaton includes $\eff{op}$. After refining the type context with the \PAT of $\eff{op_{prev}}$ (line $7$), the algorithm merges the violation property $B_h \seqA \lastA \msg{op}{\phi} \seqA B_f$ with the view of the \PAT of $\eff{op_{prev}}$ ($H \seqA \lastA \msgA{op_{prev}}{\overline{y}} \seqA (\finalA \msgA{op}{\overline{x}} \land F')$). The auxiliary function $\S{merge}$ can be viewed as an piecewise SFA conjunction where the $\msgA{op}{\overline{x}}$ in both conjunctive automata be precisely aligned.
-For each normalized merged result, we need to check for non-emptiness, as previously discussed. In fact, we perform abductive inference to identify a "subset of $\Gamma$" that ensures the SFA $B$ is not empty:
+\paragraph{Forward and backward synthesis} The forward synthesis subroutine is shown in \autoref{algo:forward}. It first get the \PAT of current message $\eff{op}$ on line $2$, which also indicate the children messages that sent by $\eff{op}$ are $\overline{\eff{op_i}}$. Then the algorithm merge the selected \PAT into the violation property piece-wisely. First, the current message $\eff{op}$ should be aligned, where the type context gathers ghost variables, parameter types, and qualifier on line $3$, also guarantee the payload assumed by violation property are consistent what in \PAT ($\overline{y = x}$). After that, the algorithm merge the history trace with history automata on line $4$, as well as the future trace and prophecy automata (line $5$). In order to guarantee the refined violation property contains at least one realizable trace, we need to check for non-emptiness of the violation property, as previously discussed. Precisely, we make sure the violation property $\Pi_h \seqA \lastA\msgA{op}{\overline{x}} \seqA \Pi_f$ is not included by empty set, i.e., $\not\subseteq \neg \allTL$).
+In fact, under different substitution $\sigma \in \denot{\Gamma}$, the violation property will also have different denotation. We would like to find an refined type context $\Gamma'$ that is only denoted with substitution guarantee the non-emptiness. This idea is implement on line $6$, where $\Gamma' \sqsubseteq \Gamma$ as the following
 {\small\begin{align*}
-    \S{NonemptinessAbduction}(\Gamma, B) = \Code{Some}\;\Gamma' \iff \denotation{\Gamma'} \not= \emptyset \land \forall \sigma. \sigma \in \denotation{\Gamma'} \impl \sigma \in \denotation{\Gamma} \land \denot{\sigma(B)} \not= \emptyset
+    \Gamma' \sqsubseteq \Gamma \doteq \denot{\Gamma'} \subseteq \denot{\Gamma} \land \denot{\Gamma'} \not=\emptyset
 \end{align*}}\noindent
-If a refined type context exists (line $11$), we mark $\msgA{op}{\overline{x}}$ as checked and shift our attention from $\eff{op}$ to its previous message $\eff{op_{prev}}$ (line $13$), then continue with the backward synthesis loop (line $14$).
+Here, we apply the abduction inference technical used by existing works\cite{?}.
+Finally, the algorithm returns the refined type context, property, as well as forward and backward set on line $7$. The forward set additional contains parent message $\eff{op}$, backward set additional contains children message $\overline{\eff{op_i}}$.
 
-\begin{example}[Backward synthesis] In the first iteration of the top-level algorithm applied to our running example, backward synthesis starts with the message $\eff{readRsp}$. By examining the handler specification $\Delta$, we identify that the \PAT of $\eff{readReq}$ can lead a $\eff{readRsp}$ happens in the future:
+\begin{algorithm}[ht!]
+\Procedure{$\backward(\Gamma, \Pi_h, \lastA \msgA{op}{\overline{x}}, \Pi_f, \Mfw, \Mbw)$}{
+    \tcp{Select the \PAT of some $\eff{op_{parent}}$ from handler specification, who sends message $\eff{op}$}
+    \If{$(\eff{op_{parent}}, \overline{z{:}b}\garr\overline{y{:}t}\sarr\rg{H}{\msg{op_{parent}}{\phi}}{F_1 \seqA \lastA \msgB{op}{\overline{x'}}{\phi'} \seqA F_2}\bufLR{\msgB{op}{\overline{x'}}{\phi'} \cup \overline{\msg{op_i}{\phi_i}}}) \in \Delta$}{
+        \tcp{add qualifier of $\eff{op_{parent}}$ and $\eff{op}$ event into type context}
+        $\Gamma \leftarrow \Gamma, \overline{z{:}\rawnuot{b}{\top}}, \overline{y{:}t}, \_{:}\nuot{unit}{\phi \land \phi'\overline{[x'\mapsto x]}}$\;
+        $\Pi_h \leftarrow \Pi_h \land (H \seqA \lastA \msgA{op_{parent}}{\overline{y}} \seqA F_1)$ \tcp*[l]{merge history automata} 
+        $\Pi_f \leftarrow \Pi_f \land F_2$ \tcp*[l]{merge prophecy automata}
+        \tcp{refined type context to make violation property be non-empty}
+        \If{exists $\Gamma'$ such that $\Gamma' \sqsubseteq \Gamma$ and $\Gamma \vdash (\Pi_h \seqA \lastA\msgA{op}{\overline{x}} \seqA \Pi_f) \not\subseteq \neg\allTL$}{
+        \tcp{return type context, property, as well as updated forward and backward set}
+            \Return{$(\Gamma', \Pi_h, \lastA \msgA{op}{\overline{x}}, \Pi_f, \Mfw \cup \{\eff{op_{parent}}\}, \Mbw \cup \{\eff{op}, \overline{\eff{op_i}}\})$}\;
+        }
+    }
+}
+\caption{Backward Synthesis}
+\label{algo:backward}
+\end{algorithm}
+
+The backward synthesis subroutine is shown in \autoref{algo:backward}, which is similar as forward synthesis but explore the message dependency from children messages back to parent message. This reversed direction leads several differences. We pick a message $\eff{op_{parent}}$ that will send $\eff{op}$ instead of message $\eff{op}$ on line $2$. Then, the violation property needs to align the current message $\eff{op}$ with the $\eff{op}$ in the prophecy automata of \PAT of $\eff{op_{parent}}$, instead of its current automata, as shown below
 {\small\begin{align*}
-    \eff{readReq}:&  \Code{x}\hasnty{int}\garr \rg{\finalA \msg{writeReq}{v = \Code{x}} \land \neg\nextA\finalA\msg{writeReq}{\top}}{\lastA\msg{readReq}{\top}}{\finalA\msg{readRsp}{v = \Code{x} \land st}}
+    \underbrace{ \effL H \effR \effL \lastA \msg{op_{parent}}{\phi} \effR  \effL F_1 }_\texttt{actual history}
+    \seqA 
+    \underbrace{ \lastA \msgB{op}{\overline{x'}}{\phi'} }_\texttt{actual current }
+    \seqA
+    \underbrace{ F_2 \effR }_\texttt{actual prophecy}
 \end{align*}}\noindent
-After merging this type into the violation property and performing abduction, the type context and refined property remain the same as those shown before second iteration. The backward synthesis then shifts its focus from $\eff{readRsp}$ to the corresponding previous message $\eff{readReq}$. Since this message is generatable, the backward synthesis terminates.
+which changes the merge procedure (line $3$ - $5$) in backward synthesis. Also, the forward set adds the parent message $\eff{op_{parent}}$ instead of current one, and backward set adds all children message ($\{\eff{op}, \overline{\eff{op_i}}\}$).
+
+\begin{example} To demonstrate the refinement of the violation property $\negSCA$ into $\negSCA'$ in our motivating example:
+{\footnotesize\begin{align*}
+\Gamma \equiv\;& \Code{x}\hasoty{int}{\top}, \Code{y}\hasoty{int}{\top} \quad \Mfw \equiv \emptyset \quad \Mbw \equiv \emptyset
+\\B \equiv\;& \allTL \seqA \lastA \msg{writeRsp}{v = \Code{x} \land st} \seqA \globalA \neg \msg{writeRsp}{st} \seqA \lastA\msg{readRsp}{v = \Code{y} \land st \land \Code{y} \not= \Code{x}} \seqA \allTL
+\tag{before iteration $1$}
+\end{align*}}\noindent
+In the first iteration, our algorithm focus on message $\eff{readRsp}$. Our algorithm perform forward synthesis since this message is not record in $\Mfw$. As specified by $\Delta$, no additional messages are sent by the handler of $\eff{readRsp}$, thus the violation property doesn't changed. Then we perform backward synthesis since $\eff{readRsp}$ is not generatable. There are two types in by $\Delta$ that has prophecy automata contains $\eff{readRsp}$:
+{\footnotesize\begin{align*}
+&\Code{x}\hasnty{int}\garr \rg{\finalA \msg{writeReq}{v = \Code{x}} \land \neg\nextA\finalA\msg{writeReq}{\top}}{\lastA\msg{readReq}{\top}}{\finalA\msg{readRsp}{v = \Code{x} \land st = \true}} \tag{$\tau_1$}
+\\& \rg{\neg\finalA
+                 \msg{writeRsp}{\top}}{\lastA\msg{readReq}{\top}}{\finalA\msg{readRsp}{st
+                 = \false}} \tag{$\tau_2$}
+\end{align*}}\noindent
+The $\tau_2$ assume the $\eff{readRsp}$ message has a false status as payload, which is conflict with violation property and cannot pass the non-emptiness check. On the other hand, if we choose $\tau_1$, then we will perform the following piecewise merge, which leads the following result:
+{\footnotesize\begin{align*}
+\Gamma \equiv\;& \Code{x}\hasoty{int}{\top}, \Code{y}\hasoty{int}{v \not= x}, \Code{s_0}\hasoty{bool}{v = \true} \quad \Mfw \equiv \{\eff{readRsp}, \eff{readReq}\} \quad \Mbw \equiv \{\eff{readRsp}\}
+\\B \equiv\;& \allTL \seqA \lastA\msg{writeReq}{v =\Code{y}} \seqA \globalA \neg \msg{writeReq}{\top} \seqA \lastA\msgA{readReq}{y} \seqA \allTL \seqA 
+\\&\lastA\msg{writeRsp}{v = \Code{x} \land st = \true} \seqA \globalA \neg \msg{writeRsp}{st} \seqA \lastA\msgA{readRsp}{y,s_0} \seqA \allTL \tag{after iteration $1$}
+\end{align*}}\noindent
+where we know there is a new symbolic event $\msg{writeReq}{v =\Code{y}}$ happens before $\eff{readReq}$, which is required by $\tau_2$. The rest of refinement steps can be found in \techreport{}.
 \end{example}
 
-\subsection{Algorithm Soundness}
-
-Our synthesis algorithm is sound, ensuring that it always produces type-safe controllers. Furthermore, the synthesized controller can realize an execution trace when the handler specification $\Delta$ is complete, meaning that all behaviors permitted by $\Delta$ are realizable.
-
-\begin{theorem}\label{theorem:algo-well-typed}[Well-type-ness]
-The controller synthesized by the algorithm can also be derived using our declarative rules.
+\begin{theorem}\label{theorem:algo-sound}[Synthesis Algorithm Soundness]
+The controller synthesized by the algorithm is also type safe with respect our declaritive typing rules.
 \end{theorem}
-
-\begin{definition}[Complete Handler Specification] A well-formed handler specification $\Delta$ is complete iff for all $\Delta(\eff{op}) = \overline{x{:}t} \sarr \rg{H}{A}{\bigwedge_{i = 1 ... n} \finalA \msg{op_i}{\phi_i}}$,
-{\small\begin{align*}
-    \forall \alpha \in \denot{A}. \forall \overline{c \in \denotation{t}}. \forall \beta. \beta \in \denot{\seqA \overline{\lastA \msg{op_i}{\phi_i}}} \impl \alpha \vDash \zevent{op}{\overline{c}} \Downarrow \beta
-\end{align*}}
-\end{definition}
-
-
-
-\begin{theorem}\label{theorem:algo-sound}[Algorithm Soundness] Under a complete handler specification, with ghost variables $\overline{x{:}b}$ and a safety property $A$, the synthesized program $e$ realizes at least one trace that violate $A$, i.e.,
-{\small\begin{align*} 
-\exists \overline{c{:}b}. \exists \alpha. 
-\msteptr{[]}{([],e[\overline{x\mapsto c}])}{\alpha}{([], ())} \land \alpha \not\in
-    \denot{A[\overline{x\mapsto c}]}
-\end{align*}}
-\end{theorem}
-
-% {\small\begin{flalign*}
-% &\denot{\rg{H}{A}{F}} &&\doteq \{e ~|~ \emptyset \basicvdash e \land \forall \alpha_H\;\alpha_F\;\alpha\;e_H\;\beta_H\;e_F\;\beta_F.
-%   \\&&& \qquad\qquad [] \vDash ([], e_H;e;e_F) \mharr{\alpha_H} (\beta_H, e;e_F) \mharr{\alpha} (\beta_F, e_F) \mharr{\alpha_F} ([], ()) \impl
-%   \\&&& \qquad\qquad (\alpha_H \in\denot{H} \impl \alpha \in\denot{A} \land \alpha_F\in\denot{F}) \}
-% \end{flalign*}}

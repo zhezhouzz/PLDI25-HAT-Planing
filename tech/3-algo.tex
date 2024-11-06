@@ -1,0 +1,44 @@
+\begin{example} To demonstrate the refinement of the violation property $\negSCA$ into $\negSCA'$ in our motivating example:
+{\footnotesize\begin{align*}
+\Gamma \equiv\;& \Code{x}\hasoty{int}{\top}, \Code{y}\hasoty{int}{\top}
+\\B \equiv\;& \allTL \seqA \lastA \msg{writeRsp}{v = \Code{x} \land st} \seqA \globalA \neg \msg{writeRsp}{st} \seqA \lastA\msg{readRsp}{v = \Code{y} \land st \land \Code{y} \not= \Code{x}} \seqA \allTL
+\tag{before iteration $1$}
+\end{align*}}\noindent
+In the first iteration, our algorithm focus on message $\eff{readRsp}$:
+As specified by $\Delta$, no additional messages are sent by the handler of $\eff{readRsp}$, and its parent message is $\eff{readReq}$. After perform the forward and backward synthesis, result into the following refined violation property:
+{\footnotesize\begin{align*}
+\Gamma \equiv\;& \Code{x}\hasoty{int}{\top}, \Code{y}\hasoty{int}{v \not= x}, \Code{s_0}\hasoty{bool}{v = \true}
+\\B \equiv\;& \allTL \seqA \lastA\msg{writeReq}{v =\Code{y}} \seqA \globalA \neg \msg{writeReq}{\top} \seqA \lastA\msgAGolden{readReq}{y} \seqA \allTL \seqA 
+\\&\lastA\msg{writeRsp}{v = \Code{x} \land st = \true} \seqA \globalA \neg \msg{writeRsp}{st} \seqA \lastA\msgAGreen{readRsp}{y,s_0} \seqA \allTL \tag{before iteration $2$}
+\end{align*}}\noindent
+
+{\footnotesize\begin{align*}
+\Gamma \equiv\;& \Code{x}\hasoty{int}{\top}, \Code{y}\hasoty{int}{v \not= x}, \Code{s_0}\hasoty{bool}{v = \true}, \Code{s_1}\hasoty{bool}{v = \true}
+\\B \equiv\;& \allTL \seqA \msgAGolden{writeReq}{x} \seqA \allTL \seqA \lastA\msg{writeReq}{v =\Code{y}} \seqA \globalA \neg \msg{writeReq}{\top} \seqA \lastA\msgAGolden{readReq}{y} \seqA \allTL \seqA 
+\\&\lastA\msgAGreen{writeRsp}{x, s_1} \seqA \globalA \neg \msg{writeRsp}{st} \seqA \lastA\msgAGreen{readRsp}{y,s_0} \seqA \allTL \tag{before iteration $3$}
+\end{align*}}\noindent
+
+{\footnotesize\begin{align*}
+\Gamma \equiv\;& \Code{x}\hasoty{int}{\top}, \Code{y}\hasoty{int}{v \not= x}, \Code{s_0}\hasoty{bool}{v = \true}, \Code{s_1}\hasoty{bool}{v = \true}, \Code{s_2}\hasoty{bool}{v = \true}
+\\B \equiv\;& \allTL \seqA \msgAGolden{writeReq}{x} \seqA \allTL \seqA \lastA\msgAGreen{writeReq}{y} \seqA \globalA \neg \msg{writeReq}{\top} \seqA \lastA\msgAGreen{writeReq}{y, s_2} \seqA \globalA \neg \msg{writeReq}{\top} \seqA \\&\lastA\msgAGolden{readReq}{y} \seqA \allTL \seqA \lastA\msgAGreen{writeRsp}{x, s_1} \seqA \globalA \neg \msg{writeRsp}{st} \seqA \lastA\msgAGreen{readRsp}{y,s_0} \seqA \allTL \tag{after iteration $3$}
+\end{align*}}\noindent
+
+Following the process outlined in \autoref{fig:intuition-algo}, the subroutine $\biSyn{}$ merges the types of these messages into the violation property, resulting in the following refined form, where checked messages ($\Gchecked$) is colored green:
+{\footnotesize\begin{align*}
+\Gamma \equiv\;& \Code{x}\hasoty{int}{\top}, \Code{y}\hasoty{int}{v \not= x}, \Code{s_0}\hasoty{bool}{v = \true}
+\\B \equiv\;& \allTL \seqA \lastA\msg{writeReq}{v =\Code{y}} \seqA \globalA \neg \msg{writeReq}{\top} \seqA \lastA\msgAGreen{readReq}{y} \seqA \allTL \seqA 
+\\&\lastA\msg{\textcolor{red}{writeRsp}}{v = \Code{x} \land st = \true} \seqA \globalA \neg \msg{writeRsp}{st} \seqA \lastA\msgAGreen{readRsp}{y,s_0} \seqA \allTL \tag{before iteration $2$}
+\end{align*}}\noindent
+Both $\eff{readReq}$ and $\eff{readRsp}$ have been checked, and their qualifiers (e.g., $\Code{x \not=y}$) are collected into type context. After merging, a new symbolic event $\msg{writeReq}{v =\Code{y}}$ appears, as required by the history automata of $\eff{readReq}$, indicating that the read value $\Code{y}$ must have been written earlier. The algorithm then selects the message $\eff{writeRsp}$ to continue the refinement, yielding the following result:
+{\footnotesize\begin{align*}
+\Gamma \equiv\;& \Code{x}\hasoty{int}{\top}, \Code{y}\hasoty{int}{v \not= x}, \Code{s_0}\hasoty{bool}{v = \true}, \Code{s_1}\hasoty{bool}{v = \true}
+\\B \equiv\;& \allTL \seqA \msgAGreen{writeReq}{x} \seqA \allTL \seqA \lastA\msg{\textcolor{red}{writeReq}}{v =\Code{y}} \seqA \globalA \neg \msg{writeReq}{\top} \seqA \lastA\msgAGreen{readReq}{y} \seqA \allTL \seqA 
+\\&\lastA\msgAGreen{writeRsp}{x, s_1} \seqA \globalA \neg \msg{writeRsp}{st} \seqA \lastA\msgAGreen{readRsp}{y,s_0} \seqA \allTL \tag{before iteration $3$}
+\end{align*}}\noindent
+Now, our algorithm refine shifts to the unchecked message $\eff{writeReq}$, and lead to the following result:
+{\footnotesize\begin{align*}
+\Gamma \equiv\;& \Code{x}\hasoty{int}{\top}, \Code{y}\hasoty{int}{v \not= x}, \Code{s_0}\hasoty{bool}{v = \true}, \Code{s_1}\hasoty{bool}{v = \true}, \Code{s_2}\hasoty{bool}{v = \true}
+\\B \equiv\;& \allTL \seqA \msgAGreen{writeReq}{x} \seqA \allTL \seqA \lastA\msgAGreen{writeReq}{y} \seqA \globalA \neg \msg{writeReq}{\top} \seqA \lastA\msgAGreen{writeReq}{y, s_2} \seqA \globalA \neg \msg{writeReq}{\top} \seqA \\&\lastA\msgAGreen{readReq}{y} \seqA \allTL \seqA \lastA\msgAGreen{writeRsp}{x, s_1} \seqA \globalA \neg \msg{writeRsp}{st} \seqA \lastA\msgAGreen{readRsp}{y,s_0} \seqA \allTL \tag{after iteration $3$}
+\end{align*}}\noindent
+Replacing all $\globalA A$ with the empty trace $\epsTL$ produces the refined violation property $\negSCA'$, from which the controller program $P_C$ can be directly derived.
+\end{example}

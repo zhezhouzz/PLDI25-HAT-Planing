@@ -1,0 +1,39 @@
+\section{Benchmark Details}
+
+\begin{table}[ht!]
+  \renewcommand{\arraystretch}{0.8}
+  % \vspace*{-.1in}
+  \caption{\small Detail explanation of benchmarks.}
+\vspace*{-.1in}
+\footnotesize
+\setlength{\tabcolsep}{2.3pt}
+\begin{tabular}{p{2.2cm}||p{6.5cm}|p{4.5cm}}
+  \toprule
+ Benchmark & Model description & Property expected to violate\\
+ \midrule
+\textsf{Database} & A simplified database which is introduced as running example in \autoref{sec:overview} & Read-Your-Writes policy introduced in \autoref{sec:overview} \\
+\midrule
+\textsf{EspressoMachine} & The user interacts with the coffee machine through its control panel, where panel must correctly interprets user inputs and handler errors from coffee machine.  & There is no handled ``run out of water'' error from coffee machine. \\
+\midrule
+\textsf{Simplified2PC} & A simplified version of two-phase commit protocol (2PC), where we assume transaction can have a single update operation. & Read-Your-Writes policy  \\
+\midrule
+\textsf{HeartBeat} & A failure detector that send heartbeat messages to a node to make sure it is alive; it reports error only when the node doesn't reply for multiple rounds by considering network package lose. & If the node is alive, the failure cannot report an false positive error.\\
+\midrule
+\textsf{BankServer} & The user interact with a bank to withdraw money from their accounts, where the balance is stored in another database component. & Bank should disallow users to withdraw an amount greater than their current balance. \\
+\midrule
+\textsf{RingLeaderElection} & Ring election algorithm where a group nodes are interconnected as a ring-like structure.  & Unique leader policy, i.e., there can only be an unique node that announces itself as leader. \\
+\midrule
+\textsf{Firewall} & A set of internal and external nodes communicating through a firewall, all messages between internal and external nodes should be forward by firewall. & Firewall should block an external node from taking initiative to send message to an internal node. \\
+\midrule
+\textsf{ChainReplication} & Chain replication protocol\cite{?}. & Read-Your-Writes policy. \\
+\midrule
+\textsf{Paxos} & Paxos protocol\cite{?}. & Paxos agreement policy, i.e., not two distinct learners can learn different values.\cite{?} \\
+\midrule
+\textsf{Raft} & Raft algorithm\cite{?}. & Leader compeleteness, i.e., if a log entry is committed, then it should be present in the leader's log.\\
+\midrule
+\textsf{Kermit2PCModel} & \multicolumn{2}{p{10cm}}{Case study in \autoref{sec:impl}}\\
+\bottomrule
+\end{tabular}
+\label{tab:bench}
+% \vspace*{-.15in}
+\end{table}

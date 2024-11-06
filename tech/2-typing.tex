@@ -1,0 +1,50 @@
+\paragraph{Strong Consistency} The SC requires that when the user receive the read response, the read value is the same as the current database, which can be expressed as the following \PAT:
+{\footnotesize
+  \begin{align*}
+    &\effLR{\finalA \msg{putReq}{k = \Code{key} \land v = \Code{val}} \land \nextA \neg \finalA \msg{putReq}{k = \Code{key}} } %
+    \\& \quad \effLR{\lastA \msg{getReq}{k = \Code{key}}}%
+    \effLR{(\neg \msg{putReq}{k = \Code{key}}) \untilA \msg{getRsp}{k = \Code{key} \land v = \Code{val}}}
+\end{align*}}\noindent
+whose prophecy automata indicates that there is no no updates ($\eff{putReq}$) happens before the user receives the read value.
+
+{\footnotesize
+\mprooftr{70mm}
+{
+$\Gamma \vdash \eff{op} : \overline{x{:}t}\sarr \rg{H}{\lastA\msgB{op}{\overline{y}}{\phi}}{A \seqA F}$ \quad
+$\Gamma \vdash \eff{op} : \overline{x{:}t}\sarr \rgbuf{H}{\lastA\msgB{op}{\overline{y}}{\phi}}{B'}$ \quad
+$\forall i. \Gamma \vdash v_i : t_i$ \quad
+ $\Gamma ~|~ B \cup B' \vdash e : \rg{H \seqA \lastA\msgB{op}{\overline{y}}{\phi\overline{[x \mapsto v]}}}{A}{F}$
+%  \quad
+% $\Gamma \wellfoundedvdash \rg{H}{\lastA\msgB{op}{\overline{y}}{\bigwedge \overline{y = v}} \seqA A}{F}$
+ }
+{TGen}
+{$\Gamma ~|~ B \vdash \zgen{op}{\overline{v}}{e} : \rg{H}{\lastA\msgB{op}{\overline{y}}{\bigwedge \overline{y = v}} \seqA A}{F}$}
+% \quad
+% \mprooftr{40mm}
+% {
+% $\Gamma \vdash[B] e : \tau$ \quad $\Gamma \vdash B' \subseteq B$
+%  }
+% {TBuffer}
+% {$\Gamma \vdash[B'] e : \tau$}
+\ \\ \ \\ \ \\
+\mprooftr{80mm}
+{
+$\Gamma \vdash \eff{op} : \overline{x{:}t}\sarr \rg{H}{\lastA\msgB{op}{\overline{y}}{\phi}}{A \seqA F}$
+\quad
+$\Gamma \vdash \eff{op} : \overline{x{:}t}\sarr \rgbuf{H}{\lastA\msgB{op}{\overline{y}}{\phi}}{B'}$
+\quad
+ $\Gamma, \overline{x{:}t} ~|~ B \cup B' \vdash e : \rg{H \seqA \lastA\msgB{op}{\overline{y}}{\phi}}{A}{F}$
+ % \quad
+ % $\Gamma \wellfoundedvdash \rg{H}{\lastA\msgB{op}{\overline{y}}{\phi} \seqA A}{F'}$
+ }
+{TObs}
+{$\Gamma ~|~ \{\msgB{op}{\overline{y}}{\phi}\} \cup B \vdash \zobs{\overline{x}}{op}{e} : \rg{H}{\lastA\msgB{op}{\overline{y}}{\phi} \seqA A}{F}$}
+% \quad
+% \mprooftr{40mm}
+% {
+% $\Gamma \vdash (B, e_1) : \rg{H}{A_1}{F_1}$ \quad
+% $\Gamma \vdash (F_1, e_2) : \rg{H \seqA A_1}{A_2}{F}$ 
+%  }
+% {TLet}
+% {$\Gamma \vdash (B, e_1 ; e_2) : \rg{H}{A_1 \seqA A_2}{F}$}
+}
