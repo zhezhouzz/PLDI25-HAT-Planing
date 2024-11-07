@@ -28,7 +28,7 @@ controller program itself. The syntax of $\DSL$ is shown in
 operations ($\primop$ and $\eff{op}$), non-deterministic choice
 ($\oplus$), and assertions. Effectful operations correspond to either
 \emph{generable} (e.g., $\eff{readReq}$) or \emph{observable} messages
-  (e.g., $\eff{readReq}$).
+  (e.g., $\eff{readReq}$), which can be decided by an built-in auxiliary predicate $\GEN$.
 
 \begin{figure}[ht!]
 {\footnotesize
@@ -62,7 +62,7 @@ operations ($\primop$ and $\eff{op}$), non-deterministic choice
     \end{prooftree}
       \quad
     \begin{prooftree}
-      \hypo{\alpha \vDash \zevent{op}{\overline{c}} \Downarrow \beta'}
+      \hypo{\alpha \vDash \zevent{op}{\overline{c}} \Downarrow \beta' \quad \GEN(\eff{op})}
       \infer1[\textsc{\small StGen}]{
         \steptr{\alpha}{(\buf, \zgen{op}{\overline{c}}{e})}{[\zevent{op}{\overline{c}}]}{(\buf \cup \beta', e)}
       }
@@ -274,6 +274,7 @@ $\Gamma  ~|~ B \vdash \tau <: \tau'$}
 {
 $\Gamma \vdash \eff{op} : \overline{x_i{:}t_i}\sarr \rgB{H}{\lastA\msg{op}{\phi}}{A \seqA F}{B'}$ \quad
 $\forall i. \Gamma \vdash v_i : t_i$ \quad
+$\GEN(\eff{op})$ \quad
  $\Gamma ~|~ B \cup B' \vdash e : \rg{H \seqA \lastA\msg{op}{\phi\msubst{x_i}{v_i}}}{A}{F}$
  }
 {TGen}
