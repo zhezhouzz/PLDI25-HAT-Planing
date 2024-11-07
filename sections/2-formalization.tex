@@ -11,7 +11,7 @@
     \\ \text{\textbf{Values }}& \quad  & v ::= \quad & c ~|~ x
     \\ \text{\textbf{Qualifiers}}& \quad & \phi ::= \quad & v ~|~ \primop\;\overline{v} ~|~ \bot ~|~ \top  ~|~ \neg \phi ~|~ \phi \land \phi ~|~ \phi \lor \phi ~|~ \phi \impl \phi ~|~ \forall x{:}b.\, \phi
     \\\text{\textbf{Effectful Operations }}& \quad & \eff{op} ::= \quad & \eff{readReq} ~|~ \eff{readRsp} ~|~  ...
-    \\ \text{\textbf{Statements}}& \quad & e ::=\quad & v ~|~ \zlet{x{:}b}{\primop\ \overline{v}}{e} ~|~ \zgen{op}{\overline{v}}{e} ~|~ \zobs{\overline{x{:}b}}{op}{e}
+    \\ \text{\textbf{Expressions}}& \quad & e ::=\quad & v ~|~ \zlet{x{:}b}{\primop\ \overline{v}}{e} ~|~ \zgen{op}{\overline{v}}{e} ~|~ \zobs{\overline{x{:}b}}{op}{e}
     \\ & & \quad & ~|~  \zassert{\phi}{e} ~|~  \zassume{\phi}{e} ~|~ e \oplus e
   \end{alignat*}}
 \caption{$\DSL$ syntax }
@@ -33,10 +33,12 @@ operations ($\primop$ and $\eff{op}$), non-deterministic choice
 \begin{figure}[ht!]
 {\footnotesize
 {\small\begin{align*}
-\text{\textbf{Buffer}}& \quad &\beta ::= \quad & \text{multi-set of $\zevent{op}{\overline{c}}$}
-\qquad\qquad\quad
-\text{\textbf{Traces}}& \quad &\alpha ::= \quad &
-    \emptr ~|~ \zevent{op}{\overline{c}} \;{::}\; \alpha ~|~ \alpha
+\text{\textbf{Message}}& \  & m ::= \   & \zevent{op}{\overline{c}}
+\qquad
+\text{\textbf{Buffer}}& \  &\beta ::= \  & \text{multi-set of $m$}
+\qquad
+\text{\textbf{Traces}}& \  &\alpha ::= \  &
+    \emptr ~|~ m \;{::}\; \alpha ~|~ \alpha
     \listconcat \alpha 
 \end{align*}
 \begin{align*}
@@ -65,18 +67,27 @@ operations ($\primop$ and $\eff{op}$), non-deterministic choice
         \steptr{\alpha}{(\buf, \zgen{op}{\overline{c}}{e})}{[\zevent{op}{\overline{c}}]}{(\buf \cup \beta', e)}
       }
     \end{prooftree}
+\\ \ 
+\mprooftr{60mm}{
+$\phi\msubst{x}{c}$
+}{StAssume}{
+$\steptr{\alpha}{(\buf, \zassume{\phi}{e})}{[]}{(\buf, e\msubst{x}{c})}$
+}
+\quad
+\mprooftr{40mm}{}{StAssert}{
+$\steptr{\alpha}{(\buf, \zassert{\top}{e}}{[]}{(\buf, e)}$
+}
   }
   \caption{Selected Operational Semantics}
   \label{fig:selected-semantics}
 \end{figure}
 
-\paragraph{Operational Semantics} The message-passing semantics of $\DSL$ relies on \emph{message buffers}, which are multi-set of events $\zevent{op}{\overline{c}}$. Evaluating a $\DSL$ program depends
+\paragraph{Operational Semantics} The message-passing semantics of $\DSL$ relies on \emph{message buffers}, which are multi-set of \emph{message} $(\zevent{op}{\overline{c}})$. Evaluating a $\DSL$ program depends
 on an input \emph{trace}, i.e., a sequence of effectful operations, and
 produces an output trace.  Traces support the standard list operations
 (i.e., cons ${::}$ and concatenation $\listconcat{}$).
 We define the operational semantics of $\DSL$ as a small-step
-reduction relation:
-\[\steptr{\alpha}{(\beta, e)}{~\alpha'}{(\beta', e')}\]
+reduction relation: $\steptr{\alpha}{(\beta, e)}{~\alpha'}{(\beta', e')}$.
 This relation is read as: under the context $\alpha$ and current
 message buffer $\beta$, $e$ steps to $e'$, emitting the trace
 $\alpha'$ and producing the output buffer $\beta'$. Intuitively, the
@@ -88,10 +99,9 @@ $\alpha \vDash \zevent{op}{\overline{c}} \Downarrow \beta$, that
 describes any new messages that are added to the message buffer as a
 consequence of handling a message.
 
-\autoref{fig:selected-semantics} provides the two non-standard rules
+\autoref{fig:selected-semantics} provides the $4$ non-standard rules
 of our semantics.\footnote{The remaining rules are completely standard
-  and provided in the supplemental material. \BD{We may want to add
-    the rules for assert and assumes to this figure.}} The rule for
+  and provided in the supplemental material.} The rule for
 observable events (\textsc{StObs}) reflects the ``receive-and-send''
 behavior of messages produced by handlers. This rule
 non-deterministically removes a pending message that matches the
@@ -102,27 +112,28 @@ messages generated as a consequence of handling
 $\eff{op}\ \overline{c}$ are added to the resulting message buffer.
 The reduction rule for generable events (\textsc{StGen}) is similar;
 since these events can be directly performed by the controller, the
-rule does not require a corresponding message in the buffer.
+rule does not require a corresponding message in the buffer. The \textsc{StAssume} rule applies a substitution $\msubst{x}{c}$ that satifies with qualifier $\phi$ to the body of assume expression; while \textsc{StAssert} rule requires the asserted qualifier to be alreay true ($\top$) after substitution.  
 
-\begin{example}[Operational Semantics] The first three events in the trace \ref{eqn:traceEx} is
+\begin{example}[Operational Semantics]\label{ex:semantics} The first three events in the trace \ref{eqn:traceEx} is
   produced by the controller program \ref{eqn:autoEx} as follows:
-  {\small
+  {\footnotesize
     \begin{align*}
-      {[]}\vDash{([],P_C)}
-      &{\xhookrightarrow{[\eff{writeReq(3)}]}\,}{([\eff{writeRsp(3,\true)}],
-        \emph{lines $3$ - $7$ of $P_C$})} \tag{\textsc{StGen}}\\
-      &{\xhookrightarrow{[\eff{writeReq(4)}]}\,}{([\eff{writeRsp(3,\true)};
-        \eff{writeRsp(4,\true)}], \emph{lines $4$ - $7$ of
-        $P_C$})} \tag{\textsc{StGen}}\\
-      &{\xhookrightarrow{[\effBlue{writeRsp(4,\true)}]}\,}{([\effGreen{writeRsp(3,\true)}],
-        \emph{lines $5$ - $7$ of $P_C$})} \tag{\textsc{StObs}}
+      {[]}\vDash{(\emptyset,P_C)}
+      &\xhookrightarrow{[]} (\emptyset,\emph{lines $2$ - $7$ of $P_C$, with $x\mapsto 3, y \mapsto 4$}) \tag{\textsc{StAssume}}\\[-0.4em]
+      &\xhookrightarrow{[ \zevent{writeReq}{3}]} (\{ \zevent{writeRsp}{3}\},
+        \emph{lines $3$ - $7$ of $P_C$}) \tag{\textsc{StGen}}\\[-0.4em]
+      &\xhookrightarrow{[\zevent{writeReq}{4}]} (\{\zevent{writeRsp}{3},
+        \zevent{writeRsp}{4}\}, \emph{lines $4$ - $7$ of $P_C$}) \tag{\textsc{StGen}}\\[-0.4em]
+      &\xhookrightarrow{[\zevent{writeRsp}{4}]} (\{\zevent{writeRsp}{3}\},
+        \emph{lines $5$ - $7$ of $P_C$}) \tag{\textsc{StObs}} \\[-0.4em]
+      &\xhookrightarrow{[\eff{readReq}]} (\{\zevent{writeRsp}{3}, \zevent{readRsp}{4,\true}\},
+        \emph{lines $6$ - $7$ of $P_C$}) \tag{\textsc{StGen}}
     \end{align*}
-  }
-  \noindent In the first two steps, the controller directly generates
-  two $\eff{writeReq}$ messages and adds two $\eff{writeRsp}$ messages
+  }\noindent 
+With the help of solver, the first step of reduction performs one possible substitution ($x\mapsto 3, y \mapsto 4$) satisfying the assumption $x\not=y$ (line $1$). In the following two steps, the controller directly generates two $\eff{writeReq}$ messages and adds two $\eff{writeRsp}$ messages
   in the message buffer. One of these messages is consumed in the
-  third step, reflecting the constraint defined at line 4 in
-  \ref{eqn:autoEx}.
+  forth step, reflecting the constraint defined at line 4 in
+  \ref{eqn:autoEx}. The fifth step handles $\eff{readReq}$, where message buffer is inserted with a $\eff{readRsp}$ message with the last written value $4$ (i.e., last $\eff{writeReq}$ above $\hookrightarrow$) as its payload.
 \end{example}
 
 \subsection{Types}
@@ -131,10 +142,10 @@ rule does not require a corresponding message in the buffer.
 {\footnotesize
 {\small
 \begin{alignat*}{2}
-    \text{\textbf{Pure Refinement Types}}& \quad & t  ::= \quad & \rawnuot{b}{\phi}
-    \\\text{\textbf{Symbolic LTL$_f$}}& \quad &A,B  ::= \quad & \msgB{op}{\overline{x}}{\phi} ~|~ \evparenth{\phi} ~|~ \negA A ~|~ A \landA A ~|~ A \lorA A ~|~ A \seqA A ~|~ \nextA A ~|~ A \untilA A
+    \text{\textbf{Pure Refinement Types}}& \quad & t  ::= \quad & \rawnuot{b}{\phi} ~|~ x{:}t \sarr t
+    \\\text{\textbf{Symbolic LTL$_f$}}& \quad &H,A,F  ::= \quad & \msgB{op}{\overline{x}}{\phi} ~|~ \evparenth{\phi} ~|~ \negA A ~|~ A \landA A ~|~ A \lorA A ~|~ A \seqA A ~|~ \nextA A ~|~ A \untilA A
     \\ \text{\textbf{Prophecy Automata Types}}& \quad & \tau  ::= \quad &
-    \rg{H}{A}{F} ~|~ x{:}b \garr \tau ~|~ x{:}t\sarr \tau ~|~ \tau \interty \tau
+    \rg{H}{A}{F} ~|~ \rgB{H}{A}{F}{\overline{\eff{op}}} ~|~ x{:}b \garr \tau ~|~ x{:}t\sarr \tau ~|~ \tau \interty \tau
     \\\text{\textbf{Type Contexts}}& \quad &\Gamma ::= \quad  &\emptyset ~|~ x{:}t, \Gamma
   \end{alignat*}}
 \vspace{-1.8em}}
@@ -142,6 +153,7 @@ rule does not require a corresponding message in the buffer.
 \label{fig:type-syntax}
 \vspace{-.2cm}
 \end{figure}
+
 
 The syntax of $\DSL{}$'s types is shown in \autoref{fig:type-syntax}.
 Types include \emph{pure} refinement types, which describe pure
@@ -203,6 +215,19 @@ symbolic events; for example, the full signature of the $\eff{getReq}$
 handler from \autoref{sec:intro} uses the ghost variables $\Code{key}$
 and $\Code{val}$.
 
+A handler type \PAT{} $\rgB{H}{A}{F}{B}$ additional contains a multi-set $B$ of operators $\{\overline{\eff{op}}\}$, which indicts messages $\eff{op}$ in prophecy automata $F$ (i.e., $\eff{getRsp}$ for \PAT of $\eff{getReq}$) are new sent by current handler. To deal with messages that has same name, we assume there is an unique identifier is assigned to these operators (e.g., $\eff{getRsp_1}$, $\eff{getRsp_2}$, ...), which we can successfully decide the location of symbolic event in $F$ by its name in $\bufLR{B}$. When the context is clear, we omit $\bufLR{B}$.
+
+\begin{example}[Strong Consistency] The SC mentioned in \autoref{sec:intro} requires that when the user receive the $\eff{getRsp}$, the gotten value is the same as the put value in current database. A \PAT for $\eff{getReq}$ consistent with SC can be 
+{\footnotesize
+  \begin{align*}
+    \Code{val}\hasnty{tVal} \garr & \Code{key}\hasoty{tKey}{\top} \sarr  \effLR{\finalA \msg{putReq}{k = \Code{key} \land v = \Code{val}} \land \nextA \neg \finalA \msg{putReq}{k = \Code{key}} } %
+    \\& \quad \effLR{\lastA \msg{getReq}{k = \Code{key}}}%
+    \effLR{(\neg \msg{putReq}{k = \Code{key}}) \untilA \msg{getRsp}{k = \Code{key} \land v = \Code{val}}}\bufLR{ \eff{getRsp} }
+\end{align*}}\noindent
+whose prophecy automata indicates that there is no no updates ($\eff{putReq}$) happens before the user receives the $\eff{getRsp}$.    
+\end{example}
+
+
 \subsection{Typing rules}
 
 \paragraph{Type contexts} A type context is a sequence of bindings
@@ -214,64 +239,68 @@ properties (e.g., weakening) that are used to prove type safety.
 {\footnotesize
 {\small
 \begin{flalign*}
- &\text{\textbf{Auxiliary Typing}} & \fbox{$\Gamma \wellfoundedvdash \tau \quad \Gamma \vdash \tau <: \tau$} &
-  &\text{\textbf{Typing}} &  &\fbox{$\Gamma \vdash \primop : \tau \quad \Gamma \vdash \eff{op} : \tau \quad \Gamma \vdash t \termsyn v \quad \Gamma \vdash \tau \termsyn e$}
+ &\text{\textbf{Auxiliary Typing}} & \fbox{$\Gamma \wellfoundedvdash \tau \quad \Gamma \vdash A \subseteq A \quad \Gamma \vdash \tau <: \tau$} &
+  &\text{\textbf{Typing}} &  &\fbox{$\Gamma \vdash \eff{op} : \tau \quad \Gamma \vdash v : t \quad \Gamma ~|~ B \vdash e: \tau$}
 \end{flalign*}
 }
 \\ \
+\mprooftr{40mm}
+{$\Gamma \wellfoundedvdash H$ \quad
+$\Gamma \wellfoundedvdash A$ \quad
+$\Gamma \wellfoundedvdash F$ \quad
+$\Gamma \not\vdash H \seqA A \seqA F \subseteq \neg\allTL$ }
+{WfHAF}
+{$\Gamma \wellfoundedvdash \rg{H}{A}{F}$}
+\ 
 \mprooftr{42mm}
 {$\Gamma \vdash H_2 \subseteq H_1$ \quad
 $\Gamma \vdash A_1 \subseteq A_2$ \quad
 $\Gamma \vdash F_1 \subseteq F_2$ }
 {SubHAF}
 {$\Gamma \vdash \rg{H_1}{A_1}{F_1} <: \rg{H_2}{A_2}{F_2}$}
-\
-\mprooftr{38mm}
-{$\Gamma \vdash \rg{H}{A_1}{F} \termsyn e_1$ \quad
-$\Gamma \vdash \rg{H}{A_2}{F} \termsyn e_2$}
-{TUnion}
-{$\Gamma \vdash \rg{H}{A_1 \lorA A_2}{F} \termsyn e_1 \oplus e_2$}
-\
+\ 
 \mprooftr{18mm}
-{$\Gamma \vdash \tau \termsyn e$ \quad
-$\Gamma \vdash \tau <: \tau'$ \quad
-$\Gamma \wellfoundedvdash \tau'$}
+{$\Gamma ~|~ B \vdash e: \tau$ \quad
+$\Gamma  ~|~ B \vdash \tau <: \tau'$}
 {TSub}
-{$\Gamma \vdash \tau' \termsyn e$}
-\\ \ \\ \ \\ \
-\mprooftr{55mm}
-{$(\eff{op}, \overline{x{:}t}\sarr \rg{H}{A}{\bigwedge_{i = 1 ... n} \finalA \msg{op_i}{\phi_i}}) \in \Delta$ \\
-$F' = F_1 \seqA \lastA\msg{op_1}{\phi_1} \seqA ... F_n \seqA \lastA\msg{op_n}{\phi_n} \seqA F_{n+1} $ \\
-$\Gamma \wellfoundedvdash \overline{x{:}t}\sarr \rg{H}{A}{F'}$}
-{TEOpFrame}
-{$\Gamma \vdash \eff{op} : \overline{x{:}t}\sarr \rg{H}{A}{F'}$}
-\quad
-\mprooftr{33mm}
+{$\Gamma  ~|~ B \vdash e: \tau'$}
+\\[.3em]
+\mprooftr{35mm}
 {}
-{TEps}
-{$\Gamma \vdash \rg{H}{\epsTL}{F} \termsyn ()$}
-\\ \ \\ \ \\ \
-\mprooftr{59mm}
-{
-$\Gamma \vdash \eff{op} : \overline{x{:}t}\sarr \rg{H}{\lastA\msgB{op}{\overline{y}}{\bigwedge \overline{y = v}}}{A \seqA F}$
+{TRet}
+{$\Gamma ~|~ B \vdash () : \rg{H}{\epsTL}{F}$}
 \quad
- $\Gamma \vdash \rg{H \seqA \lastA\msgB{op}{\overline{y}}{\bigwedge \overline{y = v}}}{A}{F} \termsyn e$
- \quad
-$\Gamma \wellfoundedvdash \rg{H}{\lastA\msgB{op}{\overline{y}}{\bigwedge \overline{y = v}} \seqA A}{F}$
+\mprooftr{73mm}
+{
+$\Gamma \vdash \eff{op} : \overline{x_i{:}t_i}\sarr \rgB{H}{\lastA\msg{op}{\phi}}{A \seqA F}{B'}$ \quad
+$\forall i. \Gamma \vdash v_i : t_i$ \quad
+ $\Gamma ~|~ B \cup B' \vdash e : \rg{H \seqA \lastA\msg{op}{\phi\msubst{x_i}{v_i}}}{A}{F}$
  }
-{\footnotesize TGen}
-{$\Gamma \vdash \rg{H}{\lastA\msgB{op}{\overline{y}}{\bigwedge \overline{y = v}} \seqA A}{F}  \termsyn \zgen{op}{\overline{v}}{e}$}
-\
-\mprooftr{59mm}
+{TGen}
+{$\Gamma ~|~ B \vdash \zgen{op}{\overline{v_i}}{e} : \rg{H}{\lastA\msg{op}{\phi\msubst{x_i}{v_i}} \seqA A}{F}$}
+\\[.3em]
+\mprooftr{15mm}
 {
-$\Gamma \vdash \eff{op} : \overline{x{:}t}\sarr \rg{H}{\msgB{op}{\lastA\overline{y}}{\phi}}{A \seqA F}$
+$(\eff{op}, \tau) \in \Delta$
+ }
+{TEOp}
+{$\Gamma \vdash \eff{op} : \tau$}
+\ 
+\mprooftr{21mm}
+{
+$\Gamma ~|~ B \vdash e_1 : \tau$ \quad $\Gamma ~|~ B \vdash e_2 : \tau$
+ }
+{TChoice}
+{$\Gamma ~|~ B \vdash e_1 \oplus e_2 : \tau$}
+\ 
+\mprooftr{65mm}
+{
+$\Gamma \vdash \eff{op} : \overline{x{:}t}\sarr \rgB{H}{\lastA\msg{op}{\phi}}{A \seqA F}{B'}$
 \quad
- $\Gamma, \overline{x{:}t} \vdash \rg{H \seqA \lastA\msgB{op}{\overline{y}}{\phi \land \overline{y = x}}}{A}{F} \termsyn e$
- \quad
- $\Gamma \wellfoundedvdash \rg{H}{\lastA\msgB{op}{\overline{x}}{\phi} \seqA A}{F}$
+ $\Gamma, \overline{x{:}t} ~|~ B \cup B' \vdash e : \rg{H \seqA \lastA\msg{op}{\phi}}{A}{F}$
  }
 {TObs}
-{$\Gamma \vdash \rg{H}{\lastA\msgB{op}{\overline{y}}{\phi} \seqA A}{F} \termsyn \zobs{\overline{x}}{op}{e}$}
+{$\Gamma ~|~ \{\eff{op}\} \cup B \vdash \zobs{\overline{x}}{op}{e} : \rg{H}{\lastA\msg{op}{\phi} \seqA A}{F}$}
 }
 \caption{Selected typing rules.}
 \label{fig:selected-typing-rules}
@@ -280,112 +309,79 @@ $\Gamma \vdash \eff{op} : \overline{x{:}t}\sarr \rg{H}{\msgB{op}{\lastA\overline
 
 \paragraph{Auxiliary typing relations} There are two auxiliary
 relations used by our type system: a well-formedness relation
-$\Gamma \wellfoundedvdash \tau$ ensures that all qualifiers appearing
+$\Gamma \wellfoundedvdash \tau$ mostly ensures that all qualifiers appearing
 in a type $\tau$ are closed under the current typing context $\Gamma$;
 and a mostly-standard semantic subtyping relation.
-\autoref{fig:selected-typing-rules} highlights the key subtyping rule.
+\autoref{fig:selected-typing-rules} highlights two key auxiliary typing rule.
+Rule $\textsc{WfHAF}$ additional requires the non-emptiness ($\neg\allTL$ indicates empty automata) of the concatenation of history, current, and prophecy automata in a \PAT. The
+inclusion relation over automata $\Gamma \vdash A \subseteq A$ is defined in the next subsection.
 Rule $\textsc{SubHAF}$ checks inclusion between the languages of two
-$\PAT{}s$ under type context $\Gamma$.  The rule relates history
-automata contravariantly, while current and prophecy automata are
-covariant. The intuition here is that because the asynchronous
-semantics \emph{delays} the return result of a computation as a
-message that is expected to be received in the future, both the
-current and prophecy automata are the effect caused by execution. The
-inclusion relation over automata $\Gamma \vdash A \subseteq A$ is
-defined in the next subsection.
+$\PAT{}s$ under type context $\Gamma$.  The rule relates history and prophecy
+automata contravariantly, while current automata are covariant. The intuition here is that, similar with history automata that provide presumption on previous events for a computation, the prophecy provide presumption on events happens in the future. Thus, both the
+history and prophecy automata are the effect assumed by execution.
 
-\paragraph{Effect Operator Framing}  The use of prophecy
-automata in specifying handler behavior is very powerful.  However,
-since it is a characterization of future events that must happen as a
-consequence of executing a handler message, it is important that the
-specification does not overly constrain the effects that may be
-produced by other handlers that execute independently.  In other
-words, a well-formed handler specification (defined in the next
-subsection) should have its prophecy automata be in the form
-$\bigwedge_{i = 1 ... n} \finalA \msg{op_i}{\phi_i}$.  In order to
-allow this type to adapt to independently occuring events in the
-future, we introduce a framing rule \textsc{TEOpFrame} for operators
-that allows the arbitrary insertion of other automata ($F_1
-... F_{n+1}$) between $\msg{op_i}{\phi_i}$.
+\paragraph{Observation Capability} The observable message (e.g., $\eff{readRsp}$) cannot just happens by itself, but need another message happens previously (e.g., $\eff{readReq}$) whose handler sent this observable message. Then, this capability of observing a message is capture by a multi-set message name (effect operators), as in handler \PAT. A expression $\zobs{\overline{x}}{op}{e}$ is type-safe only when message name $\eff{op}$ is contained by \emph{observation capability} $B$, where $\eff{op}$ will be consumed during typing on its body $e$.
 
-\paragraph{Type-guided Deductive Synthesis} Our type synthesis rules
-have the form $\Gamma \vdash \tau \termsyn e$ that reads ``synthesize
-a term $e$ that has type $\tau$ under type context $\Gamma$''. A
+% \paragraph{Effect Operator Framing}  The use of prophecy
+% automata in specifying handler behavior is very powerful.  However,
+% since it is a characterization of future events that must happen as a
+% consequence of executing a handler message, it is important that the
+% specification does not overly constrain the effects that may be
+% produced by other handlers that execute independently.  In other
+% words, a well-formed handler specification (defined in the next
+% subsection) should have its prophecy automata be in the form
+% $\bigwedge_{i = 1 ... n} \finalA \msg{op_i}{\phi_i}$.  In order to
+% allow this type to adapt to independently occuring events in the
+% future, we introduce a framing rule \textsc{TEOpFrame} for operators
+% that allows the arbitrary insertion of other automata ($F_1
+% ... F_{n+1}$) between $\msg{op_i}{\phi_i}$.
+
+\paragraph{Controller program typing} Our type rules
+have the form $\Gamma ~|~ B \vdash e : \tau$ that reads `` a term $e$ that has type $\tau$ under type context $\Gamma$ and observation capability $B$''. A
 subset of our synthesis rules\footnote{The complete set of typing
   rules is included in the \techreport{}.} is shown in
-\autoref{fig:selected-typing-rules}. The synthesis rules are
-structured over the shape of the current automata $A$ in \PAT
-$\rg{H}{A}{F}$.  Rules \textsc{TGen} and \textsc{TObs} describe how synthesis
-proceeds for a non-empty current automata.  Consider a message over
-a symbolic event $\eff{op}$ that is the head of the trace accepted by
-the current automata in a \PAT{}.  Rule \textsc{TObs} first extracts
-the type of $\eff{op}$ from the typing context.  It additionally
-requires that the selected type $\rg{H}{\msgB{op}{\overline{y}}{\phi}}{A
-  \seqA F}$ has the same \emph{global} view as the \PAT{} against which
-synthesis is being performed, i.e.:
+\autoref{fig:selected-typing-rules}, where we elide the well-formedness judgments in the
+premises of these rules; which assume all \PAT are well-formed. Rules \textsc{TGen} and \textsc{TObs} are key rules for non-standard $\mykw{gen}$ and $\mykw{obs}$ expression.
+Rule \textsc{TGen} first extracts the type of observing effect operator $\eff{op}$ from the typing context with the help of effect operator typing $\textsc{TEOp}$. Besides requiring the arguments ($\overline{v_i}$) is well-typed against parameter types ($\overline{t_i}$) as application rules in standard refinement typing, it additionally requires that the selected handler type $\rg{H}{\lastA\msg{op}{\phi}}{A\seqA F}$ has the same \emph{global} view as the \PAT{} type check against, i.e.:
 {\small\begin{align*} \underbrace{ H
   }_\texttt{history}\;\seqA\;\underbrace{
-    \lastA \msgB{op}{\overline{y}}{\phi} \seqA A }_\texttt{current} \;\seqA\;
+    \lastA \msg{op}{\phi\msubst{x_i}{v_i}} \seqA A }_\texttt{current} \;\seqA\;
   \underbrace{ F }_\texttt{prophecy} \equiv \underbrace{ H
   }_\texttt{history}\;\seqA\;\underbrace{
-    \lastA \msgB{op}{\overline{y}}{\phi} }_\texttt{current} \;\seqA\;
+    \lastA \msg{op}{\phi\msubst{x_i}{v_i}} }_\texttt{current} \;\seqA\;
   \underbrace{ A \seqA F }_\texttt{prophecy}
 \end{align*}}\noindent
-If this is the case, we move the event $\eff{op}$ from the head of the
-current automata into the tail of the history automata and add the
-constraint $\overline{y = x}$ to ensure that the local payload
-$\overline{y}$ is consistent with the parameters $\overline{x}$.  We
-then proceed with synthesizing the rest of program.  Rule
-\textsc{TGen} is similar, excepted for the manner in which the payload
-is delivered ($\overline{y = v}$), where $\overline{v}$ is provided by
-the controller.  We, therefore, need to ensure that both the operator
-type and the program type are consistent with respect to the provided
-values.  Notably, we can always use the standard subsumption rule
-\textsc{TSub} to change the shape of types. The synthesis procedure
-ends with rule \textsc{TEps} when all symbolic events in the current
-automata are synthesized; note that the LTL$_f$ formula
-$\epsTL$ specifies that automata that only accepts an empty
-trace. Finally, our deductive synthesis can synthesize different
-controller and union them together via \textsc{TUnion}, which enable
-it to explore different message orderings.
+If this is the case, we move the symbolic event $\msg{op}{\phi\msubst{x_i}{v_i}}$ from the head of the current automata into the tail of the history automata. We also add the sent message $B'$ of \PAT of $\eff{op}$ into observation capability and continue typing on the body expression $e$. Rule \textsc{TObs} is similar, beside the payload of observed $\eff{op}$ is not provided by the controller, thus no need addition typing on parameter types. Moreover, the \textsc{TObs} will consume the observed $\eff{op}$ from observation capability ($\{\eff{op}\} \cup B$). Notably, we can always use the standard subsumption rule
+\textsc{TSub} to change the shape of types. The controller should end with an unit value $()$, where rule \textsc{TRet} requires the current automata of its \PAT to a LTL$_f$ formula $\epsTL$, which specifies that automata that only accepts an empty
+trace (i.e., $[]$). Finally, the union expression can be typed via rule \textsc{TChoice}, which enable controller to explore different message orderings.
 
-% At last, we would like to highlight a special prophecy strengthening rule for operator type (\textsc{TEOp}) come from the asynchronous semantics. The intuition here is that the asynchronous semantics ``delay'' the return result of a computation as message that has non-zero chance to be received at \emph{any possible step} in the future. The well-formed handler specification $\Delta$ (define in next subsection) always capture all possible situation in the prophecy automata. Then, any automata $F'$ that included by prophecy automata $F$ can leads to another valid operator type.
 
-% \SJ{Needs to be rewritten to use SFAs not SREs}
-\begin{example}[Type-guided Deductive Synthesis] We provide
-  an informal derivation of how the typing rules enable the synthesis of program $P_C$
-  fron a given type
+\begin{example}[Controller Typing] We provide
+  an informal derivation of typing controller program $P_C$ against a given type
   $\rg{\epsTL}{\negSCA}{\epsTL}$ that encodes the violation of RYR
   policy under type context $\Gamma \doteq \Code{x}\hasoty{int}{\top},
   \Code{y}\hasoty{int}{v \not= x}$. We first apply the subsumption
-  rule (\textsc{Tsub}) to convert into its subtype
-  $\rg{\epsTL}{\negSCA'}{\epsTL}$ as the new program type.
+  rule (\textsc{Tsub}) to convert into its subtype $\rg{\epsTL}{\negSCA'}{\epsTL}$ which is consistent with $P_C$.
   {\footnotesize\begin{align*} \negSCA' \doteq &\underbrace{
       \lastA\msg{writeReq}{v = \Code{x}} }_\texttt{$A_1$} \seqA \underbrace{
       \lastA\msg{writeReq}{v = \Code{y} \land v \not= \Code{x}} \seqA
-      \lastA\msg{readReq}{\top} }_\texttt{$A_2$} \seqA \\&\underbrace{
-      \lastA\msg{writeRsp}{v = \Code{y} \land st = \true} }_\texttt{$A_3$}
-    \seqA \underbrace{ \lastA\msg{writeRsp}{v = \Code{x} \land st = \true}
-      \seqA \lastA\msg{readRsp}{v = \Code{y} \land st = \true \land v \not=
+      \lastA\msg{writeRsp}{v = \Code{y}} \seqA \lastA\msg{readReq}{\top} }_\texttt{$A_2$} \seqA \\&\underbrace{ \lastA\msg{writeRsp}{v = \Code{x}} }_\texttt{$A_3$}
+    \seqA \underbrace{ \lastA\msg{readRsp}{v = \Code{y} \land st = \true \land v \not=
         \Code{x}} }_\texttt{$A_4$}
 \end{align*}}\noindent
-For the first symbolic event $\msg{writeReq}{v = \Code{x}}$ which is generatable, we select the desugared type of $\eff{writeReq}$ from handler specification $\Delta$, then use \textsc{TEOpFrame} and \textsc{TSub} to adjust the shape the types to be consistent with $\negSCA'$.
+For the first $\mykw{gen}$ expression on line $2$ of $P_C$ can be typed with rule \textsc{TGen}, which first select \PAT of $\eff{writeReq}$ from handler specification $\Delta$ and use \textsc{TSub} to adjust it into a shape consistent with $\negSCA'$:
 {\footnotesize\begin{align*}
-&(\eff{writeReq},  \Code{x}\hasnty{int} \sarr \rg{\allTL}{\lastA\msg{writeReq}{v = \Code{x}}}{\finalA\msg{writeRsp}{v = \Code{x}}}) \in \Delta
-% \\&(\eff{writeReq}, \Code{x}\hasnty{int} \sarr \rg{\anyA^*}{\msg{writeReq}{v = \Code{x}}}{\anyA^* \seqA \msg{writeRsp}{v = \Code{x}} \seqA \anyA^*}) \in \Delta \tag{desugar into SRE}
-\\&\Gamma \vdash \eff{writeReq}: \Code{x}\hasnty{int} \sarr \effLR{\allTL}\ \effLR{\lastA\msg{writeReq}{v = \Code{x}}}\ \effLR{A_2 \seqA \lastA \msg{writeRsp}{v = \Code{x} \land st = \true} \seqA A_4} \tag{\textsc{TEOpFrame}}
+&(\eff{writeReq},  \Code{x}\hasnty{int} \sarr \rgB{\allTL}{\lastA\msg{writeReq}{v = \Code{x}}}{\finalA\msg{writeRsp}{v = \Code{x}}}{\eff{writeRsp}}) \in \Delta
+\\&\Gamma \vdash \eff{writeReq}: \Code{x}\hasnty{int} \sarr \rgB{\allTL}{\lastA\msg{writeReq}{v = \Code{x}}}{\finalA\msg{writeRsp}{v = \Code{x}}}{\eff{writeRsp}} \tag{\textsc{TEOp}}
 \\&\Gamma \vdash \eff{writeReq}: \Code{x}\hasnty{int} \sarr \effLR{\epsTL}\ \effLR{\lastA\msg{writeReq}{v = \Code{x}}}\ \effLR{A_2 \seqA \lastA\msg{writeRsp}{v = \Code{x} \land st = \true} \seqA A_4} \tag{\textsc{TSub}}
 \end{align*}}\noindent
-where in this case $\textsc{TEOpFrame}$ refine the prophecy automata and $\textsc{TSub}$ refine the history automata. Since the type of $\eff{writeReq}$ is exactly align with the program type $\rg{\epsTL}{A_1\seqA A_2\seqA A_3\seqA A_4}{\epsTL}$, it is safe to apply rule \textsc{TGen}, and derive a term $\zgen{writeReq}{\Code{x}}{e}$, where $e$ should be synthesized from program type $\rg{A_1}{A_2\seqA A_3\seqA A_4}{\epsTL}$.
+Since the type of $\eff{writeReq}$ is exactly align with the program type $\rg{\epsTL}{A_1\seqA A_2\seqA A_3\seqA A_4}{\epsTL}$, we can continuing type check the rest of program (line $3$ - $7$ of $P_C$) against \PAT $\rg{A_1}{A_2\seqA A_3\seqA A_4}{\epsTL}$.
 \end{example}
 
 \subsection{Type Soundness}
 
 \paragraph{Type denotations} Similar to other refinement type systems~\cite{..},
-type denotations in $\DSL$\ ($\denot{...}$) are given as set of terms
-that have that type.  The type context $\Gamma$ is denoted as a
-\emph{substitution} $\sigma$ that provides the assignments for binding
-variables in $\Gamma$.  Moreover, the denotation (accepting language)
+type in $\DSL$ are denoted as their inhabitants (i.e., $\denot{t}$ and $\denot{\tau}$).  The type context $\Gamma$ is denoted as a \emph{substitution} $\sigma$ (e.g., $[x\mapsto 3, y\mapsto 4]$ in \autoref{ex:semantics}) that provides the assignments for binding variables in $\Gamma$.  Moreover, the denotation (accepting language)
 of SFAs is the set of traces they can accept. Then,  automata
 inclusion under a type context is defined as $\Gamma \vdash A \subseteq
 A' \doteq \forall \sigma \in \denot{\Gamma}. \denot{\sigma(A)}
@@ -395,23 +391,15 @@ A' \doteq \forall \sigma \in \denot{\Gamma}. \denot{\sigma(A)}
 % \end{align*}}\noindent
 
 \paragraph{Well-formed Handler specification} A
-handler specification should have prophecy automata that only express
-the eventually modality.  Moreover, its current automata should always
-be a singleton ($\lastA$), and should also be consistent with the
+handler specification should be consistent with the
 auxiliary semantics of handlers introduced in
-\autoref{fig:selected-semantics}.  We can state these conditions formally:
+\autoref{fig:selected-semantics}, which defined formally as the following
 
 \begin{definition}[Well-formed handler specification]
   \label{lemma:built-in-typing}
-  The handler specification $\Delta$ is well-formed iff its type in
-  the following shape {\small\begin{align*} \Delta(\eff{op}) ~ = ~
-    \overline{x{:}t} \sarr
-    \rg{H}{\lastA\msgB{op}{\overline{y}}{\overline{y = x}}}{F \doteq
-      \bigwedge_{i = 1 ... n} \finalA \msg{op_i}{\phi_i}}
-\end{align*}}\noindent
-Moreover, these types should consistent with the auxiliary semantics of message handler:
+  The handler specification $\Delta$ is well-formed iff for all operator $\eff{op}$ and its type $\overline{x{:}t} \sarr \rgB{H}{\lastA\msgB{op}{\overline{y}}{\phi}}{F}{B}$ in $\Delta$ satisfying
 {\small\begin{align*}
-    \forall \alpha \in \denot{A}. \forall \overline{c \in \denotation{t}}. \alpha \vDash \zevent{op}{\overline{c}} \Downarrow \beta \impl \beta \in \denot{F}
+    \forall \alpha \in \denot{A}. \forall \overline{c \in \denotation{t}}. \forall \overline{\alpha_i}. \forall \overline{m_i}.\; \alpha_1 \listconcat [m_1] \listconcat ... [m_{n}] \listconcat \alpha_{n+1} \in \denot{F} \impl \alpha \vDash \zevent{op}{\overline{c}} \Downarrow \{m_i\}
 \end{align*}}
 \end{definition}
 
@@ -425,15 +413,12 @@ Moreover, these types should consistent with the auxiliary semantics of message 
     \denotation{\sigma(\tau)}$.\footnote{The proofs of theorems in this section are provided in the \techreport{}.}
 \end{theorem}
 
-\begin{corollary}\label{theorem:sound}[Type Soundness] Under
-  a handler specification, with ghost variables $\overline{x{:}b}$,
-  that is well-formed, and a property $A$ that expresses a violation
-  of a safety condition, a synthesized controller $e$ that satisfies
-  $\overline{x{:\rawnuot{b}{\top}}} \vdash \rg{\epsTL}{A}{\epsTL}
-  \termsyn e$ will have its execution traces always be consistent with
-  consistent with $A$: {\small\begin{align*} \forall
-    \overline{c{:}b}. \forall \alpha. \msteptr{[]}{([],
-      e[\overline{x\mapsto c}])}{\alpha}{([], ())} \implies \alpha \in
+\begin{theorem}\label{theorem:sound}[Type Soundness] Given
+  a well-formed handler specification $\Delta$, with ghost variables $\overline{x{:}b}$ and a violation property $A$, a controller $e$ that satisfies
+  $\overline{x{:\rawnuot{b}{\top}}} \vdash e : \rg{\epsTL}{A}{\epsTL}$, then $e$ at least realize one trace consistent with $A$:
+ {\small\begin{align*} \exists
+    \overline{c{:}b}. \exists \alpha. \msteptr{[]}{(\emptyset,
+      e[\overline{x\mapsto c}])}{\alpha}{(\emptyset, ())} \land \alpha \in
     \denot{A[\overline{x\mapsto c}]}
 \end{align*}}
-\end{corollary}
+\end{theorem}
