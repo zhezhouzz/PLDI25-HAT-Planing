@@ -190,7 +190,7 @@ procedures execute.
 \Procedure{$\forward(\Gamma, \Pi_h, \lastA \msg{op}{\phi}, \Pi_f, \Mfw, \Mbw)$}{
   \tcp{Select the \PAT of $\eff{op}$ from handler specification}
     % \SJ{I don't understand this form - the braces at the end are not part of a PAT}
-    \If{exists $(\eff{op}, \overline{z{:}b}\garr\overline{y{:}t}\sarr\rg{H}{\lastA\msg{op}{\phi'}}{F} \bufLR{B}) \in \Delta$}{
+    \If{exists $(\eff{op}, \overline{z{:}b}\garr\overline{y{:}t}\sarr\rg{H}{\lastA\msg{op}{\phi'}}{F}) \in \Delta$ and $(\eff{op}, B) \in \Sigma$ }{
         $\Gamma \leftarrow \Gamma, \overline{z{:}\rawnuot{b}{\top}}, \overline{y{:}t}$ \tcp*[l]{add ghost variables and parameters types in type context}
       % \tcp{add qualifier of $\eff{op}$ event into type context}
       % \SJ{Didn't we already do this at line 4 in Algorithm 1?}
@@ -210,7 +210,7 @@ procedures execute.
 
 \paragraph{Forward and backward synthesis} The forward synthesis subroutine is
 shown in \autoref{algo:forward}. It first retrieves the \PAT\ of
-operation $\eff{op}$ on line $2$; this handler type also indicates the children (future) events of $\eff{op}$, i.e., $\bufLR{B}$.  The
+operation $\eff{op}$ on line $2$; this handler type also indicates the children (future) events of $\eff{op}$, i.e., $B$.  The
 algorithm then merges the selected \PAT into the violation property
 piecewise. First, the current operation $\eff{op}$ should be aligned
 (line $4$), guaranteeing that the input assumed by the violation
@@ -249,7 +249,7 @@ $B$.
 \begin{algorithm}[ht!]
 \Procedure{$\backward(\Gamma, \Pi_h, \lastA \msg{op}{\phi}, \Pi_f, \Mfw, \Mbw)$}{
     \tcp{Select the \PAT of some $\eff{op_{parent}}$ from handler specification, who sends message $\eff{op}$}
-    \If{$(\eff{op_{parent}}, \overline{z{:}b}\garr\overline{y{:}t}\sarr\rgB{H}{\msg{op_{parent}}{\phi_\Code{parent}}}{F_1 \seqA \lastA \msg{op}{\phi'} \seqA F_2}{\{\eff{op}\} \cup B}) \in \Delta$}{
+    \If{$(\eff{op_{parent}}, \overline{z{:}b}\garr\overline{y{:}t}\sarr\rg{H}{\msg{op_{parent}}{\phi_\Code{parent}}}{F_1 \seqA \lastA \msg{op}{\phi'} \seqA F_2}) \in \Delta$ and $(\eff{op_{parent}}, \{\eff{op}\} \cup B) \in \Sigma$}{
         % \tcp{add qualifier of $\eff{op_{parent}}$ and $\eff{op}$ event into type context}
         $\Gamma \leftarrow \Gamma, \overline{z{:}\rawnuot{b}{\top}}, \overline{y{:}t}$ \tcp*[l]{add ghost variables and parameters types in type context}
         $\msg{op}{\phi} \leftarrow \msg{op}{\phi \land \phi'}$ \tcp*[l]{merge current automata}
@@ -282,7 +282,7 @@ which changes the merge procedure (line $4$ - $6$) in backward synthesis. Also, 
 \\B \equiv\;& \allTL \seqA \lastA \msg{writeRsp}{v = \Code{x}} \seqA \globalA \neg \msg{writeRsp}{\top} \seqA \lastA\msg{readRsp}{v = \Code{y} \land st = \true \land \Code{y} \not= \Code{x}} \seqA \allTL
 \tag{before iteration $1$}
 \end{align*}}\noindent
-In the first iteration, our algorithm focus on message $\eff{readRsp}$. Our algorithm perform forward synthesis since this message is not record in $\Mfw$. As specified by $\Delta$, no additional messages are sent by the handler of $\eff{readRsp}$, thus the violation property doesn't changed. Then we perform backward synthesis since $\eff{readRsp}$ is not generatable. There are two types in by $\Delta$ that has prophecy automata contains $\eff{readRsp}$:
+In the first iteration, our algorithm focus on message $\eff{readRsp}$. Our algorithm perform forward synthesis since this message is not record in $\Mfw$. As specified by $\Sigma$, no additional messages are sent by the handler of $\eff{readRsp}$, and the violation property doesn't changed. Then we perform backward synthesis since $\eff{readRsp}$ is not generatable. There are two types in by $\Delta$ that has prophecy automata contains $\eff{readRsp}$:
 {\footnotesize\begin{align*}
 &\Code{x}\hasnty{int}\garr \rg{\finalA \msg{writeReq}{v = \Code{x}} \land \neg\nextA\finalA\msg{writeReq}{\top}}{\lastA\msg{readReq}{\top}}{\finalA\msg{readRsp}{v = \Code{x} \land st = \true}} \tag{$\tau_1$}
 \\& \rg{\neg\finalA

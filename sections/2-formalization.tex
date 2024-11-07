@@ -145,7 +145,7 @@ With the help of solver, the first step of reduction performs one possible subst
     \text{\textbf{Pure Refinement Types}}& \quad & t  ::= \quad & \rawnuot{b}{\phi} ~|~ x{:}t \sarr t
     \\\text{\textbf{Symbolic LTL$_f$}}& \quad &H,A,F  ::= \quad & \msgB{op}{\overline{x}}{\phi} ~|~ \evparenth{\phi} ~|~ \negA A ~|~ A \landA A ~|~ A \lorA A ~|~ A \seqA A ~|~ \nextA A ~|~ A \untilA A
     \\ \text{\textbf{Prophecy Automata Types}}& \quad & \tau  ::= \quad &
-    \rg{H}{A}{F} ~|~ \rgB{H}{A}{F}{\overline{\eff{op}}} ~|~ x{:}b \garr \tau ~|~ x{:}t\sarr \tau ~|~ \tau \interty \tau
+    \rg{H}{A}{F} ~|~ x{:}b \garr \tau ~|~ x{:}t\sarr \tau ~|~ \tau \interty \tau
     \\\text{\textbf{Type Contexts}}& \quad &\Gamma ::= \quad  &\emptyset ~|~ x{:}t, \Gamma
   \end{alignat*}}
 \vspace{-1.8em}}
@@ -215,14 +215,12 @@ symbolic events; for example, the full signature of the $\eff{getReq}$
 handler from \autoref{sec:intro} uses the ghost variables $\Code{key}$
 and $\Code{val}$.
 
-A handler type \PAT{} $\rgB{H}{A}{F}{B}$ additional contains a multi-set $B$ of operators $\{\overline{\eff{op}}\}$, which indicts messages $\eff{op}$ in prophecy automata $F$ (i.e., $\eff{getRsp}$ for \PAT of $\eff{getReq}$) are new sent by current handler. To deal with messages that has same name, we assume there is an unique identifier is assigned to these operators (e.g., $\eff{getRsp_1}$, $\eff{getRsp_2}$, ...), which we can successfully decide the location of symbolic event in $F$ by its name in $\bufLR{B}$. When the context is clear, we omit $\bufLR{B}$.
-
 \begin{example}[Strong Consistency] The SC mentioned in \autoref{sec:intro} requires that when the user receive the $\eff{getRsp}$, the gotten value is the same as the put value in current database. A \PAT for $\eff{getReq}$ consistent with SC can be 
 {\footnotesize
   \begin{align*}
     \Code{val}\hasnty{tVal} \garr & \Code{key}\hasoty{tKey}{\top} \sarr  \effLR{\finalA \msg{putReq}{k = \Code{key} \land v = \Code{val}} \land \nextA \neg \finalA \msg{putReq}{k = \Code{key}} } %
     \\& \quad \effLR{\lastA \msg{getReq}{k = \Code{key}}}%
-    \effLR{(\neg \msg{putReq}{k = \Code{key}}) \untilA \msg{getRsp}{k = \Code{key} \land v = \Code{val}}}\bufLR{ \eff{getRsp} }
+    \effLR{(\neg \msg{putReq}{k = \Code{key}}) \untilA \msg{getRsp}{k = \Code{key} \land v = \Code{val}}}
 \end{align*}}\noindent
 whose prophecy automata indicates that there is no no updates ($\eff{putReq}$) happens before the user receives the $\eff{getRsp}$.    
 \end{example}
@@ -234,6 +232,18 @@ whose prophecy automata indicates that there is no no updates ($\eff{putReq}$) h
 from variables to pure refinement types (i.e., $t$). Type contexts are
 not allowed to contain \PAT{}s, as doing so breaks several structural
 properties (e.g., weakening) that are used to prove type safety.
+
+\paragraph{Observation Capability} The observable message (e.g., $\eff{readRsp}$) cannot just happens by itself, but need another message happens previously (e.g., $\eff{readReq}$) whose handler sent this observable message. Then, this capability of observing a message is capture by a multi-set message name (effect operators). A expression $\zobs{\overline{x}}{op}{e}$ is type-safe only when message name $\eff{op}$ is contained by \emph{observation capability} $B$, where $\eff{op}$ will be consumed during typing on its body $e$. 
+% To deal with messages that has same name, we assume there is an unique identifier is assigned to these operators (e.g., $\eff{getRsp_1}$, $\eff{getRsp_2}$, ...).
+% To deal with messages that has same name, we assume there is an unique identifier is assigned to these operators (e.g., $\eff{getRsp_1}$, $\eff{getRsp_2}$, ...), which we can successfully decide the location of symbolic event in $F$ by its name in $\bufLR{B}$. When the context is clear, we omit $\bufLR{B}$.
+
+\paragraph{Auxiliary Context} Besides the handler specification $\Delta$, we need another auxiliary context $\Sigma$ provides observation capability provided by handlers. Then $(\eff{op}, B) \in \Sigma$ means handling message with name $\eff{op}$ will sending new messages with name in $B$, which produce more observation capability. We omit them in the rest of rules.
+
+\begin{example}[Observation Capability Context] The observation capability context $\Sigma$ for $4$ effector operators shown as below:
+{\small\begin{align*}
+    \Sigma \doteq \{ (\eff{readReq}, \{\eff{readRsp}\}), (\eff{readRsp}, \emptyset), (\eff{writeReq}, \{\eff{writeRsp}\}), (\eff{writeRsp}, \emptyset), \}
+\end{align*}}
+\end{example}
 
 \begin{figure}[!t]
 {\footnotesize
@@ -272,9 +282,9 @@ $\Gamma  ~|~ B \vdash \tau <: \tau'$}
 \quad
 \mprooftr{73mm}
 {
-$\Gamma \vdash \eff{op} : \overline{x_i{:}t_i}\sarr \rgB{H}{\lastA\msg{op}{\phi}}{A \seqA F}{B'}$ \quad
+$\Gamma \vdash \eff{op} : \overline{x_i{:}t_i}\sarr \rg{H}{\lastA\msg{op}{\phi}}{A \seqA F}$ \quad
 $\forall i. \Gamma \vdash v_i : t_i$ \quad
-$\GEN(\eff{op})$ \quad
+$\GEN(\eff{op})$ \quad $(\eff{op}, B') \in \Sigma$ \quad
  $\Gamma ~|~ B \cup B' \vdash e : \rg{H \seqA \lastA\msg{op}{\phi\msubst{x_i}{v_i}}}{A}{F}$
  }
 {TGen}
@@ -296,8 +306,8 @@ $\Gamma ~|~ B \vdash e_1 : \tau$ \quad $\Gamma ~|~ B \vdash e_2 : \tau$
 \ 
 \mprooftr{65mm}
 {
-$\Gamma \vdash \eff{op} : \overline{x{:}t}\sarr \rgB{H}{\lastA\msg{op}{\phi}}{A \seqA F}{B'}$
-\quad
+$\Gamma \vdash \eff{op} : \overline{x{:}t}\sarr \rg{H}{\lastA\msg{op}{\phi}}{A \seqA F}$
+\quad $(\eff{op}, B') \in \Sigma$ \quad
  $\Gamma, \overline{x{:}t} ~|~ B \cup B' \vdash e : \rg{H \seqA \lastA\msg{op}{\phi}}{A}{F}$
  }
 {TObs}
@@ -320,8 +330,6 @@ Rule $\textsc{SubHAF}$ checks inclusion between the languages of two
 $\PAT{}s$ under type context $\Gamma$.  The rule relates history and prophecy
 automata contravariantly, while current automata are covariant. The intuition here is that, similar with history automata that provide presumption on previous events for a computation, the prophecy provide presumption on events happens in the future. Thus, both the
 history and prophecy automata are the effect assumed by execution.
-
-\paragraph{Observation Capability} The observable message (e.g., $\eff{readRsp}$) cannot just happens by itself, but need another message happens previously (e.g., $\eff{readReq}$) whose handler sent this observable message. Then, this capability of observing a message is capture by a multi-set message name (effect operators), as in handler \PAT. A expression $\zobs{\overline{x}}{op}{e}$ is type-safe only when message name $\eff{op}$ is contained by \emph{observation capability} $B$, where $\eff{op}$ will be consumed during typing on its body $e$.
 
 % \paragraph{Effect Operator Framing}  The use of prophecy
 % automata in specifying handler behavior is very powerful.  However,
@@ -352,7 +360,7 @@ Rule \textsc{TGen} first extracts the type of observing effect operator $\eff{op
     \lastA \msg{op}{\phi\msubst{x_i}{v_i}} }_\texttt{current} \;\seqA\;
   \underbrace{ A \seqA F }_\texttt{prophecy}
 \end{align*}}\noindent
-If this is the case, we move the symbolic event $\msg{op}{\phi\msubst{x_i}{v_i}}$ from the head of the current automata into the tail of the history automata. We also add the sent message $B'$ of \PAT of $\eff{op}$ into observation capability and continue typing on the body expression $e$. Rule \textsc{TObs} is similar, beside the payload of observed $\eff{op}$ is not provided by the controller, thus no need addition typing on parameter types. Moreover, the \textsc{TObs} will consume the observed $\eff{op}$ from observation capability ($\{\eff{op}\} \cup B$). Notably, we can always use the standard subsumption rule
+If this is the case, we move the symbolic event $\msg{op}{\phi\msubst{x_i}{v_i}}$ from the head of the current automata into the tail of the history automata. We also add new capability  $B'$ caused by handling $\eff{op}$ ($(\eff{op}, B') \in \Sigma$) into count and continue typing on the body expression $e$. Rule \textsc{TObs} is similar, beside the payload of observed $\eff{op}$ is not provided by the controller, thus no need addition typing on parameter types. Moreover, the \textsc{TObs} will consume the observed $\eff{op}$ from observation capability ($\{\eff{op}\} \cup B$). Notably, we can always use the standard subsumption rule
 \textsc{TSub} to change the shape of types. The controller should end with an unit value $()$, where rule \textsc{TRet} requires the current automata of its \PAT to a LTL$_f$ formula $\epsTL$, which specifies that automata that only accepts an empty
 trace (i.e., $[]$). Finally, the union expression can be typed via rule \textsc{TChoice}, which enable controller to explore different message orderings.
 
@@ -372,9 +380,9 @@ trace (i.e., $[]$). Finally, the union expression can be typed via rule \textsc{
 \end{align*}}\noindent
 For the first $\mykw{gen}$ expression on line $2$ of $P_C$ can be typed with rule \textsc{TGen}, which first select \PAT of $\eff{writeReq}$ from handler specification $\Delta$ and use \textsc{TSub} to adjust it into a shape consistent with $\negSCA'$:
 {\footnotesize\begin{align*}
-&(\eff{writeReq},  \Code{x}\hasnty{int} \sarr \rgB{\allTL}{\lastA\msg{writeReq}{v = \Code{x}}}{\finalA\msg{writeRsp}{v = \Code{x}}}{\eff{writeRsp}}) \in \Delta
-\\&\Gamma \vdash \eff{writeReq}: \Code{x}\hasnty{int} \sarr \rgB{\allTL}{\lastA\msg{writeReq}{v = \Code{x}}}{\finalA\msg{writeRsp}{v = \Code{x}}}{\eff{writeRsp}} \tag{\textsc{TEOp}}
-\\&\Gamma \vdash \eff{writeReq}: \Code{x}\hasnty{int} \sarr \effLR{\epsTL}\ \effLR{\lastA\msg{writeReq}{v = \Code{x}}}\ \effLR{A_2 \seqA \lastA\msg{writeRsp}{v = \Code{x} \land st = \true} \seqA A_4} \tag{\textsc{TSub}}
+&(\eff{writeReq},  \Code{x}\hasnty{int} \sarr \rg{\allTL}{\lastA\msg{writeReq}{v = \Code{x}}}{\finalA\msg{writeRsp}{v = \Code{x}}}) \in \Delta
+\\&\Gamma \vdash \eff{writeReq}: \Code{x}\hasnty{int} \sarr \rg{\allTL}{\lastA\msg{writeReq}{v = \Code{x}}}{\finalA\msg{writeRsp}{v = \Code{x}}} \tag{\textsc{TEOp}}
+\\&\Gamma \vdash \eff{writeReq}: \Code{x}\hasnty{int} \sarr \effLR{\epsTL}\ \effLR{\lastA\msg{writeReq}{v = \Code{x}}}\ \effLR{A_2 \seqA \lastA\msg{writeRsp}{v = \Code{x}} \seqA A_4} \tag{\textsc{TSub}}
 \end{align*}}\noindent
 Since the type of $\eff{writeReq}$ is exactly align with the program type $\rg{\epsTL}{A_1\seqA A_2\seqA A_3\seqA A_4}{\epsTL}$, we can continuing type check the rest of program (line $3$ - $7$ of $P_C$) against \PAT $\rg{A_1}{A_2\seqA A_3\seqA A_4}{\epsTL}$.
 \end{example}
@@ -392,21 +400,22 @@ A' \doteq \forall \sigma \in \denot{\Gamma}. \denot{\sigma(A)}
 % \end{align*}}\noindent
 
 \paragraph{Well-formed Handler specification} A
-handler specification should be consistent with the
+handler specification $\Delta$ should be consistent with the
 auxiliary semantics of handlers introduced in
-\autoref{fig:selected-semantics}, which defined formally as the following
+\autoref{fig:selected-semantics}, also, $\Delta$ should also guarantee the new sending message assumed by capability context $\Sigma$ be eventually received. 
 
-\begin{definition}[Well-formed handler specification]
+\begin{definition}[Well-formed auxiliary type context]
   \label{lemma:built-in-typing}
-  The handler specification $\Delta$ is well-formed iff for all operator $\eff{op}$ and its type $\overline{x{:}t} \sarr \rgB{H}{\lastA\msgB{op}{\overline{y}}{\phi}}{F}{B}$ in $\Delta$ satisfying
+  The handler specification $\Delta$ and capablity context $\Sigma$ is well-formed iff for all operator $\eff{op}$ and its type $\overline{x{:}t} \sarr \rgB{H}{\lastA\msgB{op}{\overline{y}}{\phi}}{F}{B}$ in $\Delta$ satisfying
 {\small\begin{align*}
     \forall \alpha \in \denot{A}. \forall \overline{c \in \denotation{t}}. \forall \overline{\alpha_i}. \forall \overline{m_i}.\; \alpha_1 \listconcat [m_1] \listconcat ... [m_{n}] \listconcat \alpha_{n+1} \in \denot{F} \impl \alpha \vDash \zevent{op}{\overline{c}} \Downarrow \{m_i\}
-\end{align*}}
+\end{align*}}\noindent
+also, for $(\eff{op}, B) \in \Sigma$, $F \subseteq \bigwedge_{\eff{op} \in B} \finalA \msg{op}{\top}$ should hold.
 \end{definition}
 
 
 \begin{theorem}\label{theorem:fundamental}[Fundamental Theorem] Given
-  a well-formed handler specification $\Delta$,
+  a well-formed handler specification $\Delta$ and capability context $\Sigma$,
     the trace of effects produced by a well-typed term
     $e$ is captured by its corresponding \PAT $\tau$:
   $\Gamma ~|~ B \vdash e : \tau \implies \forall \sigma, \sigma \in
@@ -415,7 +424,7 @@ auxiliary semantics of handlers introduced in
 \end{theorem}
 
 \begin{theorem}\label{theorem:sound}[Type Soundness] Given
-  a well-formed handler specification $\Delta$, with ghost variables $\overline{x{:}b}$ and a violation property $A$, a controller $e$ that satisfies
+  a well-formed handler specification $\Delta$ and capability context $\Sigma$, with ghost variables $\overline{x{:}b}$ and a violation property $A$, a controller $e$ that satisfies
   $\overline{x{:\rawnuot{b}{\top}}} ~|~ \emptyset \vdash e : \rg{\epsTL}{A}{\epsTL}$, then $e$ at least realize one trace consistent with $A$:
  {\small\begin{align*} \exists
     \overline{c{:}b}. \exists \alpha. \msteptr{[]}{(\emptyset,
