@@ -409,14 +409,14 @@ auxiliary semantics of handlers introduced in
   a well-formed handler specification $\Delta$,
     the trace of effects produced by a well-typed term
     $e$ is captured by its corresponding \PAT $\tau$:
-  $\Gamma \vdash e : \tau \implies \forall \sigma, \sigma \in
+  $\Gamma ~|~ B \vdash e : \tau \implies \forall \sigma, \sigma \in
     \denotation{\Gamma} \impl \sigma(e) \in
     \denotation{\sigma(\tau)}$.\footnote{The proofs of theorems in this section are provided in the \techreport{}.}
 \end{theorem}
 
 \begin{theorem}\label{theorem:sound}[Type Soundness] Given
   a well-formed handler specification $\Delta$, with ghost variables $\overline{x{:}b}$ and a violation property $A$, a controller $e$ that satisfies
-  $\overline{x{:\rawnuot{b}{\top}}} \vdash e : \rg{\epsTL}{A}{\epsTL}$, then $e$ at least realize one trace consistent with $A$:
+  $\overline{x{:\rawnuot{b}{\top}}} ~|~ \emptyset \vdash e : \rg{\epsTL}{A}{\epsTL}$, then $e$ at least realize one trace consistent with $A$:
  {\small\begin{align*} \exists
     \overline{c{:}b}. \exists \alpha. \msteptr{[]}{(\emptyset,
       e[\overline{x\mapsto c}])}{\alpha}{(\emptyset, ())} \land \alpha \in
