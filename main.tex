@@ -110,7 +110,7 @@
 %%
 %% The "title" command has an optional parameter,
 %% allowing the author to define a "short title" to be used in page headers.
-\title{Synthesizing Distributed Controllers from Trace Specifications}
+\title{Type-Guided Controller Synthesis for Testing Open Distributed Systems}
 
 %%
 %% The "author" command and its associated commands are used to define
@@ -162,24 +162,28 @@
   technique for finding errors in the design and implementation of
   distributed applications. A key challenge in this setting is that it
   difficult for such frameworks to effectively explore the set of
-  possible executions for violations of desired properties, as these
+  possible executions that can violate desired properties, as these
   typically represent an infinitesimally small fragment of the set of
-  possible executions. In this paper, we propose a technique for
-  automatically synthesizing a controller--- a program that guides the
-  search for buggy executions--- tailored to the design of the system
-  under test and the target property. Our approach rests on two
-  technical innovations: first, a novel trace-based refinement type
-  system called \emph{Prophecy Automata Types} which describe both the
-  history of the system and its future behaviors using a symbolic
-  variant of linear temporal logic. Second, we use these types to
-  design a type-guided synthesis algorithm that constructs a
-  solver-aided program in a DSL that captures feasible executions in
-  the target system in terms of message actions among the components
-  under test and the interaction of these components with an external
-  environment. We describe the implementation of our approach in a
-  tool, \name{}, and present a comprehensive evaluation on a set of
-  diverse, non-trivial benchmarks, including a case study from
-  application models developed by a major cloud vendor.
+  possible executions.  In this paper, we propose a technique for
+  automatically synthesizing a test controller--- a program that
+  guides the search for buggy executions--- tailored to the design of
+  the system under test and the target property.  We focus our
+  solution on \emph{open} systems in which the test controler must
+  govern both the generation of input messages by an external
+  environment as well as the order in which output messages by the
+  actors comprising the system-under-test.  Our approach rests on two
+  technical innovations: first, we develop a novel trace-based
+  refinement type system called \emph{Prophecy Automata Types} that
+  describe both the history of the system and its future behaviors
+  using a symbolic variant of linear temporal logic. Second, we use
+  these types to design a type-guided synthesis algorithm that
+  constructs a solver-aided program in a DSL that captures feasible
+  executions in the target system in terms of message actions among
+  the components under test and the interaction of these components
+  with an external environment. We describe the implementation of our
+  approach in a tool, \name{}, and present a comprehensive evaluation
+  on a set of diverse, non-trivial benchmarks, including a case study
+  from application models developed by a major cloud vendor.
 \end{abstract}
 
 % \begin{abstract}
