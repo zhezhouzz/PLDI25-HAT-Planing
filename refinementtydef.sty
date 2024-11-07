@@ -84,7 +84,7 @@
 \newcommand{\zobs}[3]{\mykw{let}\ {#1}\ {=}\ \mykw{obs}\ \eff{#2}\ \mykw{in}\ {#3}}
 \newcommand{\zobsPhi}[4]{\mykw{let}\ {#1}\ {=}\ \mykw{obs}\ \eff{#2}\ {#3}\ \mykw{in}\ {#4}}
 \newcommand{\zgen}[3]{\mykw{gen}\ \eff{#1} \ {#2} \ \mykw{in}\ {#3}}
-\newcommand{\zevent}[2]{(\eff{#1}\;{#2})}
+\newcommand{\zevent}[2]{\eff{#1}({#2})}
 \newcommand{\zrecv}[3]{\mykw{receive}\ {#1}\ {#2} \ \mykw{in}\ {#3}}
 \newcommand{\zassume}[2]{\mykw{assume}\ {#1} \  \mykw{in}\ {#2}}
 \newcommand{\zassert}[2]{\mykw{assert}\ {#1} \  \mykw{in}\ {#2}}
@@ -281,9 +281,9 @@
 \newcommand{\effR}{ \textcolor{DeepGreen}{\mbox{\rm\textbf{]}}} }
 \newcommand{\effLR}[1]{ \effL{} {#1} \effR{} }
 
-\newcommand{\bufL}{ \textcolor{CobaltBlue}{\mbox{\rm\textbf{\{}}} }
-\newcommand{\bufR}{ \textcolor{CobaltBlue}{\mbox{\rm\textbf{\}}}} }
-\newcommand{\bufLR}[1]{ \bufL {#1} \bufR{} }
+\newcommand{\bufL}{ \textcolor{DeepGreen}{\mbox{\rm\textbf{\{}}} }
+\newcommand{\bufR}{ \textcolor{DeepGreen}{\mbox{\rm\textbf{\}}}} }
+\newcommand{\bufLR}[1]{ \bufL\, {#1}\, \bufR{} }
 
 \newcommand{\ueffL}{ \textcolor{DeepGreen}{\mbox{\rm\textbf{\{}}} }
 \newcommand{\ueffR}{ \textcolor{DeepGreen}{\mbox{\rm\textbf{\}}}} }
@@ -446,6 +446,7 @@
 \newcommand{\atriple}[3]{ {#1}{\times}\bufLR{#2}{\times}\effLR{#3}}
 \newcommand{\relyg}[3]{ \bufLR{#1}{#2}\effLR{#3}}
 \newcommand{\rg}[3]{ \effLR{#1}\effLR{#2}\effLR{#3}}
+\newcommand{\rgB}[4]{ \effLR{#1}\effLR{#2}\effLR{#3}\bufLR{#4}}
 \newcommand{\rgbuf}[3]{ \effLR{#1}\effLR{#2}\bufLR{#3}}
 \newcommand{\hfour}[4]{ \effLR{#1}\,\bufLR{#2}\,{#3}\,\bufLR{#4}}
 \newcommand{\hpair}[2]{ \effLR{#1}\effLR{#2} }
@@ -607,5 +608,9 @@
 \newcommand{\biSyn}{\S{BidirectionalSyn}}
 \newcommand{\forward}{\textcolor{CobaltBlue}{\Code{Forward}}}
 \newcommand{\backward}{\textcolor{CobaltBlue}{\Code{Backward}}}
-\newcommand{\Mfw}{M_\Code{fw}}
-\newcommand{\Mbw}{M_\Code{bw}}
+\newcommand{\Mfw}{B_\Code{fw}}
+\newcommand{\Mbw}{B_\Code{bw}}
+\newcommand{\GEN}{\Code{Generatable}}
+
+\newcommand{\msubst}[2]{[\overline{{#1}\mapsto {#2}}]}
+\newcommand{\subst}[2]{[{#1}\mapsto {#2}]}

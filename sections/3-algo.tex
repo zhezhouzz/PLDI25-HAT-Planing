@@ -22,12 +22,13 @@ property into the desired form as depicted in
 forward synthesis as necessary, refining the violation property by
 adding new messages before and after the current one.  After
 refinement, the synthesis algorithm can derive the controller program
-mechanistically.  Note that \textsc{TSub} also makes sure that ghost
-variables and parameters types of function \PAT are suitably
-strengthened before they get added into the typing context, thus
-guaranteeing that there is at least one trace that is realizable. To
+mechanistically.  Note that declarative typing rules always assume \PAT{}s are well-formed, which thus guaranteeing that there is at least one trace that is realizable. To
 address this, our algorithm also employs an automata non-emptiness
-check, which refines the type context directly, as we describe below.
+check.
+
+% \textsc{TSub} also makes sure that ghost
+% variables and parameters types of function \PAT are suitably
+% strengthened before they get added into the typing context
 
 \subsection{Abstract trace}
 
@@ -67,13 +68,13 @@ $\Gamma \leftarrow \overline{x{:}\rawnuot{b}{\top}}$ \tcp*[l]{initialize type co
 % $\Gchecked \leftarrow \emptyset$ \tcp*[l]{Record all messages that has been checked }
 \tcp{If exists a unchecked symbolic event $\msg{op}{\phi}$, and focus on it}
 \While{exists $\msgB{op}{\overline{x}}{\phi}$ s.t. $\Pi = \Pi_h \seqA \lastA \msgB{op}{\overline{x}}{\phi} \seqA \Pi_f$ and  $\msgB{op}{\overline{x}}{\phi} \not\in (\Mfw \cap \Mbw)$}{
-    \tcp*[l]{add qualifier of $\eff{op}$ event into type context, $z$ fresh}
-    $\Gamma \leftarrow \Gamma, \overline{y\,{:}\rawnuot{b}{\top}},\, z\,\hasoty{unit}{\phi[x\mapsto y]}$\;
+    % \tcp*[l]{add qualifier of $\eff{op}$ event into type context, $z$ fresh}
+    % $\Gamma \leftarrow \Gamma, \overline{y\,{:}\rawnuot{b}{\top}},\, z\,\hasoty{unit}{\phi[x\mapsto y]}$\;
     \If{$\eff{op} \not\in \Mfw$}{
         $(\Gamma, \Pi_h, \lastA \msgA{op}{\overline{y}}, \Pi_f, \Mfw, \Mbw) \leftarrow \forward(\Gamma, \Pi_h, \lastA \msgA{op}{\overline{y}}, \Pi_f, \Mfw, \Mbw)$\;
     }
     \If{$\eff{op} \notin \Mbw$}{
-        \lIf{$\eff{op}$ is generatable}{
+        \lIf{$\GEN(\eff{op})$}{
             $\Mbw \leftarrow \Mbw \cup \{\eff{op}\}$
         }
         \lElse {
@@ -101,22 +102,22 @@ results of this algorithm.  Our implementation manifests the
 non-determinism in the algorithm via an efficient backtracking search
 procedure.  The algorithm follows the structure given in
 \autoref{fig:intuition-algo},  refining a violation property
-$\Pi$ through a refinement loop (lines $3$ - $10$) before deriving the
-controller program from the refined property (lines $11$).
+$\Pi$ through a refinement loop (lines $3$ - $9$) before deriving the
+controller program from the refined property (lines $10$).
 
-\paragraph{Type context} In order to derive necessary
-assumption and assertions over variables in the synthesized program,
-we need to gather qualifiers distributed among different symbolic
-events in the violation property into the type context $\Gamma$, which
-is also refined by the refinement loop.  For example, 
-line $4$ in \autoref{algo:top-syn} lifts the local
-variables $\overline{x}$ and qualifier $\phi$ of a symbolic event
-$\msgB{op}{\overline{x}}{\phi}$, into $\Gamma$
-$\overline{y{:}\rawnuot{b}{\top}},\ 
-x\,{:}\ \nuot{unit}{\phi[\overline{x\mapsto y}]} \vdash
-\msgB{op}{\overline{z}}{\overline{x = y}}$, where $z$ is a fresh variable. We use syntax sugar
-$\msgA{op}{\overline{y}}$ to stand for
-$\msgB{op}{\overline{x}}{\overline{x = y}}$ in the rest of paper.
+% \paragraph{Type context} In order to derive necessary
+% assumption and assertions over variables in the synthesized program,
+% we need to gather qualifiers distributed among different symbolic
+% events in the violation property into the type context $\Gamma$, which
+% is also refined by the refinement loop.  For example, 
+% line $4$ in \autoref{algo:top-syn} lifts the local
+% variables $\overline{x}$ and qualifier $\phi$ of a symbolic event
+% $\msgB{op}{\overline{x}}{\phi}$, into $\Gamma$
+% $\overline{y{:}\rawnuot{b}{\top}},\ 
+% x\,{:}\ \nuot{unit}{\phi[\overline{x\mapsto y}]} \vdash
+% \msgB{op}{\overline{z}}{\overline{x = y}}$, where $z$ is a fresh variable. We use syntax sugar
+% $\msgA{op}{\overline{y}}$ to stand for
+% $\msgB{op}{\overline{x}}{\overline{x = y}}$ in the rest of paper.
 
 \paragraph{Message dependency} The refined violation
 property must ensure that each symbolic event has a consistent history
@@ -171,16 +172,14 @@ iteration, an unchecked symbolic event is picked ($\msg{op}{\phi}
 the algorithm terminates once all symbolic events have been
 explored. Within each refinement iteration focused on symbolic event
 $\msgB{op}{\overline{x}}{\phi}$ that has $\Pi_{h}$ as its history
-trace and $\Pi_f$ as its future trace, the algorithm first gathers the
-event's qualifier into the type context (line $4$), and tries to
+trace and $\Pi_f$ as its future trace, the algorithm tries to
 perform forward (resp., backward) synthesis, if the event is not in
-$\Mfw$ (resp., $\Mbw$). Notably, if an operation is generable \SJ{How
-  is this determined?}, it is considered to be a \emph{root}, and no
+$\Mfw$ (resp., $\Mbw$). Notably, if an operation is generable ($\GEN(\eff{op})$ on line $7$), it is considered to be a \emph{root}, and no
 additional backward synthesis needs to be performed.  Instead, the
 event is simply added to $\Mbw$ (line $8$). Both the forward and
 backward synthesis routines yield a 6-tuple $(\Gamma, \Pi_h, \lastA
 \msgA{op}{\overline{x}}, \Pi_f, \Mfw, \Mbw)$.  The refined abstract
-trace returned on line 10 returns concatenation of the history trace,
+trace returned on line $9$ returns concatenation of the history trace,
 event, and future trace ($\Pi_h \seqA \lastA \msgA{op}{\overline{x}}
 \seqA \Pi_f$ after one or both of the forward or backward synthesis
 procedures execute.
@@ -188,19 +187,20 @@ procedures execute.
 \begin{algorithm}[ht!]
 % \Params{A 5-tuple $(\Gamma, \Pi_h, \lastA \msgA{op}{\overline{x}}, \Pi_f, \Gchecked)$ that are type context, history, current, and future automata, as well as checked message set.}
 % \Output{Set of refined 5-tuples }
-\Procedure{$\forward(\Gamma, \Pi_h, \lastA \msgA{op}{\overline{x}}, \Pi_f, \Mfw, \Mbw)$}{
+\Procedure{$\forward(\Gamma, \Pi_h, \lastA \msg{op}{\phi}, \Pi_f, \Mfw, \Mbw)$}{
   \tcp{Select the \PAT of $\eff{op}$ from handler specification}
-    \SJ{I don't understand this form - the braces at the end are not part of a PAT}
-    \If{exists $(\eff{op}, \overline{z{:}b}\garr\overline{y{:}t}\sarr\rg{H}{\msg{op}{\phi}}{F} \bufLR{\overline{\msg{op_i}{\phi_i}}}) \in \Delta$}{
-      \tcp{add qualifier of $\eff{op}$ event into type context}
-      \SJ{Didn't we already do this at line 4 in Algorithm 1?}
-        $\Gamma \leftarrow \Gamma, \overline{z{:}\rawnuot{b}{\top}}, \overline{y{:}t}, \_{:}\nuot{unit}{\phi \land \overline{y = x} }$\;
+    % \SJ{I don't understand this form - the braces at the end are not part of a PAT}
+    \If{exists $(\eff{op}, \overline{z{:}b}\garr\overline{y{:}t}\sarr\rg{H}{\lastA\msg{op}{\phi'}}{F} \bufLR{B}) \in \Delta$}{
+        $\Gamma \leftarrow \Gamma, \overline{z{:}\rawnuot{b}{\top}}, \overline{y{:}t}$ \tcp*[l]{add ghost variables and parameters types in type context}
+      % \tcp{add qualifier of $\eff{op}$ event into type context}
+      % \SJ{Didn't we already do this at line 4 in Algorithm 1?}
+        $\msg{op}{\phi} \leftarrow \msg{op}{\phi \land \phi'}$ \tcp*[l]{merge current automata} 
         $\Pi_h \leftarrow \Pi_h \land H$ \tcp*[l]{merge history automata} 
         $\Pi_f \leftarrow \Pi_f \land F$ \tcp*[l]{merge prophecy automata}
-        \tcp{refine type context}
-        \If{exists $\Gamma'$ such that $\Gamma' \sqsubseteq \Gamma$ and $\Gamma' \vdash (\Pi_h \seqA \lastA\msgA{op}{\overline{x}} \seqA \Pi_f) \not\subseteq \neg\allTL$}{
+        \tcp{non-emptiness check}
+        \If{$\Gamma \not\vdash (\Pi_h \seqA \lastA\msg{op}{\phi} \seqA \Pi_f) \subseteq \neg\allTL$}{
             \tcp{return type context, property, as well as updated forward and backward set}
-            \Return{$(\Gamma', \Pi_h, \lastA \msgA{op}{\overline{x}}, \Pi_f, \Mfw \cup \{\eff{op}\}, \Mbw \cup \{\overline{\eff{op_i}}\})$} 
+            \Return{$(\Gamma', \Pi_h, \lastA \msg{op}{\phi}, \Pi_f, \Mfw \cup \{\eff{op}\}, \Mbw \cup B)$} 
         }
     }
 }
@@ -210,54 +210,55 @@ procedures execute.
 
 \paragraph{Forward and backward synthesis} The forward synthesis subroutine is
 shown in \autoref{algo:forward}. It first retrieves the \PAT\ of
-operation $\eff{op}$ on line $2$; the prophecy automata for that
-\PAT\ also indicates the children (future) events of $\eff{op}$, i.e.,
-$\overline{\eff{op_i}}$ \SJ{This isn't part of the PAT syntax?}.  The
+operation $\eff{op}$ on line $2$; this handler type also indicates the children (future) events of $\eff{op}$, i.e., $\bufLR{B}$.  The
 algorithm then merges the selected \PAT into the violation property
 piecewise. First, the current operation $\eff{op}$ should be aligned
-(line $3$), guaranteeing that the input assumed by the violation
-property is consistent with the \PAT ($\overline{y = x}$). Next, the
+(line $4$), guaranteeing that the input assumed by the violation
+property is consistent with the \PAT ($\phi \land \phi'$). Next, the
 algorithm merges the existing history trace of the violation property
-with the \PAT{}'s history automata on line $4$, and the violation
+with the \PAT{}'s history automata on line $5$, and the violation
 property's future trace with the \PAT{}'s prophecy automata (line
-$5$). In order to guarantee the refined violation property contains at
+$6$). In order to guarantee the refined violation property contains at
 least one realizable trace, we also need to check for non-emptiness of
 the violation property, as previously discussed. Precisely, we make
 sure the violation property $\Pi_h \seqA \lastA\msgA{op}{\overline{x}}
-\seqA \Pi_f$ is not empty, i.e., $\not\subseteq \neg \allTL$).  Observe
-that under different substitutions, $\sigma \in \denot{\Gamma}$, the
-violation property may have have different denotations. We would like
-to find a refined type context $\Gamma'$ such that the interpretation
-of the property under this context is non-empty.  We do so   on
-line $6$, where $\Gamma' \sqsubseteq \Gamma$ is defined as:
-{\small\begin{align*} \Gamma' \sqsubseteq \Gamma \doteq
-  \denot{\Gamma'} \subseteq \denot{\Gamma} \land \denot{\Gamma'}
-  \not=\emptyset
-\end{align*}}\noindent
-\SJ{Would like a tighter phrasing of this point that doesn't
-  involve introducing abduction}
-Here, we apply a filtering procedure to discard infeasible
-substitutions~\cite{ZYDJ24} Finally, the algorithm returns the refined
+\seqA \Pi_f$ is not empty, as in \textsc{WfHAF}.  
+% Observe
+% that under different substitutions, $\sigma \in \denot{\Gamma}$, the
+% violation property may have have different denotations. We would like
+% to find a refined type context $\Gamma'$ such that the interpretation
+% of the property under this context is non-empty.  We do so   on
+% line $6$, where $\Gamma' \sqsubseteq \Gamma$ is defined as:
+% {\small\begin{align*} \Gamma' \sqsubseteq \Gamma \doteq
+%   \denot{\Gamma'} \subseteq \denot{\Gamma} \land \denot{\Gamma'}
+%   \not=\emptyset
+% \end{align*}}\noindent
+% \SJ{Would like a tighter phrasing of this point that doesn't
+%   involve introducing abduction}
+% Here, we apply a filtering procedure to discard infeasible
+% substitutions~\cite{ZYDJ24} 
+Finally, the algorithm returns the refined
 type context, property, as well as forward and backward set on line
 $7$. The forward set additional contains parent message $\eff{op}$,
 backward set additional contains children message
-$\overline{\eff{op_i}}$.
+$B$.
 
 
-\SJ{Stopped here ...}
+% \SJ{Stopped here ...}
 
 \begin{algorithm}[ht!]
-\Procedure{$\backward(\Gamma, \Pi_h, \lastA \msgA{op}{\overline{x}}, \Pi_f, \Mfw, \Mbw)$}{
+\Procedure{$\backward(\Gamma, \Pi_h, \lastA \msg{op}{\phi}, \Pi_f, \Mfw, \Mbw)$}{
     \tcp{Select the \PAT of some $\eff{op_{parent}}$ from handler specification, who sends message $\eff{op}$}
-    \If{$(\eff{op_{parent}}, \overline{z{:}b}\garr\overline{y{:}t}\sarr\rg{H}{\msg{op_{parent}}{\phi}}{F_1 \seqA \lastA \msgB{op}{\overline{x'}}{\phi'} \seqA F_2}\bufLR{\msgB{op}{\overline{x'}}{\phi'} \cup \overline{\msg{op_i}{\phi_i}}}) \in \Delta$}{
-        \tcp{add qualifier of $\eff{op_{parent}}$ and $\eff{op}$ event into type context}
-        $\Gamma \leftarrow \Gamma, \overline{z{:}\rawnuot{b}{\top}}, \overline{y{:}t}, \_{:}\nuot{unit}{\phi \land \phi'\overline{[x'\mapsto x]}}$\;
-        $\Pi_h \leftarrow \Pi_h \land (H \seqA \lastA \msgA{op_{parent}}{\overline{y}} \seqA F_1)$ \tcp*[l]{merge history automata} 
+    \If{$(\eff{op_{parent}}, \overline{z{:}b}\garr\overline{y{:}t}\sarr\rgB{H}{\msg{op_{parent}}{\phi_\Code{parent}}}{F_1 \seqA \lastA \msg{op}{\phi'} \seqA F_2}{\{\eff{op}\} \cup B}) \in \Delta$}{
+        % \tcp{add qualifier of $\eff{op_{parent}}$ and $\eff{op}$ event into type context}
+        $\Gamma \leftarrow \Gamma, \overline{z{:}\rawnuot{b}{\top}}, \overline{y{:}t}$ \tcp*[l]{add ghost variables and parameters types in type context}
+        $\msg{op}{\phi} \leftarrow \msg{op}{\phi \land \phi'}$ \tcp*[l]{merge current automata}
+        $\Pi_h \leftarrow \Pi_h \land (H \seqA \lastA \msg{op_{parent}}{\phi_\Code{parent}} \seqA F_1)$ \tcp*[l]{merge history automata}
         $\Pi_f \leftarrow \Pi_f \land F_2$ \tcp*[l]{merge prophecy automata}
-        \tcp{refined type context to make violation property be non-empty}
-        \If{exists $\Gamma'$ such that $\Gamma' \sqsubseteq \Gamma$ and $\Gamma \vdash (\Pi_h \seqA \lastA\msgA{op}{\overline{x}} \seqA \Pi_f) \not\subseteq \neg\allTL$}{
-        \tcp{return type context, property, as well as updated forward and backward set}
-            \Return{$(\Gamma', \Pi_h, \lastA \msgA{op}{\overline{x}}, \Pi_f, \Mfw \cup \{\eff{op_{parent}}\}, \Mbw \cup \{\eff{op}, \overline{\eff{op_i}}\})$}\;
+        \tcp{non-emptiness check}
+        \If{$\Gamma \not\vdash (\Pi_h \seqA \lastA\msg{op}{\phi} \seqA \Pi_f) \subseteq \neg\allTL$}{
+            \tcp{return type context, property, as well as updated forward and backward set}
+            \Return{$(\Gamma', \Pi_h, \lastA \msg{op}{\phi}, \Pi_f, \Mfw \cup \{\eff{op_{parent}}\}, \Mbw \cup \{\eff{op}\} \cup B)$} 
         }
     }
 }
@@ -267,18 +268,18 @@ $\overline{\eff{op_i}}$.
 
 The backward synthesis subroutine is shown in \autoref{algo:backward}, which is similar as forward synthesis but explore the message dependency from children messages back to parent message. This reversed direction leads several differences. We pick a message $\eff{op_{parent}}$ that will send $\eff{op}$ instead of message $\eff{op}$ on line $2$. Then, the violation property needs to align the current message $\eff{op}$ with the $\eff{op}$ in the prophecy automata of \PAT of $\eff{op_{parent}}$, instead of its current automata, as shown below
 {\small\begin{align*}
-    \underbrace{ \effL H \effR \effL \lastA \msg{op_{parent}}{\phi} \effR  \effL F_1 }_\texttt{actual history}
+    \underbrace{ \effL H \effR \effL \lastA\msg{op_{parent}}{\phi_\Code{parent}} \effR  \effL F_1 }_\texttt{actual history}
     \seqA 
-    \underbrace{ \lastA \msgB{op}{\overline{x'}}{\phi'} }_\texttt{actual current }
+    \underbrace{ \lastA \msg{op}{\phi'} }_\texttt{actual current }
     \seqA
     \underbrace{ F_2 \effR }_\texttt{actual prophecy}
 \end{align*}}\noindent
-which changes the merge procedure (line $3$ - $5$) in backward synthesis. Also, the forward set adds the parent message $\eff{op_{parent}}$ instead of current one, and backward set adds all children message ($\{\eff{op}, \overline{\eff{op_i}}\}$).
+which changes the merge procedure (line $4$ - $6$) in backward synthesis. Also, the forward set adds the parent message $\eff{op_{parent}}$ instead of current one, and backward set adds all children message ($\{\eff{op}\} \cup B$).
 
 \begin{example} To demonstrate the refinement of the violation property $\negSCA$ into $\negSCA'$ in our motivating example:
 {\footnotesize\begin{align*}
 \Gamma \equiv\;& \Code{x}\hasoty{int}{\top}, \Code{y}\hasoty{int}{\top} \quad \Mfw \equiv \emptyset \quad \Mbw \equiv \emptyset
-\\B \equiv\;& \allTL \seqA \lastA \msg{writeRsp}{v = \Code{x} \land st} \seqA \globalA \neg \msg{writeRsp}{st} \seqA \lastA\msg{readRsp}{v = \Code{y} \land st \land \Code{y} \not= \Code{x}} \seqA \allTL
+\\B \equiv\;& \allTL \seqA \lastA \msg{writeRsp}{v = \Code{x}} \seqA \globalA \neg \msg{writeRsp}{\top} \seqA \lastA\msg{readRsp}{v = \Code{y} \land st = \true \land \Code{y} \not= \Code{x}} \seqA \allTL
 \tag{before iteration $1$}
 \end{align*}}\noindent
 In the first iteration, our algorithm focus on message $\eff{readRsp}$. Our algorithm perform forward synthesis since this message is not record in $\Mfw$. As specified by $\Delta$, no additional messages are sent by the handler of $\eff{readRsp}$, thus the violation property doesn't changed. Then we perform backward synthesis since $\eff{readRsp}$ is not generatable. There are two types in by $\Delta$ that has prophecy automata contains $\eff{readRsp}$:
@@ -290,9 +291,9 @@ In the first iteration, our algorithm focus on message $\eff{readRsp}$. Our algo
 \end{align*}}\noindent
 The $\tau_2$ assume the $\eff{readRsp}$ message has a false status as payload, which is conflict with violation property and cannot pass the non-emptiness check. On the other hand, if we choose $\tau_1$, then we will perform the following piecewise merge, which leads the following result:
 {\footnotesize\begin{align*}
-\Gamma \equiv\;& \Code{x}\hasoty{int}{\top}, \Code{y}\hasoty{int}{v \not= x}, \Code{s_0}\hasoty{bool}{v = \true} \quad \Mfw \equiv \{\eff{readRsp}, \eff{readReq}\} \quad \Mbw \equiv \{\eff{readRsp}\}
-\\B \equiv\;& \allTL \seqA \lastA\msg{writeReq}{v =\Code{y}} \seqA \globalA \neg \msg{writeReq}{\top} \seqA \lastA\msgA{readReq}{y} \seqA \allTL \seqA 
-\\&\lastA\msg{writeRsp}{v = \Code{x} \land st = \true} \seqA \globalA \neg \msg{writeRsp}{st} \seqA \lastA\msgA{readRsp}{y,s_0} \seqA \allTL \tag{after iteration $1$}
+\Gamma \equiv\;& \Code{x}\hasoty{int}{\top}, \Code{y}\hasoty{int}{\top} \quad \Mfw \equiv \{\eff{readRsp}, \eff{readReq}\} \quad \Mbw \equiv \{\eff{readRsp}\}
+\\B \equiv\;& \allTL \seqA \lastA\msg{writeReq}{v =\Code{y}} \seqA \globalA \neg \msg{writeReq}{\top} \seqA \lastA\msg{readReq}{v = \Code{y}} \seqA \allTL \seqA \lastA\msg{writeRsp}{v = \Code{x}} \seqA
+\\& \globalA \neg \msg{writeRsp}{\top} \seqA \lastA\msg{readRsp}{v = \Code{y} \land st = \true \land \Code{y} \not= \Code{x}} \seqA \allTL \tag{after iteration $1$}
 \end{align*}}\noindent
 where we know there is a new symbolic event $\msg{writeReq}{v =\Code{y}}$ happens before $\eff{readReq}$, which is required by $\tau_2$. The rest of refinement steps can be found in \techreport{}.
 \end{example}
