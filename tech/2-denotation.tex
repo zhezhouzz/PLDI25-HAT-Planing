@@ -1,0 +1,101 @@
+\paragraph{Type Denotation}
+
+\begin{figure}[t!]
+\footnotesize{
+{\small
+\begin{flalign*}
+ &\text{\textbf{Well-Formed Trace}} & \fbox{$\wfvdash \zevent{op}{\overline{c}} \quad \wfvdash \alpha$}
+\end{flalign*}
+\begin{prooftree}
+\hypo{
+\emptyset \basicvdash \eff{op} : \overline{b}\sarr\Code{unit} \quad
+\forall i. \emptyset \basicvdash c_i : b_i\quad
+}
+\infer1[\textsc{WfMsg}]{
+    \wfvdash \zevent{op}{\overline{c}}
+}
+\end{prooftree}
+\quad
+\begin{prooftree}
+\hypo{}
+\infer1[\textsc{WfNil}]{
+    \wfvdash []
+}
+\end{prooftree}
+\quad
+\begin{prooftree}
+\hypo{
+\wfvdash m \quad
+\wfvdash \alpha
+}
+\infer1[\textsc{WfCons}]{
+    \wfvdash m \cons \alpha
+}
+\end{prooftree}
+\begin{flalign*}
+ &\text{\textbf{Trace Language}} & \fbox{$\alpha, i \models A \quad  \denot{A} \in \mathcal{P}(\alpha)$}
+\end{flalign*}}
+\vspace{-1em}
+\begin{flalign*}
+    \denot{A} &\doteq \{\alpha ~|~ \wfvdash \alpha \land \alpha, 0 \models A \}
+\end{flalign*}
+\vspace{-1.5em}
+\begin{flalign*}
+\alpha, i &\models \msgB{op}{\overline{x}}{\phi} \iff \alpha[i] = \zevent{op}{\overline{c}} \land \phi\msubst{x}{c}
+    \quad&
+\alpha, i &\models A \landA A' \iff \alpha, i \models A \land \alpha, i \models A'
+\\\alpha, i &\models \evparenth{\phi} \iff \alpha[i] = \zevent{op}{\overline{c}} \land \phi
+    \quad&
+    \alpha, i &\models A \lorA A' \iff \alpha, i \models A \lor \alpha, i \models A'
+\end{flalign*}
+\vspace{-1.5em}
+\begin{flalign*}
+    \alpha, i &\models \nextA A \iff \alpha, i{+}1 \models A
+    \quad&
+    \alpha, i &\models A_1;A_2 \iff \alpha[i...\I{len(\alpha)}] = \alpha_1 \listconcat \alpha_2 \land \alpha_1 \in \denot{A_1} \land \alpha_2 \in \denot{A_2}
+    \\\alpha, i &\models \neg A \iff \alpha, i \not\models A
+     \quad&
+     \alpha, i &\models  A \untilA A' \iff \exists j. i \leq j < \I{len}(\alpha). \alpha, j \models  A' \land \forall k. i \leq k < j \impl \alpha, k \models  A
+\end{flalign*}
+\vspace{-1.5em}
+{\small
+\begin{flalign*}
+  &\text{\textbf{Type Denotation}}
+  & \fbox{$\denot{t} \in \mathcal{P}(c)
+    \quad \denot{\tau} \in \mathcal{P}(e)$}
+\end{flalign*}}
+\vspace{-1.5em}
+\begin{align*}
+  &\denot{ \rawnuot{b}{\phi} } &&\doteq \{ c ~|~ \emptyset
+                                       \basicvdash c : b \land
+                                       \phi[\nu\mapsto v] \}
+  \\ &\denot{ x{:}t_x \sarr t } &&\doteq \{ e ~|~ \emptyset \basicvdash e : \eraserf{x{:}t_x \sarr t} \land
+                                           \forall c \in \denot{ t_x }.\, e\ c \in  \denot{ \tau[t \mapsto c ] } \}
+  \\ &\denot{ x{:}t\sarr\tau } &&\doteq \{ e ~|~ \emptyset \basicvdash e : \eraserf{x{:}t\sarr\tau} \land
+                                           \forall c \in \denot{ t }.\, e\ c \in  \denot{ \tau[x\mapsto c ] } \}
+  \\ &\denot{ x{:}t\garr\tau } &&\doteq \{ e ~|~ 
+    \emptyset \basicvdash e : \eraserf{\tau} \land 
+    \forall c \in \denot{t}. e \in  \denot{ \tau[x\mapsto c ] } \}
+  \\ &\denot{\rg{H}{A}{F}} &&\doteq \{e ~|~ \emptyset \basicvdash e : \Code{unit} \land \forall \alpha_h\;\alpha\;\alpha_f\;\beta\;\beta'\;e_h\;e_f.
+  \\&&& \qquad\qquad \msteptr{[]}{(\emptyset, e_h)}{\alpha_h}{(\beta, ())} \land \msteptr{\alpha_h}{(\beta, e)}{\alpha}{(\beta', ())} \land \msteptr{\alpha_h \listconcat \alpha }{(\beta', e_f)}{\alpha_f}{(\emptyset, ())} \impl
+  \\&&& \qquad\qquad (\alpha_h \in\denot{H} \land \alpha_f \in\denot{F} \impl \alpha \in\denot{A}) \}
+  \\ &\denot{ \rgB{H}{A}{F}{B} } &&\doteq \denot{ \rg{H}{A}{F} }
+  \\ &\denot{ \tau_1 \interty \tau_2 } &&\doteq \denot{\tau_1} \cap \denot{\tau_2}
+\end{align*}
+\vspace{-1.5em}
+{\small
+\begin{flalign*}
+  &\text{\textbf{Type Context Denotation}}
+  & \fbox{$\denot{\Gamma} \in \mathcal{P}(\sigma)$}
+\end{flalign*}}
+\vspace{-1.2em}
+\begin{flalign*}
+    \denot{ \emptyset } &\doteq \{ \emptyset \} \qquad\qquad\qquad\qquad&
+    \denot{ x{:}t, \Gamma } &\doteq \{ \sigma[x\mapsto c] ~|~ c\in \denot{t}, \sigma \in \denot{\Gamma[x\mapsto c]} \}
+\end{flalign*}
+}
+\vspace{-0.4cm}
+\caption{Type denotations in \langname{}}
+\label{fig:type-denotation}
+\vspace{-.4cm}
+\end{figure}

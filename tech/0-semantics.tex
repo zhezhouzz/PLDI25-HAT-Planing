@@ -1,92 +1,60 @@
+\section{Operational Semantics}\label{sec:tech:semantics}
+
+The auxiliary big-step reduction rules for effect operators and the
+small-step operational semantics of our core language are shown in
+\autoref{fig:semantics}.
+
 \begin{figure}[ht!]
 {\footnotesize
-{\small\begin{alignat*}{2}
- \quad\quad\text{\textbf{Traces}}& \quad &\alpha,\beta ::= \quad &
+{\small\begin{align*}
+\text{\textbf{Buffer}}& \quad &\beta ::= \quad & \text{multi-set of $\zevent{op}{\overline{c}}$}
+\qquad\qquad\quad
+\text{\textbf{Traces}}& \quad &\alpha ::= \quad &
     \emptr ~|~ \zevent{op}{\overline{c}} \;{::}\; \alpha ~|~ \alpha
-    \listconcat \alpha
-\end{alignat*}
+    \listconcat \alpha 
+\end{align*}
 \begin{align*}
   \text{\textbf{Handler Semantics }} & \fbox{$\alpha \vDash
                                        \zevent{op}{\overline{c}}
                                        \Downarrow \beta$} &
                                                             \quad\quad\quad \text{\textbf{Operational Semantics }} & \fbox{$\steptr{\alpha}{(\buf, e)}{\alpha}{(\buf, e)}$}
 \end{align*}}
-    \begin{prooftree}
-    \mhypo{50mm}
-    {$\buf = \{\zevent{op}{\overline{c}}\} \cup \buf_1 $ \quad
-      $\alpha \vDash \zevent{op}{\overline{c}} \Downarrow \buf_2$ \quad
-      % $\select{\buf, \zevent{op}{\overline{v}}, \buf'} $ \quad
-      $e' = e[\overline{x \mapsto c}]$
-    }
-      \infer1[\textsc{\small StObs}]{
-        \steptr{\alpha}{(\buf,
-          \zobs{\overline{x}}{op}{e})}{[\zevent{op}{\overline{c}}]}{(\buf_1
-          \cup \buf_2, e')}
-      }
-    \end{prooftree}
-      \quad
-    \begin{prooftree}
-      \hypo{\alpha \vDash \zevent{op}{\overline{c}} \Downarrow \beta'}
-      \infer1[\textsc{\small StGen}]{
-        \steptr{\alpha}{(\buf, \zgen{op}{\overline{c}}{e})}{[\zevent{op}{\overline{c}}]}{(\buf \cup \beta', e)}
-      }
-    \end{prooftree}
-  }
-  \caption{Selected Operational Semantics}
-  \label{fig:selected-semantics}
-\end{figure}
-
-\begin{figure}[h!]
-{\footnotesize
-{\small\begin{flalign*}
- &\text{\textbf{Auxiliary Operational Semantics }} & \fbox{$\primop\ \overline{v} \Downarrow v_x  \quad \alpha \vDash \zevent{op}{\overline{c}} \Downarrow \beta$}
-\end{flalign*}}
-{\small
-\begin{flalign*}
-        &\text{\textbf{Operational Semantics }} & \fbox{$\steptr{\alpha}{(\buf, e)}{\alpha}{(\buf, e)}$}
-\end{flalign*}}
-\begin{prooftree}
-      \hypo{\primop\ \overline{v} \Downarrow v_x }
-      \infer1[\textsc{\small StOp}]{
-        \steptr{\alpha}{(\buf, \zlet{x}{\primop\ \overline{v}}{e})}{[]}{(\buf, e[x\mapsto v_x])}
-      }
-\end{prooftree}
-    \\ \ \\ \ \\
-    \begin{prooftree}
-      \hypo{$\alpha \vDash \zevent{op}{\overline{v}} \Downarrow \beta'$}
-      \infer1[\textsc{\small StGen}]{
-        \steptr{\alpha}{(\buf, \zgen{op}{\overline{v}}{e})}{[\zevent{op}{\overline{v}}]}{(\buf \listconcat \beta', e)}
-      }
-    \end{prooftree}
-    \\ \ \\ \ \\    
-    \begin{prooftree}
-    \mhypo{70mm}
-    {$\buf = \buf_1 \listconcat [\zevent{op}{\overline{v}}] \listconcat \buf_2$ \quad
-    $\alpha \vDash \zevent{op}{\overline{v}} \Downarrow \beta_3$ \quad
-    % $\select{\buf, \zevent{op}{\overline{v}}, \buf'} $ \quad
-     $e' = e[\overline{x \mapsto v}]$
-     }
-      \infer1[\textsc{\small StObserve}]{
-        \steptr{\alpha}{(\buf, \zobs{\overline{x}}{op}{e})}{[\zevent{op}{\overline{v}}]}{(\buf_1 \listconcat \buf_2 \listconcat \buf_3, e')}
-      }
-    \end{prooftree}
-    \\ \ \\ \ \\
-    \mprooftr{35mm}{}{StChoice1}{
-    $\steptr{\alpha}{(\buf, e_1 \oplus e_2)}{[]}{(\buf, e_1)}$
-    }\quad
-    \mprooftr{35mm}{}{StChoice2}{
-    $\steptr{\alpha}{(\buf, e_1 \oplus e_2)}{[]}{(\buf, e_2)}$
-    }
-    \\ \ \\ \ \\
-    \mprooftr{60mm}{
-    $\exists \overline{v{:b}}. \phi[\overline{x\mapsto v}]$
-    }{StAssume}{
-    $\steptr{\alpha}{(\buf, \zletassume{\overline{x{:}b}}{\phi}{e}}{[]}{(\buf, e[\overline{x\mapsto v}])}$
-    }\quad
-    \mprooftr{44mm}{}{StAssert}{
-    $\steptr{\alpha}{(\buf, \zassume{\Code{true}}{e})}{[]}{(\buf, e)}$
-    }
-  }
-  \caption{Operational Semantics}
+\mprooftr{65mm}{
+$\buf = \{\zevent{op}{\overline{c}}\} \cup \buf_1 $ \quad
+$\alpha \vDash \zevent{op}{\overline{c}} \Downarrow \buf_2$ \quad
+$e' = e[\overline{x \mapsto c}]$
+}{StObs}
+{$\steptr{\alpha}{(\buf,
+    \zobs{\overline{x}}{op}{e})}{[\zevent{op}{\overline{c}}]}{(\buf_1 \cup \buf_2, e')}$}
+\quad
+\mprooftr{48mm}{
+$\alpha \vDash \zevent{op}{\overline{c}} \Downarrow \beta'$
+}{StGen}
+{$\steptr{\alpha}{(\buf, \zgen{op}{\overline{c}}{e})}{[\zevent{op}{\overline{c}}]}{(\buf \cup \beta', e)}$}
+\\ \ \\ \ \\
+\mprooftr{55mm}{
+$\primop\ \overline{c} \Downarrow c_x$
+}{StOp}
+{$\steptr{\alpha}{(\buf, \zlet{x}{\primop\ \overline{c}}{e})}{[]}{(\buf, e\subst{x}{c_x})}$}
+\quad
+\\ \ \\ \ \\
+\mprooftr{35mm}{}{StChoice1}{
+$\steptr{\alpha}{(\buf, e_1 \oplus e_2)}{[]}{(\buf, e_1)}$
+}\quad
+\mprooftr{35mm}{}{StChoice2}{
+$\steptr{\alpha}{(\buf, e_1 \oplus e_2)}{[]}{(\buf, e_2)}$
+}
+\\ \ \\ \ \\
+\mprooftr{60mm}{
+$\phi\msubst{x}{c}$
+}{StAssume}{
+$\steptr{\alpha}{(\buf, \zassume{\phi}{e})}{[]}{(\buf, e\msubst{x}{c})}$
+}
+\quad
+\mprooftr{40mm}{}{StAssert}{
+$\steptr{\alpha}{(\buf, \zassert{\true}{e}}{[]}{(\buf, e)}$
+}
+}
+  \caption{Full Operational Semantics}
   \label{fig:semantics}
 \end{figure}
