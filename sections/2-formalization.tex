@@ -249,19 +249,39 @@ and $\Code{val}$.
   receives a response to a $\eff{getReq}$ message.
 \end{example}
 
-
 \subsection{Typing rules}
 
-\paragraph{Type contexts} A type context is a sequence of bindings
-from variables to pure refinement types (i.e., $t$). Type contexts are
-not allowed to contain \PAT{}s, as doing so breaks several structural
-properties (e.g., weakening) that are used to prove type safety.
+Our typing judgment depends on three contexts: a type context
+$\Gamma$, a handler context $\Delta$, and a capability context
+$\Theta$. The type context, $\Gamma$ maps from variables to pure
+refinement types (i.e., $t$). As in other trace-based refinement type
+systems, contexts are not allowed to contain \PAT{}s--- doing so
+breaks several structural properties (e.g., weakening) that are used
+to prove type safety. The handler context, $\Delta$ maps operations to
+three key pieces of information: the specification of its handler as a
+\PAT{}, whether or not it represents an observable or generable event,
+and the operations it adds to the buffer. The capability context,
+$\Theta$, records the set of observable messages that are in
+scope. This context is used to ensure that every observation
+corresponds to a message that was triggered by a previous event.
 
-\paragraph{Observation Capability} The observable message (e.g., $\eff{readRsp}$) cannot just happens by itself, but need another message happens previously (e.g., $\eff{readReq}$) whose handler sent this observable message. Then, this capability of observing a message is capture by a multi-set message name (effect operators). A expression $\zobs{\overline{x}}{op}{e}$ is type-safe only when message name $\eff{op}$ is contained by \emph{observation capability} $B$, where $\eff{op}$ will be consumed during typing on its body $e$.
-% To deal with messages that has same name, we assume there is an unique identifier is assigned to these operators (e.g., $\eff{getRsp_1}$, $\eff{getRsp_2}$, ...).
-% To deal with messages that has same name, we assume there is an unique identifier is assigned to these operators (e.g., $\eff{getRsp_1}$, $\eff{getRsp_2}$, ...), which we can successfully decide the location of symbolic event in $F$ by its name in $\bufLR{B}$. When the context is clear, we omit $\bufLR{B}$.
+% \paragraph{Observation Capability} The observable message (e.g.,
+% $\eff{readRsp}$) cannot just happens by itself, but need another
+% message happens previously (e.g., $\eff{readReq}$) whose handler sent
+% this observable message. Then, this capability of observing a message
+% is capture by a multi-set message name (effect operators). A
+% expression $\zobs{\overline{x}}{op}{e}$ is type-safe only when message
+% name $\eff{op}$ is contained by \emph{observation capability} $B$,
+% where $\eff{op}$ will be consumed during typing on its body $e$.
+% % To deal with messages that has same name, we assume there is an unique identifier is assigned to these operators (e.g., $\eff{getRsp_1}$, $\eff{getRsp_2}$, ...).
+% % To deal with messages that has same name, we assume there is an unique identifier is assigned to these operators (e.g., $\eff{getRsp_1}$, $\eff{getRsp_2}$, ...), which we can successfully decide the location of symbolic event in $F$ by its name in $\bufLR{B}$. When the context is clear, we omit $\bufLR{B}$.
 
-\paragraph{Auxiliary Context} Besides the handler specification $\Delta$, we need another auxiliary context $\Sigma$ provides observation capability provided by handlers. Then $(\eff{op}, B) \in \Sigma$ means handling message with name $\eff{op}$ will sending new messages with name in $B$, which produce more observation capability. We omit them in the rest of rules.
+% \paragraph{Auxiliary Context} Besides the handler specification
+% $\Delta$, we need another auxiliary context $\Sigma$ provides
+% observation capability provided by handlers. Then
+% $(\eff{op}, B) \in \Sigma$ means handling message with name $\eff{op}$
+% will sending new messages with name in $B$, which produce more
+% observation capability. We omit them in the rest of rules.
 
 \begin{example}[Observation Capability Context] The observation capability context $\Sigma$ for $4$ effector operators shown as below:
 {\small\begin{align*}
@@ -274,7 +294,8 @@ properties (e.g., weakening) that are used to prove type safety.
 {\small
 \begin{flalign*}
  &\text{\textbf{Auxiliary Typing}} & \fbox{$\Gamma \wellfoundedvdash \tau \quad \Gamma \vdash A \subseteq A \quad \Gamma \vdash \tau <: \tau$} &
-  &\text{\textbf{Typing}} &  &\fbox{$\Gamma \vdash \eff{op} : \tau \quad \Gamma \vdash v : t \quad \Gamma ~|~ B \vdash e: \tau$}
+  &\text{\textbf{Typing}} &  &\fbox{$\Gamma~;~\Delta \vdash \eff{op} :
+    \tau \quad \Gamma \vdash v : t \quad \Gamma;~ \Delta:~ \Theta \vdash e: \tau$}
 \end{flalign*}
 }
 \\ \
@@ -294,50 +315,51 @@ $\Gamma \vdash F_1 \subseteq F_2$ }
 {$\Gamma \vdash \rg{H_1}{A_1}{F_1} <: \rg{H_2}{A_2}{F_2}$}
 \
 \mprooftr{18mm}
-{$\Gamma ~|~ B \vdash e: \tau$ \quad
-$\Gamma  ~|~ B \vdash \tau <: \tau'$}
+{$\Gamma; \Delta; \Theta \vdash e: \tau$ \quad
+$\Gamma; \Delta; \Theta \vdash \tau <: \tau'$}
 {TSub}
-{$\Gamma  ~|~ B \vdash e: \tau'$}
+{$\Gamma; \Delta; \Theta \vdash e: \tau'$}
 \\[.3em]
 \mprooftr{35mm}
 {}
 {TRet}
-{$\Gamma ~|~ B \vdash () : \rg{H}{\epsTL}{F}$}
+{$\Gamma; \Delta; \Theta \vdash () : \rg{H}{\epsTL}{F}$}
 \quad
-\mprooftr{73mm}
+\mprooftr{77mm}
 {
-$\Gamma \vdash \eff{op} : \overline{x_i{:}t_i}\sarr \rg{H}{\lastA\msg{op}{\phi}}{A \seqA F}$ \quad
+$\Delta(\eff{op}) =\langle \overline{x_i{:}t_i}\sarr
+\rg{H}{\lastA\msg{op}{\phi}}{A \seqA F}, \eff{gen}, \Theta' \rangle$ \quad
 $\forall i. \Gamma \vdash v_i : t_i$ \quad
-$\GEN(\eff{op})$ \quad $(\eff{op}, B') \in \Sigma$ \quad
- $\Gamma ~|~ B \cup B' \vdash e : \rg{H \seqA \lastA\msg{op}{\phi\msubst{x_i}{v_i}}}{A}{F}$
+ $\Gamma; \Delta; \Theta \cup \Theta' \vdash e : \rg{H \seqA \lastA\msg{op}{\phi\msubst{x_i}{v_i}}}{A}{F}$
  }
 {TGen}
-{$\Gamma ~|~ B \vdash \zgen{op}{\overline{v_i}}{e} : \rg{H}{\lastA\msg{op}{\phi\msubst{x_i}{v_i}} \seqA A}{F}$}
+{$\Gamma; \Delta; \Theta \vdash \zgen{op}{\overline{v_i}}{e} : \rg{H}{\lastA\msg{op}{\phi\msubst{x_i}{v_i}} \seqA A}{F}$}
 \\[.3em]
-\mprooftr{15mm}
-{
-$(\eff{op}, \tau) \in \Delta$
- }
-{TEOp}
-{$\Gamma \vdash \eff{op} : \tau$}
-\
+% \mprooftr{15mm}
+% {
+% $\Delta(\eff{op}) \langle \tau, $
+%  }
+% {TEOp}
+% {$\Gamma \vdash \eff{op} : \tau$}
+% \
 \mprooftr{21mm}
 {
-$\Gamma ~|~ B \vdash e_1 : \tau$ \quad $\Gamma ~|~ B \vdash e_2 : \tau$
+$\Gamma; \Delta; \Theta \vdash e_1 : \tau$ \quad $\Gamma; \Delta; \Theta \vdash e_2 : \tau$
  }
 {TChoice}
-{$\Gamma ~|~ B \vdash e_1 \oplus e_2 : \tau$}
+{$\Gamma; \Delta; \Theta \vdash e_1 \oplus e_2 : \tau$}
 \
-\mprooftr{65mm}
+\mprooftr{77mm}
 {
-$\Gamma \vdash \eff{op} : \overline{x{:}t}\sarr \rg{H}{\lastA\msg{op}{\phi}}{A \seqA F}$
-\quad $(\eff{op}, B') \in \Sigma$ \quad
- $\Gamma, \overline{x{:}t} ~|~ B \cup B' \vdash e : \rg{H \seqA \lastA\msg{op}{\phi}}{A}{F}$
+  $\Delta(\eff{op}) =\langle \overline{x_i{:}t_i}\sarr
+\rg{H}{\lastA\msg{op}{\phi}}{A \seqA F}, \eff{obs}, \Theta'\rangle$ \quad
+ $\Gamma, \overline{x{:}t}; \Delta; \Theta \cup \Theta' \vdash e : \rg{H \seqA \lastA\msg{op}{\phi}}{A}{F}$
  }
 {TObs}
-{$\Gamma ~|~ \{\eff{op}\} \cup B \vdash \zobs{\overline{x}}{op}{e} : \rg{H}{\lastA\msg{op}{\phi} \seqA A}{F}$}
+{$\Gamma; \Delta; \{\eff{op}\} \cup \Theta \vdash \zobs{\overline{x}}{op}{e} : \rg{H}{\lastA\msg{op}{\phi} \seqA A}{F}$}
 }
-\caption{Selected typing rules.}
+\caption{Selected typing rules. \BD{\textsc{TEOp} is currently
+    redundant.}}
 \label{fig:selected-typing-rules}
 \vspace*{-.2in}
 \end{figure}
@@ -370,7 +392,7 @@ history and prophecy automata are the effect assumed by execution.
 % ... F_{n+1}$) between $\msg{op_i}{\phi_i}$.
 
 \paragraph{Controller program typing} Our type rules
-have the form $\Gamma ~|~ B \vdash e : \tau$ that reads `` a term $e$ that has type $\tau$ under type context $\Gamma$ and observation capability $B$''. A
+have the form $\Gamma; \Delta; \Theta \vdash e : \tau$ that reads `` a term $e$ that has type $\tau$ under type context $\Gamma$ and observation capability $B$''. A
 subset of our synthesis rules\footnote{The complete set of typing
   rules is included in the \techreport{}.} is shown in
 \autoref{fig:selected-typing-rules}, where we elide the well-formedness judgments in the
@@ -442,7 +464,7 @@ also, for $(\eff{op}, B) \in \Sigma$, $F \subseteq \bigwedge_{\eff{op} \in B} \f
   a well-formed handler specification $\Delta$ and capability context $\Sigma$,
     the trace of effects produced by a well-typed term
     $e$ is captured by its corresponding \PAT $\tau$:
-  $\Gamma ~|~ B \vdash e : \tau \implies \forall \sigma, \sigma \in
+  $\Gamma; \Delta; \Theta \vdash e : \tau \implies \forall \sigma, \sigma \in
     \denotation{\Gamma} \impl \sigma(e) \in
     \denotation{\sigma(\tau)}$.\footnote{The proofs of theorems in this section are provided in the \techreport{}.}
 \end{theorem}
