@@ -13,7 +13,7 @@ data-dependency constraints found in $\Delta$ must be manifest in
 $\negSCA'$.
 
 The declarative subsumption rule \textsc{TSub} serves as an oracle to
-allow us to transform violation property into the correct shape, but
+allow us to transform a violation property into the correct shape, but
 an efficient algorithm needs to achieve this iteratively.  Our
 solution is to thus implement a refinement loop that shapes the input
 property into the desired form as depicted in
@@ -22,9 +22,10 @@ property into the desired form as depicted in
 forward synthesis as necessary, refining the violation property by
 adding new messages before and after the current one.  After
 refinement, the synthesis algorithm can derive the controller program
-mechanistically.  Note that declarative typing rules always assume \PAT{}s are well-formed, which thus guaranteeing that there is at least one trace that is realizable. To
-address this, our algorithm also employs an automata non-emptiness
-check.
+mecanically.  Note that declarative typing rules always assume \PAT{}s
+are well-formed, guaranteeing that there is at least one trace that is
+realizable. To address this, our algorithm also employs an automata
+non-emptiness check.
 
 % \textsc{TSub} also makes sure that ghost
 % variables and parameters types of function \PAT are suitably
@@ -50,11 +51,10 @@ In general, any arbitrary s-LTL$_f$ formula can be normalized into a finite set 
 \begin{example}[Abstract trace] The violation property $\negSCA$ can be normalized into the following abstract trace:
 {\footnotesize
   \begin{align*}
-\negSCAPi \doteq \allTL \seqA &\lastA \msg{writeRsp}{v = \Code{x} \land st = \true} \seqA \globalA (\neg \msg{writeRsp}{st = \true}) \seqA 
-\\&\lastA \msg{readRsp}{v = \Code{y} \land st = \true \land \Code{y} \not= \Code{x}} \seqA \allTL
+\negSCAPi \doteq \allTL \seqA &\lastA \msg{writeRsp}{v = \Code{x}} \seqA \globalA (\neg \msg{writeRsp}{\top}) \seqA \lastA \msg{readRsp}{v = \Code{y} \land st = \true \land \Code{y} \not= \Code{x}} \seqA \allTL
   \end{align*}}\noindent
 which describes an execution in our running example in which a successful $\eff{readRsp}$
-carries a payload different from the last handled $\eff{writeRsp}$.
+message carries a value different from the last handled $\eff{writeRsp}$.
 \end{example}
 
 \subsection{Synthesis Algorithm}
@@ -62,11 +62,11 @@ carries a payload different from the last handled $\eff{writeRsp}$.
 \begin{algorithm}[t!]
 \Params{Ghost variables $\overline{x{:}b}$, and abstract trace $\Pi$ that represent violation property}
 \Output{Synthesized controller $e$}
-$\Mfw, \Mbw \leftarrow \emptyset, \emptyset$ \tcp*[l]{The message has already preformed forward or backward synthesis}
+$\Mfw, \Mbw \leftarrow \emptyset, \emptyset$ \tcp*[l]{}
 $\Gamma \leftarrow \overline{x{:}\rawnuot{b}{\top}}$ \tcp*[l]{initialize type context}
 % $\Gsender \leftarrow \emptyset$ \tcp*[l]{A global message buffer}
-% $\Gchecked \leftarrow \emptyset$ \tcp*[l]{Record all messages that has been checked }
-\tcp{If exists a unchecked symbolic event $\msg{op}{\phi}$, and focus on it}
+% $\Gchecked \leftarrow \emptyset$ \tcp*[l]{ }
+\tcp{Pick a previously unexamined symbolic event $\msg{op}{\phi}$}
 \While{exists $\msgB{op}{\overline{x}}{\phi}$ s.t. $\Pi = \Pi_h \seqA \lastA \msgB{op}{\overline{x}}{\phi} \seqA \Pi_f$ and  $\msgB{op}{\overline{x}}{\phi} \not\in (\Mfw \cap \Mbw)$}{
     % \tcp*[l]{add qualifier of $\eff{op}$ event into type context, $z$ fresh}
     % $\Gamma \leftarrow \Gamma, \overline{y\,{:}\rawnuot{b}{\top}},\, z\,\hasoty{unit}{\phi[x\mapsto y]}$\;
@@ -92,18 +92,18 @@ $e \leftarrow \S{DeriveTerm}(\Gamma, \Pi)$ \tcp*[l]{derive controller program}
   \end{algorithm}
 
 The top-level synthesis algorithm is shown \autoref{algo:top-syn}.  It
-takes violation property that normalized as abstract trace as input
+takes a violation property normalized as an abstract trace as input
 and returns a synthesized controller expressed in $\DSL$.  For
 convenience of presentation, this algorithm is expressed as a
 non-deterministic partial function that synthesizes a controller
 program that mandates a specific message order.  Multiple message
-orders can be described as the union ($\oplus$) of all possible
-results of this algorithm.  Our implementation manifests the
-non-determinism in the algorithm via an efficient backtracking search
-procedure.  The algorithm follows the structure given in
-\autoref{fig:intuition-algo},  refining a violation property
-$\Pi$ through a refinement loop (lines $3$ - $9$) before deriving the
-controller program from the refined property (lines $10$).
+orders can be described as the union of all possible results of this
+algorithm.  Our implementation manifests the non-determinism in the
+algorithm via an efficient backtracking search procedure.  The
+algorithm follows the structure given in \autoref{fig:intuition-algo},
+refining a violation property $\Pi$ through a refinement loop (lines
+$3$ - $9$) before deriving the controller program from the refined
+property (lines $10$).
 
 % \paragraph{Type context} In order to derive necessary
 % assumption and assertions over variables in the synthesized program,
@@ -139,8 +139,8 @@ trace of these dependencies.
   \begin{align*}
   &\lastA \msg{writeReq}{v = \Code{x}} \seqA
    \lastA \msg{writeReq}{v =\Code{y} \land v \not=\Code{x}} \seqA \lastA \msg{readReq}{\top} \seqA \\
-    &\lastA \msg{writeRsp}{v = \Code{y} \land st = \true} \seqA
-    \lastA \msg{writeRsp}{v = \Code{x} \land st = \true} \seqA
+    &\lastA \msg{writeRsp}{v = \Code{y}} \seqA
+    \lastA \msg{writeRsp}{v = \Code{x}} \seqA
     \lastA \msg{readRsp}{v = \Code{y} \land st = \true \land v \not=
     \Code{x}}
   \end{align*}}\noindent
@@ -150,7 +150,7 @@ namely the last two events comprising $\negSCA'$.
 
 \paragraph{Property refinement loop} Exploiting message dependencies
 requires us to explore parent as well as children dependencies of a
-symbolic event occuring in an abstract trce; the former constitutes
+symbolic event occurring in an abstract trace; the former constitutes
 the \emph{backward} synthesis phase of the algorithm, while the latter
 is subsumed by a \emph{forward} synthesis pass.  Note that if a
 message handler for operation $\eff{op_{parent}}$ emits a new message
@@ -168,7 +168,7 @@ The refinement loop shown in \autoref{algo:top-syn} initializes $\Mfw$
 and $\Mbw$ at line $1$, and starts with an initial type context with
 all ghost variables having qualifier $\top$ (line $2$). During each
 iteration, an unchecked symbolic event is picked ($\msg{op}{\phi}
-\not\in \Mfw \cap \Mbw$ (line $3$) within the abstract trace $\Gamma$;
+\not\in \Mfw \cap \Mbw$ on line $3$) within the abstract trace $\Gamma$;
 the algorithm terminates once all symbolic events have been
 explored. Within each refinement iteration focused on symbolic event
 $\msgB{op}{\overline{x}}{\phi}$ that has $\Pi_{h}$ as its history
@@ -181,7 +181,7 @@ backward synthesis routines yield a 6-tuple $(\Gamma, \Pi_h, \lastA
 \msgA{op}{\overline{x}}, \Pi_f, \Mfw, \Mbw)$.  The refined abstract
 trace returned on line $9$ returns concatenation of the history trace,
 event, and future trace ($\Pi_h \seqA \lastA \msgA{op}{\overline{x}}
-\seqA \Pi_f$ after one or both of the forward or backward synthesis
+\seqA \Pi_f)$ after one or both of the forward or backward synthesis
 procedures execute.
 
 \begin{algorithm}[ht!]
@@ -210,8 +210,9 @@ procedures execute.
 
 \paragraph{Forward and backward synthesis} The forward synthesis subroutine is
 shown in \autoref{algo:forward}. It first retrieves the \PAT\ of
-operation $\eff{op}$ on line $2$; this handler type also indicates the children (future) events of $\eff{op}$, i.e., $B$.  The
-algorithm then merges the selected \PAT into the violation property
+operation $\eff{op}$ on line $2$; this handler type also indicates the
+children (future) operators of $\eff{op}$, i.e., $B$.  The algorithm
+then merges the selected \PAT into the violation property
 piecewise. First, the current operation $\eff{op}$ should be aligned
 (line $4$), guaranteeing that the input assumed by the violation
 property is consistent with the \PAT ($\phi \land \phi'$). Next, the
@@ -220,9 +221,10 @@ with the \PAT{}'s history automata on line $5$, and the violation
 property's future trace with the \PAT{}'s prophecy automata (line
 $6$). In order to guarantee the refined violation property contains at
 least one realizable trace, we also need to check for non-emptiness of
-the violation property, as previously discussed. Precisely, we make
-sure the violation property $\Pi_h \seqA \lastA\msgA{op}{\overline{x}}
-\seqA \Pi_f$ is not empty, as in \textsc{WfHAF}.  
+the violation property, as previously discussed.  We do so by ensuring
+that the violation property $\Pi_h \seqA \lastA\msgA{op}{\overline{x}}
+\seqA \Pi_f$ is not empty, as established in the \textsc{WfHAF} rule
+in \autoref{fig:selected-typing-rules}.
 % Observe
 % that under different substitutions, $\sigma \in \denot{\Gamma}$, the
 % violation property may have have different denotations. We would like
@@ -239,25 +241,24 @@ sure the violation property $\Pi_h \seqA \lastA\msgA{op}{\overline{x}}
 % substitutions~\cite{ZYDJ24} 
 Finally, the algorithm returns the refined
 type context, property, as well as forward and backward set on line
-$7$. The forward set additional contains parent message $\eff{op}$,
-backward set additional contains children message
-$B$.
+$8$. The forward set additionally contains parent operator $\eff{op}$,
+and the backward set additionally contains children operators $B$.
 
 
 % \SJ{Stopped here ...}
 
 \begin{algorithm}[ht!]
 \Procedure{$\backward(\Gamma, \Pi_h, \lastA \msg{op}{\phi}, \Pi_f, \Mfw, \Mbw)$}{
-    \tcp{Select the \PAT of some $\eff{op_{parent}}$ from handler specification, who sends message $\eff{op}$}
+    \tcp{Select the \PAT of some $\eff{op_{parent}}$ from the handler specification, who sends a message with operator $\eff{op}$}
     \If{$(\eff{op_{parent}}, \overline{z{:}b}\garr\overline{y{:}t}\sarr\rg{H}{\msg{op_{parent}}{\phi_\Code{parent}}}{F_1 \seqA \lastA \msg{op}{\phi'} \seqA F_2}) \in \Delta$ and $(\eff{op_{parent}}, \{\eff{op}\} \cup B) \in \Sigma$}{
         % \tcp{add qualifier of $\eff{op_{parent}}$ and $\eff{op}$ event into type context}
-        $\Gamma \leftarrow \Gamma, \overline{z{:}\rawnuot{b}{\top}}, \overline{y{:}t}$ \tcp*[l]{add ghost variables and parameters types in type context}
+        $\Gamma \leftarrow \Gamma, \overline{z{:}\rawnuot{b}{\top}}, \overline{y{:}t}$ \tcp*[l]{add ghost variables and parameters types into the type context}
         $\msg{op}{\phi} \leftarrow \msg{op}{\phi \land \phi'}$ \tcp*[l]{merge current automata}
         $\Pi_h \leftarrow \Pi_h \land (H \seqA \lastA \msg{op_{parent}}{\phi_\Code{parent}} \seqA F_1)$ \tcp*[l]{merge history automata}
         $\Pi_f \leftarrow \Pi_f \land F_2$ \tcp*[l]{merge prophecy automata}
         \tcp{non-emptiness check}
         \If{$\Gamma \not\vdash (\Pi_h \seqA \lastA\msg{op}{\phi} \seqA \Pi_f) \subseteq \neg\allTL$}{
-            \tcp{return type context, property, as well as updated forward and backward set}
+            \tcp{return type context, property, as well as updated forward and backward operations set}
             \Return{$(\Gamma', \Pi_h, \lastA \msg{op}{\phi}, \Pi_f, \Mfw \cup \{\eff{op_{parent}}\}, \Mbw \cup \{\eff{op}\} \cup B)$} 
         }
     }
@@ -266,38 +267,65 @@ $B$.
 \label{algo:backward}
 \end{algorithm}
 
-The backward synthesis subroutine is shown in \autoref{algo:backward}, which is similar as forward synthesis but explore the message dependency from children messages back to parent message. This reversed direction leads several differences. We pick a message $\eff{op_{parent}}$ that will send $\eff{op}$ instead of message $\eff{op}$ on line $2$. Then, the violation property needs to align the current message $\eff{op}$ with the $\eff{op}$ in the prophecy automata of \PAT of $\eff{op_{parent}}$, instead of its current automata, as shown below
-{\small\begin{align*}
-    \underbrace{ \effL H \effR \effL \lastA\msg{op_{parent}}{\phi_\Code{parent}} \effR  \effL F_1 }_\texttt{actual history}
-    \seqA 
-    \underbrace{ \lastA \msg{op}{\phi'} }_\texttt{actual current }
-    \seqA
-    \underbrace{ F_2 \effR }_\texttt{actual prophecy}
+The backward synthesis subroutine is shown in \autoref{algo:backward},
+which is similar to the forward synthesis procedure but explores
+message dependencies from children messages back to a parent. This
+reversal in synthesis direction leads to several differences. We pick
+an operator $\eff{op_{parent}}$ whose handler will eventually send a
+message with operator $\eff{op}$.  The violation property needs to
+align the current operator $\eff{op}$ whose message is to be
+synthesized with the $\eff{op}$ in the prophecy automata
+of $\eff{op_{parent}}$,  as shown below
+{\small\begin{align*} \underbrace{ \effL H \effR \effL
+    \lastA\msg{op_{parent}}{\phi_\Code{parent}} \effR \effL F_1
+  }_\texttt{actual history} \seqA \underbrace{ \lastA \msg{op}{\phi'}
+  }_\texttt{actual current } \seqA \underbrace{ F_2 \effR
+  }_\texttt{actual prophecy}
 \end{align*}}\noindent
-which changes the merge procedure (line $4$ - $6$) in backward synthesis. Also, the forward set adds the parent message $\eff{op_{parent}}$ instead of current one, and backward set adds all children message ($\{\eff{op}\} \cup B$).
+which changes the merge procedure (line $4$ - $6$).  Now, the forward
+operator set adds the parent operator $\eff{op_{parent}}$, and the
+backward set adds $\eff{op}$ to the backward operator set
+($\{\eff{op}\} \cup B$).
 
-\begin{example} To demonstrate the refinement of the violation property $\negSCA$ into $\negSCA'$ in our motivating example:
+\begin{example} We demonstrate the refinement of the violation property $\negSCA$ into $\negSCA'$ in our motivating example given
+  the following initialized elements:
 {\footnotesize\begin{align*}
 \Gamma \equiv\;& \Code{x}\hasoty{int}{\top}, \Code{y}\hasoty{int}{\top} \quad \Mfw \equiv \emptyset \quad \Mbw \equiv \emptyset
-\\B \equiv\;& \allTL \seqA \lastA \msg{writeRsp}{v = \Code{x}} \seqA \globalA \neg \msg{writeRsp}{\top} \seqA \lastA\msg{readRsp}{v = \Code{y} \land st = \true \land \Code{y} \not= \Code{x}} \seqA \allTL
+\\ \Pi \equiv\;& \allTL \seqA \lastA \msg{writeRsp}{v = \Code{x}} \seqA \globalA \neg \msg{writeRsp}{\top} \seqA \lastA\msg{readRsp}{v = \Code{y} \land st = \true \land \Code{y} \not= \Code{x}} \seqA \allTL
 \tag{before iteration $1$}
 \end{align*}}\noindent
-In the first iteration, our algorithm focus on message $\eff{readRsp}$. Our algorithm perform forward synthesis since this message is not record in $\Mfw$. As specified by $\Sigma$, no additional messages are sent by the handler of $\eff{readRsp}$, and the violation property doesn't changed. Then we perform backward synthesis since $\eff{readRsp}$ is not generatable. There are two types in by $\Delta$ that has prophecy automata contains $\eff{readRsp}$:
-{\footnotesize\begin{align*}
-&\Code{x}\hasnty{int}\garr \rg{\finalA \msg{writeReq}{v = \Code{x}} \land \neg\nextA\finalA\msg{writeReq}{\top}}{\lastA\msg{readReq}{\top}}{\finalA\msg{readRsp}{v = \Code{x} \land st = \true}} \tag{$\tau_1$}
-\\& \rg{\neg\finalA
-                 \msg{writeRsp}{\top}}{\lastA\msg{readReq}{\top}}{\finalA\msg{readRsp}{st
-                 = \false}} \tag{$\tau_2$}
+
+In the first iteration, our algorithm focus on operator
+$\eff{readRsp}$. Our algorithm performs forward synthesis since this
+message is not recorded in $\Mfw$. As specified by $\Sigma$, no
+additional messages are sent by the handler of $\eff{readRsp}$, and
+the violation property does not change. Next, we perform backward
+synthesis since $\eff{readRsp}$ is not generatable. There are two
+types in $\Delta$ whose prophecy automata contains
+$\eff{readRsp}$: {\footnotesize\begin{align*}
+  &\Code{x}\hasnty{int}\garr \rg{\finalA \msg{writeReq}{v = \Code{x}}
+    \land
+    \neg\nextA\finalA\msg{writeReq}{\top}}{\lastA\msg{readReq}{\top}}{\finalA\msg{readRsp}{v
+      = \Code{x} \land st = \true}} \tag{$\tau_1$} \\& \rg{\neg\finalA
+    \msg{writeRsp}{\top}}{\lastA\msg{readReq}{\top}}{\finalA\msg{readRsp}{st
+      = \false}} \tag{$\tau_2$}
 \end{align*}}\noindent
-The $\tau_2$ assume the $\eff{readRsp}$ message has a false status as payload, which is conflict with violation property and cannot pass the non-emptiness check. On the other hand, if we choose $\tau_1$, then we will perform the following piecewise merge, which leads the following result:
+Type $\tau_2$ constrains the $\eff{readRsp}$ message output by the
+this operator's handler to have a \textsf{false} status, which conflicts with the
+violation property and thus cannot pass the non-emptiness check. On
+the other hand, if we choose $\tau_1$, then we can perform the
+following piecewise merge, which leads to the following result:
+
 {\footnotesize\begin{align*}
 \Gamma \equiv\;& \Code{x}\hasoty{int}{\top}, \Code{y}\hasoty{int}{\top} \quad \Mfw \equiv \{\eff{readRsp}, \eff{readReq}\} \quad \Mbw \equiv \{\eff{readRsp}\}
-\\B \equiv\;& \allTL \seqA \lastA\msg{writeReq}{v =\Code{y}} \seqA \globalA \neg \msg{writeReq}{\top} \seqA \lastA\msg{readReq}{v = \Code{y}} \seqA \allTL \seqA \lastA\msg{writeRsp}{v = \Code{x}} \seqA
+\\ \Pi \equiv\;& \allTL \seqA \lastA\msg{writeReq}{v =\Code{y}} \seqA \globalA \neg \msg{writeReq}{\top} \seqA \lastA\msg{readReq}{v = \Code{y}} \seqA \allTL \seqA \lastA\msg{writeRsp}{v = \Code{x}} \seqA
 \\& \globalA \neg \msg{writeRsp}{\top} \seqA \lastA\msg{readRsp}{v = \Code{y} \land st = \true \land \Code{y} \not= \Code{x}} \seqA \allTL \tag{after iteration $1$}
 \end{align*}}\noindent
-where we know there is a new symbolic event $\msg{writeReq}{v =\Code{y}}$ happens before $\eff{readReq}$, which is required by $\tau_2$. The rest of refinement steps can be found in \techreport{}.
+which indicates that there is a new symbolic event $\msg{writeReq}{v =\Code{y}}$ that happens before $\msg{readReq}{v =\ \Code{y}}$ in the
+trace; the presence of a message for operator $\eff{readReq}$ is required by $\tau_2$, which can now be considered. The remainder of the
+refinement steps used to construct a violating trace can be found in \techreport{}.
 \end{example}
 
 \begin{theorem}\label{theorem:algo-sound}[Synthesis Algorithm Soundness]
-The controller synthesized by the algorithm is also type safe with respect our declaritive typing rules.
+The controller synthesized by the algorithm is type-safe with respect to our declarative typing rules.
 \end{theorem}
