@@ -83,7 +83,7 @@ The following symbolic LTL$_f$ formula~\cite{LTLf} formally captures a
 violation of RYW: %
 {\footnotesize
   \begin{align} \finalA (\msg{writeRsp}{v = \Code{x} }
-    \land \nextA (\neg \eff{writeRsp} \untilA
+    \land \nextA (\neg \msg{writeRsp}{\top} \untilA
     \msg{readRsp}{v = \Code{y} \land st = \true{} \land \Code{y} \not =
     \Code{x}})
     )
@@ -382,15 +382,15 @@ message is consistent with its specification. In the second phase, we
 use $A'$ to derive a controller program. As an example, the set of
 traces captured by \ref{eqn:autoEx} can be refined into: %
 {\footnotesize
-  \begin{align}
+  \begin{align*}
   &\lastA \msg{writeReq}{v = \Code{x}} \seqA
    \lastA \msg{writeReq}{v =\Code{y} \land v \not=\Code{x}} \seqA \lastA \msg{readReq}{\top} \seqA \\
-    &\lastA \msg{writeRsp}{v = \Code{y} \land st = \true} \seqA
-    \lastA \msg{writeRsp}{v = \Code{x} \land st = \true} \seqA
+    &\lastA \msg{writeRsp}{v = \Code{y}} \seqA
+    \lastA \msg{writeRsp}{v = \Code{x}} \seqA
     \lastA \msg{readRsp}{v = \Code{y} \land st = \true \land v \not=
     \Code{x}}
     \label{eqn:autoEx2}\tag{$\negSCA'$}
-  \end{align}}
+  \end{align*}}
 \noindent This automaton specializes the set of traces captured by the
 subformula under the $\finalA$ operator in \ref{eqn:autoEx},
 stipulating specific instances of $\eff{writeReq}$ and $\eff{readReq}$

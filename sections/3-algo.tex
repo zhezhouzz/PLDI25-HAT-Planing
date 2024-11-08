@@ -51,8 +51,7 @@ In general, any arbitrary s-LTL$_f$ formula can be normalized into a finite set 
 \begin{example}[Abstract trace] The violation property $\negSCA$ can be normalized into the following abstract trace:
 {\footnotesize
   \begin{align*}
-\negSCAPi \doteq \allTL \seqA &\lastA \msg{writeRsp}{v = \Code{x} \land st = \true} \seqA \globalA (\neg \msg{writeRsp}{st = \true}) \seqA 
-\\&\lastA \msg{readRsp}{v = \Code{y} \land st = \true \land \Code{y} \not= \Code{x}} \seqA \allTL
+\negSCAPi \doteq \allTL \seqA &\lastA \msg{writeRsp}{v = \Code{x}} \seqA \globalA (\neg \msg{writeRsp}{\top}) \seqA \lastA \msg{readRsp}{v = \Code{y} \land st = \true \land \Code{y} \not= \Code{x}} \seqA \allTL
   \end{align*}}\noindent
 which describes an execution in our running example in which a successful $\eff{readRsp}$
 message carries a value different from the last handled $\eff{writeRsp}$.
@@ -140,8 +139,8 @@ trace of these dependencies.
   \begin{align*}
   &\lastA \msg{writeReq}{v = \Code{x}} \seqA
    \lastA \msg{writeReq}{v =\Code{y} \land v \not=\Code{x}} \seqA \lastA \msg{readReq}{\top} \seqA \\
-    &\lastA \msg{writeRsp}{v = \Code{y} \land st = \true} \seqA
-    \lastA \msg{writeRsp}{v = \Code{x} \land st = \true} \seqA
+    &\lastA \msg{writeRsp}{v = \Code{y}} \seqA
+    \lastA \msg{writeRsp}{v = \Code{x}} \seqA
     \lastA \msg{readRsp}{v = \Code{y} \land st = \true \land v \not=
     \Code{x}}
   \end{align*}}\noindent
@@ -169,7 +168,7 @@ The refinement loop shown in \autoref{algo:top-syn} initializes $\Mfw$
 and $\Mbw$ at line $1$, and starts with an initial type context with
 all ghost variables having qualifier $\top$ (line $2$). During each
 iteration, an unchecked symbolic event is picked ($\msg{op}{\phi}
-\not\in \Mfw \cap \Mbw$ (line $3$) within the abstract trace $\Gamma$;
+\not\in \Mfw \cap \Mbw$ on line $3$) within the abstract trace $\Gamma$;
 the algorithm terminates once all symbolic events have been
 explored. Within each refinement iteration focused on symbolic event
 $\msgB{op}{\overline{x}}{\phi}$ that has $\Pi_{h}$ as its history
@@ -182,7 +181,7 @@ backward synthesis routines yield a 6-tuple $(\Gamma, \Pi_h, \lastA
 \msgA{op}{\overline{x}}, \Pi_f, \Mfw, \Mbw)$.  The refined abstract
 trace returned on line $9$ returns concatenation of the history trace,
 event, and future trace ($\Pi_h \seqA \lastA \msgA{op}{\overline{x}}
-\seqA \Pi_f$ after one or both of the forward or backward synthesis
+\seqA \Pi_f)$ after one or both of the forward or backward synthesis
 procedures execute.
 
 \begin{algorithm}[ht!]
