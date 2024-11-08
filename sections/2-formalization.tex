@@ -10,7 +10,8 @@
     \\ \text{\textbf{Constants }}& \quad &c ::= \quad & () ~|~ \mathbb{B} ~|~ \mathbb{Z} ~|~ ...
     \\ \text{\textbf{Values }}& \quad  & v ::= \quad & c ~|~ x
     \\ \text{\textbf{Qualifiers}}& \quad & \phi ::= \quad & v ~|~ \primop\;\overline{v} ~|~ \bot ~|~ \top  ~|~ \neg \phi ~|~ \phi \land \phi ~|~ \phi \lor \phi ~|~ \phi \impl \phi ~|~ \forall x{:}b.\, \phi
-    \\\text{\textbf{Effectful Operations }}& \quad & \eff{op} ::= \quad & \eff{readReq} ~|~ \eff{readRsp} ~|~  ...
+    \\\text{\textbf{Effectful Operations}}& \quad & \eff{op} ::= \quad & \eff{readReq} ~|~ \eff{readRsp} ~|~  ...
+    \\\text{\textbf{Message Kinds}}& \quad & k ::= \quad & \eff{gen} ~|~ \eff{obs}
     \\ \text{\textbf{Expressions}}& \quad & e ::=\quad & v ~|~ \zlet{x{:}b}{\primop\ \overline{v}}{e} ~|~ \zgen{op}{\overline{v}}{e} ~|~ \zobs{\overline{x{:}b}}{op}{e}
     \\ & & \quad & ~|~  \zassert{\phi}{e} ~|~  \zassume{\phi}{e} ~|~ e \oplus e
   \end{alignat*}}
@@ -19,33 +20,40 @@
 \end{figure}
 
 We formalize our approach using a core language, $\DSL$, for
-expressing distributed controller programs. This language is a
-call-by-value and asynchronous message-passing calculus that abstracts
-away details about other processes and their implementation that the
-controller interacts with, focussing only on the structure of the
-controller program itself. The syntax of $\DSL$ is shown in
-\autoref{fig:term-syntax}; it includes both pure and effectful
-operations ($\primop$ and $\eff{op}$), non-deterministic choice
-($\oplus$), and assertions. Effectful operations correspond to either
-\emph{generable} (e.g., $\eff{readReq}$) or \emph{observable} messages
-  (e.g., $\eff{readReq}$), which can be decided by an built-in auxiliary predicate $\GEN$.
+expressing controller programs. This language is a call-by-value and
+asynchronous message-passing calculus that abstracts away the
+implementation details of the processes that the controller interacts
+with, focusing only on the structure of the controller program
+itself. The syntax of $\DSL$ is shown in \autoref{fig:term-syntax}; it
+includes both pure and effectful operations ($\primop$ and
+$\eff{op}$), non-deterministic choice ($\oplus$), and
+assertions. Effectful operations are categorized as either
+\emph{generable} (e.g., $\eff{gen}$) or \emph{observable} messages
+(e.g., $\eff{obs}$).
 
 \begin{figure}[ht!]
 {\footnotesize
 {\small\begin{align*}
-\text{\textbf{Message}}& \  & m ::= \   & \zevent{op}{\overline{c}}
+\text{\textbf{Messages}}& \  & m ::= \   & \zevent{op}{\overline{c}}
 \qquad
-\text{\textbf{Buffer}}& \  &\beta ::= \  & \text{multi-set of $m$}
+\text{\textbf{Buffers}}& \  &\beta \in \mathcal{P}(m)  &
 \qquad
 \text{\textbf{Traces}}& \  &\alpha ::= \  &
     \emptr ~|~ m \;{::}\; \alpha ~|~ \alpha
-    \listconcat \alpha 
+    \listconcat \alpha
 \end{align*}
 \begin{align*}
   \text{\textbf{Handler Semantics }} & \fbox{$\alpha \vDash
                                        \zevent{op}{\overline{c}}
                                        \Downarrow \beta$} &
-                                                            \quad\quad\quad \text{\textbf{Operational Semantics }} & \fbox{$\steptr{\alpha}{(\buf, e)}{\alpha}{(\buf, e)}$}
+                                                            \quad\quad\quad
+                                                            \text{\textbf{Operational
+                                                            Semantics
+                                                            }} &
+                                                                 \fbox{$\phi
+                                                                 \Downarrow v
+                                                                 \quad
+                                                                 \steptr{\alpha}{(\buf, e)}{\alpha}{(\buf, e)}$}
 \end{align*}}
     \begin{prooftree}
     \mhypo{50mm}
@@ -62,57 +70,64 @@ operations ($\primop$ and $\eff{op}$), non-deterministic choice
     \end{prooftree}
       \quad
     \begin{prooftree}
-      \hypo{\alpha \vDash \zevent{op}{\overline{c}} \Downarrow \beta' \quad \GEN(\eff{op})}
+      \hypo{\alpha \vDash \zevent{op}{\overline{c}} \Downarrow \beta' }
       \infer1[\textsc{\small StGen}]{
         \steptr{\alpha}{(\buf, \zgen{op}{\overline{c}}{e})}{[\zevent{op}{\overline{c}}]}{(\buf \cup \beta', e)}
       }
     \end{prooftree}
-\\ \ 
+\\ \
 \mprooftr{60mm}{
-$\phi\msubst{x}{c}$
+$\phi\msubst{x}{c}\Downarrow \top$
 }{StAssume}{
 $\steptr{\alpha}{(\buf, \zassume{\phi}{e})}{[]}{(\buf, e\msubst{x}{c})}$
 }
 \quad
-\mprooftr{40mm}{}{StAssert}{
-$\steptr{\alpha}{(\buf, \zassert{\top}{e}}{[]}{(\buf, e)}$
+\mprooftr{40mm}{$\phi \Downarrow \top$}{StAssert}{
+$\steptr{\alpha}{(\buf, \zassert{\phi}{e}}{[]}{(\buf, e)}$
 }
   }
   \caption{Selected Operational Semantics}
   \label{fig:selected-semantics}
 \end{figure}
 
-\paragraph{Operational Semantics} The message-passing semantics of $\DSL$ relies on \emph{message buffers}, which are multi-set of \emph{message} $(\zevent{op}{\overline{c}})$. Evaluating a $\DSL$ program depends
-on an input \emph{trace}, i.e., a sequence of effectful operations, and
-produces an output trace.  Traces support the standard list operations
-(i.e., cons ${::}$ and concatenation $\listconcat{}$).
-We define the operational semantics of $\DSL$ as a small-step
-reduction relation: $\steptr{\alpha}{(\beta, e)}{~\alpha'}{(\beta', e')}$.
-This relation is read as: under the context $\alpha$ and current
-message buffer $\beta$, $e$ steps to $e'$, emitting the trace
-$\alpha'$ and producing the output buffer $\beta'$. Intuitively, the
-context $\alpha$ represents the sequence of messages visible to a
-handler, thereby determining its response; the buffers $\beta$ are
-sets of messages that have been issued by not yet been made visible to
-a handler. The semantics uses an auxiliary judgement,
+\paragraph{Operational Semantics} Messages in $\DSL$ are operations
+applied to concrete values $(\zevent{op}{\overline{c}})$. Evaluating a
+$\DSL$ program depends on an input \emph{trace}, i.e., a sequence of
+messages, and an input \emph{buffer}, i.e., a bag or multiset of
+messages. Each evaluation step produces an output trace and an updated
+buffer. Traces are equipped with the standard list operations (i.e.,
+cons ${::}$ and concatenation $\listconcat{}$).  The operational
+semantics of $\DSL$ are defined by the small-step reduction relation:
+$\steptr{\alpha}{(\beta, e)}{~\alpha'}{(\beta', e')}$.  This judgment
+is read as: under the context $\alpha$ and current message buffer
+$\beta$, $e$ steps to $e'$, emitting the trace $\alpha'$ and producing
+the output buffer $\beta'$. Intuitively, the context $\alpha$
+represents the sequence of messages visible to a handler, thereby
+determining its response; the buffer $\beta$ contains messages that
+have been issued by not yet been made visible to a handler. The
+semantics uses an auxiliary judgement,
 $\alpha \vDash \zevent{op}{\overline{c}} \Downarrow \beta$, that
-describes any new messages that are added to the message buffer as a
-consequence of handling a message.
+specifies any new messages that need to be added to the message buffer
+after handling $\eff{op}$.
 
-\autoref{fig:selected-semantics} provides the $4$ non-standard rules
-of our semantics.\footnote{The remaining rules are completely standard
-  and provided in the supplemental material.} The rule for
-observable events (\textsc{StObs}) reflects the ``receive-and-send''
-behavior of messages produced by handlers. This rule
-non-deterministically removes a pending message that matches the
-effectful operation ($\eff{op}$), evaluates it under the existing
-context, substituting the message payload $\overline{c}$ for arguments
-$\overline{x}$ in $e$, the body of the $\eff{let}$ expression. Any new
-messages generated as a consequence of handling
-$\eff{op}\ \overline{c}$ are added to the resulting message buffer.
-The reduction rule for generable events (\textsc{StGen}) is similar;
-since these events can be directly performed by the controller, the
-rule does not require a corresponding message in the buffer. The \textsc{StAssume} rule applies a substitution $\msubst{x}{c}$ that satifies with qualifier $\phi$ to the body of assume expression; while \textsc{StAssert} rule requires the asserted qualifier to be alreay true ($\top$) after substitution.  
+\autoref{fig:selected-semantics} provides the key rules of $\DSL$'s
+semantics.\footnote{The remaining rules are completely standard and
+  provided in the supplemental material.} The rule for observable
+events (\textsc{StObs}) reflects the ``receive-and-send'' behavior of
+messages produced by handlers. This rule non-deterministically removes
+a pending message that matches the effectful operation $\eff{op}$,
+evaluates it under the current context, and substitutes the message
+payload $\overline{c}$ for the variables $\overline{x}$ in $e$, the
+body of the $\eff{let}$ expression. Any new messages generated as a
+consequence of handling $\eff{op}\ \overline{c}$ are added to the
+resulting message buffer.  The reduction rule for generable events
+(\textsc{StGen}) is similar, but since these events can be directly
+performed by the controller, the rule does not require a corresponding
+message in the buffer. The \textsc{StAssume} rule substitutes the
+variables $\overline{x}$ with values $\overline{c}$ that satisfy the
+qualifier $\phi$ in the body of an assume expression. The
+\textsc{StAssert} rule, in contrast, requires the qualifier of an
+assert expression to hold in order for it to make progress.
 
 \begin{example}[Operational Semantics]\label{ex:semantics} The first three events in the trace \ref{eqn:traceEx} is
   produced by the controller program \ref{eqn:autoEx} as follows:
@@ -125,15 +140,18 @@ rule does not require a corresponding message in the buffer. The \textsc{StAssum
       &\xhookrightarrow{[\zevent{writeReq}{4}]} (\{\zevent{writeRsp}{3},
         \zevent{writeRsp}{4}\}, \emph{lines $4$ - $7$ of $P_C$}) \tag{\textsc{StGen}}\\[-0.4em]
       &\xhookrightarrow{[\zevent{writeRsp}{4}]} (\{\zevent{writeRsp}{3}\},
-        \emph{lines $5$ - $7$ of $P_C$}) \tag{\textsc{StObs}} \\[-0.4em]
+        \emph{lines $5$ - $7$ of $P_C$}) \tag{\textsc{StObs, StAssert}} \\[-0.4em]
       &\xhookrightarrow{[\eff{readReq}]} (\{\zevent{writeRsp}{3}, \zevent{readRsp}{4,\true}\},
         \emph{lines $6$ - $7$ of $P_C$}) \tag{\textsc{StGen}}
     \end{align*}
-  }\noindent 
-With the help of solver, the first step of reduction performs one possible substitution ($x\mapsto 3, y \mapsto 4$) satisfying the assumption $x\not=y$ (line $1$). In the following two steps, the controller directly generates two $\eff{writeReq}$ messages and adds two $\eff{writeRsp}$ messages
-  in the message buffer. One of these messages is consumed in the
-  forth step, reflecting the constraint defined at line 4 in
-  \ref{eqn:autoEx}. The fifth step handles $\eff{readReq}$, where message buffer is inserted with a $\eff{readRsp}$ message with the last written value $4$ (i.e., last $\eff{writeReq}$ above $\hookrightarrow$) as its payload.
+  }\noindent The first step performs the substitution
+  ($x\mapsto 3, y \mapsto 4$), which satisfies the assumed formula
+  $x\not=y$ (line $1$). In the next two steps, $P_{C}$ generates two
+  $\eff{writeReq}$ messages and adds two $\eff{writeRsp}$ messages to
+  the message buffer. One of these messages is consumed by the fourth
+  step, causing the assertion on line 4 of \autoref{fig:2pc-term} to
+  succeed. The fifth step handles $\eff{readReq}$, and the message
+  $\eff{readRsp(4, true)}$ is added to the buffer.
 \end{example}
 
 \subsection{Types}
@@ -155,7 +173,7 @@ With the help of solver, the first step of reduction performs one possible subst
 \end{figure}
 
 
-The syntax of $\DSL{}$'s types is shown in \autoref{fig:type-syntax}.
+The syntax of types in $\DSL{}$ is shown in \autoref{fig:type-syntax}.
 Types include \emph{pure} refinement types, which describe pure
 computations, and Prophecy Automata Types (\PAT{}s), which describe
 effectful computations.  Pure refinement types are similar to those
@@ -167,16 +185,15 @@ sentences~\cite{Ramsey1987}, which can be efficiently handled by an
 off-the-shelf theorem prover such as Z3~\cite{de2008z3}.
 
 \paragraph{Symbolic Finite Automata} Following other recently proposed
-trace-based type systems\cite{...}, $\DSL{}$ uses \emph{Symbolic
+trace-based type systems\cite{ZYDJ24}, $\DSL{}$ uses \emph{Symbolic
   Finite Automata} (SFAs)~\cite{Vea13,SFA-minimization,
   SFA-Transducers} to qualify traces, similar to how standard
 refinement types use formulae to qualify the types of pure terms.  The
 front-end language used to express SFAs is a symbolic version of
-\emph{linear temporal logic on finite traces} (LTL$_f$)~\cite{LTLf}.
-A \emph{symbolic event} $\msgB{op}{\overline{x}}{\phi}$ is an atomic
-predicate that describes a message {$\eff{op}$} whose fields
+LTL$_f$.  A \emph{symbolic event} $\msgB{op}{\overline{x}}{\phi}$ is
+an atomic predicate that describes a message {$\eff{op}$} whose fields
 $\overline{x}$ must satisfy the qualifier $\phi$.\footnote{When the
-  field names of a message are clear, we omit the local variables
+  fields of an event are clear from context, we omit its parameters
   $\overline{x}$, e.g., $\msg{writeReq}{v > 0}$ means
   $\msgB{writeReq}{v}{v > 0}$.}  The standard temporal operators
 (i.e., test $\evparenth{\phi}$, next $\nextA A$, until $\untilA$) and
@@ -184,8 +201,8 @@ various set operators (i.e., complement $\neg$, intersection $\land$,
 and union $\lorA$) are defined normally. These operators are
 sufficient to express other modalities, e.g., eventually ($\finalA$),
 globally ($\globalA$), and importantly, the singleton (last) modality
-$\lastA$, which describes a singleton trace which prohibits any
-subsequent effects~\cite{LTLf}.% .
+$\lastA$, which describes a singleton trace, i.e., one which prohibits
+any subsequent effects~\cite{LTLf}.% .
 
 % In addition to the temporal next ($\nextA A$) and until operators ($A
 % \untilA A$), the syntax of HATs includes negation ($\neg A$),
@@ -209,20 +226,27 @@ a \emph{prophecy} SFA $F$ that characterizes new messages that have
 yet to be performed. Function types use \PAT{}s in their result types
 to describe the effects they perform, when combined with intersection
 types ($\interty$), this allows users to express complex control
-flows. Function types also \emph{ghost variables}
+flows. Function types also use \emph{ghost variables}
 ($x{:}b \garr \tau$)\cite{...}  to capture data dependencies among
 symbolic events; for example, the full signature of the $\eff{getReq}$
 handler from \autoref{sec:intro} uses the ghost variables $\Code{key}$
 and $\Code{val}$.
 
-\begin{example}[Strong Consistency] The SC mentioned in \autoref{sec:intro} requires that when the user receive the $\eff{getRsp}$, the gotten value is the same as the put value in current database. A \PAT for $\eff{getReq}$ consistent with SC can be 
-{\footnotesize
-  \begin{align*}
-    \Code{val}\hasnty{tVal} \garr & \Code{key}\hasoty{tKey}{\top} \sarr  \effLR{\finalA \msg{putReq}{k = \Code{key} \land v = \Code{val}} \land \nextA \neg \finalA \msg{putReq}{k = \Code{key}} } %
-    \\& \quad \effLR{\lastA \msg{getReq}{k = \Code{key}}}%
-    \effLR{(\neg \msg{putReq}{k = \Code{key}}) \untilA \msg{getRsp}{k = \Code{key} \land v = \Code{val}}}
-\end{align*}}\noindent
-whose prophecy automata indicates that there is no no updates ($\eff{putReq}$) happens before the user receives the $\eff{getRsp}$.    
+\begin{example}[Strong Consistency]
+  Strong consistency requires that all $\eff{getRsp}$ messages report
+  the last value that was $\eff{put}$ to the database. This property
+  is captured by the following \PAT{}:
+%
+  {
+    \footnotesize
+    \begin{align*}
+      \Code{val}\hasnty{tVal} \garr & \Code{key}\hasoty{tKey}{\top} \sarr  \effLR{\finalA \msg{putReq}{k = \Code{key} \land v = \Code{val}} \land \nextA \neg \finalA \msg{putReq}{k = \Code{key}} } %
+      \\& \quad \effLR{\lastA \msg{getReq}{k = \Code{key}}}%
+      \effLR{(\neg \msg{putReq}{k = \Code{key}}) \untilA \msg{getRsp}{k = \Code{key} \land v = \Code{val}}}
+    \end{align*}}
+  \noindent The prophecy automata in this \PAT{} requires that no
+  updates ($\eff{putReq}$) to the database happen before a user
+  receives a response to a $\eff{getReq}$ message.
 \end{example}
 
 
@@ -233,7 +257,7 @@ from variables to pure refinement types (i.e., $t$). Type contexts are
 not allowed to contain \PAT{}s, as doing so breaks several structural
 properties (e.g., weakening) that are used to prove type safety.
 
-\paragraph{Observation Capability} The observable message (e.g., $\eff{readRsp}$) cannot just happens by itself, but need another message happens previously (e.g., $\eff{readReq}$) whose handler sent this observable message. Then, this capability of observing a message is capture by a multi-set message name (effect operators). A expression $\zobs{\overline{x}}{op}{e}$ is type-safe only when message name $\eff{op}$ is contained by \emph{observation capability} $B$, where $\eff{op}$ will be consumed during typing on its body $e$. 
+\paragraph{Observation Capability} The observable message (e.g., $\eff{readRsp}$) cannot just happens by itself, but need another message happens previously (e.g., $\eff{readReq}$) whose handler sent this observable message. Then, this capability of observing a message is capture by a multi-set message name (effect operators). A expression $\zobs{\overline{x}}{op}{e}$ is type-safe only when message name $\eff{op}$ is contained by \emph{observation capability} $B$, where $\eff{op}$ will be consumed during typing on its body $e$.
 % To deal with messages that has same name, we assume there is an unique identifier is assigned to these operators (e.g., $\eff{getRsp_1}$, $\eff{getRsp_2}$, ...).
 % To deal with messages that has same name, we assume there is an unique identifier is assigned to these operators (e.g., $\eff{getRsp_1}$, $\eff{getRsp_2}$, ...), which we can successfully decide the location of symbolic event in $F$ by its name in $\bufLR{B}$. When the context is clear, we omit $\bufLR{B}$.
 
@@ -261,14 +285,14 @@ $\Gamma \wellfoundedvdash F$ \quad
 $\Gamma \not\vdash H \seqA A \seqA F \subseteq \neg\allTL$ }
 {WfHAF}
 {$\Gamma \wellfoundedvdash \rg{H}{A}{F}$}
-\ 
+\
 \mprooftr{42mm}
 {$\Gamma \vdash H_2 \subseteq H_1$ \quad
 $\Gamma \vdash A_1 \subseteq A_2$ \quad
 $\Gamma \vdash F_1 \subseteq F_2$ }
 {SubHAF}
 {$\Gamma \vdash \rg{H_1}{A_1}{F_1} <: \rg{H_2}{A_2}{F_2}$}
-\ 
+\
 \mprooftr{18mm}
 {$\Gamma ~|~ B \vdash e: \tau$ \quad
 $\Gamma  ~|~ B \vdash \tau <: \tau'$}
@@ -296,14 +320,14 @@ $(\eff{op}, \tau) \in \Delta$
  }
 {TEOp}
 {$\Gamma \vdash \eff{op} : \tau$}
-\ 
+\
 \mprooftr{21mm}
 {
 $\Gamma ~|~ B \vdash e_1 : \tau$ \quad $\Gamma ~|~ B \vdash e_2 : \tau$
  }
 {TChoice}
 {$\Gamma ~|~ B \vdash e_1 \oplus e_2 : \tau$}
-\ 
+\
 \mprooftr{65mm}
 {
 $\Gamma \vdash \eff{op} : \overline{x{:}t}\sarr \rg{H}{\lastA\msg{op}{\phi}}{A \seqA F}$
@@ -402,7 +426,7 @@ A' \doteq \forall \sigma \in \denot{\Gamma}. \denot{\sigma(A)}
 \paragraph{Well-formed Handler specification} A
 handler specification $\Delta$ should be consistent with the
 auxiliary semantics of handlers introduced in
-\autoref{fig:selected-semantics}, also, $\Delta$ should also guarantee the new sending message assumed by capability context $\Sigma$ be eventually received. 
+\autoref{fig:selected-semantics}, also, $\Delta$ should also guarantee the new sending message assumed by capability context $\Sigma$ be eventually received.
 
 \begin{definition}[Well-formed auxiliary type context]
   \label{lemma:built-in-typing}
