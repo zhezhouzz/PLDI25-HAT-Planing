@@ -1,0 +1,92 @@
+\newpage
+\section{Proofs}\label{sec:tech:proof}
+
+\subsection{Lemmas for s-LTL$_f$}
+
+We introduce several auxiliary lemmas for s-LTL$_f$ formulae.
+
+\begin{lemma}\label{lemma:allTL}[All well-fromed traces] $\denot{\allTL} = \{ tr ~|~ \wellfoundedvdash tr  \}$.
+\end{lemma}
+
+\begin{lemma}\label{lemma:espTL}[Epsilon set of trace] $\denot{\epsTL} = \{ [] \}$.
+\end{lemma}
+
+\begin{lemma}\label{lemma:empTL}[Empty set of trace] $\denot{\empTL} = \emptyset$.
+\end{lemma}
+
+\begin{definition}[Well-formed handler specification]
+  \label{lemma:built-in-typing-ap}
+  The handler specification $\Delta$ is well-formed iff for all operator $\eff{op}$ and its type $\overline{x{:}t} \sarr \rgB{H}{\lastA\msgB{op}{\overline{y}}{\phi}}{F}{B}$ in $\Delta$ satisfying
+{\small\begin{align*}
+    \forall \alpha \in \denot{A}. \forall \overline{c \in \denot{t}}. \forall \overline{\alpha_i}. \forall \overline{m_i}.\; \alpha_1 \listconcat [m_1] \listconcat ... [m_{n}] \listconcat \alpha_{n+1} \in \denot{F} \impl \alpha \vDash \zevent{op}{\overline{c}} \Downarrow \{m_i\}
+\end{align*}}
+\end{definition}
+
+\begin{theorem}\label{theorem:fundamental-ap}[Fundamental Theorem] Given
+  a well-formed handler specification $\Delta$,
+    the trace of effects produced by a well-typed term
+    $e$ is captured by its corresponding \PAT $\tau$:
+  $\Gamma ~|~ B \vdash e : \tau \implies \forall \sigma, \sigma \in
+    \denot{\Gamma} \impl \sigma(e) \in
+    \denot{\sigma(\tau)}$.
+\end{theorem}
+\begin{proof} We proceed by induction over our type judgment $\Gamma ~|~ B \vdash e : \tau$, which has seven cases proved as following:
+\begin{enumerate}[label=Case]
+\item:
+{\footnotesize\mprooftr{35mm}
+{}
+{TRet}
+{$\Gamma ~|~ \emptyset \vdash () : \rg{H}{\epsTL}{F}$}
+\ \\ \ \\}
+This rule assume that $B \equiv \emptyset, e \equiv (), A \equiv \epsTL$, thus we need to prove
+{\footnotesize\begin{align*}
+    \forall \sigma, \sigma \in \denot{\Gamma} \impl \sigma(()) \in \denot{\sigma(\rg{H}{\epsTL}{F})}
+\end{align*}}\noindent
+From the induction hypothesis and the precondition of this rule, we have
+{\footnotesize\begin{alignat}{2}
+    \setcounter{equation}{0}
+        &\forall \sigma. \sigma(()) = () \\
+        &\forall \sigma. \sigma(\rg{H}{\epsTL}{F}) = \rg{\sigma(H)}{\epsTL}{\sigma(F)}
+\end{alignat}}\noindent
+where we just need to prove the term $()$ is in the denotation of a \PAT in from $\rg{H}{\epsTL}{F}$, which means for all $\alpha_h\;\alpha\;\alpha_f\;\beta\;\beta'\;e_h\;e_f$,
+{\footnotesize\begin{alignat}{2}
+&\eraserf{\Gamma} \basicvdash () : \Code{unit} \ptag{from basic typing ??}
+\\&\msteptr{[]}{(\emptyset, e_h)}{\alpha_h}{(\beta, ())} 
+\land \msteptr{\alpha_h}{(\beta, ())}{\alpha}{(\beta', ())}
+\land \msteptr{\alpha_h \listconcat \alpha }{(\beta', e_f)}{\alpha_f}{(\emptyset, ())}
+\ptag{assumption of $\denot{\tau}$}
+\\&\alpha_h \in \denot{H} \land \alpha_f \in \denot{F} \ptag{assumption of $\denot{\tau}$}
+\end{alignat}}\noindent
+Since there is no small-step reduction rule for the term $()$, thus the relation $\msteptr{\alpha_h}{(\beta, ())}{\alpha}{(\beta', ())}$ is derived from reflexivity case of multi-step reduction. Thus, $\alpha$ is empty trace $[]$, which included by the denotation of $\epsTL$ (\autoref{lemma:espTL}). Then the proof immediate holds in this case.
+
+\item:
+{\footnotesize
+\mprooftr{73mm}
+{
+$\Gamma \vdash \eff{op} : \overline{x_i{:}t_i}\sarr \rg{H}{\lastA\msg{op}{\phi}}{A \seqA F}$ \quad
+$\forall i. \Gamma \vdash v_i : t_i$ \quad
+$\GEN(\eff{op})$ \quad $(\eff{op}, B') \in \Sigma$ \quad
+ $\Gamma ~|~ B \cup B' \vdash e : \rg{H \seqA \lastA\msg{op}{\phi\msubst{x_i}{v_i}}}{A}{F}$
+ }
+{TGen}
+{$\Gamma ~|~ B \vdash \zgen{op}{\overline{v_i}}{e} : \rg{H}{\lastA\msg{op}{\phi\msubst{x_i}{v_i}} \seqA A}{F}$}
+\ \\ \ \\}
+This rule assume that $e \equiv \zgen{op}{\overline{v}}{e}, \tau \equiv \rg{H}{\lastA\msg{op}{\phi\msubst{x}{v}} \seqA A}{F}$, thus we need to prove
+{\footnotesize\begin{align*}
+    \forall \sigma, \sigma \in \denot{\Gamma} \impl \sigma(\zgen{op}{\overline{v}}{e}) \in \denot{\sigma(\rg{H}{\lastA\msg{op}{\phi\msubst{x}{v}} \seqA A}{F})}
+\end{align*}}\noindent
+From the induction hypothesis and the precondition of this rule, we have
+{\footnotesize\begin{alignat}{2}
+\setcounter{equation}{0}
+&\Gamma \vdash \eff{op} : \overline{x{:}t}\sarr \rg{H}{\lastA\msg{op}{\phi}}{A \seqA F} \ptag{assumption} \\
+&\forall i. \Gamma \vdash v_i : t_i \ptag{assumption} \label{loc:1-1} \\
+&\GEN(\eff{op}) \land (\eff{op}, B') \in \Sigma \ptag{assumption} \\
+&\Gamma ~|~ B \cup B' \vdash e : \rg{H \seqA \lastA\msg{op}{\phi\msubst{x}{v}}}{A}{F} \ptag{assumption} \\
+&\forall \sigma \in \denot{\Gamma}. \sigma(e) \in \denot{\sigma(\rg{H \seqA \lastA\msg{op}{\phi\msubst{x}{v}}}{A}{F})} \ptag{induction hypothesis} \\
+&\forall i. \forall \sigma \in \denot{\Gamma}. \sigma(v_i) \in  \sigma(\denot{t_i}) \ptag{\autoref{loc:1-1} and ??} \\
+&\msteptr{\alpha_h}{(\beta, \zgen{op}{\overline{v}}{e})}{\alpha}{(\beta', e)}  \ptag{??} \\
+% &\forall \alpha \in \denot{A}. \forall \overline{c \in \denot{t}}. \forall \overline{\alpha_i}. \forall \overline{m_i}.\; \alpha_1 \listconcat [m_1] \listconcat ... [m_{n}] \listconcat \alpha_{n+1} \in \denot{F} \impl \alpha \vDash \zevent{op}{\overline{c}} \Downarrow \{m_i\} \ptag{??} \\
+\end{alignat}}\noindent
+\end{enumerate}
+\end{proof}
+
