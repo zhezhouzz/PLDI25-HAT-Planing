@@ -250,20 +250,19 @@ and $\Code{val}$.
 \end{example}
 
 \subsection{Typing rules}
-
-Our typing judgment depends on three contexts: a type context
-$\Gamma$, a handler context $\Delta$, and a capability context
-$\Theta$. The type context, $\Gamma$ maps from variables to pure
-refinement types (i.e., $t$). As in other trace-based refinement type
-systems, contexts are not allowed to contain \PAT{}s--- doing so
-breaks several structural properties (e.g., weakening) that are used
-to prove type safety. The handler context, $\Delta$ maps operations to
-three key pieces of information: the specification of its handler as a
-\PAT{}, whether or not it represents an observable or generable event,
-and the operations it adds to the buffer. The capability context,
-$\Theta$, records the set of observable messages that are in
-scope. This context is used to ensure that every observation
-corresponds to a message that was triggered by a previous event.
+Our typing judgment features three contexts: a type context $\Gamma$,
+a handler context $\Delta$, and a capability context $\Theta$. The
+type context, $\Gamma$ maps from variables to pure refinement types
+(i.e., $t$). As in other trace-based refinement type systems, contexts
+are not allowed to contain \PAT{}s--- doing so breaks several
+structural properties (e.g., weakening) that are used to prove type
+safety. The handler context, $\Delta$ maps operations to two key
+pieces of information: a specification of its handler as a \PAT{}
+tagged with whether it is observable or generable, and the operations
+its handler adds to the buffer. The capability context, $\Theta$,
+records the set of observable messages that are in scope. This context
+is used to ensure that every observation corresponds to a message that
+was triggered by a previous event.
 
 % \paragraph{Observation Capability} The observable message (e.g.,
 % $\eff{readRsp}$) cannot just happens by itself, but need another
@@ -283,9 +282,15 @@ corresponds to a message that was triggered by a previous event.
 % will sending new messages with name in $B$, which produce more
 % observation capability. We omit them in the rest of rules.
 
-\begin{example}[Observation Capability Context] The observation capability context $\Sigma$ for $4$ effector operators shown as below:
-{\small\begin{align*}
-    \Sigma \doteq \{ (\eff{readReq}, \{\eff{readRsp}\}), (\eff{readRsp}, \emptyset), (\eff{writeReq}, \{\eff{writeRsp}\}), (\eff{writeRsp}, \emptyset), \}
+\begin{example}[Capability Context] The handler context $\Delta$ for
+  our running examples augments the four specifications from
+  \autoref{fig:spec} as follows:
+  {\small
+    \begin{align*} \Delta \doteq
+      \{ (\eff{readReq}, \langle \ldots, \{\eff{readRsp}\}\rangle),%
+      (\eff{readRsp}, \langle \ldots, \emptyset\rangle),%
+      (\eff{writeReq}, \langle \ldots,\{\eff{writeRsp}\} \rangle), %
+      (\eff{writeRsp}, \langle \ldots, \emptyset\rangle) \}
 \end{align*}}
 \end{example}
 
@@ -327,8 +332,8 @@ $\Gamma; \Delta; \Theta \vdash \tau <: \tau'$}
 \quad
 \mprooftr{77mm}
 {
-$\Delta(\eff{op}) =\langle \overline{x_i{:}t_i}\sarr
-\rg{H}{\lastA\msg{op}{\phi}}{A \seqA F}, \eff{gen}, \Theta' \rangle$ \quad
+$\Delta(\eff{op}) =\langle \eff{gen}~\overline{x_i{:}t_i}\sarr
+\rg{H}{\lastA\msg{op}{\phi}}{A \seqA F}, \Theta' \rangle$ \quad
 $\forall i. \Gamma \vdash v_i : t_i$ \quad
  $\Gamma; \Delta; \Theta \cup \Theta' \vdash e : \rg{H \seqA \lastA\msg{op}{\phi\msubst{x_i}{v_i}}}{A}{F}$
  }
@@ -351,8 +356,8 @@ $\Gamma; \Delta; \Theta \vdash e_1 : \tau$ \quad $\Gamma; \Delta; \Theta \vdash 
 \
 \mprooftr{77mm}
 {
-  $\Delta(\eff{op}) =\langle \overline{x_i{:}t_i}\sarr
-\rg{H}{\lastA\msg{op}{\phi}}{A \seqA F}, \eff{obs}, \Theta'\rangle$ \quad
+  $\Delta(\eff{op}) =\langle \eff{obs}~\overline{x_i{:}t_i}\sarr
+\rg{H}{\lastA\msg{op}{\phi}}{A \seqA F}, \Theta'\rangle$ \quad
  $\Gamma, \overline{x{:}t}; \Delta; \Theta \cup \Theta' \vdash e : \rg{H \seqA \lastA\msg{op}{\phi}}{A}{F}$
  }
 {TObs}
@@ -364,18 +369,23 @@ $\Gamma; \Delta; \Theta \vdash e_1 : \tau$ \quad $\Gamma; \Delta; \Theta \vdash 
 \vspace*{-.2in}
 \end{figure}
 
-\paragraph{Auxiliary typing relations} There are two auxiliary
-relations used by our type system: a well-formedness relation
-$\Gamma \wellfoundedvdash \tau$ mostly ensures that all qualifiers appearing
-in a type $\tau$ are closed under the current typing context $\Gamma$;
-and a mostly-standard semantic subtyping relation.
-\autoref{fig:selected-typing-rules} highlights two key auxiliary typing rule.
-Rule $\textsc{WfHAF}$ additional requires the non-emptiness ($\neg\allTL$ indicates empty automata) of the concatenation of history, current, and prophecy automata in a \PAT. The
-inclusion relation over automata $\Gamma \vdash A \subseteq A$ is defined in the next subsection.
-Rule $\textsc{SubHAF}$ checks inclusion between the languages of two
-$\PAT{}s$ under type context $\Gamma$.  The rule relates history and prophecy
-automata contravariantly, while current automata are covariant. The intuition here is that, similar with history automata that provide presumption on previous events for a computation, the prophecy provide presumption on events happens in the future. Thus, both the
-history and prophecy automata are the effect assumed by execution.
+\paragraph{Auxiliary typing relations}
+Our system depends on three auxiliary relations: a well-formedness
+relation $\Gamma \wellfoundedvdash \tau$ ensures, e.g., that all
+qualifiers appearing in a type $\tau$ are closed under the current
+typing context $\Gamma$; an inclusion relation on SFAs
+$\Gamma \vdash A \subseteq A$; and a mostly-standard semantic
+subtyping relation.  \autoref{fig:selected-typing-rules} provides two
+of the key rules for these relations. A well-formed \PAT{}
+($\textsc{WfHAF}$) is required to accept at least one trace
+($\neg\allTL$ is an SFA that rejects all traces). Subtyping for two
+\PAT{}s ($\textsc{SubHAF}$) is established by checking inclusion
+between their constituent automata under the current type context
+$\Gamma$. Inclusion on the history and prophecy automata is
+contravariant, while current automata are covariant.  Intuitively,
+since both the history and prophecy automata constrain the contexts in
+which a term that produces the current automata may appear, it is safe
+to further constrain both contexts.
 
 % \paragraph{Effect Operator Framing}  The use of prophecy
 % automata in specifying handler behavior is very powerful.  However,
@@ -391,46 +401,97 @@ history and prophecy automata are the effect assumed by execution.
 % that allows the arbitrary insertion of other automata ($F_1
 % ... F_{n+1}$) between $\msg{op_i}{\phi_i}$.
 
-\paragraph{Controller program typing} Our type rules
-have the form $\Gamma; \Delta; \Theta \vdash e : \tau$ that reads `` a term $e$ that has type $\tau$ under type context $\Gamma$ and observation capability $B$''. A
-subset of our synthesis rules\footnote{The complete set of typing
-  rules is included in the \techreport{}.} is shown in
-\autoref{fig:selected-typing-rules}, where we elide the well-formedness judgments in the
-premises of these rules; which assume all \PAT are well-formed. Rules \textsc{TGen} and \textsc{TObs} are key rules for non-standard $\mykw{gen}$ and $\mykw{obs}$ expression.
-Rule \textsc{TGen} first extracts the type of observing effect operator $\eff{op}$ from the typing context with the help of effect operator typing $\textsc{TEOp}$. Besides requiring the arguments ($\overline{v_i}$) is well-typed against parameter types ($\overline{t_i}$) as application rules in standard refinement typing, it additionally requires that the selected handler type $\rg{H}{\lastA\msg{op}{\phi}}{A\seqA F}$ has the same \emph{global} view as the \PAT{} type check against, i.e.:
-{\small\begin{align*} \underbrace{ H
-  }_\texttt{history}\;\seqA\;\underbrace{
-    \lastA \msg{op}{\phi\msubst{x_i}{v_i}} \seqA A }_\texttt{current} \;\seqA\;
-  \underbrace{ F }_\texttt{prophecy} \equiv \underbrace{ H
-  }_\texttt{history}\;\seqA\;\underbrace{
-    \lastA \msg{op}{\phi\msubst{x_i}{v_i}} }_\texttt{current} \;\seqA\;
-  \underbrace{ A \seqA F }_\texttt{prophecy}
-\end{align*}}\noindent
-If this is the case, we move the symbolic event $\msg{op}{\phi\msubst{x_i}{v_i}}$ from the head of the current automata into the tail of the history automata. We also add new capability  $B'$ caused by handling $\eff{op}$ ($(\eff{op}, B') \in \Sigma$) into count and continue typing on the body expression $e$. Rule \textsc{TObs} is similar, beside the payload of observed $\eff{op}$ is not provided by the controller, thus no need addition typing on parameter types. Moreover, the \textsc{TObs} will consume the observed $\eff{op}$ from observation capability ($\{\eff{op}\} \cup B$). Notably, we can always use the standard subsumption rule
-\textsc{TSub} to change the shape of types. The controller should end with an unit value $()$, where rule \textsc{TRet} requires the current automata of its \PAT to a LTL$_f$ formula $\epsTL$, which specifies that automata that only accepts an empty
-trace (i.e., $[]$). Finally, the union expression can be typed via rule \textsc{TChoice}, which enable controller to explore different message orderings.
+\paragraph{Typing Rules} A subset of our typing rules is shown in
+\autoref{fig:selected-typing-rules}.\footnote{The complete set of
+  typing rules is included in the \techreport{}.} All of our terms
+assume any types they use are well-formed, so we elide the
+corresponding well-formedness judgments from their premises. The rules
+for performing events, \textsc{TGen} and \textsc{TObs}, both extract
+the type of the corresponding handler from $\Delta$,
+$\rg{H}{\lastA\msg{op}{\phi}}{A\seqA F}$, and require that it aligns
+with the \PAT{} of the expression that the operation is being
+performed in:%
+{\small
+  \begin{align*}
+    \underbrace{ H
+    }_\texttt{history}\;\seqA\;\underbrace{ \lastA
+    \msg{op}{\phi\msubst{x_i}{v_i}} \seqA A }_\texttt{current}
+    \;\seqA\; \underbrace{ F }_\texttt{prophecy} \equiv \underbrace{ H
+    }_\texttt{history}\;\seqA\;\underbrace{ \lastA
+    \msg{op}{\phi\msubst{x_i}{v_i}} }_\texttt{current} \;\seqA\;
+    \underbrace{ A \seqA F }_\texttt{prophecy}
+  \end{align*}}
+\noindent %
+To type the rest of the expression, both rules move the symbolic event
+$\msg{op}{\phi\msubst{x_i}{v_i}}$ from the head of the current
+automata to the tail of the history automata and add any new
+capabilities to $\Theta$. In order to make an observation using
+$\eff{op}$, \textsc{TObs} additionally requires that the capability
+context has a corresponding capability ($\{\eff{op}\} \cup B$). The
+standard subsumption rule \textsc{TSub} allows us to change the shape
+of a type a term is being typed against. Controller always end in a
+unit value $()$; thus, the \textsc{TRet} rule requires the current
+automata of this term ($\epsTL$) to only accept the empty trace (i.e.,
+$[]$). The nondeterministic choice operator is typed using the
+\textsc{TChoice} rule, when combined with the subsumption rule, this
+allows controllers to explore different message orderings.
 
+% of observing effect operator $\eff{op}$ from the typing
+% context with the help of effect operator typing
+% $\textsc{TEOp}$. Besides requiring the arguments ($\overline{v_i}$) is
+% well-typed against parameter types ($\overline{t_i}$) as application
+% rules in standard refinement typing, it additionally
 
-\begin{example}[Controller Typing] We provide
-  an informal derivation of typing controller program $P_C$ against a given type
-  $\rg{\epsTL}{\negSCA}{\epsTL}$ that encodes the violation of RYR
-  policy under type context $\Gamma \doteq \Code{x}\hasoty{int}{\top},
-  \Code{y}\hasoty{int}{v \not= x}$. We first apply the subsumption
-  rule (\textsc{Tsub}) to convert into its subtype $\rg{\epsTL}{\negSCA'}{\epsTL}$ which is consistent with $P_C$.
-  {\footnotesize\begin{align*} \negSCA' \doteq &\underbrace{
-      \lastA\msg{writeReq}{v = \Code{x}} }_\texttt{$A_1$} \seqA \underbrace{
-      \lastA\msg{writeReq}{v = \Code{y} \land v \not= \Code{x}} \seqA
-      \lastA\msg{writeRsp}{v = \Code{y}} \seqA \lastA\msg{readReq}{\top} }_\texttt{$A_2$} \seqA \\&\underbrace{ \lastA\msg{writeRsp}{v = \Code{x}} }_\texttt{$A_3$}
-    \seqA \underbrace{ \lastA\msg{readRsp}{v = \Code{y} \land st = \true \land v \not=
-        \Code{x}} }_\texttt{$A_4$}
-\end{align*}}\noindent
-For the first $\mykw{gen}$ expression on line $2$ of $P_C$ can be typed with rule \textsc{TGen}, which first select \PAT of $\eff{writeReq}$ from handler specification $\Delta$ and use \textsc{TSub} to adjust it into a shape consistent with $\negSCA'$:
-{\footnotesize\begin{align*}
-&(\eff{writeReq},  \Code{x}\hasnty{int} \sarr \rg{\allTL}{\lastA\msg{writeReq}{v = \Code{x}}}{\finalA\msg{writeRsp}{v = \Code{x}}}) \in \Delta
-\\&\Gamma \vdash \eff{writeReq}: \Code{x}\hasnty{int} \sarr \rg{\allTL}{\lastA\msg{writeReq}{v = \Code{x}}}{\finalA\msg{writeRsp}{v = \Code{x}}} \tag{\textsc{TEOp}}
-\\&\Gamma \vdash \eff{writeReq}: \Code{x}\hasnty{int} \sarr \effLR{\epsTL}\ \effLR{\lastA\msg{writeReq}{v = \Code{x}}}\ \effLR{A_2 \seqA \lastA\msg{writeRsp}{v = \Code{x}} \seqA A_4} \tag{\textsc{TSub}}
-\end{align*}}\noindent
-Since the type of $\eff{writeReq}$ is exactly align with the program type $\rg{\epsTL}{A_1\seqA A_2\seqA A_3\seqA A_4}{\epsTL}$, we can continuing type check the rest of program (line $3$ - $7$ of $P_C$) against \PAT $\rg{A_1}{A_2\seqA A_3\seqA A_4}{\epsTL}$.
+\begin{example}[Controller Typing] We provide an informal typing
+  derivation of $P_C$ against a \PAT{} that encodes a violation of RYR
+  policy, $\rg{\epsTL}{\negSCA}{\epsTL}$, under the type context
+  $\Gamma \doteq \Code{x}\hasoty{int}{\top}, \Code{y}\hasoty{int}{v
+    \not= x}$. The first step of our derivation uses \textsc{TSub} to
+  refine our target type to a \PAT{} that better aligns with the
+  messages sent by $P_C$: %
+  {\footnotesize
+    \begin{align*}
+      \negSCA' \doteq
+      &\underbrace{
+        \lastA\msg{writeReq}{v = \Code{x}}
+        }_\texttt{$A_1$} \seqA \underbrace{ \lastA\msg{writeReq}{v =
+        \Code{y} \land v \not= \Code{x}} \seqA
+        \lastA\msg{writeRsp}{v = \Code{y}} \seqA
+        \lastA\msg{readReq}{\top}
+        }_\texttt{$A_2$} \seqA \\
+      &\underbrace{ \lastA\msg{writeRsp}{v =
+        \Code{x}}
+        }_\texttt{$A_3$} \seqA \underbrace{ \lastA\msg{readRsp}{v =
+        \Code{y} \land st = \true \land v \not= \Code{x}}
+        }_\texttt{$A_4$}
+    \end{align*}}\noindent
+  The first $\mykw{gen}$ expression on line $2$ of $P_C$
+  is typed using \textsc{TGen}. After retrieving the specification of
+  $\eff{writeReq}$ from $\Delta$ and uses \textsc{TSub} to adjust it
+  into a shape consistent with $\negSCA'$:
+  {\footnotesize
+    \begin{align*}
+      &\underline{(\eff{writeReq}, \Code{x}\hasnty{int}
+        \sarr \rg{\allTL}{\lastA\msg{writeReq}{v =
+        \Code{x}}}{\finalA\msg{writeRsp}{v = \Code{x}}}) \in \Delta} \\
+      & \underline{\Gamma \vdash \eff{writeReq}: \Code{x}\hasnty{int} \sarr
+        \rg{\allTL}{\lastA\msg{writeReq}{v =
+        \Code{x}}}{\finalA\msg{writeRsp}{v = \Code{x}}}
+        \tag{\textsc{TEOp}}} \\
+      &\Gamma \vdash \eff{writeReq}:
+        \Code{x}\hasnty{int} \sarr \effLR{\epsTL}\
+        \effLR{\lastA\msg{writeReq}{v = \Code{x}}}\ \effLR{A_2 \seqA
+        \lastA\msg{writeRsp}{v = \Code{x}} \seqA A_4}
+        \tag{\textsc{TSub}}
+    \end{align*}
+  }\noindent %
+  \BD{The current definition of \textsc{TGen} does not allow
+    \textsc{TSub} to be applied (although neither did the old one); we
+    will want to patch up this example after the metatheory is
+    finished. } Since the type of $\eff{writeReq}$ aligns with the
+  target type $\rg{\epsTL}{A_1\seqA A_2\seqA A_3\seqA A_4}{\epsTL}$,
+  we continue typing the rest of $P_C$ (lines $3$ - $7$) against the
+  \PAT{} $\rg{A_1}{A_2\seqA A_3\seqA A_4}{\epsTL}$.
 \end{example}
 
 \subsection{Type Soundness}
