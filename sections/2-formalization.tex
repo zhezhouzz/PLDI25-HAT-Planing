@@ -22,7 +22,7 @@
 We formalize our approach using a core language, $\DSL$, for
 expressing controller programs. This language is a call-by-value and
 asynchronous message-passing calculus that abstracts away the
-implementation details of the processes that the controller interacts
+implementation details of the actors that the controller interacts
 with, focusing only on the structure of the controller program
 itself. The syntax of $\DSL$ is shown in \autoref{fig:term-syntax}; it
 includes both pure and effectful operations ($\primop$ and
@@ -93,18 +93,18 @@ $\steptr{\alpha}{(\buf, \zassert{\phi}{e}}{[]}{(\buf, e)}$
 \paragraph{Operational Semantics} Messages in $\DSL$ are operations
 applied to concrete values $(\zevent{op}{\overline{c}})$. Evaluating a
 $\DSL$ program depends on an input \emph{trace}, i.e., a sequence of
-messages, and an input \emph{buffer}, i.e., a bag or multiset of
+messages, and an input \emph{buffer}, i.e., an element of a bag or multiset of
 messages. Each evaluation step produces an output trace and an updated
 buffer. Traces are equipped with the standard list operations (i.e.,
 cons ${::}$ and concatenation $\listconcat{}$).  The operational
 semantics of $\DSL$ are defined by the small-step reduction relation:
 $\steptr{\alpha}{(\beta, e)}{~\alpha'}{(\beta', e')}$.  This judgment
-is read as: under the context $\alpha$ and current message buffer
+is read as: ``under the context $\alpha$ and current message buffer
 $\beta$, $e$ steps to $e'$, emitting the trace $\alpha'$ and producing
-the output buffer $\beta'$. Intuitively, the context $\alpha$
+the output buffer $\beta'$.''  Intuitively, the context $\alpha$
 represents the sequence of messages visible to a handler, thereby
 determining its response; the buffer $\beta$ contains messages that
-have been issued by not yet been made visible to a handler. The
+have been issued but not yet been made visible to a handler. The
 semantics uses an auxiliary judgement,
 $\alpha \vDash \zevent{op}{\overline{c}} \Downarrow \beta$, that
 specifies any new messages that need to be added to the message buffer
@@ -191,11 +191,11 @@ trace-based type systems\cite{ZYDJ24}, $\DSL{}$ uses \emph{Symbolic
 refinement types use formulae to qualify the types of pure terms.  The
 front-end language used to express SFAs is a symbolic version of
 LTL$_f$.  A \emph{symbolic event} $\msgB{op}{\overline{x}}{\phi}$ is
-an atomic predicate that describes a message {$\eff{op}$} whose fields
-$\overline{x}$ must satisfy the qualifier $\phi$.\footnote{When the
-  fields of an event are clear from context, we omit its parameters
-  $\overline{x}$, e.g., $\msg{writeReq}{v > 0}$ means
-  $\msgB{writeReq}{v}{v > 0}$.}  The standard temporal operators
+an atomic predicate that describes an effectful operation {$\eff{op}$}
+whose inputs $\overline{x}$ must satisfy the qualifier
+$\phi$.\footnote{When the fields of an event are clear from context,
+  we omit its parameters $\overline{x}$, e.g., $\msg{writeReq}{v > 0}$
+  means $\msgB{writeReq}{v}{v > 0}$.}  The standard temporal operators
 (i.e., test $\evparenth{\phi}$, next $\nextA A$, until $\untilA$) and
 various set operators (i.e., complement $\neg$, intersection $\land$,
 and union $\lorA$) are defined normally. These operators are
@@ -227,7 +227,7 @@ yet to be performed. Function types use \PAT{}s in their result types
 to describe the effects they perform, when combined with intersection
 types ($\interty$), this allows users to express complex control
 flows. Function types also use \emph{ghost variables}
-($x{:}b \garr \tau$)\cite{...}  to capture data dependencies among
+($x{:}b \garr \tau$) to capture data dependencies among
 symbolic events; for example, the full signature of the $\eff{getReq}$
 handler from \autoref{sec:intro} uses the ghost variables $\Code{key}$
 and $\Code{val}$.
