@@ -92,31 +92,31 @@ Our experimental evaluation addresses three research questions:
 \vspace*{-.1in}
 \footnotesize
 \setlength{\tabcolsep}{2.3pt}
-\begin{tabular}{c||cc||ccc||cc||c|ccc}
+\begin{tabular}{c||cc||ccc||ccc||c|ccc}
   \toprule
- Benchmark & \#$\eff{op}$ & \#qualifier & \#var &(\#$\mykw{gen}$, \#$\mykw{obs}$) & \#$\mykw{assert}$ &  violation rate$_\text{(c,rd)}$ & t$_\text{rd}$(s) & t$_\text{total}$(s)  & \#SMT & \#fw & \#bw \\
+ Benchmark & \#$\eff{op}$ & \#qualifier & \#var &(\#$\mykw{gen}$, \#$\mykw{obs}$) & \#$\mykw{assert}$ & \#try$_\text{c}$ & \#try$_\text{p}$ & \#try$_\text{rd}$ & t$_\text{total}$(s)  & \#SMT & \#fw & \#bw \\
 \midrule
-\textsf{Database} & $4$ & $7$ & $6$ & ($3$, $3$) & $4$ & $(100.0\%, 18.18\%)$ & $0.52$ & $2.73$ & $420$ & $4$ & $6$\\
+\textsf{Database} & $4$ & $7$ & $6$ & ($3$, $3$) & $4$ & $1$ & - & $6$ & $2.73$ & $420$ & $4$ & $6$\\
 \midrule
-\textsf{Firewall}$^{\star}$ & $5$ & $17$ & $12$ & ($2$, $8$) & $9$ & $(100.0\%, 8.00\%)$ & $3.98$ & $5.48$ & $788$ & $5$ & $8$\\
+\textsf{Firewall}$^{\star}$ & $5$ & $17$ & $12$ & ($2$, $8$) & $9$ & $1$ & - & $12$ & $5.48$ & $788$ & $5$ & $8$\\
 \midrule
-\textsf{RingLeaderElection}$^{\star}$ & $3$ & $19$ & $12$ & ($2$, $6$) & $8$ & $(81.0\%, 4.84\%)$ & $1.77$ & $6.53$ & $964$ & $2$ & $18$\\
+\textsf{RingLeaderElection}$^{\star}$ & $3$ & $19$ & $12$ & ($2$, $6$) & $8$ & $1$ & - & $21$ & $6.53$ & $964$ & $2$ & $18$\\
 \midrule
-\textsf{EspressoMachine}$^{\dagger}$ & $13$ & $3$ & $1$ & ($2$, $8$) & $1$ & $(23.0\%, 2.48\%)$ & $3.63$ & $1.13$ & $165$ & $2$ & $11$\\
+\textsf{EspressoMachine}$^{\dagger}$ & $13$ & $3$ & $1$ & ($2$, $8$) & $1$ & $4$ & $4$ & $40$ & $1.13$ & $165$ & $2$ & $11$\\
 \midrule
-\textsf{BankServer}$^{\dagger}$ & $6$ & $17$ & $15$ & ($2$, $3$) & $5$ & $(100.0\%, 2.52\%)$ & $3.57$ & $8.31$ & $1191$ & $2$ & $5$\\
+\textsf{BankServer}$^{\dagger}$ & $6$ & $17$ & $15$ & ($2$, $3$) & $5$ & $1$ & $2$ & $40$ & $8.31$ & $1191$ & $2$ & $5$\\
 \midrule
-\textsf{Simplified2PC}$^{\dagger}$ & $9$ & $14$ & $7$ & ($2$, $6$) & $5$ & $(48.0\%, 0.75\%)$ & $21.63$ & $6.87$ & $1043$ & $3$ & $8$\\
+\textsf{Simplified2PC}$^{\dagger}$ & $9$ & $14$ & $7$ & ($2$, $6$) & $5$ & $2$ & $6$ & $133$ & $6.87$ & $1043$ & $3$ & $8$\\
 \midrule
-\textsf{HeartBeat}$^{\dagger}$ & $7$ & $18$ & $9$ & ($4$, $10$) & $9$ & $(100.0\%, 1.63\%)$ & $7.99$ & $7.08$ & $1073$ & $4$ & $20$\\
+\textsf{HeartBeat}$^{\dagger}$ & $7$ & $18$ & $9$ & ($4$, $10$) & $9$ & $1$ & $7$ & $61$ & $7.08$ & $1073$ & $4$ & $20$\\
 \midrule
-\textsf{ChainReplication}$^{\diamond}$ & $7$ & $32$ & $26$ & ($4$, $9$) & $10$ & $(100.0\%, 0.15\%)$ & $71.75$ & $27.07$ & $4016$ & $6$ & $19$\\
+\textsf{ChainReplication}$^{\diamond}$ & $7$ & $32$ & $26$ & ($4$, $9$) & $10$ & $1$ & $400$ & $667$ & $27.07$ & $4016$ & $6$ & $19$\\
 \midrule
-\textsf{Paxos}$^{\diamond}$ & $10$ & $30$ & $36$ & ($4$, $10$) & $13$ & $(100.0\%, 0.01\%)$ & $654.64$ & $59.98$ & $8763$ & $4$ & $16$\\
+\textsf{Paxos}$^{\diamond}$ & $10$ & $30$ & $36$ & ($4$, $10$) & $13$ & $1$ & $667$ & $10000$ & $59.98$ & $8763$ & $4$ & $16$\\
 \midrule
-\textsf{Raft} & $9$ & $26$ & $29$ & ($3$, $14$) & $14$ & $(100.0\%, 0.00\%)$ & $-$ & $56.07$ & $8356$ & $10$ & $22$\\
+\textsf{Raft} & $9$ & $26$ & $29$ & ($3$, $14$) & $14$ & $1$ & - & {\tiny Timeout} & $56.07$ & $8356$ & $10$ & $22$\\
 \midrule
-\textsf{Kermit2PCModel}$^{\square}$ & $17$ & $70$ & $36$ & ($4$, $10$) & $10$ & $(100.0\%, 0.00\%)$ & $-$ & $60.36$ & $9023$ & $6$ & $12$\\
+\textsf{Kermit2PCModel}$^{\square}$ & $17$ & $70$ & $36$ & ($4$, $10$) & $10$ & $1$ & ? & {\tiny Timeout} & $60.36$ & $9023$ & $6$ & $12$\\
 \bottomrule
 \end{tabular}
 \label{tab:evaluation}
@@ -244,3 +244,23 @@ automaton $\finalA \msg{startTxnRsp}{tid = \Code{i}}$, requiring that
 the user previously received a valid transaction id $\Code{i}$,
 \name{} can synthesize a controller program that strategically
 requests a new transaction to trigger the intended violation.
+
+
+We have evaluated \name{} on a corpus of complex reactive distributed
+system models drawn from a variety of sources (described in the
+caption of \autoref{tab:evaluation}) (\textbf{Q1}). We test the
+correctness of these models against a number of consistency and safety
+properties, including Read-Your-Writes (RYW) consistency introduced in
+\autoref{sec:overview}, strong consistency, and unique leader
+invariants, among others.  For example, \textsc{RingLeaderElection}
+models a leader election algorithm.  Each message transmitted by the
+model's actors contain a source ($\I{src}$) and destination
+($\I{dest}$), to allow recipient's to distinguish
+messages from different nodes.
+Then, a symbolic event $\msg{elect}{\I{src} = \Code{n} \land \I{dest} = \Code{m} \land \I{leader} = \Code{ld} }$ indicates a node $\Code{n}$ sends node $\Code{m}$ an election message for node $\Code{ld}$ as leader. In the ring leader election algorithm, nodes compare the input elected leader with themselves: if they match, the node announce itself leader; if the elected leader has lower priority, it insists on itself; otherwise, it agrees with the input election message. For an incorrect implementation where receiver nodes never insist on itself as leader, the unique-leader policy may be violated with the following trace:
+{\footnotesize
+\[
+\zevent{wakeup}{\Code{n_1}}; \zevent{wakeup}{\Code{n_2}}; \zevent{elect}{\Code{n_1, n_2, n_1}}; \zevent{elect}{\Code{n_2, n_1, n_2}}; \zevent{elect}{\Code{n_1, n_2, n_2}}; \zevent{elect}{\Code{n_2, n_1, n_1}}; \zevent{leader}{\Code{n_1}}; \zevent{leader}{\Code{n_2}}
+\]
+}\noindent
+which assume there are two nodes ($\Code{n_1}$ and $\Code{n_2}$) in the ring. After waken up (\(\eff{wakeup}\)), they \emph{don't receive message} from each other before after they elects themselves as leader (e.g., $\zevent{elect}{\Code{n_1, n_2, n_1}}$). After receiving each other’s election messages, they both switch to elect each other as leader \emph{simultaneously}, causing each to declare itself as leader (\(\eff{leader}\)), violating the unique-leader policy. Further details on the reactive distributed system and safety properties used in our benchmarks are provided in \techreport{}.
