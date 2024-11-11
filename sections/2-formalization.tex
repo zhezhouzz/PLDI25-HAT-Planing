@@ -300,11 +300,11 @@ was triggered by a previous event.
 \begin{flalign*}
  &\text{\textbf{Auxiliary Typing}} & \fbox{$\Gamma \wellfoundedvdash \tau \quad \Gamma \vdash A \subseteq A \quad \Gamma \vdash \tau <: \tau$} &
   &\text{\textbf{Typing}} &  &\fbox{$\Gamma~;~\Delta \vdash \eff{op} :
-    \tau \quad \Gamma \vdash v : t \quad \Gamma;~ \Delta:~ \Theta \vdash e: \tau$}
+    \tau \quad \Gamma \vdash v : t \quad \Gamma;~ \Delta;~ \Theta \vdash e: \tau$}
 \end{flalign*}
 }
 \\ \
-\mprooftr{40mm}
+\mprooftr{38mm}
 {$\Gamma \wellfoundedvdash H$ \quad
 $\Gamma \wellfoundedvdash A$ \quad
 $\Gamma \wellfoundedvdash F$ \quad
@@ -319,7 +319,7 @@ $\Gamma \vdash F_1 \subseteq F_2$ }
 {SubHAF}
 {$\Gamma \vdash \rg{H_1}{A_1}{F_1} <: \rg{H_2}{A_2}{F_2}$}
 \
-\mprooftr{18mm}
+\mprooftr{20mm}
 {$\Gamma; \Delta; \Theta \vdash e: \tau$ \quad
 $\Gamma; \Delta; \Theta \vdash \tau <: \tau'$}
 {TSub}
@@ -328,7 +328,7 @@ $\Gamma; \Delta; \Theta \vdash \tau <: \tau'$}
 \mprooftr{35mm}
 {}
 {TRet}
-{$\Gamma; \Delta; \Theta \vdash () : \rg{H}{\epsTL}{F}$}
+{$\Gamma; \Delta; \emptyset \vdash () : \rg{H}{\epsTL}{F}$}
 \quad
 \mprooftr{77mm}
 {
