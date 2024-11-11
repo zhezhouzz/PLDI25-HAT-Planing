@@ -84,7 +84,7 @@ an SFA's traces.
   \Params{Ghost variables $\overline{x{:}b}$, handler context
     $\Delta$, and abstract unsafe trace $\Pi$}%
   \Output{Controller $e$, such that
-    $\Gamma; \Delta; \cdot \vdash e~:~\rg{H}{\Pi}{F}$ \BD{Fix this \PAT{}}} %
+    $\Gamma; \Delta; \emptyset \vdash e~:~\rg{\epsTL}{\Pi}{\epsTL}$} %
   $\Mfw, \Mbw \leftarrow \emptyset, \emptyset$ \tcp*[l]{}
   $\Gamma \leftarrow \overline{x{:}\rawnuot{b}{\top}}$
   \tcp*[l]{initialize type context}
@@ -95,16 +95,15 @@ an SFA's traces.
     % \tcp*[l]{add qualifier of $\eff{op}$ event into type context, $z$ fresh}
     % $\Gamma \leftarrow \Gamma, \overline{y\,{:}\rawnuot{b}{\top}},\, z\,\hasoty{unit}{\phi[x\mapsto y]}$\;
     \If{$\eff{op} \not\in \Mfw$}{
-        $(\Gamma, \Pi_h, \lastA \msgA{op}{\overline{y}}, \Pi_f, \Mfw,
-        \Mbw) \leftarrow \forward(\Gamma, \Pi_h, \lastA
-        \msgA{op}{\overline{y}}, \Pi_f, \Mfw, \Mbw, \Delta)$\;
+        $(\Gamma, \Mfw, \Mbw, \Pi_h, \lastA \msgA{op}{\overline{y}}, \Pi_f) \leftarrow \forward(\Delta, \Gamma, \Mfw, \Mbw, \Pi_h, \lastA
+        \msgA{op}{\overline{y}}, \Pi_f)$\;
     }
     \If{$\eff{op} \notin \Mbw$}{
         \lIf{$\GEN(\eff{op})$}{
             $\Mbw \leftarrow \Mbw \cup \{\eff{op}\}$
         }
         \lElse {
-        $(\Gamma, \Pi_h, \lastA \msgA{op}{\overline{y}}, \Pi_f, \Mfw, \Mbw) \leftarrow \backward(\Gamma, \Pi_h, \lastA \msgA{op}{\overline{y}}, \Pi_f, \Mfw, \Mbw, \Delta)$
+        $(\Gamma, \Mfw, \Mbw, \Pi_h, \lastA \msgA{op}{\overline{y}}, \Pi_f) \leftarrow \backward(\Delta,\Gamma,\Mfw, \Mbw, \Pi_h, \lastA \msgA{op}{\overline{y}}, \Pi_f)$
         }
     }
     % $\Gchecked \leftarrow \Gchecked \cup \{\eff{op}\}$ \tcp*[l]{now message $\eff{op}$ is check}
@@ -118,9 +117,8 @@ $e \leftarrow \S{DeriveTerm}(\Gamma, \Pi)$ \tcp*[l]{derive controller program}
 \label{algo:top-syn}
 \end{algorithm}
 
-\BD{We need to explain where these ghost variables come from. } Our
-top-level synthesis algorithm is shown in \autoref{algo:top-syn}.
-Given an (unsafe) abstract trace $\Pi$ as input, this nondeterministic
+Our top-level synthesis algorithm is shown in \autoref{algo:top-syn}.
+Given an (unsafe) abstract trace $\Pi$ and corresponding ghost variables (e.g., $\Code{x}$ and $\Code{y}$ in \ref{eqn:abstraceEx}) as input, this nondeterministic
 algorithm synthesizes a well-typed $\DSL{}$ controller. The algorithm
 follows the structure given in \autoref{fig:intuition-algo}, using a
 refinement loop (lines $3$ - $9$) to refine the input abstract trace
@@ -159,7 +157,7 @@ current abstract trace and repairs them by inserting appropriate
 events before and after it. Intuitively, each observable event must
 $\eff{op_{child}}$ must follow a handler of an operation that produces
 it, $\eff{op_{parent}}$, forming a tree-like dependency structure
-similar to that described in \citet{MessageChain}. The refinement loop
+similar to that described in \cite{MessageChain}. The refinement loop
 reconstructs these trees from the target node, refining the candidate
 abstract trace into one that satisfies these dependencies.
 
@@ -190,9 +188,8 @@ performing forward synthesis on $\eff{op_{parent}}$ is the same as
 performing backward synthesis on $\eff{op}$. To avoid repeatedly
 targeting the same event, our algorithm maintains two sets $\Mfw$ and
 $\Mbw$ that record events whose child and parent dependencies have
-already been resolved, resp. \BD{We should probably add a footnote
-  about how we can distinguish between the dependencies of two
-  distinct occurrences of the same event.} The intersection of these
+already been resolved, resp.\footnote{
+To enable $\Mfw$ and $\Mbw$ to distinguish distinct occurrences of events with the same effect operator in the abstract trace, we assign a unique identifier to each operator at every occurrence. For example, \ref{eqn:abstraceEx} with identifiers can be $\lastA \msg{writeReq_1}{v = \Code{x}} \seqA \lastA \msg{writeReq_2}{v =\Code{y}}...$. } The intersection of these
 two sets ($\Mfw \cap \Mbw$) contains those events that correspond to
 well-typed handlers in a controller program.
 
@@ -210,7 +207,7 @@ target operation is generable ($\GEN(\eff{op})$ on line $7$), it is
 the root of a dependency chain, so no additional backward synthesis is
 required and the event is simply added to $\Mbw$ (line $8$). Both the
 forward and backward synthesis routines yield a 6-tuple
-$(\Gamma, \Pi_h, \lastA \msgA{op}{\overline{x}}, \Pi_f, \Mfw, \Mbw)$
+$(\Gamma, \Mfw, \Mbw, \Pi_h, \lastA \msgA{op}{\overline{x}}, \Pi_f)$
 that contains updated history and future traces; the refined abstract
 trace at the end of an iteration (line $9$) is simply the
 concatenation of the refined history trace, target event, and refined
@@ -219,11 +216,10 @@ future trace.
 \begin{algorithm}[t!]
 % \Params{A 5-tuple $(\Gamma, \Pi_h, \lastA \msgA{op}{\overline{x}}, \Pi_f, \Gchecked)$ that are type context, history, current, and future automata, as well as checked message set.}
 % \Output{Set of refined 5-tuples }
-\Procedure{$\forward(\Gamma, \Pi_h, \lastA \msg{op}{\phi}, \Pi_f,
-  \Mfw, \Mbw, \Delta)$}{
+\Procedure{$\forward(\Delta, \Gamma, \Mfw, \Mbw,\Pi_h, \lastA \msg{op}{\phi}, \Pi_f)$}{
   \tcp{Select the \PAT of $\eff{op}$ from handler specification}
     % \SJ{I don't understand this form - the braces at the end are not part of a PAT}
-    \If{exists $(\eff{op}, \overline{z{:}b}\garr\overline{y{:}t}\sarr\rg{H}{\lastA\msg{op}{\phi'}}{F}) \in \Delta$ and $(\eff{op}, B) \in \Sigma$ }{
+    \If{$\Delta(\eff{op}) = \langle \overline{z{:}b}\garr\overline{y{:}t}\sarr\rg{H}{\lastA\msg{op}{\phi'}}{F}, B \rangle \in \Delta$}{
         $\Gamma \leftarrow \Gamma, \overline{z{:}\rawnuot{b}{\top}}, \overline{y{:}t}$ \tcp*[l]{add ghost variables and parameters types in type context}
       % \tcp{add qualifier of $\eff{op}$ event into type context}
       % \SJ{Didn't we already do this at line 4 in Algorithm 1?}
@@ -233,11 +229,11 @@ future trace.
         \tcp{non-emptiness check}
         \If{$\Gamma \not\vdash (\Pi_h \seqA \lastA\msg{op}{\phi} \seqA \Pi_f) \subseteq \neg\allTL$}{
             \tcp{return type context, property, as well as updated forward and backward set}
-            \Return{$(\Gamma', \Pi_h, \lastA \msg{op}{\phi}, \Pi_f, \Mfw \cup \{\eff{op}\}, \Mbw \cup B)$}
+            \Return{$(\Gamma', \Mfw \cup \{\eff{op}\}, \Mbw \cup B, \Pi_h, \lastA \msg{op}{\phi}, \Pi_f)$}
         }
     }
 }
-\caption{Forward Synthesis \BD{Fix reference to $\Sigma$}}
+\caption{Forward Synthesis}
 \label{algo:forward}
 \end{algorithm}
 
@@ -276,9 +272,9 @@ well as updated forward and backward sets (line $8$).
 % \SJ{Stopped here ...}
 
 \begin{algorithm}[t!]
-\Procedure{$\backward(\Gamma, \Pi_h, \lastA \msg{op}{\phi}, \Pi_f, \Mfw, \Mbw)$}{
+\Procedure{$\backward(\Delta, \Gamma, \Mfw, \Mbw, \Pi_h, \lastA \msg{op}{\phi}, \Pi_f, )$}{
     \tcp{Select the \PAT of some $\eff{op_{parent}}$ from the handler specification, who sends a message with operator $\eff{op}$}
-    \If{$(\eff{op_{parent}}, \overline{z{:}b}\garr\overline{y{:}t}\sarr\rg{H}{\msg{op_{parent}}{\phi_\Code{parent}}}{F_1 \seqA \lastA \msg{op}{\phi'} \seqA F_2}) \in \Delta$ and $(\eff{op_{parent}}, \{\eff{op}\} \cup B) \in \Sigma$}{
+    \If{$\Delta(\eff{op_{parent}}) = \langle \overline{z{:}b}\garr\overline{y{:}t}\sarr\rg{H}{\msg{op_{parent}}{\phi_\Code{parent}}}{F_1 \seqA \lastA \msg{op}{\phi'} \seqA F_2}, \{\eff{op}\} \cup B\rangle \in \Delta$}{
         % \tcp{add qualifier of $\eff{op_{parent}}$ and $\eff{op}$ event into type context}
         $\Gamma \leftarrow \Gamma, \overline{z{:}\rawnuot{b}{\top}}, \overline{y{:}t}$ \tcp*[l]{add ghost variables and parameters types into the type context}
         $\msg{op}{\phi} \leftarrow \msg{op}{\phi \land \phi'}$ \tcp*[l]{merge current automata}
@@ -287,7 +283,7 @@ well as updated forward and backward sets (line $8$).
         \tcp{non-emptiness check}
         \If{$\Gamma \not\vdash (\Pi_h \seqA \lastA\msg{op}{\phi} \seqA \Pi_f) \subseteq \neg\allTL$}{
             \tcp{return type context, property, as well as updated forward and backward operations set}
-            \Return{$(\Gamma', \Pi_h, \lastA \msg{op}{\phi}, \Pi_f, \Mfw \cup \{\eff{op_{parent}}\}, \Mbw \cup \{\eff{op}\} \cup B)$}
+            \Return{$(\Gamma', \Mfw \cup \{\eff{op_{parent}}\}, \Mbw \cup \{\eff{op}\} \cup B, \Pi_h, \lastA \msg{op}{\phi}, \Pi_f)$}
         }
     }
 }
@@ -349,9 +345,7 @@ forward and backward sets (line $8$).
     \end{align*}}%
   \noindent The prophecy automaton of $\tau_2$ requires
   $\eff{readRsp}$ to have a \textsf{false} status, which is at odds
-  with the current abstract trace. This inconsistency is caught by the
-  non-emptiness check and this \PAT{} is discarded \BD{Will the reader
-    understand what discarding a \PAT{} means?}. Alternatively,
+  with the current abstract trace. This inconsistency is detected by the non-emptiness check, causing our algorithm to backtrack and attempt to select an alternative type. Alternatively,
   $\tau_1$ can be merged with the current trace, resulting in the
   following updated values of the loop's variables:%
   { \footnotesize
