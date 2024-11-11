@@ -1,0 +1,88 @@
+\paragraph{Type Soundness} 
+
+We relate a buffer $\beta$ that is a multi-set of message with a observation capability $B$ that is a multi-set of effect operators.
+
+\begin{definition}\label{def:beta-B}[BufferCapablity] A buffer $\beta$ is allowed by observation capability $B$, denoted as $B \vdash \beta$, when 
+ {\small\begin{align*} 
+\forall \eff{op}. \forall \overline{c}. \zevent{op}{\overline{c}} \in \beta \iff \eff{op} \in B
+\end{align*}}
+\end{definition}
+
+\begin{lemma}\label{lemma:realizable}[Realizable Trace Exists] Given a well-formed handler specification $\Delta$, A well typed program $e$ at least realize one trace:
+ {\small\begin{align*} 
+ \Gamma ~|~ B \vdash e : \tau \implies 
+    \forall \beta. B \vdash \beta \impl \forall \alpha_h. \exists \alpha. \msteptr{\alpha_h}{(\beta, e)}{\alpha}{(\emptyset, ())}
+\end{align*}}
+\end{lemma}
+
+\begin{theorem}\label{theorem:sound-ap}[Type Soundness] Given
+  a well-formed handler specification $\Delta$, with ghost variables $\overline{x{:}b}$ and a violation property $A$, a controller $e$ that satisfies
+  $\overline{x{:\rawnuot{b}{\top}}} ~|~ \emptyset \vdash e : \rg{\epsTL}{A}{\epsTL}$, then $e$ at least realize one trace consistent with $A$:
+ {\footnotesize\begin{align*} \exists
+    \overline{c{:}b}. \exists \alpha. \msteptr{[]}{(\emptyset,
+      e[\overline{x\mapsto c}])}{\alpha}{(\emptyset, ())} \land \alpha \in
+    \denot{A[\overline{x\mapsto c}]}
+\end{align*}}
+\end{theorem}
+\begin{proof} According to the fundamental theorem, we have
+{\footnotesize\begin{alignat}{2}
+    &\overline{x{:\rawnuot{b}{\top}}} ~|~ \emptyset \vdash e : \rg{\epsTL}{A}{\epsTL} \ptag{assumption}
+    \\&\Gamma ~|~ \emptyset \vdash e : \tau \impl \forall \sigma, \sigma \in
+    \denot{\Gamma} \impl \sigma(e) \in
+    \denot{\sigma(\tau)} 
+    \ptag{\autoref{theorem:fundamental-ap}}
+    \\&\forall \sigma, \sigma \in
+    \denot{\overline{x{:\rawnuot{b}{\top}}}} \impl \sigma(e) \in
+    \denot{\sigma(\rg{\epsTL}{A}{\epsTL})}
+    \\&\forall \overline{c{:}b}, e\msubst{x}{c} \in
+    \denot{\rg{\epsTL}{A\msubst{x}{c}}{\epsTL}} \ptag{definition of $\denot{\Gamma}$} \label{loc:p1}
+\end{alignat}}\noindent
+the definition of \PAT denotation as shown in \autoref{fig:type-denotation} indicates
+{\footnotesize\begin{align*}
+    &\denot{\rg{H}{A}{F}} &&\doteq \{e ~|~ \emptyset \basicvdash e : \Code{unit} \land \forall \alpha_h\;\alpha\;\alpha_f\;\beta\;\beta'\;e_h\;e_f.
+  \\&&& \qquad\qquad \msteptr{[]}{(\emptyset, e_h)}{\alpha_h}{(\beta, ())} \land \msteptr{\alpha_h}{(\beta, e)}{\alpha}{(\beta', ())} \land \msteptr{\alpha_h \listconcat \alpha }{(\beta', e_f)}{\alpha_f}{(\emptyset, ())} \impl
+  \\&&& \qquad\qquad (\alpha_h \in\denot{H} \land \alpha_f \in\denot{F} \impl \alpha \in\denot{A}) \}
+\end{align*}}\noindent
+Then, for a term $e$ has basic type $\Code{unit}$, $e$ is inhabitant of type $\rg{\epsTL}{A\msubst{x}{c}}{\epsTL}$ iff
+{\footnotesize\begin{alignat}{2}
+  & \denot{\epsTL} = \{ [] \} \ptag{\autoref{lemma:espTL}}
+  \\&\forall \alpha\;\beta\;\beta'\;e_h\;e_f.\msteptr{[]}{(\emptyset, e_h)}{[]}{(\beta, ())} \land \msteptr{[]}{(\beta, e)}{\alpha}{(\beta', ())} \land \msteptr{\alpha }{(\beta', e_f)}{[]}{(\emptyset, ())} \impl \alpha \in\denot{A}
+  \\&\forall e\;\beta. \msteptr{\alpha}{(\emptyset, e)}{[]}{(\beta, ())} \impl \beta = \emptyset \ptag{??}
+  \\&\forall \alpha. \msteptr{[]}{(\emptyset, e)}{\alpha}{(\emptyset, ())} \impl \alpha \in\denot{A}
+\end{alignat}}\noindent
+Then, we can say
+{\footnotesize\begin{alignat}{2}
+    &\denot{\rg{\epsTL}{A}{\epsTL}} = \{e ~|~ \forall \alpha. \msteptr{[]}{(\emptyset, e)}{\alpha}{(\emptyset, ())} \impl \alpha \in\denot{A}\}
+    \\&\forall \overline{c{:}b}, e\msubst{x}{c} \in
+    \denot{\rg{\epsTL}{A\msubst{x}{c}}{\epsTL}} \ptag{\autoref{loc:p1}}
+    \\&\forall \overline{c{:}b}, \forall \alpha. \msteptr{[]}{(\emptyset, e\msubst{x}{c})}{\alpha}{(\emptyset, ())} \impl \alpha \in\denot{A\msubst{x}{c}} \label{loc:p2}
+    \\&\forall \beta. B \vdash \beta \impl \forall \alpha_h. \exists \alpha. \msteptr{\alpha_h}{(\beta, e\msubst{x}{c})}{\alpha}{(\emptyset, ())}
+    \ptag{\autoref{lemma:realizable} and assumption}
+    \\&\emptyset \vdash [] \ptag{Definition~\ref{def:beta-B}}
+    \\&\forall \alpha_h. \exists \alpha. \msteptr{\alpha_h}{(\emptyset, e\msubst{x}{c})}{\alpha}{(\emptyset, ())}\ptag{\autoref{lemma:realizable}} \label{loc:p3}
+    \\&\exists \overline{c{:}b}. \exists \alpha. \msteptr{[]}{(\emptyset, e\msubst{x}{c})}{\alpha}{(\emptyset, ())} \land  \alpha \in \denot{A\msubst{x}{c}}\ptag{\autoref{loc:p2} and \autoref{loc:p3}}
+\end{alignat}}\noindent
+This is sufficient to establish the original theorem we aim to prove.
+\end{proof}
+
+% Our synthesis algorithm is sound, ensuring that it always produces type-safe controllers. Furthermore, the synthesized controller can realize an execution trace when the handler specification $\Delta$ is complete, meaning that all behaviors permitted by $\Delta$ are realizable.
+
+% \begin{theorem}\label{theorem:algo-well-typed}[Well-type-ness]
+% The controller synthesized by the algorithm can also be derived using our declarative rules.
+% \end{theorem}
+
+% \begin{definition}[Complete Handler Specification] A well-formed handler specification $\Delta$ is complete iff for all $\Delta(\eff{op}) = \overline{x{:}t} \sarr \rg{H}{A}{\bigwedge_{i = 1 ... n} \finalA \msg{op_i}{\phi_i}}$,
+% {\small\begin{align*}
+%     \forall \alpha \in \denot{A}. \forall \overline{c \in \denot{t}}. \forall \beta. \beta \in \denot{\seqA \overline{\lastA \msg{op_i}{\phi_i}}} \impl \alpha \vDash \zevent{op}{\overline{c}} \Downarrow \beta
+% \end{align*}}
+% \end{definition}
+
+
+
+% \begin{theorem}\label{theorem:algo-sound}[Algorithm Soundness] Under a complete handler specification, with ghost variables $\overline{x{:}b}$ and a safety property $A$, the synthesized program $e$ realizes at least one trace that violate $A$, i.e.,
+% {\small\begin{align*} 
+% \exists \overline{c{:}b}. \exists \alpha. 
+% \msteptr{[]}{([],e[\overline{x\mapsto c}])}{\alpha}{([], ())} \land \alpha \not\in
+%     \denot{A[\overline{x\mapsto c}]}
+% \end{align*}}
+% \end{theorem}

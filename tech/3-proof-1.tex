@@ -1,0 +1,147 @@
+\newpage
+\section{Proofs}\label{sec:tech:proof}
+
+\subsection{Lemmas for s-LTL$_f$}
+
+We introduce several auxiliary lemmas for s-LTL$_f$ formulae.
+
+\begin{lemma}\label{lemma:allTL}[All well-fromed traces] $\denot{\allTL} = \{ tr ~|~ \wellfoundedvdash tr  \}$.
+\end{lemma}
+
+\begin{lemma}\label{lemma:espTL}[Epsilon set of trace] $\denot{\epsTL} = \{ [] \}$.
+\end{lemma}
+
+\begin{lemma}\label{lemma:empTL}[Empty set of trace] $\denot{\empTL} = \emptyset$.
+\end{lemma}
+
+\begin{definition}[Well-formed handler specification]
+  \label{lemma:built-in-typing-ap}
+  The handler specification $\Delta$ is well-formed iff for all operator $\eff{op}$ and its type $\overline{x{:}t} \sarr \rgB{H}{\lastA\msgB{op}{\overline{y}}{\phi}}{F}{B}$ in $\Delta$ satisfying
+{\small\begin{align*}
+    \forall \alpha \in \denot{A}. \forall \overline{c \in \denot{t}}. \forall \overline{\alpha_i}. \forall \overline{m_i}.\; \alpha_1 \listconcat [m_1] \listconcat ... [m_{n}] \listconcat \alpha_{n+1} \in \denot{F} \impl \alpha \vDash \zevent{op}{\overline{c}} \Downarrow \{m_i\}
+\end{align*}}
+\end{definition}
+
+\begin{theorem}\label{theorem:fundamental-ap}[Fundamental Theorem] Given
+  a well-formed handler specification $\Delta$,
+    the trace of effects produced by a well-typed term
+    $e$ is captured by its corresponding \PAT $\tau$:
+  $\Gamma ~|~ B \vdash e : \tau \implies \forall \sigma, \sigma \in
+    \denot{\Gamma} \impl \sigma(e) \in
+    \denot{\sigma(\tau)}$.
+\end{theorem}
+\begin{proof} We proceed by induction over our type judgment $\Gamma ~|~ B \vdash e : \tau$, which has seven cases proved as following:
+\begin{enumerate}[label=Case]
+\item:
+{\footnotesize\mprooftr{35mm}
+{}
+{TRet}
+{$\Gamma ~|~ \emptyset \vdash () : \rg{H}{\epsTL}{F}$}
+\ \\ \ \\}
+This rule assume that $B \equiv \emptyset, e \equiv (), A \equiv \epsTL$, thus we need to prove
+{\footnotesize\begin{align*}
+    \forall \sigma, \sigma \in \denot{\Gamma} \impl \sigma(()) \in \denot{\sigma(\rg{H}{\epsTL}{F})}
+\end{align*}}\noindent
+From the induction hypothesis and the precondition of this rule, we have
+{\footnotesize\begin{alignat}{2}
+    \setcounter{equation}{0}
+        &\forall \sigma. \sigma(()) = () \\
+        &\forall \sigma. \sigma(\rg{H}{\epsTL}{F}) = \rg{\sigma(H)}{\epsTL}{\sigma(F)}
+\end{alignat}}\noindent
+where we just need to prove the term $()$ is in the denotation of a \PAT in from $\rg{H}{\epsTL}{F}$, which means for all $\alpha_h\;\alpha\;\alpha_f\;\beta\;\beta'\;e_h\;e_f$,
+{\footnotesize\begin{alignat}{2}
+&\eraserf{\Gamma} \basicvdash () : \Code{unit} \ptag{from basic typing ??}
+\\&\msteptr{[]}{(\emptyset, e_h)}{\alpha_h}{(\beta, ())} 
+\land \msteptr{\alpha_h}{(\beta, ())}{\alpha}{(\beta', ())}
+\land \msteptr{\alpha_h \listconcat \alpha }{(\beta', e_f)}{\alpha_f}{(\emptyset, ())}
+\ptag{assumption of $\denot{\tau}$}
+\\&\alpha_h \in \denot{H} \land \alpha_f \in \denot{F} \ptag{assumption of $\denot{\tau}$}
+\end{alignat}}\noindent
+Since there is no small-step reduction rule for the term $()$, thus the relation $\msteptr{\alpha_h}{(\beta, ())}{\alpha}{(\beta', ())}$ is derived from reflexivity case of multi-step reduction. Thus, $\alpha$ is empty trace $[]$, which included by the denotation of $\epsTL$ (\autoref{lemma:espTL}). Then the proof immediate holds in this case.
+
+\item:
+{\footnotesize
+\mprooftr{73mm}
+{
+$\Gamma \vdash \eff{op} : \overline{x_i{:}t_i}\sarr \rg{H}{\lastA\msg{op}{\phi}}{A \seqA F}$ \quad
+$\forall i. \Gamma \vdash v_i : t_i$ \quad
+$\GEN(\eff{op})$ \quad $(\eff{op}, B') \in \Sigma$ \quad
+ $\Gamma ~|~ B \cup B' \vdash e : \rg{H \seqA \lastA\msg{op}{\phi\msubst{x_i}{v_i}}}{A}{F}$
+ }
+{TGen}
+{$\Gamma ~|~ B \vdash \zgen{op}{\overline{v_i}}{e} : \rg{H}{\lastA\msg{op}{\phi\msubst{x_i}{v_i}} \seqA A}{F}$}
+\ \\ \ \\}
+This rule assume that $e \equiv \zgen{op}{\overline{v}}{e}, \tau \equiv \rg{H}{\lastA\msg{op}{\phi\msubst{x}{v}} \seqA A}{F}$, thus we need to prove
+{\footnotesize\begin{align*}
+    \forall \sigma, \sigma \in \denot{\Gamma} \impl \sigma(\zgen{op}{\overline{v}}{e}) \in \denot{\sigma(\rg{H}{\lastA\msg{op}{\phi\msubst{x}{v}} \seqA A}{F})}
+\end{align*}}\noindent
+From the induction hypothesis and the precondition of this rule, we have
+{\footnotesize\begin{alignat}{2}
+\setcounter{equation}{0}
+&\Gamma \vdash \eff{op} : \overline{x{:}t}\sarr \rg{H}{\lastA\msg{op}{\phi}}{A \seqA F} \ptag{assumption} \\
+&\forall i. \Gamma \vdash v_i : t_i \ptag{assumption} \label{loc:1-1} \\
+&\GEN(\eff{op}) \land (\eff{op}, B') \in \Sigma \ptag{assumption} \\
+&\Gamma ~|~ B \cup B' \vdash e : \rg{H \seqA \lastA\msg{op}{\phi\msubst{x}{v}}}{A}{F} \ptag{assumption} \\
+&\forall \sigma \in \denot{\Gamma}. \sigma(e) \in \denot{\sigma(\rg{H \seqA \lastA\msg{op}{\phi\msubst{x}{v}}}{A}{F})} \ptag{induction hypothesis} \\
+&\forall i. \forall \sigma \in \denot{\Gamma}. \sigma(v_i) \in  \sigma(\denot{t_i}) \ptag{\autoref{loc:1-1} and ??} \\
+&\msteptr{\alpha_h}{(\beta, \zgen{op}{\overline{v}}{e})}{\alpha}{(\beta', e)}  \ptag{??} \\
+% &\forall \alpha \in \denot{A}. \forall \overline{c \in \denot{t}}. \forall \overline{\alpha_i}. \forall \overline{m_i}.\; \alpha_1 \listconcat [m_1] \listconcat ... [m_{n}] \listconcat \alpha_{n+1} \in \denot{F} \impl \alpha \vDash \zevent{op}{\overline{c}} \Downarrow \{m_i\} \ptag{??} \\
+\end{alignat}}\noindent
+\end{enumerate}
+\end{proof}
+
+
+\begin{table}[ht!]
+  \renewcommand{\arraystretch}{0.8}
+  % \vspace*{-.1in}
+  \caption{\small Experimental results of using \name{} to synthesize
+    controller for reactive distributed systems. Benchmarks from prior
+    works are annotated with their source:
+    P~\cite{DGJ+13}($^{\dagger}$), ModP~\cite{ModP}($^{\diamond}$) the modular version of P language, and
+    MessageChain~\cite{MessageChain}($^{\star}$) that is automated specification mining and verification tool built for P language. We also include a real world
+    model (\textsf{Kermit2PCModel}$^{\square}$) written in P that
+    models a 2PC protocol used by a major cloud vendor.  The
+    components under test are written in P, whereas handler
+    specifications are manually defined as \PAT{}s in our DSL. The
+    synthesized controller program is then transpired into P and run
+    alongside the other components.  \name{} can synthesize a set of
+    controllers, each of which specifies a specific scheduling order
+    for messages, all consistent with provided specifications.  We set
+    a $2$ minute time bound for the synthesis procedure (i.e.,
+    t$_\text{total}$) is the average time to find a single
+    controller. 
+    % \SJ{Should we also include the number of controllers that were synthesized in the two minute bound?}
+    }
+\vspace*{-.1in}
+\footnotesize
+\setlength{\tabcolsep}{2.3pt}
+\begin{tabular}{c||cc||ccc|cc||c|ccc}
+  \toprule
+ Benchmark & \#$\eff{op}$ & \#qualifier & \#var &(\#$\mykw{gen}$, \#$\mykw{obs}$) & \#$\mykw{assert}$ &  failure rate$_\text{(c,rd)}$ & t$_\text{rd}$(s) & t$_\text{total}$(s)  & \#SMT & \#fw & \#bw \\
+\midrule
+\textsf{Database} & $4$ & $7$ & $6$ & ($3$, $3$) & $4$ & $(100.0\%, 16.10\%)$ & $0.60$ & $2.73$ & $420$ & $4$ & $6$\\
+\midrule
+\textsf{Firewall}$^{\star}$ & $5$ & $17$ & $12$ & ($2$, $8$) & $9$ & $(100.0\%, 4.00\%)$ & $7.68$ & $5.48$ & $788$ & $5$ & $8$\\
+\midrule
+\textsf{RingLeaderElection}$^{\star}$ & $3$ & $19$ & $12$ & ($2$, $6$) & $8$ & $(74.0\%, 5.23\%)$ & $1.71$ & $6.53$ & $964$ & $2$ & $18$\\
+\midrule
+\textsf{EspressoMachine}$^{\dagger}$ & $13$ & $3$ & $1$ & ($2$, $8$) & $1$ & $(29.0\%, 3.10\%)$ & $3.05$ & $1.13$ & $165$ & $2$ & $11$\\
+\midrule
+\textsf{BankServer}$^{\dagger}$ & $6$ & $17$ & $15$ & ($2$, $3$) & $5$ & $(100.0\%, 2.10\%)$ & $4.39$ & $8.31$ & $1191$ & $2$ & $5$\\
+\midrule
+\textsf{Simplified2PC}$^{\dagger}$ & $9$ & $14$ & $7$ & ($2$, $6$) & $5$ & $(54.0\%, 0.80\%)$ & $20.76$ & $6.87$ & $1043$ & $3$ & $8$\\
+\midrule
+\textsf{HeartBeat}$^{\dagger}$ & $7$ & $18$ & $9$ & ($4$, $10$) & $9$ & $(100.0\%, 1.40\%)$ & $9.21$ & $7.08$ & $1073$ & $4$ & $20$\\
+\midrule
+\textsf{ChainReplication}$^{\diamond}$ & $7$ & $32$ & $26$ & ($4$, $9$) & $10$ & $(100.0\%, 0.15\%)$ & $73.19$ & $27.07$ & $4016$ & $6$ & $19$\\
+\midrule
+\textsf{Paxos}$^{\diamond}$ & $10$ & $30$ & $36$ & ($4$, $10$) & $13$ & $(100.0\%, 0.03\%)$ & $209.24$ & $59.98$ & $8763$ & $4$ & $16$\\
+\midrule
+\textsf{Raft} & $9$ & $26$ & $29$ & ($3$, $14$) & $14$ & $(100.0\%, 0.00\%)$ & $-$ & $56.07$ & $8356$ & $10$ & $22$\\
+\midrule
+\textsf{Kermit2PCModel}$^{\square}$ & $17$ & $70$ & $36$ & ($4$, $10$) & $10$ & $(100.0\%, 0.00\%)$ & $-$ & $60.36$ & $9023$ & $6$ & $12$\\
+\bottomrule
+\end{tabular}
+\label{tab:evaluation2}
+% \vspace*{-.15in}
+\end{table}
