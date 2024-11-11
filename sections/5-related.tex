@@ -1,2 +1,74 @@
 \section{Related Works}\label{sec:related}
+
+\paragraph{{\it Verification}}  Proving the correctness of distributed
+protocols and models is a topic of significant recent
+interest~\cite{KA+07,HH+15,SWT18}.  These approaches provide strong
+correctness guarantees but require significant investment on the part
+of the proof engineer (e.g., by defining suitable inductive
+invariants) to complete a verification task~\cite{PM+16,YR+21,MG+19}.
+Our focus in this work is to improve the effectiveness of
+falsification techniques - validating the presence of bugs in a
+distributed protocol design, rather than their absence.  The burden we
+impose on test engineers, providing handler specifications as PAT{}s,
+as well as a global safety/liveness property in LTL$_f$, is a
+significantly lower hurdle than what is required to verify functional
+correctness.
+
+\paragraph{{\it Testing}}   There have also been
+numerous efforts at improving the capabilities of testing frameworks
+for distributed systems~\cite{Jepsen,BK+21,RK+19}.  For example,
+Jepsen~\cite{Jepsen} uses randomization to explore schedules that may
+reveal bugs when an application is deployed on a weakly-consistent
+storage system. Similarly, MonkeyDB~\cite{RK+19} uses a demonic
+scheduling mechanism to expose safety violations in SQL applications
+that interact with a weakly-isolated storage backend.  In contrast,
+\name\ is applicable to \emph{any} distributed application or protocol
+that can be modeled as an open reactive system.  Our approach can also
+be seen as a form of property-based testing (PBT)~\cite{CH00,HC+24}
+applied to this setting.  Broadly related to our approach is
+Mocket~\citet{WD+23}, a PBT-style testing framework that uses the
+state space graph extracted from model-checking TLA+
+specifications~\cite{Lam02} that enforce executions to follow specific
+paths in the graph.  Unlike \name, Mocket requires manual
+instrumentation of implementations to align actions defined in the
+specification with the corresponding code in the implementation.  It
+also relies on the TLC model-checker to produce the state space graph
+that it explores.  On the other hand, \name\ leverages a compositional
+refinement type system to drive synthesis, and requires no
+instrumentation or \emph{a priori} enumeration of the state space to
+synthesize effective bespoke controllers.
+
+\paragraph{{\it Specifications}}
+Type and effect systems that target \emph{temporal} properties on the
+sequences of effects a program may \emph{produce} is a well-studied
+subject. For example, Skalka and Smith\cite{SS+04} present a type and
+effect system for reasoning about the shape of histories (i.e., finite
+traces) of events embedded in a program.  Koskinen and
+Terauchi\cite{KT+14} present a type and effect system that
+additionally supports verification properties of infinite traces,
+specified as B\"{u}chi automata.  More recently,
+\cite{Temporal-Verification} consider how to support richer control
+flow structures, e.g., delimited continuations, in such an effect
+system.  Closest to our work, is the proposal of Zhe {\emph et
+  al}~\cite{ZYDJ24} on \emph{Hoare Automata Types} (HAT), an
+integration of symbolic finite automata within a refinement type
+system, suitable for reasoning about stateful sequential programs
+structured as a functional core interacting with opaque effectful
+libraries.  Our development of \PAT{}s, while sharing some obvious
+commonality with HATs, extends them with prophency automata to enable
+their use in a distributed setting, where traces represent both
+constraints on the history of consumed messages as well as
+requirements of future messages that have yet to be handled.  
+
 \section{Conclusion}\label{sec:conc}
+
+This paper examines a property-guided testing framework for open
+reactive distributed system models.  Our key innovation is the use of
+prophecy automata types (\PAT{}s) that enable the specification of
+message handlers in terms of a trace history and future.  A
+component-based synthesis procedure leverages \PAT{}s to output
+bespoke test controllers specialized to generating execution traces
+that violate a given safety or liveness property.  Experimental
+results on a wide range of benchmarks, including real-world models
+used in production, show that \name\ is significantly more effective
+in uncovering design bugs than the existing state-of-the-art.
