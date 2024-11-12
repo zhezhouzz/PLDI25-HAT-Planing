@@ -303,6 +303,8 @@ $\eff{readRsp}$ and $\eff{writeRsp}$ messages, as can been seen by
 their prophecy automata, which provide no guarantees about any future
 messages they may produce ($\allTL$).
 
+To prevent the violation of the RYW policy, a stronger \PAT for \(\eff{writeReq}\) is required, i.e., with the prophecy automata \((\neg \msg{readReq}{\top}) \untilA \msg{writeRsp}{v = \Code{x}}\). This \PAT ensures atomicity by guaranteeing that no read operation occurs before the write operation completes (i.e., before \(\eff{writeRsp}\) is received).
+
 \paragraph{Control flow} A handler's \PAT{} also captures its relevant
 control-flow dependencies. For example, the type of $\eff{readReq}$
 uses an intersection type ($\interty$) to encode its behaviors in the
