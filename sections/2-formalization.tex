@@ -510,7 +510,7 @@ auxiliary semantics of handlers introduced in
 
 \begin{definition}[Well-formed handler context]
   \label{lemma:built-in-typing}
-  The handler specification $\Delta$ and capablity context $\Sigma$ is well-formed iff for all operator $\eff{op}$ and its \PAT $\overline{y{:}b} \garr \overline{x{:}t} \sarr \rg{H}{\lastA\msgB{op}{\overline{y}}{\phi}}{F}$ and capability $\Theta$ in $\Delta$ satisfying
+  The handler specification $\Delta$ and capability context $\Sigma$ is well-formed iff for all operator $\eff{op}$ and its \PAT $\overline{y{:}b} \garr \overline{x{:}t} \sarr \rg{H}{\lastA\msgB{op}{\overline{y}}{\phi}}{F}$ and capability $\Theta$ in $\Delta$ satisfying
 {\small\begin{align*}
     \forall \overline{y{:}b}.\forall \alpha \in \denot{A}. \forall \overline{c \in \denotation{t}}. \forall \overline{\alpha_i}. \forall \overline{m_i}.\; \alpha_1 \listconcat [m_1] \listconcat ... [m_{n}] \listconcat \alpha_{n+1} \in \denot{F} \impl \alpha \vDash \zevent{op}{\overline{c}} \Downarrow \{m_i\}
 \end{align*}}\noindent

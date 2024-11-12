@@ -7,17 +7,26 @@ small-step operational semantics of our core language are shown in
 \begin{figure}[ht!]
 {\footnotesize
 {\small\begin{align*}
-\text{\textbf{Buffer}}& \quad &\beta ::= \quad & \text{multi-set of $\zevent{op}{\overline{c}}$}
-\qquad\qquad\quad
-\text{\textbf{Traces}}& \quad &\alpha ::= \quad &
-    \emptr ~|~ \zevent{op}{\overline{c}} \;{::}\; \alpha ~|~ \alpha
-    \listconcat \alpha 
+\text{\textbf{Messages}}& \  & m ::= \   & \zevent{op}{\overline{c}}
+\qquad
+\text{\textbf{Buffers}}& \  &\beta \in \mathcal{P}(m)  &
+\qquad
+\text{\textbf{Traces}}& \  &\alpha ::= \  &
+    \emptr ~|~ m \;{::}\; \alpha ~|~ \alpha
+    \listconcat \alpha
 \end{align*}
 \begin{align*}
   \text{\textbf{Handler Semantics }} & \fbox{$\alpha \vDash
                                        \zevent{op}{\overline{c}}
                                        \Downarrow \beta$} &
-                                                            \quad\quad\quad \text{\textbf{Operational Semantics }} & \fbox{$\steptr{\alpha}{(\buf, e)}{\alpha}{(\buf, e)}$}
+                                                            \quad\quad\quad
+                                                            \text{\textbf{Operational
+                                                            Semantics
+                                                            }} &
+                                                                 \fbox{$\phi
+                                                                 \Downarrow v
+                                                                 \quad
+                                                                 \steptr{\alpha}{(\buf, e)}{\alpha}{(\buf, e)}$}
 \end{align*}}
 \mprooftr{65mm}{
 $\buf = \{\zevent{op}{\overline{c}}\} \cup \buf_1 $ \quad
@@ -58,3 +67,5 @@ $\steptr{\alpha}{(\buf, \zassert{\true}{e}}{[]}{(\buf, e)}$
   \caption{Full Operational Semantics}
   \label{fig:semantics}
 \end{figure}
+
+\section{Basic Typing Rules}\label{sec:tech:basic-typing}
