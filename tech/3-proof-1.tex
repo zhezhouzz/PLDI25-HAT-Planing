@@ -14,31 +14,33 @@ We introduce several auxiliary lemmas for s-LTL$_f$ formulae.
 \begin{lemma}\label{lemma:empTL}[Empty set of trace] $\denot{\empTL} = \emptyset$.
 \end{lemma}
 
-\begin{definition}[Well-formed handler specification]
+\begin{definition}[Well-formed handler context]
   \label{lemma:built-in-typing-ap}
-  The handler specification $\Delta$ is well-formed iff for all operator $\eff{op}$ and its type $\overline{x{:}t} \sarr \rgB{H}{\lastA\msgB{op}{\overline{y}}{\phi}}{F}{B}$ in $\Delta$ satisfying
+  The handler specification $\Delta$ and capability context $\Sigma$ is well-formed iff for all operator $\eff{op}$ and its \PAT $\overline{y{:}b} \garr \overline{x{:}t} \sarr \rg{H}{\lastA\msgB{op}{\overline{y}}{\phi}}{F}$ and capability $\Theta$ in $\Delta$ satisfying
 {\small\begin{align*}
-    \forall \alpha \in \denot{A}. \forall \overline{c \in \denot{t}}. \forall \overline{\alpha_i}. \forall \overline{m_i}.\; \alpha_1 \listconcat [m_1] \listconcat ... [m_{n}] \listconcat \alpha_{n+1} \in \denot{F} \impl \alpha \vDash \zevent{op}{\overline{c}} \Downarrow \{m_i\}
-\end{align*}}
+    \forall \overline{y{:}b}.\forall \alpha \in \denot{A}. \forall \overline{c \in \denotation{t}}. \forall \overline{\alpha_i}. \forall \overline{m_i}.\; \alpha_1 \listconcat [m_1] \listconcat ... [m_{n}] \listconcat \alpha_{n+1} \in \denot{F} \impl \alpha \vDash \zevent{op}{\overline{c}} \Downarrow \{m_i\}
+\end{align*}}\noindent
+also, $\overline{y{:}\rawnuot{b}{\top}},\overline{x{:}t} \vdash F \subseteq \bigwedge_{\eff{op} \in \Theta} \finalA \msg{op}{\top}$ should hold.
 \end{definition}
 
 \begin{theorem}\label{theorem:fundamental-ap}[Fundamental Theorem] Given
   a well-formed handler specification $\Delta$,
     the trace of effects produced by a well-typed term
     $e$ is captured by its corresponding \PAT $\tau$:
-  $\Gamma ~|~ B \vdash e : \tau \implies \forall \sigma, \sigma \in
-    \denot{\Gamma} \impl \sigma(e) \in
-    \denot{\sigma(\tau)}$.
+  $\Gamma; \Delta; \Theta \vdash e : \tau \implies \forall \sigma, \sigma \in
+    \denotation{\Gamma} \impl \sigma(e) \in
+    \denotation{\sigma(\tau)}$.\footnote{The proofs of theorems in this section are provided in the \techreport{}.}
 \end{theorem}
-\begin{proof} We proceed by induction over our type judgment $\Gamma ~|~ B \vdash e : \tau$, which has seven cases proved as following:
+\begin{proof} We proceed by induction over our type judgment $\Gamma;\Delta;\Theta \vdash e : \tau$, which has seven cases proved as following:
 \begin{enumerate}[label=Case]
 \item:
-{\footnotesize\mprooftr{35mm}
+{\footnotesize
+\mprooftr{35mm}
 {}
 {TRet}
-{$\Gamma ~|~ \emptyset \vdash () : \rg{H}{\epsTL}{F}$}
+{$\Gamma; \Delta; \emptyset \vdash () : \rg{H}{\epsTL}{F}$}
 \ \\ \ \\}
-This rule assume that $B \equiv \emptyset, e \equiv (), A \equiv \epsTL$, thus we need to prove
+This rule assume that $\Theta \equiv \emptyset, e \equiv (), A \equiv \epsTL$, thus we need to prove
 {\footnotesize\begin{align*}
     \forall \sigma, \sigma \in \denot{\Gamma} \impl \sigma(()) \in \denot{\sigma(\rg{H}{\epsTL}{F})}
 \end{align*}}\noindent
@@ -89,59 +91,3 @@ From the induction hypothesis and the precondition of this rule, we have
 \end{alignat}}\noindent
 \end{enumerate}
 \end{proof}
-
-
-\begin{table}[ht!]
-  \renewcommand{\arraystretch}{0.8}
-  % \vspace*{-.1in}
-  \caption{\small Experimental results of using \name{} to synthesize
-    controller for reactive distributed systems. Benchmarks from prior
-    works are annotated with their source:
-    P~\cite{DGJ+13}($^{\dagger}$), ModP~\cite{ModP}($^{\diamond}$) the modular version of P language, and
-    MessageChain~\cite{MessageChain}($^{\star}$) that is automated specification mining and verification tool built for P language. We also include a real world
-    model (\textsf{Kermit2PCModel}$^{\square}$) written in P that
-    models a 2PC protocol used by a major cloud vendor.  The
-    components under test are written in P, whereas handler
-    specifications are manually defined as \PAT{}s in our DSL. The
-    synthesized controller program is then transpired into P and run
-    alongside the other components.  \name{} can synthesize a set of
-    controllers, each of which specifies a specific scheduling order
-    for messages, all consistent with provided specifications.  We set
-    a $2$ minute time bound for the synthesis procedure (i.e.,
-    t$_\text{total}$) is the average time to find a single
-    controller. 
-    % \SJ{Should we also include the number of controllers that were synthesized in the two minute bound?}
-    }
-\vspace*{-.1in}
-\footnotesize
-\setlength{\tabcolsep}{2.3pt}
-\begin{tabular}{c||cc||ccc|cc||c|ccc}
-  \toprule
- Benchmark & \#$\eff{op}$ & \#qualifier & \#var &(\#$\mykw{gen}$, \#$\mykw{obs}$) & \#$\mykw{assert}$ &  failure rate$_\text{(c,rd)}$ & t$_\text{rd}$(s) & t$_\text{total}$(s)  & \#SMT & \#fw & \#bw \\
-\midrule
-\textsf{Database} & $4$ & $7$ & $6$ & ($3$, $3$) & $4$ & $(100.0\%, 16.10\%)$ & $0.60$ & $2.73$ & $420$ & $4$ & $6$\\
-\midrule
-\textsf{Firewall}$^{\star}$ & $5$ & $17$ & $12$ & ($2$, $8$) & $9$ & $(100.0\%, 4.00\%)$ & $7.68$ & $5.48$ & $788$ & $5$ & $8$\\
-\midrule
-\textsf{RingLeaderElection}$^{\star}$ & $3$ & $19$ & $12$ & ($2$, $6$) & $8$ & $(74.0\%, 5.23\%)$ & $1.71$ & $6.53$ & $964$ & $2$ & $18$\\
-\midrule
-\textsf{EspressoMachine}$^{\dagger}$ & $13$ & $3$ & $1$ & ($2$, $8$) & $1$ & $(29.0\%, 3.10\%)$ & $3.05$ & $1.13$ & $165$ & $2$ & $11$\\
-\midrule
-\textsf{BankServer}$^{\dagger}$ & $6$ & $17$ & $15$ & ($2$, $3$) & $5$ & $(100.0\%, 2.10\%)$ & $4.39$ & $8.31$ & $1191$ & $2$ & $5$\\
-\midrule
-\textsf{Simplified2PC}$^{\dagger}$ & $9$ & $14$ & $7$ & ($2$, $6$) & $5$ & $(54.0\%, 0.80\%)$ & $20.76$ & $6.87$ & $1043$ & $3$ & $8$\\
-\midrule
-\textsf{HeartBeat}$^{\dagger}$ & $7$ & $18$ & $9$ & ($4$, $10$) & $9$ & $(100.0\%, 1.40\%)$ & $9.21$ & $7.08$ & $1073$ & $4$ & $20$\\
-\midrule
-\textsf{ChainReplication}$^{\diamond}$ & $7$ & $32$ & $26$ & ($4$, $9$) & $10$ & $(100.0\%, 0.15\%)$ & $73.19$ & $27.07$ & $4016$ & $6$ & $19$\\
-\midrule
-\textsf{Paxos}$^{\diamond}$ & $10$ & $30$ & $36$ & ($4$, $10$) & $13$ & $(100.0\%, 0.03\%)$ & $209.24$ & $59.98$ & $8763$ & $4$ & $16$\\
-\midrule
-\textsf{Raft} & $9$ & $26$ & $29$ & ($3$, $14$) & $14$ & $(100.0\%, 0.00\%)$ & $-$ & $56.07$ & $8356$ & $10$ & $22$\\
-\midrule
-\textsf{Kermit2PCModel}$^{\square}$ & $17$ & $70$ & $36$ & ($4$, $10$) & $10$ & $(100.0\%, 0.00\%)$ & $-$ & $60.36$ & $9023$ & $6$ & $12$\\
-\bottomrule
-\end{tabular}
-\label{tab:evaluation2}
-% \vspace*{-.15in}
-\end{table}

@@ -1,4 +1,4 @@
-\section{Related Works}\label{sec:related}
+\section{Related Work}\label{sec:related}
 
 \paragraph{{\it Verification}}  Proving the correctness of distributed
 protocols and models is a topic of significant recent
@@ -15,29 +15,30 @@ PAT{}s, as well as a global safety/liveness property in LTL$_f$, is a
 significantly lower hurdle than what is required to verify full
 functional correctness.
 
-\paragraph{{\it Testing}}   There have also been
-numerous efforts at improving the capabilities of testing frameworks
-for distributed systems~\cite{Jepsen,BK+21,RK+19}.  For example,
-Jepsen~\cite{Jepsen} uses randomization to explore schedules that may
-reveal bugs when an application is deployed on a weakly-consistent
-storage system; MonkeyDB~\cite{RK+19} uses a demonic scheduling
-mechanism to expose safety violations in SQL applications that
-interact with a weakly-isolated storage backend.  In contrast,
-\name\ is applicable to \emph{any} distributed application or protocol
-that can be modeled as an open reactive system.  Our approach can also
-be seen as a form of property-based testing (PBT)~\cite{CH00,HC+24}
-applied to this setting.  Broadly related to our approach is
-Mocket~\cite{WD+23}, a PBT-style testing framework that uses the state
-space graph extracted from model-checking TLA+
-specifications~\cite{Lam02} to force executions to follow specific
-paths in the graph.  Unlike \name, Mocket requires manual
-instrumentation of implementations to align actions defined in the
-specification with the corresponding code in the implementation.  It
-also relies on the TLC model-checker to produce the state space graph
-that it explores.  On the other hand, \name\ leverages a compositional
-refinement type system to drive synthesis, and requires no
-instrumentation or \emph{a priori} enumeration of the state space to
-synthesize effective bespoke controllers.
+\paragraph{{\it Testing}}  Besides P~\cite{DGJ+13,ModP}, which we have
+dicussed at length, there have also been other efforts at improving
+the capabilities of testing frameworks for distributed
+systems~\cite{Jepsen,BK+21,RK+19}.  For example, Jepsen~\cite{Jepsen}
+uses randomization to explore schedules that may reveal bugs when an
+application is deployed on a weakly-consistent storage system;
+MonkeyDB~\cite{RK+19} uses a demonic scheduling mechanism to expose
+safety violations in SQL applications that interact with a
+weakly-isolated storage backend.  In contrast, \name\ is applicable to
+\emph{any} distributed application or protocol that can be modeled as
+an open reactive system.  Our approach can also be seen as a form of
+property-based testing (PBT)~\cite{CH00,HC+24} applied to this
+setting.  Broadly related to our approach is Mocket~\cite{WD+23}, a
+PBT-style testing framework that uses the state space graph extracted
+from model-checking TLA+ specifications~\cite{Lam02} to force
+executions to follow specific paths in the graph.  Unlike \name,
+Mocket requires manual instrumentation of implementations to align
+actions defined in the specification with the corresponding code in
+the implementation.  It also relies on the TLC model-checker to
+produce the state space graph that it explores.  On the other hand,
+\name\ leverages a compositional refinement type system to drive
+synthesis, and requires no instrumentation or \emph{a priori}
+enumeration of the state space to synthesize effective bespoke
+controllers.
 
 \paragraph{{\it Specifications}}
 Type and effect systems that target \emph{temporal} properties on the

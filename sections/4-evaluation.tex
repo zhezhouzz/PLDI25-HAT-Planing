@@ -6,7 +6,7 @@ message-passing systems defined as a collection of actors). \name{}
 consists of approximately 14K lines of OCaml code and uses
 Z3~\cite{de2008z3} as its backend solver for SMT queries.\footnote{The
   supplemental material provides additional explanation of our experiments as
-  well as a docker image that contains the source code of \name{} and
+  well as a docker image that contains the \name{}'s source code and
   benchmarks.}
 
 \paragraph{Evaluation setting} \name{} takes a safety property in s-LTL$_f$
@@ -18,10 +18,10 @@ operators listed in \autoref{fig:term-syntax}.  During synthesis,
 \name{} first negates the given property to treat it as a violation
 property (e.g., $\negSCA$ in \autoref{sec:overview}), and
 systematically explores the space of possible controllers (upto some
-fixed time bound) for those that can guide execution to a state
-consistent with both $\Delta$ and the violation property. Each
+fixed time bound), looking for those that can guide execution to a
+state consistent with both $\Delta$ and the violation property. Each
 synthesized controller indicates a specific message order and payload
-for generated (environment) messages.  \name{} returns an union of
+for generated (environment) messages.  \name{} returns a union of
 these controller as the final synthesized result.
 
 A synthesized controller is directly executable with an interpreter
@@ -42,26 +42,24 @@ Unlike our method, however, P’s runtime scheduler explores arbitrary
 message interleavings systematically during execution.
 
 To test our synthesized controller with P handlers while also
-retaining scheduling control, we compile the controller as a special P
-component that works like a \emph{coordinator}. In this setup,
+retaining scheduling control, we transpile the controller as a special
+P component that works like a \emph{coordinator}. In this setup,
 messages between components are first routed to our controller, where
 they are buffered and then forwarded to the actual handlers in
 accordance with the order found in the synthesized output.  In other
 words, the order in which messages are forwarded from the controller
-is determined by the $\mykw{obs}$ statements in the controller
-program, allowing it to control the message scheduling.  Additionally,
-the coordinator is also responsible for generating messages from
+is determined by $\mykw{obs}$ statements in the controller program,
+allowing it to control message scheduling.  Additionally, the
+coordinator is also responsible for generating messages from
 environment components (e.g., a logical user) to the components under
 test, again respecting the order in which these messages appear in the
-synthesized program.  We compare our synthesized controller with a
-purely random input P message generator for the SUT which uses the
-default P scheduler to explore all possible message orderings.
+synthesized program.  
 
 Our experimental evaluation addresses three research questions:
 \begin{itemize}
-\item[\textbf{Q1}:] Is \name{} \emph{expressive}? Can it synthesizes
+\item[\textbf{Q1}:] Is \name{} \emph{expressive}? Can it synthesize
   controllers for a diverse set of distributed protocols with
-  realistic safety properties?
+  realistic safety and liveness properties?
 \item[\textbf{Q2}:] Is \name{} \emph{effective}? Do synthesized
   controller programs enable more targeted exploration of the state
   space to witness violations of provided safety properties than
@@ -81,79 +79,85 @@ Our experimental evaluation addresses three research questions:
     extension of P with support for modules, and
     MessageChain~\cite{MessageChain}($^{\star}$) that is an automated
     specification mining and verification tool built for P.  We also
-    include a real-world model of a 2PC protocol
-    (\textsf{Kermit2PCModel}$^{\square}$) used by a major cloud
-    vendor.  The components under test are written in P, whereas
-    handler specifications are manually defined as \PAT{}s.  The
-    synthesized controller program expressed in our DSL is then
-    transpiled into P and run alongside the other components.  \name{}
-    can synthesize a set of controllers, each of which specifies a
-    specific scheduling order for messages, all consistent with
-    provided specifications.  We set a $2$ minute time bound for the
-    synthesis procedure (t$_\text{total}$ is the average time
-    to find a single controller.)  }
+    include a real-world model of a 2PC (two-phase commit) protocol
+    (\textsf{Anon2PCModel}$^{\square}$) used by a major cloud vendor.
+    The components under test are written in P, whereas handler
+    specifications are defined using \PAT{}s.  \name{} can synthesize
+    a set of controllers, each of which specifies a distinct
+    scheduling order for messages, all consistent with provided
+    specifications.  We set a $2$ minute time bound for the synthesis
+    procedure (t$_\text{total}$ is the average time to find a single
+    controller.)  We set a bound of 10K executions for the P
+    baselines.}
 \vspace*{-.1in}
 \footnotesize
 \setlength{\tabcolsep}{2.3pt}
-\begin{tabular}{c||cc||ccc||ccc||c|ccc}
+\begin{tabular}{c||cc||ccc||cc||c|ccc}
   \toprule
-<<<<<<< HEAD
- Benchmark & \#$\eff{op}$ & \#qualifier & \#var &(\#$\mykw{gen}$, \#$\mykw{obs}$) & \#$\mykw{assert}$ &  violation rate$_\text{(Cl,P)}$ & t$_\text{rd}$(s) & t$_\text{total}$(s)  & \#SMT & \#fw & \#bw \\
-=======
- Benchmark & \#$\eff{op}$ & \#qualifier & \#var &(\#$\mykw{gen}$, \#$\mykw{obs}$) & \#$\mykw{assert}$ & \#try$_\text{c}$ & \#try$_\text{p}$ & \#try$_\text{rd}$ & t$_\text{total}$(s)  & \#SMT & \#fw & \#bw \\
->>>>>>> fbdb8fdfaad28213cdd18210290595a5f4ffed51
+  Benchmark & \#$\eff{op}$ & \#qualifier & \#var &(\#$\mykw{gen}$, \#$\mykw{obs}$) & \#$\mykw{assert}$ & \multicolumn{2}{c||}{\# Num. Executions} & t$_\text{total}$(s) & \#SMT & \#fw & \#bw \\
+  & & & & & &  Clouseau & (P+Rand,P+M) &   & &  \\
 \midrule
-\textsf{Database} & $4$ & $7$ & $6$ & ($3$, $3$) & $4$ & $1$ & - & $6$ & $2.73$ & $420$ & $4$ & $6$\\
+\textsf{Database} & $4$ & $7$ & $6$ & ($3$, $3$) & $4$ & $1$ & ($6$, -) & $2.73$ & $420$ & $4$ & $6$\\
 \midrule
-\textsf{Firewall}$^{\star}$ & $5$ & $17$ & $12$ & ($2$, $8$) & $9$ & $1$ & - & $12$ & $5.48$ & $788$ & $5$ & $8$\\
+\textsf{Firewall}$^{\star}$ & $5$ & $17$ & $12$ & ($2$, $8$) & $9$ & $1$ & ($12$, -) & $5.48$ & $788$ & $5$ & $8$\\
 \midrule
-\textsf{RingLeaderElection}$^{\star}$ & $3$ & $19$ & $12$ & ($2$, $6$) & $8$ & $1$ & - & $21$ & $6.53$ & $964$ & $2$ & $18$\\
+\textsf{RingLeaderElection}$^{\star}$ & $3$ & $19$ & $12$ & ($2$, $6$) & $8$ & $1$ & ($21$, -) & $6.53$ & $964$ & $2$ & $18$\\
 \midrule
-\textsf{EspressoMachine}$^{\dagger}$ & $13$ & $3$ & $1$ & ($2$, $8$) & $1$ & $4$ & $4$ & $40$ & $1.13$ & $165$ & $2$ & $11$\\
+\textsf{EspressoMachine}$^{\dagger}$ & $13$ & $3$ & $1$ & ($2$, $8$) & $1$ & $4$ & ($40$, $4$) & $1.13$ & $165$ & $2$ & $11$\\
 \midrule
-\textsf{BankServer}$^{\dagger}$ & $6$ & $17$ & $15$ & ($2$, $3$) & $5$ & $1$ & $2$ & $40$ & $8.31$ & $1191$ & $2$ & $5$\\
+\textsf{BankServer}$^{\dagger}$ & $6$ & $17$ & $15$ & ($2$, $3$) & $5$ & $1$ & ($40$, $2$) & $8.31$ & $1191$ & $2$ & $5$\\
 \midrule
-\textsf{Simplified2PC}$^{\dagger}$ & $9$ & $14$ & $7$ & ($2$, $6$) & $5$ & $2$ & $6$ & $133$ & $6.87$ & $1043$ & $3$ & $8$\\
+\textsf{Simplified2PC}$^{\dagger}$ & $9$ & $14$ & $7$ & ($2$, $6$) & $5$ & $2$ & ($133$, $6$) & $6.87$ & $1043$ & $3$ & $8$\\
 \midrule
-\textsf{HeartBeat}$^{\dagger}$ & $7$ & $18$ & $9$ & ($4$, $10$) & $9$ & $1$ & $7$ & $61$ & $7.08$ & $1073$ & $4$ & $20$\\
+\textsf{HeartBeat}$^{\dagger}$ & $7$ & $18$ & $9$ & ($4$, $10$) & $9$ & $1$ & ($61$, $7$) & $7.08$ & $1073$ & $4$ & $20$\\
 \midrule
-\textsf{ChainReplication}$^{\diamond}$ & $7$ & $32$ & $26$ & ($4$, $9$) & $10$ & $1$ & $400$ & $667$ & $27.07$ & $4016$ & $6$ & $19$\\
+\textsf{ChainReplication}$^{\diamond}$ & $7$ & $32$ & $26$ & ($4$, $9$) & $10$ & $1$ & ($670$, $400$) & $27.07$ & $4016$ & $6$ & $19$\\
 \midrule
-\textsf{Paxos}$^{\diamond}$ & $10$ & $30$ & $36$ & ($4$, $10$) & $13$ & $1$ & $667$ & $10000$ & $59.98$ & $8763$ & $4$ & $16$\\
+\textsf{Paxos}$^{\diamond}$ & $10$ & $30$ & $36$ & ($4$, $10$) & $13$ & $1$ & ({\tiny Timeout}, $667$) & $59.98$ & $8763$ & $4$ & $16$\\
 \midrule
-\textsf{Raft} & $9$ & $26$ & $29$ & ($3$, $14$) & $14$ & $1$ & - & {\tiny Timeout} & $56.07$ & $8356$ & $10$ & $22$\\
+\textsf{Raft} & $9$ & $26$ & $29$ & ($3$, $14$) & $14$ & $1$ & ({\tiny Timeout}, -) & $56.07$ & $8356$ & $10$ & $22$\\
 \midrule
-\textsf{Kermit2PCModel}$^{\square}$ & $17$ & $70$ & $36$ & ($4$, $10$) & $10$ & $1$ & ? & {\tiny Timeout} & $60.36$ & $9023$ & $6$ & $12$\\
+\textsf{Anon2PCModel}$^{\square}$ & $17$ & $70$ & $36$ & ($4$, $10$) & $10$ & $1$ & ({\tiny Timeout}, $51$) & $60.36$ & $9023$ & $6$ & $12$\\
 \bottomrule
 \end{tabular}
 \label{tab:evaluation}
 % \vspace*{-.15in}
 \end{table}
 
-We have evaluated \name{} on a corpus of complex reactive
-system models written in P drawn from a variety of sources (described in the
+We have evaluated \name{} on a corpus of complex reactive system
+models written in P drawn from a variety of sources (described in the
 caption of \autoref{tab:evaluation}) (\textbf{Q1}). We test the
 correctness of these models against a number of consistency and safety
 properties, including Read-Your-Writes (RYW) consistency introduced in
-\autoref{sec:overview}, eventual consistency, strong consistency, and unique leader
-invariants, among others.  For example, \textsc{RingLeaderElection}
-models a leader election algorithm.  Each message transmitted by the
-model's actors contain a source ($\I{src}$) and destination
-($\I{dest}$), to allow recipient's to distinguish
-messages from different nodes. Then, an $\eff{elect}$ handler can
-be given the following \PAT{}: {\small\begin{align*}
-  &\Code{n}\hasoty{tNode}{\top} \sarr \Code{m}\hasoty{tNode}{\top}
-  \sarr \Code{ld}\hasoty{tNode}{v = \Code{m}} \sarr
-  \\&\rg{\globalA\evparenth{\top}}{\lastA\msgB{elect}{\I{src}\;\I{dest}\;\I{leader}}{
-      \I{src} = \Code{n} \land \I{dest} = \Code{m} \land \I{leader} =
-      \Code{m} }}{\finalA\msgB{beLeader}{\I{leader}}{\I{leader} =
-      \Code{m}}}
-\end{align*}}\noindent
-This specification captures a useful property of a leader
-election algorithm: when a node $\Code{m}$ receive a message that elects
-($\eff{elect}$) itself as leader ($\I{leader} = \Code{m}$) from
-another node $\Code{n}$, then node $\Code{m}$ can announce itself to
-be the leader ($\eff{beLeader}$).  
+\autoref{sec:overview}, eventual consistency, strong consistency,
+unique leader invariants (as defined by \textsf{RingLeader},
+\textsf{Paxos} and \textsf{Raft}), among others.  Faults are
+introduced into these models manually either by removing necessary
+dependencies or adding incorrect ones; these faults were chosen to be
+triggered under specific message orderings or with specific input
+message contents.  While these are synthetic design bugs, they are
+nonetheless representative of real and plausible errors that can be
+introduced when designing these models, as was illustrated in
+\autoref{sec:overview}.
+
+%% For example, \textsc{RingLeaderElection}
+%% models a leader election algorithm.  Each message transmitted by the
+%% model's actors contain a source ($\I{src}$) and destination
+%% ($\I{dest}$), to allow recipient's to distinguish
+%% messages from different nodes. Then, an $\eff{elect}$ handler can
+%% be given the following \PAT{}: {\small\begin{align*}
+%%   &\Code{n}\hasoty{tNode}{\top} \sarr \Code{m}\hasoty{tNode}{\top}
+%%   \sarr \Code{ld}\hasoty{tNode}{v = \Code{m}} \sarr
+%%   \\&\rg{\globalA\evparenth{\top}}{\lastA\msgB{elect}{\I{src}\;\I{dest}\;\I{leader}}{
+%%       \I{src} = \Code{n} \land \I{dest} = \Code{m} \land \I{leader} =
+%%       \Code{m} }}{\finalA\msgB{beLeader}{\I{leader}}{\I{leader} =
+%%       \Code{m}}}
+%% \end{align*}}\noindent
+%% This specification captures a useful property of a leader
+%% election algorithm: when a node $\Code{m}$ receive a message that elects
+%% ($\eff{elect}$) itself as leader ($\I{leader} = \Code{m}$) from
+%% another node $\Code{n}$, then node $\Code{m}$ can announce itself to
+%% be the leader ($\eff{beLeader}$).  
 
 \autoref{tab:evaluation} divides the results of our experiments into
 four categories, separated by double bars. The first measures the
@@ -179,50 +183,39 @@ shorter controller programs, avoiding synthesizing messages that do
 not directly affect the property of interest.
 
 The third group of columns reports the performance results of our
-synthesized controller compared to the default P setting, in which
-input messages are generated randomly, and the P scheduler controls
-the order in which messages are delivered (\textbf{Q2}). The first
-column ($\text{violation rate}_{\text{(c,rd)}}$) shows the percentage
-of violations discovered by \name\ (the first percentage) and P (the
-second).  In both cases, we fix the number of executions explored
-during testing to be 10K.  Benchmarks that only use deterministic
-handlers, i.e., handlers whose output messages are uniquely determined
-by its inputs, have a 100\% violation rate when using \name, 
-
-
-
-Conversely, for benchmarks like \textsc{EspressoMachine}, which
-simulates a coffee machine that can non-deterministically fail (e.g.,
-because the machine runs out of water or beans), \name's violation
-rate is lower since it has no control over when handlers can trigger a
-failure.  Nevertheless, the table shows that \name\ is significantly
-more effective (often by many orders of magnitude) than the default P
-implementation.  Indeed, as the complexity of the benchmarks increase,
-the advantages of \name's approach becomes clear - for example, for
-both \textsc{Raft} and \textsc{Kermit2PCModel}, P's controller was
-unable to find any violation in 10K executions, while \name\ was
-able to manifest a faulty execution in a single run.
-
-
-
-violation rate than the random input message generator, except for the
-last two benchmarks, where the random generator fails to detect a
-violation within 10000 attempts. Consequently, the average time for
-the controller to detect a violation is under $0.1$ seconds across all
-benchmarks, significantly lower than the average detection time for
-the random generator ($t_{\text{rd}}$).
-
-% The last two column (\#try) in the
-% second group reports the average number of times that executing the
-% synthesized program violate the safety property during testing. For
-% benchmarks that have deterministic handlers where e.g., the payload in
-% messages generated by the handler does not affect the likelihood of
-% witnessing a violation, the synthesized controller does not need to
-% run multiple times (\#try is equal to $1$). On the other hand, for
-% benchmarks like \textsc{Database} introduced in
-% \autoref{sec:overview}, the $\eff{writeReq}$ handler is allowed to
-% accept or reject the write request with equal probability, leading to
-% two runs.
+synthesized controller compared to two baselines.  The first (P+Rand)
+uses the default P controller to generate input messages and message
+orderings.  The actions taken by this controller are determined
+without exploiting handler or property specifications and uses random
+input generation and enumerative state exploration to construct
+schedules.  The second (P+M), which were available for only some of
+our benchmarks (those not marked as ``-''), manually introduces new
+actors into the model that act to control input message generation and
+prevent uninteresting message orderingss, effectively trying to
+emulate the role of our synthesized controller, albeit without the
+benefit of rigorous specifications to help guide their definitions.
+The column shows the number of executions that were necessary to
+manifest a property violation for both baselines, as well as \name.
+For the P baseline, we fix a bound on the number of executions to be
+explored to be 10K.  Our results demonstrate that \name{} consistently
+identifies faulty executions using only a small number of executions
+(always less than 4 for these benchmarks).  As benchmark complexity
+increases, \name{}'s effectiveness becomes correspondingly more
+apparent when compared to the default P baseline (often by many orders
+of magnitude).  Indeed, for any of the benchmarks that only use
+deterministic handlers, i.e., handlers whose output messages are
+uniquely determined by its inputs, the synthesis procedure is always
+able to construct a controller that yields a property violating
+schedule in a single execution; for benchmarks that use internal
+non-determinism (e.g., \textsf{EspressoMachine} simulates a coffee
+machine that can non-deterministically fail because the machine runs
+out of water or beans), a small number of additional runs were
+required to explore different possible paths.  Not surprisingly, the
+manually-refined P environment (P+M) can often
+greatly improve upon the default baseline, but even here may sometimes
+require hundreds of executions to manifest a bug (e.g., consider
+\textsf{ChainReplication} or \textsf{Paxos}), compared to the single
+execution that \name{} generates.
 
 
 The last group of columns in \autoref{tab:evaluation} provides details
@@ -230,10 +223,7 @@ on the cost of our synthesis procedure. The first column presents
 total synthesis time (t$_\text{total}$), which takes anywhere from
 $1.13$ to $60.39$ seconds (\textbf{Q3}); synthesis time is
 proportional to benchmark complexity, as reflected in the \#$\eff{op}$
-and \#qualifier columns.  Notably, the synthesis time is much shorter
-than the average time required for a random input message generator to
-detect a safety violation in two-thirds of the benchmarks,
-particularly in the more complex cases.  The last three columns
+and \#qualifier columns.   The last three columns
 additionally analyze the behaviors of \name{} with respect to the
 number of SAT queries (\#SAT), as well as the number of forward
 synthesis (\#fw) and backward synthesis steps (\#bw) performed by the
@@ -248,76 +238,79 @@ which future iterations cannot resolve.
 
 \paragraph{Case study}
 We demonstrate that \name{} can be applied to real-world scenarios, as
-illustrated in the \textsf{Kermit2PCModel} benchmark, which models a
-two-phase commit (2PC) protocol used in production by a major cloud
-provider. The original P model checks a consistency property for 2PC
-transactions, specifically that if there exists a key $\Code{k}$
-updated within an active transaction $\Code{i}$, any successful read
-response asking its value, should return the value last written to
-$\Code{k}$ made by that transaction. We can express a violation
-of this property in LTL$_f$ as:
-{\small\begin{align*} \finalA (&\msg{updateRsp}{tid = \Code{i} \land
-    key = \Code{k} \land v = \Code{x} \land st = \Code{OK}} \land
-  \\&\nextA \neg \msg{updateRsp}{tid = \Code{i} \land key = \Code{k}
-    \land st = \Code{OK}} \untilA \msg{readRsp}{tid = \Code{i} \land
-    key = \Code{k} \land v \not= \Code{x} \land st = \Code{OK}})
+illustrated in the \textsf{Anon2PCModel} benchmark, which models a
+two-phase commit (2PC) protocol used by a major cloud provider. The
+original P model checks a consistency property for 2PC transactions,
+specifically that if there exists a key $\Code{k}$ updated within an
+active transaction $\Code{i}$, any successful read response asking its
+value should return the value last written to $\Code{k}$ made by that
+transaction. We can express a violation of this property in LTL$_f$
+as: {\small\begin{align*} \finalA (&\msg{updateRsp}{tid = \Code{i}
+    \land key = \Code{k} \land v = \Code{x} \land st = \Code{OK}}
+  \land \\&\nextA \neg \msg{updateRsp}{tid = \Code{i} \land key =
+    \Code{k} \land st = \Code{OK}} \untilA \msg{readRsp}{tid =
+    \Code{i} \land key = \Code{k} \land v \not= \Code{x} \land st =
+    \Code{OK}})
 \end{align*}}\noindent
 where the field $tid$ represents the transaction id, while other
 fields have the same meanings as in the example from
-
-\autoref{sec:intro}.  Generating a scenario that exposes this
-violation is challenging because it requires (a) initiating a new
-transaction with transaction id $\Code{i}$, (b) successfully
-performing a write within that transaction, and then (c) subsequently
-performing a read within $\Code{i}$.  This is an extremely challenging
-sequence of steps for a controller to generate if it has no guidance
-on the property it is trying to violate.  In contrast, since the \PAT
-for $\eff{readReq}$ includes a history automaton $\finalA
-\msg{startTxnRsp}{tid = \Code{i}}$ that requires the user to have
-previously received a valid transaction id $\Code{i}$, \name{} can
-directly synthesize a controller program that strategically requests a
-new transaction to initiate triggering the intended violation.
-
-..................
-
-\autoref{sec:intro}. This scenario is challenging because the
-violation requires observing a successful $\eff{readRsp}$ with an
-incorrect value ($v \neq \Code{x}$), the failed $\eff{readRsp}$ won't violate the safety property. The successful response can only occur when the
-preceding $\eff{readReq}$ selects a transaction id $\Code{i}$ that maintained by server, where user can send $\eff{startTxnReq}$ to get new transaction id from server with corresponding response ($\eff{startTxnRsq}$).
-% which is managed by the underlying storage system rather than the
-% user.
-% \SJ{This is sentence is confusing - what does it mean for a transaction
-%   id to be managed by the storage system and not the user?  Can you
-%   provide an explicit scenario where this can happen?}
-% This can only occur when the
-% preceding $\eff{readReq}$ selects a valid transaction id $\Code{i}$,
-% which is managed by the underlying storage system rather than the
-% user. 
-Without explicitly requesting a new transaction, the random input message generator
-has virtually no chance of ``guessing'' a valid transaction
-id. However, since the \PAT for $\eff{readReq}$ includes a history
-automaton $\finalA \msg{startTxnRsp}{tid = \Code{i}}$, requiring that
-the user previously received a valid transaction id $\Code{i}$,
-\name{} can synthesize a controller program that strategically
-requests a new transaction to trigger the intended violation.
+\autoref{sec:intro}.  Generating a fault-inducing scenario requires
+(a) initiating a new transaction with transaction id $\Code{i}$, (b)
+successfully performing a write within that transaction, and then (c)
+subsequently performing a read within $\Code{i}$ that yields a
+different value than the one last written.  This is an extremely
+challenging sequence of steps for a controller to automatically
+generate if it has no guidance on the property it is trying to
+violate.  In contrast, since the \PAT for $\eff{readReq}$ includes a
+history automaton $\finalA \msg{startTxnRsp}{tid = \Code{i}}$ that
+requires the user to have previously received a valid transaction id
+$\Code{i}$, \name{} can directly synthesize a controller program that
+strategically requests a new transaction to initiate triggering the
+intended violation.  Indeed, A version of the benchmark in which this
+sequence structure is manually enforced can discover the violation in
+51 executions, but at the cost of a notably more complex model.
 
 
-We have evaluated \name{} on a corpus of complex reactive distributed
-system models drawn from a variety of sources (described in the
-caption of \autoref{tab:evaluation}) (\textbf{Q1}). We test the
-correctness of these models against a number of consistency and safety
-properties, including Read-Your-Writes (RYW) consistency introduced in
-\autoref{sec:overview}, strong consistency, and unique leader
-invariants, among others.  For example, \textsc{RingLeaderElection}
-models a leader election algorithm.  Each message transmitted by the
-model's actors contain a source ($\I{src}$) and destination
-($\I{dest}$), to allow recipient's to distinguish
-messages from different nodes.
-Then, a symbolic event $\msg{elect}{\I{src} = \Code{n} \land \I{dest} = \Code{m} \land \I{leader} = \Code{ld} }$ indicates a node $\Code{n}$ sends node $\Code{m}$ an election message for node $\Code{ld}$ as leader. In the ring leader election algorithm, nodes compare the input elected leader with themselves: if they match, the node announce itself leader; if the elected leader has lower priority, it insists on itself; otherwise, it agrees with the input election message. For an incorrect implementation where receiver nodes never insist on itself as leader, the unique-leader policy may be violated with the following trace:
-{\footnotesize
-\[
-\zevent{wakeup}{\Code{n_1}}; \zevent{wakeup}{\Code{n_2}}; \zevent{elect}{\Code{n_1, n_2, n_1}}; \zevent{elect}{\Code{n_2, n_1, n_2}}; \zevent{elect}{\Code{n_1, n_2, n_2}}; \zevent{elect}{\Code{n_2, n_1, n_1}}; \zevent{leader}{\Code{n_1}}; \zevent{leader}{\Code{n_2}}
-\]
-}\noindent
-which assume there are two nodes ($\Code{n_1}$ and $\Code{n_2}$) in the ring. After waken up (\(\eff{wakeup}\)), they \emph{don't receive message} from each other before after they elects themselves as leader (e.g., $\zevent{elect}{\Code{n_1, n_2, n_1}}$). After receiving each other’s election messages, they both switch to elect each other as leader \emph{simultaneously}, causing each to declare itself as leader (\(\eff{leader}\)), violating the unique-leader policy. Further details on the reactive distributed system and safety properties used in our benchmarks are provided in \techreport{}.
+%% ..................
+
+%% \autoref{sec:intro}. This scenario is challenging because the
+%% violation requires observing a successful $\eff{readRsp}$ with an
+%% incorrect value ($v \neq \Code{x}$), the failed $\eff{readRsp}$ won't violate the safety property. The successful response can only occur when the
+%% preceding $\eff{readReq}$ selects a transaction id $\Code{i}$ that maintained by server, where user can send $\eff{startTxnReq}$ to get new transaction id from server with corresponding response ($\eff{startTxnRsq}$).
+%% % which is managed by the underlying storage system rather than the
+%% % user.
+%% % \SJ{This is sentence is confusing - what does it mean for a transaction
+%% %   id to be managed by the storage system and not the user?  Can you
+%% %   provide an explicit scenario where this can happen?}
+%% % This can only occur when the
+%% % preceding $\eff{readReq}$ selects a valid transaction id $\Code{i}$,
+%% % which is managed by the underlying storage system rather than the
+%% % user. 
+%% Without explicitly requesting a new transaction, the random input message generator
+%% has virtually no chance of ``guessing'' a valid transaction
+%% id. However, since the \PAT for $\eff{readReq}$ includes a history
+%% automaton $\finalA \msg{startTxnRsp}{tid = \Code{i}}$, requiring that
+%% the user previously received a valid transaction id $\Code{i}$,
+%% \name{} can synthesize a controller program that strategically
+%% requests a new transaction to trigger the intended violation.
+
+
+%% We have evaluated \name{} on a corpus of complex reactive distributed
+%% system models drawn from a variety of sources (described in the
+%% caption of \autoref{tab:evaluation}) (\textbf{Q1}). We test the
+%% correctness of these models against a number of consistency and safety
+%% properties, including Read-Your-Writes (RYW) consistency introduced in
+%% \autoref{sec:overview}, strong consistency, and unique leader
+%% invariants, among others.  For example, \textsc{RingLeaderElection}
+%% models a leader election algorithm.  Each message transmitted by the
+%% model's actors contain a source ($\I{src}$) and destination
+%% ($\I{dest}$), to allow recipient's to distinguish
+%% messages from different nodes.
+%% Then, a symbolic event $\msg{elect}{\I{src} = \Code{n} \land \I{dest} = \Code{m} \land \I{leader} = \Code{ld} }$ indicates a node $\Code{n}$ sends node $\Code{m}$ an election message for node $\Code{ld}$ as leader. In the ring leader election algorithm, nodes compare the input elected leader with themselves: if they match, the node announce itself leader; if the elected leader has lower priority, it insists on itself; otherwise, it agrees with the input election message. For an incorrect implementation where receiver nodes never insist on itself as leader, the unique-leader policy may be violated with the following trace:
+%% {\footnotesize
+%% \[
+%% \zevent{wakeup}{\Code{n_1}}; \zevent{wakeup}{\Code{n_2}}; \zevent{elect}{\Code{n_1, n_2, n_1}}; \zevent{elect}{\Code{n_2, n_1, n_2}}; \zevent{elect}{\Code{n_1, n_2, n_2}}; \zevent{elect}{\Code{n_2, n_1, n_1}}; \zevent{leader}{\Code{n_1}}; \zevent{leader}{\Code{n_2}}
+%% \]
+%% }\noindent
+%% which assume there are two nodes ($\Code{n_1}$ and $\Code{n_2}$) in the ring. After waken up (\(\eff{wakeup}\)), they \emph{don't receive message} from each other before after they elects themselves as leader (e.g., $\zevent{elect}{\Code{n_1, n_2, n_1}}$). After receiving each other’s election messages, they both switch to elect each other as leader \emph{simultaneously}, causing each to declare itself as leader (\(\eff{leader}\)), violating the unique-leader policy. Further details on the reactive distributed system and safety properties used in our benchmarks are provided in \techreport{}.
 
