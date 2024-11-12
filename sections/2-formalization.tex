@@ -200,9 +200,9 @@ $\phi$.\footnote{When the fields of an event are clear from context,
 various set operators (i.e., complement $\neg$, intersection $\land$,
 and union $\lorA$) are defined normally. These operators are
 sufficient to express other modalities, e.g., eventually ($\finalA$),
-globally ($\globalA$), and importantly, the singleton (last) modality
+globally\footnote{Specifically, the formula \(\allTL\), \(\epsTL\), and \(\empTL\) represent the set of all possible traces, the singleton set containing the empty trace ($\{[]\}$), and the empty set of traces, respectively, analogous to \( .^* \), \(\epsilon\), and \(\emptyset\) in regular expressions.} ($\globalA$), and importantly, the singleton (last) modality
 $\lastA$, which describes a singleton trace, i.e., one which prohibits
-any subsequent effects~\cite{LTLf}.% .
+any subsequent effects~\cite{LTLf}.
 
 % In addition to the temporal next ($\nextA A$) and until operators ($A
 % \untilA A$), the syntax of HATs includes negation ($\neg A$),
@@ -299,8 +299,7 @@ was triggered by a previous event.
 {\small
 \begin{flalign*}
  &\text{\textbf{Auxiliary Typing}} & \fbox{$\Gamma \wellfoundedvdash \tau \quad \Gamma \vdash A \subseteq A \quad \Gamma \vdash \tau <: \tau$} &
-  &\text{\textbf{Typing}} &  &\fbox{$\Gamma~;~\Delta \vdash \eff{op} :
-    \tau \quad \Gamma \vdash v : t \quad \Gamma;~ \Delta;~ \Theta \vdash e: \tau$}
+  &\text{\textbf{Typing}} &  &\fbox{$\Gamma \vdash v : t \quad \Gamma;~ \Delta;~ \Theta \vdash e: \tau$}
 \end{flalign*}
 }
 \\ \
@@ -325,15 +324,18 @@ $\Gamma; \Delta; \Theta \vdash \tau <: \tau'$}
 {TSub}
 {$\Gamma; \Delta; \Theta \vdash e: \tau'$}
 \\[.3em]
-\mprooftr{35mm}
-{}
-{TRet}
-{$\Gamma; \Delta; \emptyset \vdash () : \rg{H}{\epsTL}{F}$}
-\quad
-\mprooftr{77mm}
+\mprooftr{21mm}
 {
-$\Delta(\eff{op}) =\langle \eff{gen}~\overline{x_i{:}t_i}\sarr
-\rg{H}{\lastA\msg{op}{\phi}}{A \seqA F}, \Theta' \rangle$ \quad
+$\Gamma; \Delta; \Theta \vdash e_1 : \tau$ \quad $\Gamma; \Delta; \Theta \vdash e_2 : \tau$
+ }
+{TChoice}
+{$\Gamma; \Delta; \Theta \vdash e_1 \oplus e_2 : \tau$}
+\quad
+\mprooftr{87mm}
+{
+$\Delta(\eff{op}) =\langle \mykw{gen}\;\tau, \Theta' \rangle$ \quad
+$\Gamma \vdash \tau <: \overline{x_i{:}t_i}\sarr
+\rg{H}{\lastA\msg{op}{\phi}}{A \seqA F}$ \quad
 $\forall i. \Gamma \vdash v_i : t_i$ \quad
  $\Gamma; \Delta; \Theta \cup \Theta' \vdash e : \rg{H \seqA \lastA\msg{op}{\phi\msubst{x_i}{v_i}}}{A}{F}$
  }
@@ -347,24 +349,22 @@ $\forall i. \Gamma \vdash v_i : t_i$ \quad
 % {TEOp}
 % {$\Gamma \vdash \eff{op} : \tau$}
 % \
-\mprooftr{21mm}
-{
-$\Gamma; \Delta; \Theta \vdash e_1 : \tau$ \quad $\Gamma; \Delta; \Theta \vdash e_2 : \tau$
- }
-{TChoice}
-{$\Gamma; \Delta; \Theta \vdash e_1 \oplus e_2 : \tau$}
-\
+\mprooftr{35mm}
+{}
+{TRet}
+{$\Gamma; \Delta; \emptyset \vdash () : \rg{H}{\epsTL}{F}$}
+\quad
 \mprooftr{77mm}
 {
-  $\Delta(\eff{op}) =\langle \eff{obs}~\overline{x_i{:}t_i}\sarr
-\rg{H}{\lastA\msg{op}{\phi}}{A \seqA F}, \Theta'\rangle$ \quad
+  $\Delta(\eff{op}) =\langle \mykw{obs}\;\tau, \Theta'\rangle$ \quad
+$\Gamma \vdash \tau <: \overline{x_i{:}t_i}\sarr
+\rg{H}{\lastA\msg{op}{\phi}}{A \seqA F}$ \quad
  $\Gamma, \overline{x{:}t}; \Delta; \Theta \cup \Theta' \vdash e : \rg{H \seqA \lastA\msg{op}{\phi}}{A}{F}$
  }
 {TObs}
 {$\Gamma; \Delta; \{\eff{op}\} \cup \Theta \vdash \zobs{\overline{x}}{op}{e} : \rg{H}{\lastA\msg{op}{\phi} \seqA A}{F}$}
 }
-\caption{Selected typing rules. \BD{\textsc{TEOp} is currently
-    redundant.}}
+\caption{Selected typing rules.}
 \label{fig:selected-typing-rules}
 \vspace*{-.2in}
 \end{figure}
@@ -471,9 +471,9 @@ allows controllers to explore different message orderings.
   into a shape consistent with $\negSCA'$:
   {\footnotesize
     \begin{align*}
-      &\underline{(\eff{writeReq}, \Code{x}\hasnty{int}
+      &\underline{\Delta(\eff{writeReq}) = \langle \Code{x}\hasnty{int}
         \sarr \rg{\allTL}{\lastA\msg{writeReq}{v =
-        \Code{x}}}{\finalA\msg{writeRsp}{v = \Code{x}}}) \in \Delta} \\
+        \Code{x}}}{\finalA\msg{writeRsp}{v = \Code{x}}}, \{\eff{writeRsp}\} \rangle} \\
       & \underline{\Gamma \vdash \eff{writeReq}: \Code{x}\hasnty{int} \sarr
         \rg{\allTL}{\lastA\msg{writeReq}{v =
         \Code{x}}}{\finalA\msg{writeRsp}{v = \Code{x}}}
