@@ -171,6 +171,8 @@ can specify this safety property as the following LTL$_f$ formula:
   \begin{align*}
 \neg (\msg{putReq}{k = \Code{key} \land v = \Code{val}} \land \nextA (\neg \msg{putReq}{k = \Code{key}} \untilA \msg{getRsp}{k = \Code{key} \land v \not= \Code{val}}))
   \end{align*}}\noindent
+
+{\color{red} AD: lets make sure we have defined the LTL operators before they appear for the first time, next and until.}
 Observe that probing if a store is SC cannot be done by testing how
 messages are handled in isolation, as a violation of SC crucially
 depends on a specific sequence of get and put messages with

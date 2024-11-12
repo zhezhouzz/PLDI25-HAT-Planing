@@ -262,9 +262,9 @@ future events.
       \mykw{obs}~ \eff{writeRsp} ~:~ & \Code{x}\hasnty{int} \sarr \rg{\allTL}{\lastA\msg{writeRsp}{v = \Code{x} }}{\allTL}
       \\[.5em]
       \mykw{gen}~ \eff{readReq} ~:~ &  \Code{x}\hasnty{int}\garr
-                                      \rg{\finalA \msg{writeRsp}{v =
+                                      \rg{\finalA \msg{writeReq}{v =
                                       \Code{x}} \land
-                                      \neg\nextA\finalA\msg{writeRsp}{\top}}{\lastA\msg{readReq}{\top}}{\finalA\msg{readRsp}{v
+                                      \neg\nextA\finalA\msg{writeReq}{\top}}{\lastA\msg{readReq}{\top}}{\finalA\msg{readRsp}{v
                                       = \Code{x} \land st = \true}}
       \\[-1pt] & \interty  \rg{\neg\finalA
                  \msg{writeReq}{\top}}{\lastA\msg{readReq}{\top}}{\finalA\msg{readRsp}{st
@@ -302,6 +302,8 @@ assume little information about the behaviors of the handlers for
 $\eff{readRsp}$ and $\eff{writeRsp}$ messages, as can been seen by
 their prophecy automata, which provide no guarantees about any future
 messages they may produce ($\allTL$).
+
+To prevent the violation of the RYW policy, a stronger \PAT for \(\eff{writeReq}\) is required, i.e., with the prophecy automata \((\neg \msg{readReq}{\top}) \untilA \msg{writeRsp}{v = \Code{x}}\). This \PAT ensures atomicity by guaranteeing that no read operation occurs before the write operation completes (i.e., before \(\eff{writeRsp}\) is received).
 
 \paragraph{Control flow} A handler's \PAT{} also captures its relevant
 control-flow dependencies. For example, the type of $\eff{readReq}$
