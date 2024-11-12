@@ -262,9 +262,9 @@ future events.
       \mykw{obs}~ \eff{writeRsp} ~:~ & \Code{x}\hasnty{int} \sarr \rg{\allTL}{\lastA\msg{writeRsp}{v = \Code{x} }}{\allTL}
       \\[.5em]
       \mykw{gen}~ \eff{readReq} ~:~ &  \Code{x}\hasnty{int}\garr
-                                      \rg{\finalA \msg{writeRsp}{v =
+                                      \rg{\finalA \msg{writeReq}{v =
                                       \Code{x}} \land
-                                      \neg\nextA\finalA\msg{writeRsp}{\top}}{\lastA\msg{readReq}{\top}}{\finalA\msg{readRsp}{v
+                                      \neg\nextA\finalA\msg{writeReq}{\top}}{\lastA\msg{readReq}{\top}}{\finalA\msg{readRsp}{v
                                       = \Code{x} \land st = \true}}
       \\[-1pt] & \interty  \rg{\neg\finalA
                  \msg{writeReq}{\top}}{\lastA\msg{readReq}{\top}}{\finalA\msg{readRsp}{st
