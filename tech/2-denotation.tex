@@ -76,9 +76,8 @@
   \\ &\denot{ x{:}t\garr\tau } &&\doteq \{ e ~|~ 
     \emptyset \basicvdash e : \eraserf{\tau} \land 
     \forall c \in \denot{t}. e \in  \denot{ \tau[x\mapsto c ] } \}
-  \\ &\denot{\rg{H}{A}{F}} &&\doteq \{e ~|~ \emptyset \basicvdash e : \Code{unit} \land \forall \alpha_h\;\alpha\;\alpha_f\;\beta\;\beta'\;e_h\;e_f.
-  \\&&& \qquad\qquad \msteptr{[]}{(\emptyset, e_h)}{\alpha_h}{(\beta, ())} \land \msteptr{\alpha_h}{(\beta, e)}{\alpha}{(\beta', ())} \land \msteptr{\alpha_h \listconcat \alpha }{(\beta', e_f)}{\alpha_f}{(\emptyset, ())} \impl
-  \\&&& \qquad\qquad (\alpha_h \in\denot{H} \land \alpha_f \in\denot{F} \impl \alpha \in\denot{A}) \}
+  \\ &\denot{\rg{H}{A}{F}} &&\doteq \{e ~|~ \emptyset \basicvdash e : \Code{unit} \land \forall \alpha_h \in\denot{H}.\forall \alpha_f \in\denot{F}. \forall \alpha\; \beta\;\beta'\;e_h\;e_f.
+  \\&&& \qquad\qquad \msteptr{[]}{(\emptyset, e_h)}{\alpha_h}{(\beta, ())}\land \msteptr{\alpha_h}{(\beta, e)}{\alpha}{(\beta', ())} \land \msteptr{\alpha_h \listconcat \alpha }{(\beta', e_f)}{\alpha_f}{(\emptyset, ())} \impl \alpha \in\denot{A} \}
   \\ &\denot{ \tau_1 \interty \tau_2 } &&\doteq \denot{\tau_1} \cap \denot{\tau_2}
 \end{align*}
 \vspace{-1.5em}

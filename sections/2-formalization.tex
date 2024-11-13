@@ -2,7 +2,7 @@
 
 \begin{figure}[t!]
   \vspace{-.3cm}
-{\small
+{\footnotesize
   \begin{alignat*}{2}
     \text{\textbf{Variables }}& \quad &\quad& x, y, z, \vnu, ...
     \\\text{\textbf{Base Types}}& \quad & b  ::= \quad &  \Code{unit} ~|~ \Code{bool} ~|~ \Code{nat} ~|~ \Code{int} ~|~ ...
@@ -15,8 +15,10 @@
     \\ \text{\textbf{Expressions}}& \quad & e ::=\quad & v ~|~ \zlet{x{:}b}{\primop\ \overline{v}}{e} ~|~ \zgen{op}{\overline{v}}{e} ~|~ \zobs{\overline{x{:}b}}{op}{e}
     \\ & & \quad & ~|~  \zassert{\phi}{e} ~|~  \zassume{\phi}{e} ~|~ e \oplus e
   \end{alignat*}}
+\vspace*{-.25in}
 \caption{$\DSL$ syntax }
 \label{fig:term-syntax}
+\vspace*{-.2in}
 \end{figure}
 
 We formalize our approach using a core language, $\DSL$, for
@@ -32,9 +34,10 @@ assertions. Effectful operations are categorized as either
 (e.g., $\eff{obs}$).
 
 \begin{figure}[ht!]
+\vspace*{-.15in}
 {\footnotesize
 {\small\begin{align*}
-\text{\textbf{Messages}}& \  & m ::= \   & \zevent{op}{\overline{c}}
+\text{\textbf{Messages}}& \  & m ::= \   & \zevent{op}{\overline{v}}
 \qquad
 \text{\textbf{Buffers}}& \  &\beta \in \mathcal{P}(m)  &
 \qquad
@@ -42,9 +45,10 @@ assertions. Effectful operations are categorized as either
     \emptr ~|~ m \;{::}\; \alpha ~|~ \alpha
     \listconcat \alpha
 \end{align*}
+\vspace*{-.2in}
 \begin{align*}
   \text{\textbf{Handler Semantics }} & \fbox{$\alpha \vDash
-                                       \zevent{op}{\overline{c}}
+                                       \zevent{op}{\overline{v}}
                                        \Downarrow \beta$} &
                                                             \quad\quad\quad
                                                             \text{\textbf{Operational
@@ -86,12 +90,14 @@ $\steptr{\alpha}{(\buf, \zassume{\phi}{e})}{[]}{(\buf, e\msubst{x}{c})}$
 $\steptr{\alpha}{(\buf, \zassert{\phi}{e}}{[]}{(\buf, e)}$
 }
   }
+\vspace*{-.1in}
   \caption{Selected Operational Semantics}
   \label{fig:selected-semantics}
+\vspace*{-.2in}
 \end{figure}
 
 \paragraph{Operational Semantics} Messages in $\DSL$ are operations
-applied to concrete values $(\zevent{op}{\overline{c}})$. Evaluating a
+applied to concrete values $(\zevent{op}{\overline{v}})$. Evaluating a
 $\DSL$ program depends on an input \emph{trace}, i.e., a sequence of
 messages, and an input \emph{buffer}, i.e., an element of a bag or multiset of
 messages. Each evaluation step produces an output trace and an updated
@@ -165,11 +171,11 @@ assert expression to hold in order for it to make progress.
     \\ \text{\textbf{Prophecy Automata Types}}& \quad & \tau  ::= \quad &
     \rg{H}{A}{F} ~|~ x{:}b \garr \tau ~|~ x{:}t\sarr \tau ~|~ \tau \interty \tau
     \\\text{\textbf{Type Contexts}}& \quad &\Gamma ::= \quad  &\emptyset ~|~ x{:}t, \Gamma
-  \end{alignat*}}
-\vspace{-1.8em}}
+  \end{alignat*}}}
+\vspace*{-.15in}
 \caption{\langname{} types.}
 \label{fig:type-syntax}
-\vspace{-.2cm}
+\vspace*{-.15in}
 \end{figure}
 
 
@@ -323,7 +329,7 @@ $\Gamma \vdash F_1 \subseteq F_2$ }
 $\Gamma; \Delta; \Theta \vdash \tau <: \tau'$}
 {TSub}
 {$\Gamma; \Delta; \Theta \vdash e: \tau'$}
-\\[.3em]
+\\[.4em]
 \mprooftr{21mm}
 {
 $\Gamma; \Delta; \Theta \vdash e_1 : \tau$ \quad $\Gamma; \Delta; \Theta \vdash e_2 : \tau$
@@ -341,7 +347,7 @@ $\forall i. \Gamma \vdash v_i : t_i$ \quad
  }
 {TGen}
 {$\Gamma; \Delta; \Theta \vdash \zgen{op}{\overline{v_i}}{e} : \rg{H}{\lastA\msg{op}{\phi\msubst{x_i}{v_i}} \seqA A}{F}$}
-\\[.3em]
+\\[.4em]
 % \mprooftr{15mm}
 % {
 % $\Delta(\eff{op}) \langle \tau, $
@@ -354,19 +360,20 @@ $\forall i. \Gamma \vdash v_i : t_i$ \quad
 {TRet}
 {$\Gamma; \Delta; \emptyset \vdash () : \rg{H}{\epsTL}{F}$}
 \quad
-\mprooftr{77mm}
+\mprooftr{81mm}
 {
   $\Delta(\eff{op}) =\langle \mykw{obs}\;\tau, \Theta'\rangle$ \quad
 $\Gamma \vdash \tau <: \overline{x_i{:}t_i}\sarr
-\rg{H}{\lastA\msg{op}{\phi}}{A \seqA F}$ \quad
- $\Gamma, \overline{x{:}t}; \Delta; \Theta \cup \Theta' \vdash e : \rg{H \seqA \lastA\msg{op}{\phi}}{A}{F}$
+\rg{H}{\lastA\msgB{op}{\overline{y}}{\phi}}{A \seqA F}$ \quad
+ $\Gamma, \overline{x{:}t}; \Delta; \Theta \cup \Theta' \vdash e : \rg{H \seqA \lastA\msgB{op}{\overline{y}}{\phi \land \overline{y = x}}}{A}{F}$
  }
 {TObs}
-{$\Gamma; \Delta; \{\eff{op}\} \cup \Theta \vdash \zobs{\overline{x}}{op}{e} : \rg{H}{\lastA\msg{op}{\phi} \seqA A}{F}$}
+{$\Gamma; \Delta; \{\eff{op}\} \cup \Theta \vdash \zobs{\overline{x}}{op}{e} : \rg{H}{\lastA\msgB{op}{\overline{y}}{\phi} \seqA A}{F}$}
 }
+% \vspace*{-.1in}
 \caption{Selected typing rules.}
 \label{fig:selected-typing-rules}
-\vspace*{-.2in}
+\vspace*{-.15in}
 \end{figure}
 
 \paragraph{Auxiliary typing relations}
@@ -411,7 +418,7 @@ the type of the corresponding handler from $\Delta$,
 $\rg{H}{\lastA\msg{op}{\phi}}{A\seqA F}$, and require that it aligns
 with the \PAT{} of the expression that the operation is being
 performed in:%
-{\small
+{\footnotesize
   \begin{align*}
     \underbrace{ H
     }_\texttt{history}\;\seqA\;\underbrace{ \lastA
@@ -458,7 +465,7 @@ allows controllers to explore different message orderings.
         \Code{y} \land v \not= \Code{x}} \seqA
         \lastA\msg{writeRsp}{v = \Code{y}} \seqA
         \lastA\msg{readReq}{\top}
-        }_\texttt{$A_2$} \seqA \\
+        }_\texttt{$A_2$} \seqA \\[-.3em]
       &\underbrace{ \lastA\msg{writeRsp}{v =
         \Code{x}}
         }_\texttt{$A_3$} \seqA \underbrace{ \lastA\msg{readRsp}{v =
@@ -508,17 +515,26 @@ handler specification $\Delta$ should be consistent with the
 auxiliary semantics of handlers introduced in
 \autoref{fig:selected-semantics}, also, $\Delta$ should also guarantee the new sending message assumed by capability context can be eventually received.
 
+% \begin{definition}[Well-formed handler context]
+%   \label{lemma:built-in-typing}
+%   The handler specification $\Delta$ and capability context $\Sigma$ is well-formed iff for all operator $\eff{op}$ and its \PAT $\overline{y{:}b} \garr \overline{x{:}t} \sarr \rg{H}{\lastA\msgB{op}{\overline{y}}{\phi}}{F}$ and capability $\Theta$ in $\Delta$ satisfying
+% {\small\begin{align*}
+%     \forall \overline{y{:}b}.\forall \alpha \in \denot{A}. \forall \overline{c \in \denotation{t}}. \forall \overline{\alpha_i}. \forall \overline{m_i}.\; \alpha_1 \listconcat [m_1] \listconcat ... [m_{n}] \listconcat \alpha_{n+1} \in \denot{F} \impl \alpha \vDash \zevent{op}{\overline{c}} \Downarrow \{m_i\}
+% \end{align*}}\noindent
+% also, $\overline{y{:}\rawnuot{b}{\top}},\overline{x{:}t} \vdash F \subseteq \bigwedge_{\eff{op} \in \Theta} \finalA \msg{op}{\top}$ should hold.
+% \end{definition}
+
 \begin{definition}[Well-formed handler context]
   \label{lemma:built-in-typing}
-  The handler specification $\Delta$ and capability context $\Sigma$ is well-formed iff for all operator $\eff{op}$ and its \PAT $\overline{y{:}b} \garr \overline{x{:}t} \sarr \rg{H}{\lastA\msgB{op}{\overline{y}}{\phi}}{F}$ and capability $\Theta$ in $\Delta$ satisfying
+  The handler specification $\Delta$ is well-formed iff for all operator $\eff{op}$ and its \PAT $\overline{y{:}b} \garr \overline{x{:}t} \sarr \rg{H}{\lastA\msgB{op}{\overline{y}}{\phi}}{F}$ and capability $\{\overline{\eff{op_i}}\}$ in $\Delta$ satisfying
 {\small\begin{align*}
-    \forall \overline{y{:}b}.\forall \alpha \in \denot{A}. \forall \overline{c \in \denotation{t}}. \forall \overline{\alpha_i}. \forall \overline{m_i}.\; \alpha_1 \listconcat [m_1] \listconcat ... [m_{n}] \listconcat \alpha_{n+1} \in \denot{F} \impl \alpha \vDash \zevent{op}{\overline{c}} \Downarrow \{m_i\}
-\end{align*}}\noindent
-also, $\overline{y{:}\rawnuot{b}{\top}},\overline{x{:}t} \vdash F \subseteq \bigwedge_{\eff{op} \in \Theta} \finalA \msg{op}{\top}$ should hold.
+    &\forall \overline{y{:}b}.\forall \alpha_h \in \denot{H}. \forall \overline{c \in \denotation{t}}. \forall \overline{c_{ij}}.\forall \overline{\alpha_i}. \alpha_1 \listconcat [\zevent{op_1}{\overline{c_{1j}}}] \listconcat ... [\zevent{op_n}{\overline{c_{nj}}}] \listconcat \alpha_{n+1} \in \denot{F} \impl 
+    \\&\qquad \alpha_h \vDash \zevent{op}{\overline{c}} \Downarrow \{\zevent{op_i}{\overline{c_{ij}}}\} \land \phi\msubst{x}{c}
+\end{align*}} 
 \end{definition}
 
 
-\begin{theorem}\label{theorem:fundamental}[Fundamental Theorem] Given
+\begin{theorem}[Fundamental Theorem]\label{theorem:fundamental} Given
   a well-formed handler specification $\Delta$,
     the trace of effects produced by a well-typed term
     $e$ is captured by its corresponding \PAT $\tau$:
@@ -527,7 +543,7 @@ also, $\overline{y{:}\rawnuot{b}{\top}},\overline{x{:}t} \vdash F \subseteq \big
     \denotation{\sigma(\tau)}$.\footnote{The proofs of theorems in this section are provided in the \techreport{}.}
 \end{theorem}
 
-\begin{theorem}\label{theorem:sound}[Type Soundness] Given
+\begin{theorem}[Type Soundness]\label{theorem:sound} Given
   a well-formed handler specification $\Delta$, with ghost variables $\overline{x{:}b}$ and a violation property $A$, a controller $e$ that satisfies
   $\overline{x{:\rawnuot{b}{\top}}};\Delta;\emptyset \vdash e : \rg{\epsTL}{A}{\epsTL}$, then $e$ at least realize one trace consistent with $A$:
  {\small\begin{align*} \exists

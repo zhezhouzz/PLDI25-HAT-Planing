@@ -80,12 +80,13 @@ an SFA's traces.
 
 \subsection{Synthesis Algorithm}
 
+\setlength{\textfloatsep}{4pt}
 \begin{algorithm}[t!]
   \Params{Ghost variables $\overline{x{:}b}$, handler context
     $\Delta$, and abstract unsafe trace $\Pi$}%
   \Output{Controller $e$, such that
     $\Gamma; \Delta; \emptyset \vdash e~:~\rg{\epsTL}{\Pi}{\epsTL}$} %
-  $\Mfw, \Mbw \leftarrow \emptyset, \emptyset$ \tcp*[l]{}
+  $\Mfw, \Mbw \leftarrow \emptyset, \emptyset$ \tcp*[l]{initialize forward and backward set.}
   $\Gamma \leftarrow \overline{x{:}\rawnuot{b}{\top}}$
   \tcp*[l]{initialize type context}
 % $\Gsender \leftarrow \emptyset$ \tcp*[l]{A global message buffer}
@@ -213,6 +214,7 @@ trace at the end of an iteration (line $9$) is simply the
 concatenation of the refined history trace, target event, and refined
 future trace.
 
+\setlength{\textfloatsep}{4pt}
 \begin{algorithm}[t!]
 % \Params{A 5-tuple $(\Gamma, \Pi_h, \lastA \msgA{op}{\overline{x}}, \Pi_f, \Gchecked)$ that are type context, history, current, and future automata, as well as checked message set.}
 % \Output{Set of refined 5-tuples }
@@ -271,6 +273,7 @@ well as updated forward and backward sets (line $8$).
 
 % \SJ{Stopped here ...}
 
+\setlength{\textfloatsep}{4pt}
 \begin{algorithm}[t!]
 \Procedure{$\backward(\Delta, \Gamma, \Mfw, \Mbw, \Pi_h, \lastA \msg{op}{\phi}, \Pi_f, )$}{
     \tcp{Select the \PAT of some $\eff{op_{parent}}$ from the handler specification, who sends a message with operator $\eff{op}$}
@@ -300,7 +303,7 @@ operator $\eff{op_{parent}}$ whose handler specification has a
 prophecy automata that includes the target operator $\eff{op}$.  The
 refined abstract trace needs to align the target operator $\eff{op}$
 with its counterpart in the prophecy automata of $\eff{op_{parent}}$:
-{\small
+{\footnotesize
   \begin{align*} \underbrace{ \effL H \effR \effL
     \lastA\msg{op_{parent}}{\phi_\Code{parent}} \effR \effL F_1
     }_\texttt{actual history} \seqA \underbrace{ \lastA

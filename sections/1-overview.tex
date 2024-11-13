@@ -122,8 +122,9 @@ let (y1: int) = ?$\mykw{obs}$? ?$\eff{writeRsp}$? in ?$\mykw{assert}$? (y1 == y)
 let (x1: int) = ?$\mykw{obs}$? ?$\eff{writeRsp}$? in ?$\mykw{assert}$? (x1 == x) in
 let (y2: int) (s : bool) = ?$\mykw{obs}$? ?$\eff{readRsp}$? in ?$\mykw{assert}$? (y2 == y && s == true)
 \end{minted}
-    \caption{A controller $P_{C}$ that is consistent with \ref{eqn:autoEx}. }
-    \label{fig:2pc-term}
+\vspace*{-.1in}
+\caption{A controller $P_{C}$ that is consistent with \ref{eqn:autoEx}. }\label{fig:2pc-term}
+\vspace*{-.2in}
 \end{figure}
 
 \paragraph{Controllers}
@@ -276,8 +277,10 @@ future events.
       \\ \mykw{obs}~ \eff{readRsp} ~:~ & \Code{x}\hasnty{int}\sarr \Code{s}\hasnty{bool} \sarr \rg{\allTL}{\lastA\msg{readRsp}{v = \Code{x} \land st = \Code{s}}}{\allTL}
     \end{align*}
   }
+\vspace*{-.2in}
   \caption{Prophecy Automata Type specifications of message handlers. } %
   \label{fig:spec}
+\vspace*{-.15in}
 \end{figure}
 
 \paragraph{History, current, and prophecy automata} The specifications
@@ -394,10 +397,13 @@ messages are generated ($\epsTL$).
 \subsection{Controller Synthesis}
 
 \begin{figure}[ht!]
+\vspace*{-.1in}
     \centering
     \includegraphics[width=0.95\linewidth]{figures/intuition-plan-syn.drawio.png}
+\vspace*{-.1in}
     \caption{High-level overview of \name{} }
     \label{fig:intuition-algo}
+% \vspace*{-.1in}
 \end{figure}
 
 % For example, desirable controller should uses messages properly with respect to message specification $\Delta$, moreover, can be type checked against \PAT $\rg{\epsTL}{\negSCA}{\epsTL}$.

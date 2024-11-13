@@ -7,7 +7,7 @@ small-step operational semantics of our core language are shown in
 \begin{figure}[ht!]
 {\footnotesize
 {\small\begin{align*}
-\text{\textbf{Messages}}& \  & m ::= \   & \zevent{op}{\overline{c}}
+\text{\textbf{Messages}}& \  & m ::= \   & \zevent{op}{\overline{v}}
 \qquad
 \text{\textbf{Buffers}}& \  &\beta \in \mathcal{P}(m)  &
 \qquad
@@ -17,7 +17,7 @@ small-step operational semantics of our core language are shown in
 \end{align*}
 \begin{align*}
   \text{\textbf{Handler Semantics }} & \fbox{$\alpha \vDash
-                                       \zevent{op}{\overline{c}}
+                                       \zevent{op}{\overline{v}}
                                        \Downarrow \beta$} &
                                                             \quad\quad\quad
                                                             \text{\textbf{Operational
@@ -55,13 +55,13 @@ $\steptr{\alpha}{(\buf, e_1 \oplus e_2)}{[]}{(\buf, e_2)}$
 }
 \\ \ \\ \ \\
 \mprooftr{60mm}{
-$\phi\msubst{x}{c}$
+$\phi\msubst{x}{c} \Downarrow \top$
 }{StAssume}{
 $\steptr{\alpha}{(\buf, \zassume{\phi}{e})}{[]}{(\buf, e\msubst{x}{c})}$
 }
 \quad
-\mprooftr{40mm}{}{StAssert}{
-$\steptr{\alpha}{(\buf, \zassert{\true}{e}}{[]}{(\buf, e)}$
+\mprooftr{40mm}{$\phi \Downarrow \top$}{StAssert}{
+$\steptr{\alpha}{(\buf, \zassert{\phi}{e}}{[]}{(\buf, e)}$
 }
 }
   \caption{Full Operational Semantics}
@@ -69,3 +69,161 @@ $\steptr{\alpha}{(\buf, \zassert{\true}{e}}{[]}{(\buf, e)}$
 \end{figure}
 
 \section{Basic Typing Rules}\label{sec:tech:basic-typing}
+
+The basic typing rules of our core language and qualifiers are shown
+in \autoref{fig:basic-type-rules} and
+\autoref{fig:basic-qualifier-type-rules}. We use an auxiliary function
+$\Code{Ty}$ to provide a basic type for the primitives of our language,
+e.g., constants, built-in operators, and data constructors.
+
+\begin{alignat*}{2}
+    \text{\textbf{Basic Types}}& \quad & s  ::= \quad & b ~|~ s \sarr s
+\end{alignat*}
+
+\begin{figure}[h!]
+ {\footnotesize
+ {\small
+\begin{flalign*}
+ &\text{\textbf{Basic Typing }} & \fbox{$\Gamma \basicvdash e : s$}
+\end{flalign*}}
+\\ \
+\begin{prooftree}
+\hypo{}
+\infer1[\textsc{BtConst}]{
+\Gamma \basicvdash c : \Code{Ty}(c)
+}
+\end{prooftree}
+\quad
+\begin{prooftree}
+\hypo{ \Gamma(x) = s }
+\infer1[\textsc{BtVar}]{
+\Gamma \basicvdash x : s
+}
+\end{prooftree}
+\\ \ \\ \ \\
+\begin{prooftree}
+\hypo{\Code{Ty}(\primop) = \overline{s_i}{\sarr}s_x \quad \forall i. \Gamma \basicvdash v_i : s_i \quad \Gamma, x{:}s_x \basicvdash e : s}
+\infer1[\textsc{BtPureOp}]{
+\Gamma \basicvdash \zlet{x}{\primop\, \overline{v_i}}{e} : s
+}
+\end{prooftree}
+\quad
+\begin{prooftree}
+\hypo{\Code{Ty}(\eff{op}) = \overline{s_i}{\sarr}s_x \quad \forall i. \Gamma \basicvdash v_i : s_i \quad \Gamma \basicvdash e : s}
+\infer1[\textsc{BtGen}]{
+\Gamma \basicvdash \zgen{op}{\overline{v}}{e} : s
+}
+\end{prooftree}
+\\ \ \\ \ \\
+\begin{prooftree}
+\hypo{\Code{Ty}(\eff{op}) = \overline{s_i}{\sarr}s_x \quad \Gamma, \overline{x_i{:}s_x} \basicvdash e : s}
+\infer1[\textsc{BtGen}]{
+\Gamma \basicvdash \zobs{\overline{x_i}}{op}{e} : s
+}
+\end{prooftree}
+\quad
+\begin{prooftree}
+\hypo{\Gamma \basicvdash e_1 : s
+\quad \Gamma \basicvdash e_2 : s}
+\infer1[\textsc{BtChoice}]{
+\Gamma \basicvdash e_1 \oplus e_2 : s
+}
+\end{prooftree}
+\\ \ \\ \ \\
+\begin{prooftree}
+\hypo{\Gamma \basicvdash \phi : \Code{bool} \quad \Gamma \basicvdash e : s}
+\infer1[\textsc{BtAssume}]{
+\Gamma \basicvdash \zassume{\phi}{e} : s
+}
+\end{prooftree}
+\quad
+\begin{prooftree}
+\hypo{\Gamma \basicvdash \phi : \Code{bool} \quad \Gamma \basicvdash e : s}
+\infer1[\textsc{BtAssert}]{
+\Gamma \basicvdash \zassert{\phi}{e} : s
+}
+\end{prooftree}
+}
+\caption{Basic Typing Rules}
+    \label{fig:basic-type-rules}
+\end{figure}
+
+\begin{figure}
+ {\footnotesize
+ {\small
+\begin{flalign*}
+ &\text{\textbf{Basic Qualifier Typing }} & \fbox{$\Gamma \basicvdash \phi: s$}
+\end{flalign*}}
+\\ \
+\begin{prooftree}
+\hypo{\Code{Ty}(c) = s }
+\infer1[\textsc{BtLitConst}]{
+\Gamma \basicvdash c : s
+}
+\end{prooftree}
+\quad
+\begin{prooftree}
+\hypo{ \Gamma(x) = s }
+\infer1[\textsc{BtLitVar}]{
+\Gamma \basicvdash x : s
+}
+\end{prooftree}
+\quad
+\begin{prooftree}
+\hypo{ }
+\infer1[\textsc{BtTop}]{
+\Gamma \basicvdash \top : \Code{bool}
+}
+\end{prooftree}
+\quad
+\begin{prooftree}
+\hypo{ }
+\infer1[\textsc{BtBot}]{
+\Gamma \basicvdash \bot : \Code{bool}
+}
+\end{prooftree}
+\\ \ \\ \ \\
+\begin{prooftree}
+\hypo{\Code{Ty}(\primop) = \overline{s_i}{\sarr}s \quad \forall i. \Gamma \basicvdash l_i : s_i }
+\infer1[\textsc{BtLitOp}]{
+\Gamma \basicvdash \primop\,\overline{l_i} : s
+}
+\end{prooftree}
+\quad
+\begin{prooftree}
+\hypo{
+\Gamma \basicvdash \phi : \Code{bool} }
+\infer1[\textsc{BtNeg}]{
+\Gamma \basicvdash \neg \phi : \Code{bool}
+}
+\end{prooftree}
+\\ \ \\ \ \\
+\begin{prooftree}
+\hypo{
+\Gamma \basicvdash \phi_1 : \Code{bool} \quad
+\Gamma \basicvdash \phi_2 : \Code{bool} }
+\infer1[\textsc{BtAnd}]{
+\Gamma \basicvdash \phi_1 \land \phi_2 : \Code{bool}
+}
+\end{prooftree}
+\quad
+\begin{prooftree}
+\hypo{
+\Gamma \basicvdash \phi_1 : \Code{bool} \quad
+\Gamma \basicvdash \phi_2 : \Code{bool} }
+\infer1[\textsc{BtOr}]{
+\Gamma \basicvdash \phi_1 \lor \phi_2 : \Code{bool}
+}
+\end{prooftree}
+\quad
+\begin{prooftree}
+\hypo{
+\Gamma, x{:}b \basicvdash \phi : \Code{bool} }
+\infer1[\textsc{BtForall}]{
+\Gamma \basicvdash \forall x{:}b. \phi : \Code{bool}
+}
+\end{prooftree}
+}
+\caption{Basic Qualifier Typing Rules}
+    \label{fig:basic-qualifier-type-rules}
+\end{figure}

@@ -54,7 +54,8 @@ $\mykw{obs}$ statements in the controller program, allowing it to
 control message scheduling.  The coordinator is also responsible for
 generating and sending messages from the environment (e.g., a logical
 user) to the actors under test, again respecting the order in which
-these messages appear in the synthesized program.
+these messages appear in the synthesized program. 
+The assume statements in the translated coordinator ensure that the generated message always has the expected payloads; assertion failures indicate that the system under test did not encounter the potential bug in this execution, suggesting the need for another attempt. 
 % \BD{Say something about how we handle assertion failures.}
 
 Our experimental evaluation addresses three research questions:
@@ -79,8 +80,7 @@ Our experimental evaluation addresses three research questions:
     works are annotated with their source:
     P~\cite{DGJ+13}($^{\dagger}$), ModP~\cite{ModP}($^{\diamond}$) an
     extension of P with support for modules, and
-    MessageChain~\cite{MessageChain}($^{\star}$), an automated
-    specification mining and verification tool for P.  We also include
+    MessageChain~\cite{MessageChain}($^{\star}$), an automated verification tool for P.  We also include
     a real-world model of a two-phase commit protocol
     (\textsf{Anon2PCModel}$^{\square}$) used by a major cloud vendor.
     The components under test are written in P, and handler
@@ -97,7 +97,7 @@ Our experimental evaluation addresses three research questions:
 \begin{tabular}{c||cc||cccc||ccc||c|ccc}
   \toprule
   Benchmark & \#$\eff{op}$ & \#qualifier & \#var &\#$\mykw{gen}$ & \#$\mykw{obs}$ & \#$\mykw{assert}$ & \multicolumn{3}{c||}{\# Num. Executions} & t$_\text{total}$(s) & \#SMT & \#fw & \#bw \\
-  & & & & & &  Clouseau & P+Rand & P+M &   & &  \\
+  & & & & & & &  Clouseau & P+Rand & P+M   & &  \\
 \midrule
 \textsf{Database} & $4$ & $7$ & $6$ & $3$& $3$ & $4$ & $1$ & $6$& - & $2.73$ & $420$ & $4$ & $6$\\
 \midrule
@@ -130,7 +130,7 @@ Our experimental evaluation addresses three research questions:
                                                                        - & $56.07$ & $8356$ & $10$ & $22$\\
 \midrule
 \textsf{Anon2PCModel}$^{\square}$ & $17$ & $70$ & $36$ & $4$& $10$ &
-                                                                     $10$ & $1$ & {\tiny Timeout}& $51$ & $60.36$ & $9023$ & $6$ & $12$\\
+                                                                     $10$ & $1$ & {\tiny Timeout}& $53$ & $60.36$ & $9023$ & $6$ & $12$\\
 \bottomrule
 \end{tabular}
 \label{tab:evaluation}
@@ -144,8 +144,7 @@ correctness of these models against a number of consistency and safety
 properties, including the Read-Your-Writes (RYW) consistency policy
 described in \autoref{sec:overview}, eventual consistency, strong
 consistency, unique leader invariants (as defined by
-\textsf{RingLeader}, \textsf{Paxos} and \textsf{Raft}). Faults are
-introduced into these models manually either by removing necessary
+\textsf{RingLeader}, \textsf{Paxos} and \textsf{Raft}). We introduce synthetic faults into these models manually either by removing necessary
 dependencies or adding incorrect ones; these faults were chosen to be
 triggered under specific message orderings or with specific input
 message contents.  %BD: Who inserted these bugs? Was it us or the
@@ -203,8 +202,7 @@ uses the default P controller to generate input messages and message
 orderings.  This uses random input generation and enumerative state
 exploration to construct schedules, independently of the behaviors of
 the actors under test or the target property.  The second baseline
-(P+M) uses manually written actors to control input message generation
-and prevent uninteresting message orderings.
+(P+M) uses manually written actors from their original source\footnote{There are no existing human-written actors (\(-\) in the table) for two benchmarks from Message Chain (\(^\star\)), which is a verifier, as well as for two benchmarks we provided.} to control input message generation and prevent uninteresting message orderings. 
 % BD: Explain where these components come from, use that to justify
 % why the benchmarks marked with "-" are missing.
 These components play a similar role to our synthesized controllers,
@@ -286,8 +284,8 @@ $\Code{i}$, \name{} can directly synthesize a controller program that
 strategically requests a new transaction to initiate triggering the
 intended violation.  A version of the benchmark in which this sequence
 structure is enforced by a manually crafted environment can discover
-the violation in 51 executions, but at the cost of a notably more
-complex model. %BD: I don't get why the manually written model is more
+the violation in 53 executions, but at the cost of more
+user effort. %BD: I don't get why the manually written model is more
 % complex... isn't this more a matter of user effort?
 
 
