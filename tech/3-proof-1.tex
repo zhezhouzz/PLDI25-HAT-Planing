@@ -1,6 +1,8 @@
 \newpage
 \section{Proofs}\label{sec:tech:proof}
 
+In the proof of this paper, we omit the proof of basic typing $\basicvdash e : s$, where all terms and qualifiers in our typing rules and theorems are basic type safe.
+
 \subsection{Lemmas for s-LTL$_f$}
 
 We introduce several auxiliary lemmas for s-LTL$_f$ formulae.
@@ -14,14 +16,124 @@ We introduce several auxiliary lemmas for s-LTL$_f$ formulae.
 \begin{lemma}\label{lemma:empTL}[Empty set of trace] $\denot{\empTL} = \emptyset$.
 \end{lemma}
 
+\subsection{Lemmas for operational semantics}
+
+\begin{lemma}\label{lemma:op-gen}[One step reduction on Gen expression under context] For all type context $\Gamma$, and term $\zgen{op}{\overline{v}}{e}$, trace $\alpha$ and $\alpha_h$, buffer $\beta$ and $\beta'$ that are well-formed under $\Gamma$, we have:
+{\small\begin{align*}
+    \forall \sigma, \sigma \in \denot{\Gamma}.
+    &\sigma(\alpha_h) \models \sigma(\zevent{op}{\overline{v}}) \Downarrow \sigma(\beta_{\eff{op}}) \impl
+    \\&\msteptr{\sigma(\alpha_h;\zevent{op}{\overline{v}})}{(\sigma(\beta \cup \beta_{\eff{op}}, e))}{\sigma(\alpha)}{(\sigma(\beta'), \sigma(e'))} \impl
+    \\&\msteptr{\sigma(\alpha_h)}{(\sigma(\beta), \sigma(\zgen{op}{\overline{v}}{e}))}{\sigma(\alpha)}{(\sigma(\beta'), \sigma(e'))}
+\end{align*}}
+\end{lemma}
+
+\subsection{Lemma for denotations}
+
+\begin{lemma}\label{lemma:lastA-denot}[Denotation of singleton modality] For all symbolic event $\msgB{op}{\overline{x_i}}{\phi}$ and values $\overline{v_i}$,
+{\small\begin{align*}
+    \phi\msubst{x_i}{v_i} \implies
+    [\zevent{op}{\overline{v_i}}] \in \denot{\lastA\msgB{op}{\overline{x_i}}{\phi}}
+\end{align*}}
+\end{lemma}
+
+\begin{lemma}\label{lemma:seqA-denot}[Denotation of concatenation] For all automata $A_1$ and $A_2$ and trace $\alpha$,
+{\small\begin{align*}
+    \alpha \in \denot{A_1 \seqA A_2} \iff (\exists \alpha_1\;\alpha_2. \alpha = \alpha_1 \listconcat \alpha_2 \land \alpha_1 \in \denot{A_1} \land \alpha_2 \in \denot{A_2})
+\end{align*}}
+\end{lemma}
+
+\begin{lemma}\label{lemma:choice-denot}[Denotation of choice] For all term $e_1$ and $e_2$ and \PAT $\tau$,
+{\small\begin{align*}
+    e_1 \in \denot{\tau} \land e_2 \in \denot{\tau} \impl e_1 \oplus e_2 \in \denot{\tau}
+\end{align*}}
+\end{lemma}
+
+\begin{lemma}\label{lemma:pure-denot}[Denotation of pure computation] For all term $e_1$ and $e_2$ and \PAT $\tau$,
+{\small\begin{align*}
+    (\forall \alpha\;\beta. \msteptr{\alpha}{(\beta, e)}{[]}{(\beta, e')}) \impl
+   e\in \denot{\tau} \iff e' \in \denot{\tau}
+\end{align*}}
+\end{lemma}
+
+% [\zevent{op}{\overline{\sigma(v_i)}}] \in \denot{\lastA\msg{op}{\sigma(\phi)\msubst{x_i}{v_i}}} 
+% \\& \alpha_h \listconcat [\zevent{op}{\overline{\sigma(v_i)}}] \in \denot{\sigma(H \seqA \lastA\msg{op}{\phi\msubst{x_i}{v_i}})}
+
+\subsection{Lemma for Subtyping}
+
+\begin{lemma}\label{lemma:pure-subtyping}[Pure Subtyping Soundness] For Given type context $\Gamma$ and well-formed pure refinement type $t$ and $t'$:
+  $\Gamma \vdash t <: t' \implies \forall \sigma \in \denot{\Gamma}. \denot{\sigma(t)} \subseteq \denot{\sigma(t')}$
+\end{lemma}
+
+\begin{lemma}\label{lemma:subtyping}[Subtyping Soundness] For Given type context $\Gamma$ and well-formed \PAT $\tau$ and $\tau'$:
+  $\Gamma \vdash \tau <: \tau' \implies \forall \sigma \in \denot{\Gamma}. \denot{\sigma(\tau)} \subseteq \denot{\sigma(\tau')}$
+\end{lemma}
+
+\subsection{Substitution Lemma}
+
+\begin{lemma}\label{lemma:subt}Substitution Lemma] For Given type context $\Gamma$, variable $x$, well-formed pure refinement type $t$,\PAT $\tau$ and term $e$:
+  $\Gamma, x{:}t;\Delta;\Theta \vdash e : \tau \impl \forall v. \Gamma \vdash v : t \impl \Gamma;\Delta;\Theta \vdash e[x\mapsto v] : \tau[x\mapsto v]$
+\end{lemma}
+
+\subsection{Lemma for handler context}
+
 \begin{definition}[Well-formed handler context]
   \label{lemma:built-in-typing-ap}
-  The handler specification $\Delta$ and capability context $\Sigma$ is well-formed iff for all operator $\eff{op}$ and its \PAT $\overline{y{:}b} \garr \overline{x{:}t} \sarr \rg{H}{\lastA\msgB{op}{\overline{y}}{\phi}}{F}$ and capability $\Theta$ in $\Delta$ satisfying
+  The handler specification $\Delta$ is well-formed iff for all operator $\eff{op}$ and its \PAT $\overline{y{:}b} \garr \overline{x{:}t} \sarr \rg{H}{\lastA\msgB{op}{\overline{y}}{\phi}}{F}$ and capability $\Theta$ in $\Delta$ satisfying
 {\small\begin{align*}
-    \forall \overline{y{:}b}.\forall \alpha \in \denot{A}. \forall \overline{c \in \denotation{t}}. \forall \overline{\alpha_i}. \forall \overline{m_i}.\; \alpha_1 \listconcat [m_1] \listconcat ... [m_{n}] \listconcat \alpha_{n+1} \in \denot{F} \impl \alpha \vDash \zevent{op}{\overline{c}} \Downarrow \{m_i\}
-\end{align*}}\noindent
-also, $\overline{y{:}\rawnuot{b}{\top}},\overline{x{:}t} \vdash F \subseteq \bigwedge_{\eff{op} \in \Theta} \finalA \msg{op}{\top}$ should hold.
+    &\forall \overline{y{:}b}.\forall \alpha_h \in \denot{H}. \forall \overline{c \in \denotation{t}}. \forall \alpha_f \in \denot{F}. \phi\msubst{y}{c} \impl
+    \\&\quad \exists \overline{\alpha_i}. \exists \overline{m_i}.\; \alpha_1 \listconcat [m_1] \listconcat ... [m_{n}] \listconcat \alpha_{n+1} = \alpha_f \land \alpha_h \vDash \zevent{op}{\overline{c}} \Downarrow \{m_i\} \land \forall \eff{op_i}. \eff{op_i} \in \Theta \iff \exists \overline{c_i}.m_i = \zevent{op_i}{\overline{c_i}}
+\end{align*}}
 \end{definition}
+
+\begin{lemma}[Well-formed handler context with subsumption]
+  \label{lemma:built-in-typing-sub}
+For given well-formed handler specification $\Delta$, type context $\Gamma$, and effect operator $\eff{op}$
+{\small\begin{align*}
+    &\Delta(\eff{op}) = \langle \tau, \Theta \rangle \impl \Gamma \vdash \tau <: \overline{x{:}t} \sarr \rg{H}{\lastA\msgB{op}{\overline{y}}{\phi}}{F} \impl
+    \\&\forall \sigma \in \denot{\Gamma}. \forall \alpha_h \in \denot{\sigma(H)}. \forall \overline{c \in \denotation{\sigma(t)}}. \forall \alpha_f \in \denot{\sigma(F)}.
+    \exists \overline{\alpha_i}. \exists \overline{m_i}.\; \alpha_1 \listconcat [m_1] \listconcat ... [m_{n}] \listconcat \alpha_{n+1} = \alpha_f \land
+    \\&\quad \alpha_h \vDash \zevent{op}{\overline{c}} \Downarrow \{m_i\} \land \sigma(\phi)\msubst{y}{c} \land  \forall \eff{op_i}. \eff{op_i} \in \Theta {\iff} \exists \overline{c_i}.m_i = \zevent{op_i}{\overline{c_i}}
+\end{align*}}
+\end{lemma}
+
+\begin{lemma}[Well-formed pure context with subsumption]
+  \label{lemma:built-in-typing-sub-pure}
+For given specification $\Delta$, type context $\Gamma$, and pure operator $\primop$
+{\small\begin{align*}
+    &\Delta(\primop) = t \land \Gamma \vdash t <: \overline{y{:}t_y}\sarr t_x \impl \forall \sigma \in \denot{\Gamma}. \forall \overline{c_y \in \denot{\sigma(t_y)}}. \primop (\overline{c_y}) \Downarrow c \impl c \in \denot{\sigma(t_x\msubst{y}{c_y})}
+\end{align*}}
+\end{lemma}
+
+
+
+\subsection{Fundamental Theorems}
+
+\begin{theorem}\label{theorem:pure-fundamental-ap}[Pure Fundamental Theorem] For Given type context $\Gamma$ and well-formed value $v$ as well as pure refinement type $t$:
+  $\Gamma \vdash v: t \implies \forall \sigma \in \denot{\Gamma}. \sigma(v) \in \denot{\sigma(t)}$
+\end{theorem}
+\begin{proof} We proceed by induction over our type judgment $\Gamma;\Delta;\Theta \vdash e : \tau$, which has two cases proved as following:
+\begin{enumerate}[label=Case]
+\item:
+{\footnotesize
+\mprooftr{23mm}
+{$\eraserf{\Gamma} \basicvdash v : b$}
+{TVal}
+{$\Gamma \vdash v : \rawnuot{b}{\vnu = v}$}
+\ \\ \ \\}
+where we need to prove $\forall \sigma \in \denot{\Gamma}. \sigma(v) \in\denot{\rawnuot{b}{\vnu = \sigma(v)}}$, which can be directly proved by definition of type denotation.
+\item:
+{\footnotesize
+\mprooftr{38mm}
+{$\Gamma \vdash v : t$ \quad
+$\Gamma \vdash t <: t'$}
+{TPureSub}
+{$\Gamma \vdash v : t'$}
+\ \\ \ \\}
+where we have inductive hypothesis $\forall \sigma \in \denot{\Gamma}. \sigma(v) \in\denot{\sigma(t)}$ and need to prove $\forall \sigma \in \denot{\Gamma}. \sigma(v) \in\denot{\sigma(t')}$, which can be directly proved by soundness lemma of pure subtyping (lemma~\ref{lemma:pure-subtyping}).
+\end{enumerate}
+\end{proof}
+
+
 
 \begin{theorem}\label{theorem:fundamental-ap}[Fundamental Theorem] Given
   a well-formed handler specification $\Delta$,
@@ -31,47 +143,21 @@ also, $\overline{y{:}\rawnuot{b}{\top}},\overline{x{:}t} \vdash F \subseteq \big
     \denotation{\Gamma} \impl \sigma(e) \in
     \denotation{\sigma(\tau)}$.\footnote{The proofs of theorems in this section are provided in the \techreport{}.}
 \end{theorem}
-\begin{proof} We proceed by induction over our type judgment $\Gamma;\Delta;\Theta \vdash e : \tau$, which has seven cases proved as following:
+\begin{proof} We proceed by induction over our type judgment $\Gamma;\Delta;\Theta \vdash e : \tau$, which has $8$ cases proved as following:
 \begin{enumerate}[label=Case]
-\item:
-{\footnotesize
-\mprooftr{35mm}
-{}
-{TRet}
-{$\Gamma; \Delta; \emptyset \vdash () : \rg{H}{\epsTL}{F}$}
-\ \\ \ \\}
-This rule assume that $\Theta \equiv \emptyset, e \equiv (), A \equiv \epsTL$, thus we need to prove
-{\footnotesize\begin{align*}
-    \forall \sigma, \sigma \in \denot{\Gamma} \impl \sigma(()) \in \denot{\sigma(\rg{H}{\epsTL}{F})}
-\end{align*}}\noindent
-From the induction hypothesis and the precondition of this rule, we have
-{\footnotesize\begin{alignat}{2}
-    \setcounter{equation}{0}
-        &\forall \sigma. \sigma(()) = () \\
-        &\forall \sigma. \sigma(\rg{H}{\epsTL}{F}) = \rg{\sigma(H)}{\epsTL}{\sigma(F)}
-\end{alignat}}\noindent
-where we just need to prove the term $()$ is in the denotation of a \PAT in from $\rg{H}{\epsTL}{F}$, which means for all $\alpha_h\;\alpha\;\alpha_f\;\beta\;\beta'\;e_h\;e_f$,
-{\footnotesize\begin{alignat}{2}
-&\eraserf{\Gamma} \basicvdash () : \Code{unit} \ptag{from basic typing ??}
-\\&\msteptr{[]}{(\emptyset, e_h)}{\alpha_h}{(\beta, ())} 
-\land \msteptr{\alpha_h}{(\beta, ())}{\alpha}{(\beta', ())}
-\land \msteptr{\alpha_h \listconcat \alpha }{(\beta', e_f)}{\alpha_f}{(\emptyset, ())}
-\ptag{assumption of $\denot{\tau}$}
-\\&\alpha_h \in \denot{H} \land \alpha_f \in \denot{F} \ptag{assumption of $\denot{\tau}$}
-\end{alignat}}\noindent
-Since there is no small-step reduction rule for the term $()$, thus the relation $\msteptr{\alpha_h}{(\beta, ())}{\alpha}{(\beta', ())}$ is derived from reflexivity case of multi-step reduction. Thus, $\alpha$ is empty trace $[]$, which included by the denotation of $\epsTL$ (\autoref{lemma:espTL}). Then the proof immediate holds in this case.
 
 \item:
 {\footnotesize
-\mprooftr{73mm}
+\mprooftr{87mm}
 {
-$\Gamma \vdash \eff{op} : \overline{x_i{:}t_i}\sarr \rg{H}{\lastA\msg{op}{\phi}}{A \seqA F}$ \quad
-$\forall i. \Gamma \vdash v_i : t_i$ \quad
-$\GEN(\eff{op})$ \quad $(\eff{op}, B') \in \Sigma$ \quad
- $\Gamma ~|~ B \cup B' \vdash e : \rg{H \seqA \lastA\msg{op}{\phi\msubst{x_i}{v_i}}}{A}{F}$
+$\Delta(\eff{op}) =\langle \mykw{gen}\;\tau, \Theta' \rangle$ \quad
+$\Gamma \vdash \tau <: \overline{x_i{:}t_i}\sarr
+\rg{H}{\lastA\msg{op}{\phi}}{A \seqA F}$ \quad
+$\forall i. \Gamma \vdash v_i : t_i$ \quad $\Gamma \vdash \nuot{unit}{\top} <: \nuot{unit}{\phi\msubst{x_i}{v_i}}$ \quad
+ $\Gamma; \Delta; \Theta \cup \Theta' \vdash e : \rg{H \seqA \lastA\msg{op}{\phi\msubst{x_i}{v_i}}}{A}{F}$
  }
 {TGen}
-{$\Gamma ~|~ B \vdash \zgen{op}{\overline{v_i}}{e} : \rg{H}{\lastA\msg{op}{\phi\msubst{x_i}{v_i}} \seqA A}{F}$}
+{$\Gamma; \Delta; \Theta \vdash \zgen{op}{\overline{v_i}}{e} : \rg{H}{\lastA\msg{op}{\phi\msubst{x_i}{v_i}} \seqA A}{F}$}
 \ \\ \ \\}
 This rule assume that $e \equiv \zgen{op}{\overline{v}}{e}, \tau \equiv \rg{H}{\lastA\msg{op}{\phi\msubst{x}{v}} \seqA A}{F}$, thus we need to prove
 {\footnotesize\begin{align*}
@@ -80,14 +166,258 @@ This rule assume that $e \equiv \zgen{op}{\overline{v}}{e}, \tau \equiv \rg{H}{\
 From the induction hypothesis and the precondition of this rule, we have
 {\footnotesize\begin{alignat}{2}
 \setcounter{equation}{0}
-&\Gamma \vdash \eff{op} : \overline{x{:}t}\sarr \rg{H}{\lastA\msg{op}{\phi}}{A \seqA F} \ptag{assumption} \\
-&\forall i. \Gamma \vdash v_i : t_i \ptag{assumption} \label{loc:1-1} \\
-&\GEN(\eff{op}) \land (\eff{op}, B') \in \Sigma \ptag{assumption} \\
-&\Gamma ~|~ B \cup B' \vdash e : \rg{H \seqA \lastA\msg{op}{\phi\msubst{x}{v}}}{A}{F} \ptag{assumption} \\
-&\forall \sigma \in \denot{\Gamma}. \sigma(e) \in \denot{\sigma(\rg{H \seqA \lastA\msg{op}{\phi\msubst{x}{v}}}{A}{F})} \ptag{induction hypothesis} \\
-&\forall i. \forall \sigma \in \denot{\Gamma}. \sigma(v_i) \in  \sigma(\denot{t_i}) \ptag{\autoref{loc:1-1} and ??} \\
-&\msteptr{\alpha_h}{(\beta, \zgen{op}{\overline{v}}{e})}{\alpha}{(\beta', e)}  \ptag{??} \\
-% &\forall \alpha \in \denot{A}. \forall \overline{c \in \denot{t}}. \forall \overline{\alpha_i}. \forall \overline{m_i}.\; \alpha_1 \listconcat [m_1] \listconcat ... [m_{n}] \listconcat \alpha_{n+1} \in \denot{F} \impl \alpha \vDash \zevent{op}{\overline{c}} \Downarrow \{m_i\} \ptag{??} \\
+&\Delta(\eff{op}) =\langle \mykw{gen}\;\tau, \Theta' \rangle \ptag{assumption} \label{found:1-1} \\
+&\Gamma \vdash \tau <: \overline{x{:}t}\sarr \rg{H}{\lastA\msg{op}{\phi}}{A \seqA F} \ptag{assumption} \label{found:1-2} \\
+&\forall i. \Gamma \vdash v_i : t_i \ptag{assumption} \label{found:1-3} \\
+&\Gamma \vdash \nuot{unit}{\top} <: \nuot{unit}{\phi\msubst{x_i}{v_i}} \ptag{assumption} \label{found:1-4} \\
+&\Gamma ~|~ \Theta \cup \Theta' \vdash e : \rg{H \seqA \lastA\msg{op}{\phi\msubst{x}{v}}}{A}{F} \ptag{assumption} \label{found:1-5} \\
+&\forall \sigma \in \denot{\Gamma}. \sigma(e) \in \denot{\sigma(\rg{H \seqA \lastA\msg{op}{\phi\msubst{x}{v}}}{A}{F})} \ptag{induction hypothesis} \label{found:1-6} \\
+&\forall i. \forall \sigma \in \denot{\Gamma}. \sigma(v_i) \in  \sigma(\denot{t_i}) \ptag{\ref{found:1-3} and Lemma~\ref{theorem:pure-fundamental-ap}} \label{found:1-7} \\
+&\forall \sigma \in \denot{\Gamma}. \sigma(\phi)\msubst{x_i}{v_i} \ptag{\ref{found:1-4} and Lemma~\ref{theorem:pure-fundamental-ap}} \label{found:1-8}
 \end{alignat}}\noindent
+According to denotation of \PAT and assumption~\ref{found:1-6}, we have
+{\footnotesize\begin{alignat}{2}
+&\forall \sigma \in \denot{\Gamma}. \forall \alpha_h \in\denot{\sigma(H \seqA \lastA\msg{op}{\phi\msubst{x}{v}})}.\forall \alpha_f \in\denot{F}. \forall \alpha\;\beta\;\beta'\;e_h\;e_f. \notag 
+\\&\quad \msteptr{[]}{(\emptyset, e_h)}{\alpha_h}{(\beta, ())} \land \msteptr{\alpha_h}{(\beta, \sigma(e))}{\alpha}{(\beta', ())} \land \msteptr{\alpha_h \listconcat \alpha }{(\beta', e_f)}{\alpha_f}{(\emptyset, ())} \impl \notag 
+\\&\quad \alpha \in\denot{\sigma(A)}) \ptag{assumption \ref{found:1-6}} \label{found:1-9}
+\end{alignat}}\noindent
+From now, we consider each $\sigma \in \denot{\Gamma}$, and try to prove the subgoal of this case, i.e., 
+{\footnotesize\begin{align*}
+    \sigma(\zgen{op}{\overline{v}}{e}) \in \denot{\sigma(\rg{H}{\lastA\msg{op}{\phi\msubst{x}{v}} \seqA A}{F})}
+\end{align*}}\noindent
+According to denotation of \PAT, we need to prove for all $\forall \alpha_h\;\alpha_f\;\alpha\;\beta\;\beta'\;e_h\;e_f.$ where $\alpha_h \in \denot{\sigma(H)}$ and $\alpha_f \in \denot{\sigma(F)}$, 
+{\footnotesize\begin{align*}
+&\msteptr{[]}{(\emptyset, e_h)}{\alpha_h}{(\beta, ())} \land \msteptr{\alpha_h}{(\beta, \zgen{op}{\overline{\sigma(v_i)}}{\sigma(e)}))}{\alpha}{(\beta', ())} \land \msteptr{\alpha_h \listconcat \alpha }{(\beta', e_f)}{\alpha_f}{(\emptyset, ())} \impl \notag 
+\\&\quad \alpha \in\denot{\sigma(\lastA\msg{op}{\phi\msubst{x}{v}} \seqA A)}
+\end{align*}}\noindent
+Then we have
+{\footnotesize\begin{alignat}{2}
+&\sigma \in \denot{\Gamma} \land \alpha_h \in \denot{\sigma(H)} \land  \alpha_f \in \denot{\sigma(F)} \ptag{assumption} \label{found:1-10}
+\\& \msteptr{[]}{(\emptyset, e_h)}{\alpha_h}{(\beta, ())} \ptag{assumption} \label{found:1-11}
+\\& \msteptr{\alpha_h}{(\beta, \zgen{op}{\overline{\sigma(v_i)}}{\sigma(e)}))}{\alpha}{(\beta', ())} \ptag{assumption} \label{found:1-12}
+\\& \msteptr{\alpha_h \listconcat \alpha }{(\beta', e_f)}{\alpha_f}{(\emptyset, ())} \ptag{assumption} \label{found:1-13}
+\\& [\zevent{op}{\overline{\sigma(v_i)}}] \in \denot{\lastA\msg{op}{\sigma(\phi)\msubst{x_i}{v_i}}} \ptag{lemma~\ref{lemma:lastA-denot}} \label{found:1-14}
+\\& \alpha_h \listconcat [\zevent{op}{\overline{\sigma(v_i)}}] \in \denot{\sigma(H \seqA \lastA\msg{op}{\phi\msubst{x_i}{v_i}})} \ptag{lemma~\ref{lemma:seqA-denot}, \ref{found:1-12}, and \ref{found:1-11}} \label{found:1-15}
+\\& \exists \alpha'. \alpha = \zevent{op}{\overline{\sigma(v_i)}} \cons \alpha' \land 
+\alpha_h \models \zevent{op}{\overline{\sigma(v_i)}} \Downarrow \beta_{\eff{op}} \land \notag
+\\&\quad\msteptr{\alpha_h \listconcat [\zevent{op}{\overline{\sigma(v_i)}}]}{(\beta \cup \beta_{\eff{op}}, \sigma(e))}{\alpha'}{(\beta', ())} \ptag{\textsc{StGen} and \ref{found:1-12}} \label{found:1-16}
+\end{alignat}}\noindent
+Now, we can apply hypothesis~\ref{found:1-9} with 
+{\footnotesize\begin{align*}
+    &\sigma \mapsto \sigma \quad \alpha_h \mapsto \alpha_h \listconcat [\zevent{op}{\overline{\sigma(v_i)}}] \quad \alpha_f \mapsto \alpha_f \quad \alpha \mapsto \alpha' \quad \beta \mapsto \beta \cup \beta_{\eff{op}} \quad 
+    e_h \mapsto e_h; \zgen{op}{\overline{\sigma(v_i)}}{()} \quad e_f \mapsto e_f
+\end{align*}}
+Then we have
+{\footnotesize\begin{alignat}{2}
+&\alpha' \in\denot{\sigma(A)} \ptag{hypothesis~\ref{found:1-9} with \ref{found:1-10}, \ref{found:1-11}, \ref{found:1-13}, \ref{found:1-15}, \ref{found:1-16}} \label{found:1-17}
+\\&[\zevent{op}{\overline{\sigma(v_i)}}] \listconcat \alpha' \in\denot{\sigma(\lastA\msg{op}{\phi\msubst{x}{v}} \seqA A)}\ptag{hypothesis~\ref{found:1-17}} \label{found:1-18}
+\end{alignat}}\noindent
+that is sufficient to prove subgoal of this case.
+
+\item:
+{\footnotesize
+\mprooftr{77mm}
+{
+  $\Delta(\eff{op}) =\langle \mykw{obs}\;\tau, \Theta'\rangle$ \quad
+$\Gamma \vdash \tau <: \overline{x_i{:}t_i}\sarr
+\rg{H}{\lastA\msgB{op}{\overline{y}}{\phi \land \overline{y = x}}}{A \seqA F}$ \quad
+ $\Gamma, \overline{x{:}t}; \Delta; \Theta \cup \Theta' \vdash e : \rg{H \seqA \lastA\msgB{op}{\overline{y}}{\phi \land \overline{y = x}}}{A}{F}$
+ }
+{TObs}
+{$\Gamma; \Delta; \{\eff{op}\} \cup \Theta \vdash \zobs{\overline{x}}{op}{e} : \rg{H}{\lastA\msg{op}{\phi}\seqA A}{F}$}
+\ \\ \ \\}
+This rule assume that $e \equiv \zobs{\overline{x}}{op}{e}, \tau \equiv\rg{H}{\lastA\msg{op}{\phi} \seqA A}{F}$, thus we need to prove
+{\footnotesize\begin{align*}
+    \forall \sigma, \sigma \in \denot{\Gamma} \impl \sigma(\zobs{\overline{x}}{op}{e}) \in \denot{\sigma(\rg{H}{\lastA\msg{op}{\phi} \seqA A}{F})}
+\end{align*}}\noindent
+From the induction hypothesis and the precondition of this rule, we have
+{\footnotesize\begin{alignat}{2}
+\setcounter{equation}{0}
+&\Delta(\eff{op}) =\langle \mykw{obs}\;\tau, \Theta' \rangle \ptag{assumption} \label{found:2-1} \\
+&\Gamma \vdash \tau <: \overline{x_i{:}t_i}\sarr\rg{H}{\lastA\msgB{op}{\overline{y}}{\phi \land \overline{y = x}}}{A \seqA F} \ptag{assumption} \label{found:2-2} \\
+&\Gamma, \overline{x{:}t}; \Delta; \Theta \cup \Theta' \vdash e : \rg{H \seqA \lastA\msgB{op}{\overline{y}}{\phi \land \overline{y = x}}}{A}{F} \ptag{assumption} \label{found:2-3} \\
+&\forall \sigma \in \denot{\Gamma, \overline{x{:}t}}. \sigma(e) \in \denot{\sigma(\rg{H \seqA \lastA\msgB{op}{\overline{y}}{\phi \land \overline{y = x}}}{A}{F})} \ptag{induction hypothesis} \label{found:2-4}
+\end{alignat}}\noindent
+According to denotation of \PAT and assumption~\ref{found:2-4}, we have
+{\footnotesize\begin{alignat}{2}
+&\forall \sigma \in\denot{\Gamma, \overline{x{:}t}}. \forall \alpha_h \in\denot{\sigma(H \seqA \lastA\msgB{op}{\overline{y}}{\phi \land \overline{y = x}})}.\forall \alpha_f \in\denot{F}. \forall \alpha\;\beta\;\beta'\;e_h\;e_f. \notag 
+\\&\quad \msteptr{[]}{(\emptyset, e_h)}{\alpha_h}{(\beta, ())} \land \msteptr{\alpha_h}{(\beta, \sigma(e))}{\alpha}{(\beta', ())} \land \msteptr{\alpha_h \listconcat \alpha }{(\beta', e_f)}{\alpha_f}{(\emptyset, ())} \impl \notag 
+\\&\quad \alpha \in\denot{\sigma(A)}) \ptag{assumption \ref{found:2-4}} \label{found:2-5}
+\end{alignat}}\noindent
+From now, we consider each $\sigma \in \denot{\Gamma}$, and try to prove the subgoal of this case, i.e., 
+{\footnotesize\begin{align*}
+    \sigma(\zobs{\overline{x}}{op}{e}) \in \denot{\sigma(\rg{H}{\lastA\msg{op}{\phi} \seqA A}{F})}
+\end{align*}}\noindent
+According to denotation of \PAT, we need to prove for all $\forall \alpha_h\;\alpha_f\;\alpha\;\beta\;\beta'\;e_h\;e_f.$ where $\alpha_h \in \denot{\sigma(H)}$ and $\alpha_f \in \denot{\sigma(F)}$, 
+{\footnotesize\begin{align*}
+&\msteptr{[]}{(\emptyset, e_h)}{\alpha_h}{(\beta, ())} \land \msteptr{\alpha_h}{(\beta, \zobs{\overline{x}}{op}{\sigma(e)}))}{\alpha}{(\beta', ())} \land \msteptr{\alpha_h \listconcat \alpha }{(\beta', e_f)}{\alpha_f}{(\emptyset, ())} \impl \notag 
+\\&\quad \alpha \in\denot{\sigma(\lastA\msg{op}{\phi} \seqA A)}
+\end{align*}}\noindent
+Then we have
+{\footnotesize\begin{alignat}{2}
+&\sigma \in \denot{\Gamma} \land \alpha_h \in \denot{\sigma(H)} \land  \alpha_f \in \denot{\sigma(F)} \ptag{assumption} \label{found:2-6}
+\\& \msteptr{[]}{(\emptyset, e_h)}{\alpha_h}{(\beta, ())} \ptag{assumption} \label{found:2-7}
+\\& \msteptr{\alpha_h}{(\beta, \zobs{\overline{x}}{op}{\sigma(e)}))}{\alpha}{(\beta', ())} \ptag{assumption} \label{found:2-8}
+\\& \msteptr{\alpha_h \listconcat \alpha }{(\beta', e_f)}{\alpha_f}{(\emptyset, ())} \ptag{assumption} \label{found:2-9}
+\\& \exists \alpha'.\exists \overline{c_i}. \alpha = \zevent{op}{\overline{c_i}} \cons \alpha' \land 
+\alpha_h \models \zevent{op}{\overline{c_i}} \Downarrow \beta_{\eff{op}} \land \notag
+\\&\quad\msteptr{\alpha_h \listconcat [\zevent{op}{\overline{c_i}}]}{(\beta \cup \beta_{\eff{op}}, \sigma(e\msubst{x_i}{c_i}))}{\alpha'}{(\beta', ())} \ptag{\textsc{StObs} and \ref{found:2-8}} \label{found:2-10}
+\\& [\zevent{op}{\overline{c_i}}] \in \denot{\msgB{op}{\overline{y}}{\sigma(\phi) \land \overline{y = c_i}}} \ptag{lemma~\ref{lemma:lastA-denot}, and $\overline{y} \cap \Code{DOM}(\Gamma) = \emptyset$} \label{found:1-11}
+\\& \sigma([\zevent{op}{\overline{x}}])\msubst{x}{c} \in \sigma(\denot{\msgB{op}{\overline{y}}{\phi \land \overline{y = x}}})\msubst{x}{c} \ptag{lift a new substitution $\msubst{x}{c}$ from \ref{found:1-11}} \label{found:1-12}
+\\& \sigma(\alpha_h \listconcat [\zevent{op}{\overline{x}}])\msubst{x}{c} \in \sigma(\denot{H \seqA \lastA\msg{op}{\phi \land \overline{y = x}})})\msubst{x}{c} \ptag{lemma~\ref{lemma:seqA-denot}, \ref{found:1-6}, and \ref{found:1-12}} \label{found:2-13}
+\end{alignat}}\noindent
+Now, we can apply hypothesis~\ref{found:2-5} with 
+{\footnotesize\begin{align*}
+    &\sigma \mapsto \sigma\msubst{x}{c} \quad \alpha_h \mapsto \alpha_h \listconcat [\zevent{op}{\overline{x}}] \quad \alpha_f \mapsto \alpha_f \quad \alpha \mapsto \alpha' \quad \beta \mapsto \beta \cup \beta_{\eff{op}} \quad 
+    e_h \mapsto e_h; \zobs{\overline{x}}{op}{\sigma(e)} \quad e_f \mapsto e_f
+\end{align*}}
+Then we have
+{\footnotesize\begin{alignat}{2}
+&\alpha' \in\denot{\sigma(A\msubst{x}{c})} \ptag{hypothesis~\ref{found:2-5} with \ref{found:2-6}, \ref{found:2-7}, \ref{found:2-9}, \ref{found:2-13}} \label{found:2-14}
+\\&\alpha' \in\denot{\sigma(A)} \ptag{$A$ is well formed under context $\Gamma$ and \ref{found:2-14}} \label{found:1-15}
+\\&[\zevent{op}{\overline{c_i}}] \listconcat \alpha' \in\denot{\sigma(\lastA\msg{op}{\phi\msubst{x}{v}} \seqA A)}\ptag{hypothesis~\ref{found:1-15}} \label{found:1-16}
+\end{alignat}}\noindent
+that is sufficient to prove subgoal of this case.
+
+\item:
+{\footnotesize
+\mprooftr{35mm}
+{}
+{TRet}
+{$\Gamma; \Delta; \emptyset \vdash () : \rg{H}{\epsTL}{F}$}
+\ \\ \ \\}
+This rule assume that $\Theta \equiv \emptyset, e \equiv (), \tau \equiv \rg{H}{\epsTL}{F}$, thus we need to prove
+{\footnotesize\begin{align*}
+    \forall \sigma, \sigma \in \denot{\Gamma} \impl \sigma(()) \in \denot{\sigma(\rg{H}{\epsTL}{F})}
+\end{align*}}\noindent
+that is, prove the term $()$ is in the denotation of a \PAT in from $\rg{H}{\epsTL}{F}$. According to the definition of \PAT denotation, for all$\alpha_h\;\alpha\;\alpha_f\;\beta\;\beta'\;e_h\;e_f$, where $\alpha_h \in \denot{H} \land \alpha_f \in \denot{F}$, we need to show
+{\footnotesize\begin{align*}
+&\msteptr{[]}{(\emptyset, e_h)}{\alpha_h}{(\beta, ())} 
+\land \msteptr{\alpha_h}{(\beta, ())}{\alpha}{(\beta', ())}
+\land \msteptr{\alpha_h \listconcat \alpha }{(\beta', e_f)}{\alpha_f}{(\emptyset, ())} \impl \alpha \in \denot{\epsTL}
+\end{align*}}\noindent
+Since there is no small-step reduction rule for the term $()$, thus the relation $\msteptr{\alpha_h}{(\beta, ())}{\alpha}{(\beta', ())}$ is derived from reflexivity case of multi-step reduction. Thus, $\alpha$ is empty trace $[]$, which included by the denotation of $\epsTL$ (\autoref{lemma:espTL}). Then the proof immediate holds in this case.
+
+\item:
+{\footnotesize
+\mprooftr{21mm}
+{
+$\Gamma; \Delta; \Theta \vdash e_1 : \tau$ \quad $\Gamma; \Delta; \Theta \vdash e_2 : \tau$
+ }
+{TChoice}
+{$\Gamma; \Delta; \Theta \vdash e_1 \oplus e_2 : \tau$}
+\ \\ \ \\}
+This rule assume that $e \equiv e_1 \oplus e_2$, thus we need to prove
+{\footnotesize\begin{align*}
+    \forall \sigma, \sigma \in \denot{\Gamma} \impl \sigma(e_1 \oplus e_2) \in \denot{\sigma(\tau)}
+\end{align*}}\noindent
+From the inductive hypothesis of this case, we know
+{\footnotesize\begin{align*}
+    &\forall \sigma, \sigma \in \denot{\Gamma} \impl \sigma(e_1) \in \denot{\sigma(\tau)}
+    \\&\forall \sigma, \sigma \in \denot{\Gamma} \impl \sigma(e_2) \in \denot{\sigma(\tau)}
+\end{align*}}\noindent
+Then the Lemma~\ref{lemma:choice-denot} is sufficient to prove the subgoal of this case.
+
+\item:
+{\footnotesize
+\mprooftr{50mm}
+{$\Gamma, z\hasoty{unit}{\phi};\Delta;\Theta \vdash e : \tau$ \quad $z$ is fresh}
+{TAssume}
+{$\Gamma;\Delta;\Theta  \vdash \zassume{\phi}{e} : \tau  $}
+\ \\ \ \\}
+This rule assume that $e \equiv \zassume{\phi}{e}$, thus we need to prove
+{\footnotesize\begin{align*}
+    \forall \sigma, \sigma \in \denot{\Gamma} \impl \sigma(\zassume{\phi}{e}) \in \denot{\sigma(\tau)}
+\end{align*}}\noindent
+From the inductive hypothesis of this case, we know
+{\footnotesize\begin{align*}
+    &\forall \sigma, \sigma \in \denot{\Gamma, z\hasoty{unit}{\phi}} \impl \sigma(e) \in \denot{\sigma(\tau)}
+\end{align*}}\noindent
+Since $z$ is a fresh variable, then we have
+{\footnotesize\begin{align*}
+    &\forall \sigma, \sigma \in \denot{\Gamma, z\hasoty{unit}{\phi}} \impl \exists \sigma'. \sigma'[\overline{z \mapsto ()}] = \sigma. \sigma'(e) \in \denot{\sigma'(\tau)}
+\end{align*}}\noindent
+Moreover, according to the definition of type context denotation, 
+{\footnotesize\begin{align*}
+    &\forall \sigma, \sigma \in \denot{\Gamma} \land \sigma(\phi) \iff \sigma[\overline{z \mapsto ()}] \in \denot{\Gamma, z\hasoty{unit}{\phi}}
+\end{align*}}\noindent
+Then it is safe to apply Lemma~\ref{lemma:pure-denot} with $\sigma$ as substitution in $\denot{\Gamma}$ and make $\sigma(\phi)$ holds, and $e \mapsto \sigma(\zassume{\phi}{e}), e' \mapsto \sigma(e), \tau \mapsto \sigma(\tau)$.
+Now, we need to show $\zassume{\phi}{e}$ can reduced into $e$ without add new effect, which is can be proved by \textsc{StAssume} and $\sigma(\phi)$. Then the proof immediate holds in this case.
+
+\item:
+{\footnotesize
+\mprooftr{45mm}
+{$\Gamma;\Delta;\Theta \vdash e : \tau$ \quad
+$\Gamma \vdash () : \nuot{unit}{\phi}$}
+{TAssert}
+{$\Gamma;\Delta;\Theta \vdash \zassert{\phi}{e} : \tau  $}
+\ \\ \ \\}
+This rule assume that $e \equiv \zassert{\phi}{e}$, thus we need to prove
+{\footnotesize\begin{align*}
+    \forall \sigma, \sigma \in \denot{\Gamma} \impl \sigma(\zassert{\phi}{e}) \in \denot{\sigma(\tau)}
+\end{align*}}\noindent
+From the assumption and inductive hypothesis of this case, we know
+{\footnotesize\begin{align*}
+    &\forall \sigma, \sigma \in \denot{\Gamma} \impl \sigma(e) \in \denot{\sigma(\tau)} \land \sigma(\phi)
+\end{align*}}\noindent
+Then it is safe to apply Lemma~\ref{lemma:pure-denot} with $e \mapsto \sigma(\zassert{\phi}{e}), e' \mapsto \sigma(e), \tau \mapsto \sigma(\tau)$.
+Now, we need to show $\zassert{\phi}{e}$ can reduced into $e$ without add new effect, which is can be proved by \textsc{StAssert} and $\sigma(\phi)$. Then the proof immediate holds in this case.
+
+\item:
+{\footnotesize
+\mprooftr{58mm}
+{
+$\Gamma \vdash \primop : t$ \quad $\Gamma \vdash t <: \overline{y{:}t}\sarr t_x$
+$\forall i. \Gamma \vdash v_i : t_i$ \quad
+$\Gamma, x{:}t_x\msubst{y}{v};\Delta;\Theta \vdash e : \tau$
+}
+{TOpApp}
+{$\Gamma;\Delta;\Theta \vdash \zlet{x{:}b}{\primop\ \overline{v}}{e} : \tau$}
+\ \\ \ \\}
+This rule assume that $e \equiv \zlet{x{:}b}{\primop\ \overline{v}}{e}$, thus we need to prove
+{\footnotesize\begin{align*}
+    \forall \sigma, \sigma \in \denot{\Gamma} \impl \sigma(\zlet{x{:}b}{\primop\ \overline{v}}{e}) \in \denot{\sigma(\tau)}
+\end{align*}}\noindent
+From the assumption and inductive hypothesis of this case, we know
+{\footnotesize\begin{alignat}{2}
+\setcounter{equation}{0}
+&\Delta(\eff{op}) = t \ptag{assumption} \label{found:3-1} \\
+&\Gamma \vdash t <: \overline{y{:}t}\sarr t_x \ptag{assumption} \label{found:3-2} \\
+&\forall i. \Gamma \vdash v_i : t_i \ptag{assumption} \label{found:3-3} \\
+&\Gamma, x{:}t_x\msubst{y}{v};\Delta;\Theta \vdash e : \tau \ptag{assumption} \label{found:3-4} \\
+&\forall v_x. \Gamma \vdash v_x : t_x\msubst{y}{v} \impl \Gamma;\Delta;\Theta \vdash e[x\mapsto v_x] : \tau[x\mapsto v_x] \ptag{Lemma~\ref{lemma:subt} and \ref{found:3-4}} \label{found:3-5} \\
+&\forall \sigma \in \denot{\Gamma}. \forall v_x \in \denot{\sigma(t_x\msubst{y}{v})}. \sigma(e[x\mapsto v_x]) \in \denot{\sigma(\tau[x\mapsto v_x])} \ptag{induction hypothesis and \ref{found:3-5}} \label{found:3-6}
+\\& \forall i. \forall \sigma\in\denot{\Gamma}. \sigma(v_i) \in\denot{\sigma(t_i)} \ptag{Lemma~\ref{theorem:pure-fundamental-ap} and \ref{found:3-3}} \label{found:3-7}
+\\& \forall \sigma\in\denot{\Gamma}. \forall c_x. \primop(\overline{\sigma(v)}) \Downarrow c_x \impl c_x \in \denot{t_x\msubst{y}{v}} \ptag{Lemma~\ref{lemma:built-in-typing-sub-pure}, \ref{found:3-1}, \ref{found:3-2}, and \ref{found:3-6}} \label{found:3-8}
+\\& \forall \sigma\in\denot{\Gamma}. \forall c_x. \primop(\overline{\sigma(v)}) \Downarrow c_x \impl \sigma(e[x\mapsto c_x]) \in \denot{\sigma(\tau[x\mapsto c_x])} \ptag{\ref{found:3-6} and \ref{found:3-8}} \label{found:3-9}
+\\& \forall \sigma\in\denot{\Gamma}. \forall c_x. \primop(\overline{\sigma(v)}) \Downarrow c_x \impl \sigma(e[x\mapsto c_x]) \in \denot{\sigma(\tau)} \ptag{\ref{found:3-19} and $\tau$ is well-formed under $\Gamma$} \label{found:3-10}
+\end{alignat}}\noindent
+Then it is safe to apply Lemma~\ref{lemma:pure-denot} with $e \mapsto \sigma(\zlet{x{:}b}{\primop\ \overline{v}}{e}), e' \mapsto \sigma(e[x\mapsto c_x]), \tau \mapsto \sigma(\tau)$.
+Now, we need to show $\zlet{x{:}b}{\primop\ \overline{v}}{e}$ can reduced into $e[x\mapsto c_x]$ without add new effect, which is can be proved by \textsc{StOp} and the assumption $\primop(\overline{\sigma(v)}) \Downarrow c_x$. Then the proof immediate holds in this case.
+
+\item:
+{\footnotesize
+\mprooftr{38mm}
+{$\Gamma;\Delta;\Theta \vdash e : \tau$ \quad
+$\Gamma \vdash \tau <: \tau'$}
+{TSub}
+{$\Gamma;\Delta;\Theta \vdash e : \tau'$}
+\ \\ \ \\}
+The case can be directly proved by Lemma~\ref{lemma:subtyping}.
 \end{enumerate}
 \end{proof}
+
+
+
+
+
+
+
+
+% According to well-formed handler context Lemma~\ref{lemma:built-in-typing-sub}, as well as assumption \ref{found:1-1} and \ref{found:1-2}, we have
+% {\footnotesize\begin{alignat}{2}
+% &\forall \sigma \in \denot{\Gamma}. \forall \alpha_h \in \denot{\sigma(H)}. \forall \overline{c \in \denotation{\sigma(t)}}. \forall \alpha_f \in \denot{\sigma(A \seqA F)}. \sigma(\phi)\msubst{y}{c} \impl \exists \overline{\alpha_i}. \exists \overline{m_i}.\; \notag 
+% \\&\quad \alpha_1 \listconcat [m_1] \listconcat ... [m_{n}] \listconcat \alpha_{n+1} = \alpha_f \land \alpha_h \vDash \zevent{op}{\overline{c}} \Downarrow \{m_i\} \land \forall \eff{op_i}. \eff{op_i} \in \Theta' \iff \exists \overline{c_i}.m_i = \zevent{op_i}{\overline{c_i}} \ptag{Lemma~\ref{lemma:built-in-typing-sub}} \label{found:1-9}
+% \\&\forall \sigma \in \denot{\Gamma}. \forall \alpha_h \in \denot{\sigma(H)}. \forall \alpha_f \in \denot{\sigma(A \seqA F)}. \exists \overline{\alpha_i}. \exists \overline{m_i}.\; \notag 
+% \\&\quad \alpha_1 \listconcat [m_1] \listconcat ... [m_{n}] \listconcat \alpha_{n+1} = \alpha_f \land \alpha_h \vDash \zevent{op}{\overline{c}} \Downarrow \{m_i\} \land \forall \eff{op_i}. \eff{op_i} \in \Theta' \iff \exists \overline{c_i}.m_i = \zevent{op_i}{\overline{c_i}} \ptag{\ref{found:1-9}, \ref{found:1-7}, and \ref{found:1-8}} \label{found:1-10}
+% \end{alignat}}\noindent
