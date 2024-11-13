@@ -34,7 +34,7 @@ assertions. Effectful operations are categorized as either
 \begin{figure}[ht!]
 {\footnotesize
 {\small\begin{align*}
-\text{\textbf{Messages}}& \  & m ::= \   & \zevent{op}{\overline{c}}
+\text{\textbf{Messages}}& \  & m ::= \   & \zevent{op}{\overline{v}}
 \qquad
 \text{\textbf{Buffers}}& \  &\beta \in \mathcal{P}(m)  &
 \qquad
@@ -44,7 +44,7 @@ assertions. Effectful operations are categorized as either
 \end{align*}
 \begin{align*}
   \text{\textbf{Handler Semantics }} & \fbox{$\alpha \vDash
-                                       \zevent{op}{\overline{c}}
+                                       \zevent{op}{\overline{v}}
                                        \Downarrow \beta$} &
                                                             \quad\quad\quad
                                                             \text{\textbf{Operational
@@ -91,7 +91,7 @@ $\steptr{\alpha}{(\buf, \zassert{\phi}{e}}{[]}{(\buf, e)}$
 \end{figure}
 
 \paragraph{Operational Semantics} Messages in $\DSL$ are operations
-applied to concrete values $(\zevent{op}{\overline{c}})$. Evaluating a
+applied to concrete values $(\zevent{op}{\overline{v}})$. Evaluating a
 $\DSL$ program depends on an input \emph{trace}, i.e., a sequence of
 messages, and an input \emph{buffer}, i.e., an element of a bag or multiset of
 messages. Each evaluation step produces an output trace and an updated

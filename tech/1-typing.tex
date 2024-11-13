@@ -258,7 +258,7 @@ $\Gamma; \Delta; \Theta \vdash e_1 : \tau$ \quad $\Gamma; \Delta; \Theta \vdash 
 $\Delta(\eff{op}) =\langle \mykw{gen}\;\tau, \Theta' \rangle$ \quad
 $\Gamma \vdash \tau <: \overline{x_i{:}t_i}\sarr
 \rg{H}{\lastA\msg{op}{\phi}}{A \seqA F}$ \quad
-$\forall i. \Gamma \vdash v_i : t_i$ \quad
+$\forall i. \Gamma \vdash v_i : t_i$ \quad $\Gamma \vdash \nuot{unit}{\top} <: \nuot{unit}{\phi\msubst{x_i}{v_i}}$ \quad
  $\Gamma; \Delta; \Theta \cup \Theta' \vdash e : \rg{H \seqA \lastA\msg{op}{\phi\msubst{x_i}{v_i}}}{A}{F}$
  }
 {TGen}
@@ -280,14 +280,14 @@ $\Gamma \vdash \tau <: \overline{x_i{:}t_i}\sarr
 {$\Gamma; \Delta; \{\eff{op}\} \cup \Theta \vdash \zobs{\overline{x}}{op}{e} : \rg{H}{\lastA\msg{op}{\phi} \seqA A}{F}$}
 \\ \ \\ \ \\ \
 \mprooftr{50mm}
-{$\Gamma, z\hasoty{unit}{\phi};\Delta;\Theta \vdash e : \tau$}
+{$\Gamma, z\hasoty{unit}{\phi};\Delta;\Theta \vdash e : \tau$ \quad $z$ is fresh}
 {TAssume}
 {$\Gamma;\Delta;\Theta  \vdash \zassume{\phi}{e} : \tau  $}
 \quad
 \mprooftr{45mm}
 {$\Gamma;\Delta;\Theta \vdash e : \tau$ \quad
 $\Gamma \vdash () : \nuot{unit}{\phi}$}
-{TAssume}
+{TAssert}
 {$\Gamma;\Delta;\Theta \vdash \zassert{\phi}{e} : \tau  $}
 \\ \ \\ \ \\ \
 \mprooftr{58mm}
