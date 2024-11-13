@@ -80,8 +80,7 @@ Our experimental evaluation addresses three research questions:
     works are annotated with their source:
     P~\cite{DGJ+13}($^{\dagger}$), ModP~\cite{ModP}($^{\diamond}$) an
     extension of P with support for modules, and
-    MessageChain~\cite{MessageChain}($^{\star}$), an automated
-    specification mining and verification tool for P.  We also include
+    MessageChain~\cite{MessageChain}($^{\star}$), an automated verification tool for P.  We also include
     a real-world model of a two-phase commit protocol
     (\textsf{Anon2PCModel}$^{\square}$) used by a major cloud vendor.
     The components under test are written in P, and handler
@@ -203,7 +202,7 @@ uses the default P controller to generate input messages and message
 orderings.  This uses random input generation and enumerative state
 exploration to construct schedules, independently of the behaviors of
 the actors under test or the target property.  The second baseline
-(P+M) uses manually written actors from there original source\footnote{There are no existing human-written actors (\(-\) in the table) for two benchmarks from Message Chain (\(^\star\)), which is a verifier, as well as for two benchmarks we provided.} to control input message generation and prevent uninteresting message orderings. 
+(P+M) uses manually written actors from their original source\footnote{There are no existing human-written actors (\(-\) in the table) for two benchmarks from Message Chain (\(^\star\)), which is a verifier, as well as for two benchmarks we provided.} to control input message generation and prevent uninteresting message orderings. 
 % BD: Explain where these components come from, use that to justify
 % why the benchmarks marked with "-" are missing.
 These components play a similar role to our synthesized controllers,

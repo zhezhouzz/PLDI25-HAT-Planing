@@ -1,11 +1,11 @@
 \newpage
 \section{Proofs}\label{sec:tech:proof}
 
-In the proof of this paper, we omit the proof of basic typing $\basicvdash e : s$, where all terms and qualifiers in our typing rules and theorems are basic type safe.
+In this paper, we omit the proof of basic typing \(\basicvdash e : s\), assuming that all terms and qualifiers in our typing rules and theorems are type-safe. Before presenting the proof of the fundamental theorem and type soundness, we introduce several useful lemmas.
 
-\subsection{Lemmas for s-LTL$_f$}
+\subsection{Lemmas}
 
-We introduce several auxiliary lemmas for s-LTL$_f$ formulae.
+\paragraph{Lemmas for s-LTL$_f$} 
 
 \begin{lemma}\label{lemma:allTL}[All well-fromed traces] $\denot{\allTL} = \{ tr ~|~ \wellfoundedvdash tr  \}$.
 \end{lemma}
@@ -16,18 +16,7 @@ We introduce several auxiliary lemmas for s-LTL$_f$ formulae.
 \begin{lemma}\label{lemma:empTL}[Empty set of trace] $\denot{\empTL} = \emptyset$.
 \end{lemma}
 
-\subsection{Lemmas for operational semantics}
-
-\begin{lemma}\label{lemma:op-gen}[One step reduction on Gen expression under context] For all type context $\Gamma$, and term $\zgen{op}{\overline{v}}{e}$, trace $\alpha$ and $\alpha_h$, buffer $\beta$ and $\beta'$ that are well-formed under $\Gamma$, we have:
-{\small\begin{align*}
-    \forall \sigma, \sigma \in \denot{\Gamma}.
-    &\sigma(\alpha_h) \models \sigma(\zevent{op}{\overline{v}}) \Downarrow \sigma(\beta_{\eff{op}}) \impl
-    \\&\msteptr{\sigma(\alpha_h;\zevent{op}{\overline{v}})}{(\sigma(\beta \cup \beta_{\eff{op}}, e))}{\sigma(\alpha)}{(\sigma(\beta'), \sigma(e'))} \impl
-    \\&\msteptr{\sigma(\alpha_h)}{(\sigma(\beta), \sigma(\zgen{op}{\overline{v}}{e}))}{\sigma(\alpha)}{(\sigma(\beta'), \sigma(e'))}
-\end{align*}}
-\end{lemma}
-
-\subsection{Lemma for denotations}
+\paragraph{Lemma for denotations}
 
 \begin{lemma}\label{lemma:lastA-denot}[Denotation of singleton modality] For all symbolic event $\msgB{op}{\overline{x_i}}{\phi}$ and values $\overline{v_i}$,
 {\small\begin{align*}
@@ -58,7 +47,7 @@ We introduce several auxiliary lemmas for s-LTL$_f$ formulae.
 % [\zevent{op}{\overline{\sigma(v_i)}}] \in \denot{\lastA\msg{op}{\sigma(\phi)\msubst{x_i}{v_i}}} 
 % \\& \alpha_h \listconcat [\zevent{op}{\overline{\sigma(v_i)}}] \in \denot{\sigma(H \seqA \lastA\msg{op}{\phi\msubst{x_i}{v_i}})}
 
-\subsection{Lemma for Subtyping}
+\paragraph{Lemma for Subtyping}
 
 \begin{lemma}\label{lemma:pure-subtyping}[Pure Subtyping Soundness] For Given type context $\Gamma$ and well-formed pure refinement type $t$ and $t'$:
   $\Gamma \vdash t <: t' \implies \forall \sigma \in \denot{\Gamma}. \denot{\sigma(t)} \subseteq \denot{\sigma(t')}$
@@ -68,21 +57,20 @@ We introduce several auxiliary lemmas for s-LTL$_f$ formulae.
   $\Gamma \vdash \tau <: \tau' \implies \forall \sigma \in \denot{\Gamma}. \denot{\sigma(\tau)} \subseteq \denot{\sigma(\tau')}$
 \end{lemma}
 
-\subsection{Substitution Lemma}
+\paragraph{Substitution Lemma}
 
 \begin{lemma}\label{lemma:subt}Substitution Lemma] For Given type context $\Gamma$, variable $x$, well-formed pure refinement type $t$,\PAT $\tau$ and term $e$:
   $\Gamma, x{:}t;\Delta;\Theta \vdash e : \tau \impl \forall v. \Gamma \vdash v : t \impl \Gamma;\Delta;\Theta \vdash e[x\mapsto v] : \tau[x\mapsto v]$
 \end{lemma}
 
-\subsection{Lemma for handler context}
+\paragraph{Lemma for handler context}
 
 \begin{definition}[Well-formed handler context]
   \label{lemma:built-in-typing-ap}
-  The handler specification $\Delta$ is well-formed iff for all operator $\eff{op}$ and its \PAT $\overline{y{:}b} \garr \overline{x{:}t} \sarr \rg{H}{\lastA\msgB{op}{\overline{y}}{\phi}}{F}$ and capability $\Theta$ in $\Delta$ satisfying
+  The handler specification $\Delta$ is well-formed iff for all operator $\eff{op}$ and its \PAT $\overline{y{:}b} \garr \overline{x{:}t} \sarr \rg{H}{\lastA\msgB{op}{\overline{y}}{\phi}}{F}$ and capability $\{\overline{\eff{op_i}}\}$ in $\Delta$ satisfying
 {\small\begin{align*}
-    &\forall \overline{y{:}b}.\forall \alpha_h \in \denot{H}. \forall \overline{c \in \denotation{t}}. \forall \alpha_f \in \denot{F}. \phi\msubst{y}{c} \impl
-    \\&\quad \exists \overline{\alpha_i}. \exists \overline{m_i}.\; \alpha_1 \listconcat [m_1] \listconcat ... [m_{n}] \listconcat \alpha_{n+1} = \alpha_f \land \alpha_h \vDash \zevent{op}{\overline{c}} \Downarrow \{m_i\} \land \forall \eff{op_i}. \eff{op_i} \in \Theta \iff \exists \overline{c_i}.m_i = \zevent{op_i}{\overline{c_i}}
-\end{align*}}
+    &\forall \overline{y{:}b}.\forall \alpha_h \in \denot{H}. \forall \overline{c \in \denotation{t}}. \forall \overline{c_{ij}}.\forall \overline{\alpha_i}. \alpha_1 \listconcat [\zevent{op_1}{\overline{c_{1j}}}] \listconcat ... [\zevent{op_n}{\overline{c_{nj}}}] \listconcat \alpha_{n+1} \in \denot{F} \impl \alpha_h \vDash \zevent{op}{\overline{c}} \Downarrow \{m_i\} \land \phi\msubst{x}{c}
+\end{align*}} 
 \end{definition}
 
 \begin{lemma}[Well-formed handler context with subsumption]
@@ -91,8 +79,8 @@ For given well-formed handler specification $\Delta$, type context $\Gamma$, and
 {\small\begin{align*}
     &\Delta(\eff{op}) = \langle \tau, \Theta \rangle \impl \Gamma \vdash \tau <: \overline{x{:}t} \sarr \rg{H}{\lastA\msgB{op}{\overline{y}}{\phi}}{F} \impl
     \\&\forall \sigma \in \denot{\Gamma}. \forall \alpha_h \in \denot{\sigma(H)}. \forall \overline{c \in \denotation{\sigma(t)}}. \forall \alpha_f \in \denot{\sigma(F)}.
-    \exists \overline{\alpha_i}. \exists \overline{m_i}.\; \alpha_1 \listconcat [m_1] \listconcat ... [m_{n}] \listconcat \alpha_{n+1} = \alpha_f \land
-    \\&\quad \alpha_h \vDash \zevent{op}{\overline{c}} \Downarrow \{m_i\} \land \sigma(\phi)\msubst{y}{c} \land  \forall \eff{op_i}. \eff{op_i} \in \Theta {\iff} \exists \overline{c_i}.m_i = \zevent{op_i}{\overline{c_i}}
+    \exists \overline{\alpha_i}. \exists \overline{m_i}.\; 
+    \\&\alpha_1 \listconcat [m_1] \listconcat ... [m_{n}] \listconcat \alpha_{n+1} = \alpha_f  \land (\forall \eff{op_i}. \eff{op_i} \in \Theta {\iff} \exists \overline{c_i}.m_i = \zevent{op_i}{\overline{c_i}}) \impl \alpha_h \vDash \zevent{op}{\overline{c}} \Downarrow \{m_i\} \land \sigma(\phi)\msubst{x}{c}
 \end{align*}}
 \end{lemma}
 
@@ -103,8 +91,6 @@ For given specification $\Delta$, type context $\Gamma$, and pure operator $\pri
     &\Delta(\primop) = t \land \Gamma \vdash t <: \overline{y{:}t_y}\sarr t_x \impl \forall \sigma \in \denot{\Gamma}. \forall \overline{c_y \in \denot{\sigma(t_y)}}. \primop (\overline{c_y}) \Downarrow c \impl c \in \denot{\sigma(t_x\msubst{y}{c_y})}
 \end{align*}}
 \end{lemma}
-
-
 
 \subsection{Fundamental Theorems}
 
@@ -153,7 +139,7 @@ where we have inductive hypothesis $\forall \sigma \in \denot{\Gamma}. \sigma(v)
 $\Delta(\eff{op}) =\langle \mykw{gen}\;\tau, \Theta' \rangle$ \quad
 $\Gamma \vdash \tau <: \overline{x_i{:}t_i}\sarr
 \rg{H}{\lastA\msg{op}{\phi}}{A \seqA F}$ \quad
-$\forall i. \Gamma \vdash v_i : t_i$ \quad $\Gamma \vdash \nuot{unit}{\top} <: \nuot{unit}{\phi\msubst{x_i}{v_i}}$ \quad
+$\forall i. \Gamma \vdash v_i : t_i$ \quad
  $\Gamma; \Delta; \Theta \cup \Theta' \vdash e : \rg{H \seqA \lastA\msg{op}{\phi\msubst{x_i}{v_i}}}{A}{F}$
  }
 {TGen}
@@ -169,11 +155,11 @@ From the induction hypothesis and the precondition of this rule, we have
 &\Delta(\eff{op}) =\langle \mykw{gen}\;\tau, \Theta' \rangle \ptag{assumption} \label{found:1-1} \\
 &\Gamma \vdash \tau <: \overline{x{:}t}\sarr \rg{H}{\lastA\msg{op}{\phi}}{A \seqA F} \ptag{assumption} \label{found:1-2} \\
 &\forall i. \Gamma \vdash v_i : t_i \ptag{assumption} \label{found:1-3} \\
-&\Gamma \vdash \nuot{unit}{\top} <: \nuot{unit}{\phi\msubst{x_i}{v_i}} \ptag{assumption} \label{found:1-4} \\
+% &\Gamma \vdash \nuot{unit}{\top} <: \nuot{unit}{\phi\msubst{x_i}{v_i}} \ptag{assumption} \label{found:1-4} \\
 &\Gamma ~|~ \Theta \cup \Theta' \vdash e : \rg{H \seqA \lastA\msg{op}{\phi\msubst{x}{v}}}{A}{F} \ptag{assumption} \label{found:1-5} \\
 &\forall \sigma \in \denot{\Gamma}. \sigma(e) \in \denot{\sigma(\rg{H \seqA \lastA\msg{op}{\phi\msubst{x}{v}}}{A}{F})} \ptag{induction hypothesis} \label{found:1-6} \\
 &\forall i. \forall \sigma \in \denot{\Gamma}. \sigma(v_i) \in  \sigma(\denot{t_i}) \ptag{\ref{found:1-3} and Lemma~\ref{theorem:pure-fundamental-ap}} \label{found:1-7} \\
-&\forall \sigma \in \denot{\Gamma}. \sigma(\phi)\msubst{x_i}{v_i} \ptag{\ref{found:1-4} and Lemma~\ref{theorem:pure-fundamental-ap}} \label{found:1-8}
+&\forall \sigma \in \denot{\Gamma}. \sigma(\phi)\msubst{x_i}{v_i} \ptag{Lemma~\ref{lemma:built-in-typing-sub}, \ref{found:1-1}, \ref{found:1-2}, and \ref{found:1-3}} \label{found:1-8}
 \end{alignat}}\noindent
 According to denotation of \PAT and assumption~\ref{found:1-6}, we have
 {\footnotesize\begin{alignat}{2}
@@ -206,7 +192,7 @@ Now, we can apply hypothesis~\ref{found:1-9} with
 {\footnotesize\begin{align*}
     &\sigma \mapsto \sigma \quad \alpha_h \mapsto \alpha_h \listconcat [\zevent{op}{\overline{\sigma(v_i)}}] \quad \alpha_f \mapsto \alpha_f \quad \alpha \mapsto \alpha' \quad \beta \mapsto \beta \cup \beta_{\eff{op}} \quad 
     e_h \mapsto e_h; \zgen{op}{\overline{\sigma(v_i)}}{()} \quad e_f \mapsto e_f
-\end{align*}}
+\end{align*}}\noindent
 Then we have
 {\footnotesize\begin{alignat}{2}
 &\alpha' \in\denot{\sigma(A)} \ptag{hypothesis~\ref{found:1-9} with \ref{found:1-10}, \ref{found:1-11}, \ref{found:1-13}, \ref{found:1-15}, \ref{found:1-16}} \label{found:1-17}
@@ -216,7 +202,7 @@ that is sufficient to prove subgoal of this case.
 
 \item:
 {\footnotesize
-\mprooftr{77mm}
+\mprooftr{80mm}
 {
   $\Delta(\eff{op}) =\langle \mykw{obs}\;\tau, \Theta'\rangle$ \quad
 $\Gamma \vdash \tau <: \overline{x_i{:}t_i}\sarr
@@ -390,7 +376,7 @@ From the assumption and inductive hypothesis of this case, we know
 \\& \forall i. \forall \sigma\in\denot{\Gamma}. \sigma(v_i) \in\denot{\sigma(t_i)} \ptag{Lemma~\ref{theorem:pure-fundamental-ap} and \ref{found:3-3}} \label{found:3-7}
 \\& \forall \sigma\in\denot{\Gamma}. \forall c_x. \primop(\overline{\sigma(v)}) \Downarrow c_x \impl c_x \in \denot{t_x\msubst{y}{v}} \ptag{Lemma~\ref{lemma:built-in-typing-sub-pure}, \ref{found:3-1}, \ref{found:3-2}, and \ref{found:3-6}} \label{found:3-8}
 \\& \forall \sigma\in\denot{\Gamma}. \forall c_x. \primop(\overline{\sigma(v)}) \Downarrow c_x \impl \sigma(e[x\mapsto c_x]) \in \denot{\sigma(\tau[x\mapsto c_x])} \ptag{\ref{found:3-6} and \ref{found:3-8}} \label{found:3-9}
-\\& \forall \sigma\in\denot{\Gamma}. \forall c_x. \primop(\overline{\sigma(v)}) \Downarrow c_x \impl \sigma(e[x\mapsto c_x]) \in \denot{\sigma(\tau)} \ptag{\ref{found:3-19} and $\tau$ is well-formed under $\Gamma$} \label{found:3-10}
+\\& \forall \sigma\in\denot{\Gamma}. \forall c_x. \primop(\overline{\sigma(v)}) \Downarrow c_x \impl \sigma(e[x\mapsto c_x]) \in \denot{\sigma(\tau)} \ptag{\ref{found:3-9} and $\tau$ is well-formed under $\Gamma$} \label{found:3-10}
 \end{alignat}}\noindent
 Then it is safe to apply Lemma~\ref{lemma:pure-denot} with $e \mapsto \sigma(\zlet{x{:}b}{\primop\ \overline{v}}{e}), e' \mapsto \sigma(e[x\mapsto c_x]), \tau \mapsto \sigma(\tau)$.
 Now, we need to show $\zlet{x{:}b}{\primop\ \overline{v}}{e}$ can reduced into $e[x\mapsto c_x]$ without add new effect, which is can be proved by \textsc{StOp} and the assumption $\primop(\overline{\sigma(v)}) \Downarrow c_x$. Then the proof immediate holds in this case.

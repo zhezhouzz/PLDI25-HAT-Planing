@@ -360,15 +360,15 @@ $\forall i. \Gamma \vdash v_i : t_i$ \quad
 {TRet}
 {$\Gamma; \Delta; \emptyset \vdash () : \rg{H}{\epsTL}{F}$}
 \quad
-\mprooftr{77mm}
+\mprooftr{81mm}
 {
   $\Delta(\eff{op}) =\langle \mykw{obs}\;\tau, \Theta'\rangle$ \quad
 $\Gamma \vdash \tau <: \overline{x_i{:}t_i}\sarr
-\rg{H}{\lastA\msg{op}{\phi}}{A \seqA F}$ \quad
- $\Gamma, \overline{x{:}t}; \Delta; \Theta \cup \Theta' \vdash e : \rg{H \seqA \lastA\msg{op}{\phi}}{A}{F}$
+\rg{H}{\lastA\msgB{op}{\overline{y}}{\phi}}{A \seqA F}$ \quad
+ $\Gamma, \overline{x{:}t}; \Delta; \Theta \cup \Theta' \vdash e : \rg{H \seqA \lastA\msgB{op}{\overline{y}}{\phi \land \overline{y = x}}}{A}{F}$
  }
 {TObs}
-{$\Gamma; \Delta; \{\eff{op}\} \cup \Theta \vdash \zobs{\overline{x}}{op}{e} : \rg{H}{\lastA\msg{op}{\phi} \seqA A}{F}$}
+{$\Gamma; \Delta; \{\eff{op}\} \cup \Theta \vdash \zobs{\overline{x}}{op}{e} : \rg{H}{\lastA\msgB{op}{\overline{y}}{\phi} \seqA A}{F}$}
 }
 % \vspace*{-.1in}
 \caption{Selected typing rules.}
@@ -515,13 +515,21 @@ handler specification $\Delta$ should be consistent with the
 auxiliary semantics of handlers introduced in
 \autoref{fig:selected-semantics}, also, $\Delta$ should also guarantee the new sending message assumed by capability context can be eventually received.
 
+% \begin{definition}[Well-formed handler context]
+%   \label{lemma:built-in-typing}
+%   The handler specification $\Delta$ and capability context $\Sigma$ is well-formed iff for all operator $\eff{op}$ and its \PAT $\overline{y{:}b} \garr \overline{x{:}t} \sarr \rg{H}{\lastA\msgB{op}{\overline{y}}{\phi}}{F}$ and capability $\Theta$ in $\Delta$ satisfying
+% {\small\begin{align*}
+%     \forall \overline{y{:}b}.\forall \alpha \in \denot{A}. \forall \overline{c \in \denotation{t}}. \forall \overline{\alpha_i}. \forall \overline{m_i}.\; \alpha_1 \listconcat [m_1] \listconcat ... [m_{n}] \listconcat \alpha_{n+1} \in \denot{F} \impl \alpha \vDash \zevent{op}{\overline{c}} \Downarrow \{m_i\}
+% \end{align*}}\noindent
+% also, $\overline{y{:}\rawnuot{b}{\top}},\overline{x{:}t} \vdash F \subseteq \bigwedge_{\eff{op} \in \Theta} \finalA \msg{op}{\top}$ should hold.
+% \end{definition}
+
 \begin{definition}[Well-formed handler context]
   \label{lemma:built-in-typing}
-  The handler specification $\Delta$ and capability context $\Sigma$ is well-formed iff for all operator $\eff{op}$ and its \PAT $\overline{y{:}b} \garr \overline{x{:}t} \sarr \rg{H}{\lastA\msgB{op}{\overline{y}}{\phi}}{F}$ and capability $\Theta$ in $\Delta$ satisfying
+  The handler specification $\Delta$ is well-formed iff for all operator $\eff{op}$ and its \PAT $\overline{y{:}b} \garr \overline{x{:}t} \sarr \rg{H}{\lastA\msgB{op}{\overline{y}}{\phi}}{F}$ and capability $\{\overline{\eff{op_i}}\}$ in $\Delta$ satisfying
 {\small\begin{align*}
-    \forall \overline{y{:}b}.\forall \alpha \in \denot{A}. \forall \overline{c \in \denotation{t}}. \forall \overline{\alpha_i}. \forall \overline{m_i}.\; \alpha_1 \listconcat [m_1] \listconcat ... [m_{n}] \listconcat \alpha_{n+1} \in \denot{F} \impl \alpha \vDash \zevent{op}{\overline{c}} \Downarrow \{m_i\}
-\end{align*}}\noindent
-also, $\overline{y{:}\rawnuot{b}{\top}},\overline{x{:}t} \vdash F \subseteq \bigwedge_{\eff{op} \in \Theta} \finalA \msg{op}{\top}$ should hold.
+    &\forall \overline{y{:}b}.\forall \alpha_h \in \denot{H}. \forall \overline{c \in \denotation{t}}. \forall \overline{c_{ij}}.\forall \overline{\alpha_i}. \alpha_1 \listconcat [\zevent{op_1}{\overline{c_{1j}}}] \listconcat ... [\zevent{op_n}{\overline{c_{nj}}}] \listconcat \alpha_{n+1} \in \denot{F} \impl \alpha_h \vDash \zevent{op}{\overline{c}} \Downarrow \{m_i\} \land \phi\msubst{x}{c}
+\end{align*}} 
 \end{definition}
 
 
