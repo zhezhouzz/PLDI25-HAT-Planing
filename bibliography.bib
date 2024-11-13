@@ -1521,7 +1521,7 @@ url="https://doi.org/10.1007/978-0-8176-4842-8_1"
   month = oct,
   articleno = {159},
   numpages = {30}}
- 
+
 @inproceedings{WW+15,
   author       = {James R. Wilcox and
                   Doug Woos and
@@ -1547,7 +1547,7 @@ url="https://doi.org/10.1007/978-0-8176-4842-8_1"
   bibsource    = {dblp computer science bibliography, https://dblp.org}
 }
 
- 
+
 @article{SWT18,
   author       = {Ilya Sergey and
                   James R. Wilcox and
@@ -1646,7 +1646,7 @@ month = jul
  acmid = {1973448},
  publisher = {USENIX Association},
  address = {Berkeley, CA, USA},
-} 
+}
 
 @article{BK+21,
 author = {Biswas, Ranadeep and Kakwani, Diptanshu and Vedurada, Jyothi and Enea, Constantin and Lal, Akash},
@@ -1815,3 +1815,72 @@ series = {ASPLOS '20}}
  numpages = {8} }
  
  
+@InProceedings{casl,
+  author =	{Raad, Azalea and Vanegue, Julien and Berdine, Josh and O'Hearn, Peter},
+  title =	{{A General Approach to Under-Approximate Reasoning About Concurrent Programs}},
+  booktitle =	{34th International Conference on Concurrency Theory (CONCUR 2023)},
+  pages =	{25:1--25:17},
+  series =	{Leibniz International Proceedings in Informatics (LIPIcs)},
+  ISBN =	{978-3-95977-299-0},
+  ISSN =	{1868-8969},
+  year =	{2023},
+  volume =	{279},
+  editor =	{P\'{e}rez, Guillermo A. and Raskin, Jean-Fran\c{c}ois},
+  publisher =	{Schloss Dagstuhl -- Leibniz-Zentrum f{\"u}r Informatik},
+  address =	{Dagstuhl, Germany},
+  URL =		{https://drops.dagstuhl.de/opus/volltexte/2023/19019},
+  URN =		{urn:nbn:de:0030-drops-190195},
+  doi =		{10.4230/LIPIcs.CONCUR.2023.25},
+  annote =	{Keywords: Under-approximate reasoning, incorrectness logic, bug detection, software exploits, separation logic}
+}
+
+@article{OHP19,
+ author = {O'Hearn, Peter W.},
+ title = {{Incorrectness Logic}},
+ year = {2019},
+ journal = {Proc. {ACM} Program. Lang.},
+ issue_date = {January 2020},
+ publisher = {Association for Computing Machinery},
+ address = {New York, NY, USA},
+ volume = {4},
+ number = {POPL},
+ url = {https://doi.org/10.1145/3371078},
+ doi = {10.1145/3371078}}
+
+@article{LR+22,
+  author    = {Quang Loc Le and
+               Azalea Raad and
+               Jules Villard and
+               Josh Berdine and
+               Derek Dreyer and
+               Peter W. O'Hearn},
+  title     = {{Finding Real Bugs in Big Programs with Incorrectness Logic}},
+  journal   = {Proc. {ACM} Program. Lang.},
+  volume    = {6},
+  number    = {{OOPSLA}},
+  pages     = {1--27},
+  year      = {2022},
+  url       = {https://doi.org/10.1145/3527325},
+  doi       = {10.1145/3527325},
+  timestamp = {Wed, 18 May 2022 15:21:43 +0200},
+  biburl    = {https://dblp.org/rec/journals/pacmpl/LeRVBDO22.bib},
+  bibsource = {dblp computer science bibliography, https://dblp.org}
+}
+
+@inproceedings{RBD+20,
+author = {Raad, Azalea and Berdine, Josh and Dang, Hoang-Hai and Dreyer, Derek and O’Hearn, Peter and Villard, Jules},
+title = {Local Reasoning About the Presence of Bugs: Incorrectness Separation Logic},
+year = {2020},
+isbn = {978-3-030-53290-1},
+publisher = {Springer-Verlag},
+address = {Berlin, Heidelberg},
+url = {https://doi.org/10.1007/978-3-030-53291-8_14},
+doi = {10.1007/978-3-030-53291-8_14},
+abstract = {There has been a large body of work on local reasoning for proving the absence of bugs, but none for proving their presence. We present a new formal framework for local reasoning about the presence of bugs, building on two complementary foundations: 1) separation logic and 2) incorrectness logic. We explore the theory of this new incorrectness separation logic (ISL), and use it to derive a begin-anywhere, intra-procedural symbolic execution analysis that has no false positives by construction. In so doing, we take a step towards transferring modular, scalable techniques from the world of program verification to bug catching.},
+booktitle = {Computer Aided Verification: 32nd International Conference, CAV 2020, Los Angeles, CA, USA, July 21–24, 2020, Proceedings, Part II},
+pages = {225–252},
+numpages = {28},
+keywords = {Separation logic, Program logics, Bug catching},
+location = {Los Angeles, CA, USA}
+}
+

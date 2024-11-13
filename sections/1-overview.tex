@@ -26,7 +26,7 @@ $\eff{readReq}$ message is a $\eff{readRsp}$ message with two fields,
 $v$ and $st$: when the $st$ field is $\true$, field
 $v$ contains the value of the key at the time when the response was
 generated; a $\false$ status indicates that there is no value for
-the key in the current database.
+the key in the database.
 
 %% Each response carries a status flag indicating if the
 %% request was successful.  A \textsf{true} status value on a
@@ -130,17 +130,16 @@ let (y2: int) (s : bool) = ?$\mykw{obs}$? ?$\eff{readRsp}$? in ?$\mykw{assert}$?
 \paragraph{Controllers}
 As mentioned earlier, testing an open and reactive distributed system
 requires the support of a controller that models the environment in
-which it is run.  We introduce a solver-aided DSL~\cite{TB13,TB14} for
-expressing controllers that is amenable to automated
-synthesis. Generating a message in this DSL is analogous to performing
-an effect in a functional language, with actors playing a similar role
-to effect handlers~\cite{BP15}. A controller program manages the
-generation of messages, schedules message order, and constrains data
-dependencies between messages.  Concretely, to realize the trace
-\ref{eqn:traceEx}, the controller must both issue user-generable
-messages (e.g., $\zevent{writeReq}{3}$), and ensure that
-$\zevent{writeRsp}{3}$ is allowed to be delivered before
-$\zevent{readRsp}{4,\true}$.
+which it is run.  We introduce a new DSL for expressing controllers
+that is amenable to automated synthesis. Generating a message in this
+DSL is analogous to performing an effect in a functional language,
+with actors playing a similar role to effect handlers~\cite{BP15}. A
+controller program manages the generation of messages, schedules
+message order, and constrains data dependencies between messages.
+Concretely, to realize the trace \ref{eqn:traceEx}, the controller
+must both issue user-generable messages (e.g.,
+$\zevent{writeReq}{3}$), and ensure that $\zevent{writeRsp}{3}$ is
+allowed to be delivered before $\zevent{readRsp}{4,\true}$.
 
 Programs in our DSL are loop-free sequences of commands that generate
 messages from the environment, and impose constraints on the outputs

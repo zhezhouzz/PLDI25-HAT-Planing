@@ -267,14 +267,15 @@ $\Code{k}$ updated within an active transaction $\Code{i}$, any
 successful read response asking its value should return the value last
 written to $\Code{k}$ made by that transaction. We can express a
 violation of this property in LTL$_f$ as: {\small
+  \vspace*{-.1in}
   \begin{align*}
     \finalA (&\msg{updateRsp}{tid = \Code{i} \land key = \Code{k}
                \land v = \Code{x} \land st = \Code{OK}} \land \\
              &\nextA \neg
                \msg{updateRsp}{tid = \Code{i} \land key = \Code{k} \land st =
                \Code{OK}} \untilA \msg{readRsp}{tid = \Code{i} \land key =
-               \Code{k} \land v \not= \Code{x} \land st = \Code{OK}})
-  \end{align*}}%
+                 \Code{k} \land v \not= \Code{x} \land st = \Code{OK}})
+\end{align*}}%
 \noindent where the field $\mathit{tid}$ represents the transaction id, while
 other fields have the same meanings as in the example from
 \autoref{sec:intro}.  Generating a fault-inducing scenario requires
