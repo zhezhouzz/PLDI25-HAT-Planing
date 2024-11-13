@@ -3,7 +3,7 @@
 A trace realizes buffer $\{\overline{m_i}\}$ when it contains all messages in this buffer, i.e., 
 {\small$\alpha_1 \listconcat [m_1] \listconcat ... [m_{n}] \listconcat \alpha_{n+1}$}. We generate this idea to automata.
 
-\begin{definition}\label{def:beta-B}[Automata Realize Capability] A automata $F$ realizes the capability, denoted as $(\Theta, \{\overline{m_i}\}) \sim F$, when
+\begin{definition}[Automata Realize Capability]\label{def:beta-B} A automata $F$ realizes the capability, denoted as $(\Theta, \{\overline{m_i}\}) \sim F$, when
  {\small\begin{align*}
  \exists \alpha \in \denot{F} \land \exists \overline{\alpha_i}. \alpha_1 \listconcat [m_1] \listconcat ... [m_{n}] \listconcat \alpha_{n+1} = \alpha \land 
 \forall \eff{op}. \eff{op} \in \Theta \iff (\exists \overline{c}. \zevent{op}{\overline{c}} \in \{\overline{m_i}\})
@@ -12,7 +12,7 @@ A trace realizes buffer $\{\overline{m_i}\}$ when it contains all messages in th
 
 Then, the prophecy automata in our type judgment always contains at least one trace that realizes the capability.
 
-\begin{lemma}\label{lemma:cap-prophecy}[Prophecy automata realize capability]
+\begin{lemma}[Prophecy automata realize capability]\label{lemma:cap-prophecy}
  {\small\begin{align*} 
  \Gamma;\Delta\;\Theta \vdash e : \rg{H}{A}{F} \impl \forall \sigma \in\denot{\Gamma}. \exists \beta. (\Theta, \beta) \sim \sigma(F)
 \end{align*}}
@@ -20,7 +20,7 @@ Then, the prophecy automata in our type judgment always contains at least one tr
 
 We also need a lemma about buffer which can be proved by basic properties of multi-set.
 
-\begin{lemma}\label{lemma:buf-partition}[Buffer Partition] For all capability $\Theta$, automata $F$ and buffer $\beta$, we have
+\begin{lemma}[Buffer Partition]\label{lemma:buf-partition} For all capability $\Theta$, automata $F$ and buffer $\beta$, we have
 \begin{align*}
     (\Theta_1 \cup \Theta_2, \beta) \sim F \impl
     \exists \beta_1\;\beta_2. \beta_1 \cup \beta_2 = \beta \land \beta_1 \cap \beta_2 = \emptyset \land (\Theta_1, \beta_1) \sim F \land (\Theta_2, \beta_2) \sim F
@@ -28,7 +28,7 @@ We also need a lemma about buffer which can be proved by basic properties of mul
 \end{lemma}
 
 
-\begin{theorem}\label{theorem:realizable}[Realizability] Given a well-formed handler specification $\Delta$, A well typed program $e$ at least realize one trace:
+\begin{theorem}[Realizability]\label{theorem:realizable} Given a well-formed handler specification $\Delta$, A well typed program $e$ at least realize one trace:
  {\small\begin{align*} 
  \Gamma;\Delta\;\Theta \vdash e : \rg{H}{A}{F} \impl 
  \forall \sigma \in \denot{\Gamma}.\forall \alpha_h \in \denot{\sigma(H)}. \forall \beta. (\Theta, \beta) \sim \sigma(F) \impl \exists \alpha \in\denot{\sigma(A)}. \msteptr{\alpha_h}{(\beta, e)}{\alpha}{(\emptyset, ())}
@@ -283,7 +283,7 @@ The case can be directly proved by Lemma~\ref{lemma:subtyping}.
 
 The type soundness can be proved by fundamental theorem and realizability.
 
-\begin{theorem}\label{theorem:sound-ap}[Type Soundness] Given
+\begin{theorem}[Type Soundness]\label{theorem:sound-ap} Given
   a well-formed handler specification $\Delta$, with ghost variables $\overline{x{:}b}$ and a violation property $A$, a controller $e$ that satisfies
   $\overline{x{:\rawnuot{b}{\top}}};\Delta; \emptyset \vdash e : \rg{\epsTL}{A}{\epsTL}$, then $e$ at least realize one trace consistent with $A$:
  {\footnotesize\begin{align*} \exists

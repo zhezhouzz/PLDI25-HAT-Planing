@@ -59,7 +59,7 @@ In this paper, we omit the proof of basic typing \(\basicvdash e : s\), assuming
 
 \paragraph{Substitution Lemma}
 
-\begin{lemma}\label{lemma:subt}Substitution Lemma] For Given type context $\Gamma$, variable $x$, well-formed pure refinement type $t$,\PAT $\tau$ and term $e$:
+\begin{lemma}[Substitution Lemma]\label{lemma:subt} For Given type context $\Gamma$, variable $x$, well-formed pure refinement type $t$,\PAT $\tau$ and term $e$:
   $\Gamma, x{:}t;\Delta;\Theta \vdash e : \tau \impl \forall v. \Gamma \vdash v : t \impl \Gamma;\Delta;\Theta \vdash e[x\mapsto v] : \tau[x\mapsto v]$
 \end{lemma}
 
