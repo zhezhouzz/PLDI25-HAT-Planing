@@ -69,7 +69,8 @@ In this paper, we omit the proof of basic typing \(\basicvdash e : s\), assuming
   \label{lemma:built-in-typing-ap}
   The handler specification $\Delta$ is well-formed iff for all operator $\eff{op}$ and its \PAT $\overline{y{:}b} \garr \overline{x{:}t} \sarr \rg{H}{\lastA\msgB{op}{\overline{y}}{\phi}}{F}$ and capability $\{\overline{\eff{op_i}}\}$ in $\Delta$ satisfying
 {\small\begin{align*}
-    &\forall \overline{y{:}b}.\forall \alpha_h \in \denot{H}. \forall \overline{c \in \denotation{t}}. \forall \overline{c_{ij}}.\forall \overline{\alpha_i}. \alpha_1 \listconcat [\zevent{op_1}{\overline{c_{1j}}}] \listconcat ... [\zevent{op_n}{\overline{c_{nj}}}] \listconcat \alpha_{n+1} \in \denot{F} \impl \alpha_h \vDash \zevent{op}{\overline{c}} \Downarrow \{m_i\} \land \phi\msubst{x}{c}
+    &\forall \overline{y{:}b}.\forall \alpha_h \in \denot{H}. \forall \overline{c \in \denotation{t}}. \forall \overline{c_{ij}}.\forall \overline{\alpha_i}. \alpha_1 \listconcat [\zevent{op_1}{\overline{c_{1j}}}] \listconcat ... [\zevent{op_n}{\overline{c_{nj}}}] \listconcat \alpha_{n+1} \in \denot{F} \impl 
+    \\&\qquad \alpha_h \vDash \zevent{op}{\overline{c}} \Downarrow \{\zevent{op_i}{\overline{c_{ij}}}\} \land \phi\msubst{x}{c}
 \end{align*}} 
 \end{definition}
 
