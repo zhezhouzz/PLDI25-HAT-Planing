@@ -231,7 +231,7 @@ future trace.
         \tcp{non-emptiness check}
         \If{$\Gamma \not\vdash (\Pi_h \seqA \lastA\msg{op}{\phi} \seqA \Pi_f) \subseteq \neg\allTL$}{
             \tcp{return type context, property, as well as updated forward and backward set}
-            \Return{$(\Gamma', \Mfw \cup \{\eff{op}\}, \Mbw \cup B, \Pi_h, \lastA \msg{op}{\phi}, \Pi_f)$}
+            \Return{$(\Gamma, \Mfw \cup \{\eff{op}\}, \Mbw \cup B, \Pi_h, \lastA \msg{op}{\phi}, \Pi_f)$}
         }
     }
 }
@@ -286,7 +286,7 @@ well as updated forward and backward sets (line $8$).
         \tcp{non-emptiness check}
         \If{$\Gamma \not\vdash (\Pi_h \seqA \lastA\msg{op}{\phi} \seqA \Pi_f) \subseteq \neg\allTL$}{
             \tcp{return type context, property, as well as updated forward and backward operations set}
-            \Return{$(\Gamma', \Mfw \cup \{\eff{op_{parent}}\}, \Mbw \cup \{\eff{op}\} \cup \Theta, \Pi_h, \lastA \msg{op}{\phi}, \Pi_f)$}
+            \Return{$(\Gamma, \Mfw \cup \{\eff{op_{parent}}\}, \Mbw \cup \{\eff{op}\} \cup \Theta, \Pi_h, \lastA \msg{op}{\phi}, \Pi_f)$}
         }
     }
 }
