@@ -1,14 +1,13 @@
 \section{Overview}
 \label{sec:overview}
 
-\begin{figure}[t!]
+\begin{wrapfigure}{l}{.6\textwidth}
     \centering
-    \includegraphics[width=0.6\linewidth]{figures/Controller-Database.drawio.png}
+    \includegraphics[width=0.8\linewidth]{figures/Controller-Database.drawio.png}
     \caption{A simplified database access workflow.}
     \label{fig:database}
     \vspace{-0.5cm}
-\end{figure}
-
+\end{wrapfigure}
 To motivate our approach, consider how we might test a (highly
 simplified) model of a distributed database application depicted in
 \autoref{fig:database}. This system includes two actors: a user and a
@@ -75,7 +74,7 @@ the database are received by the user.
 In this trace, the $\eff{readRsp}$ message is received by the user
 from the database in response to a previously issued $\eff{readReq}$
 message, but notably its contents contains a value other than the most
-recently persisted write.  This can happen, for example, when messages
+recently persisted write.  This can happen, for example, if messages
 on $\eff{writeReq}$ events are not guaranteed to be serviced in-order,
 or when the database state is replicated and the effect of the
 $\zevent{writeRsp}{3}$ event has not been propagated to the replica
@@ -123,8 +122,9 @@ let (y1: int) = ?$\mykw{obs}$? ?$\eff{writeRsp}$? in ?$\mykw{assert}$? (y1 == y)
 let (x1: int) = ?$\mykw{obs}$? ?$\eff{writeRsp}$? in ?$\mykw{assert}$? (x1 == x) in
 let (y2: int) (s : bool) = ?$\mykw{obs}$? ?$\eff{readRsp}$? in ?$\mykw{assert}$? (y2 == y && s == true)
 \end{minted}
-    \caption{A controller $P_{C}$ that is consistent with \ref{eqn:autoEx}. }
-    \label{fig:2pc-term}
+\vspace*{-.1in}
+\caption{A controller $P_{C}$ that is consistent with \ref{eqn:autoEx}. }\label{fig:2pc-term}
+\vspace*{-.2in}
 \end{figure}
 
 \paragraph{Controllers}
@@ -163,8 +163,8 @@ generable messages, and binds the contents of observable messages to
 new variables using $\mykw{let}$. The constraints on parameters
 $\Code{x}$ and $\Code{y}$ are defined by the $\mykw{assume}$ statement
 on line 1.  Importantly, since the controller does not control the
-behavior of the actors under test, it cannot mandate the specific values
-output by the database in message responses. Consequently,
+behavior of the actors under test, it cannot mandate the specific
+values output by the database in message responses. Consequently,
 assertions may fail; for instance, if the database sends a
 $\eff{readRsp}$ message with a $\false$ status, this would violate the
 assertion on line 4. Assertions are used to prune executions that will
@@ -172,7 +172,12 @@ not satisfy \ref{eqn:autoEx}; our synthesis algorithm adds these
 assertions selectively (lines 4, 6, and 7) using the specifications
 associated with each handler.  Our synthesis procedure guarantees that
 at least one of its executions will produce a trace accepted by
-\ref{eqn:autoEx}, if one exists.
+\ref{eqn:autoEx}, if one exists.  The correctness of this program is
+established with respect to specifications associated with message
+handlers that dictate the form and placement of asserts and assumes,
+as well as the order and structure of $\eff{gen}$ and $\eff{obs}$
+statements.  We introduce the specification language for handlers
+below.
 
 % BD: we may want to say what happens when an assert fails.
 
@@ -272,8 +277,10 @@ future events.
       \\ \mykw{obs}~ \eff{readRsp} ~:~ & \Code{x}\hasnty{int}\sarr \Code{s}\hasnty{bool} \sarr \rg{\allTL}{\lastA\msg{readRsp}{v = \Code{x} \land st = \Code{s}}}{\allTL}
     \end{align*}
   }
+\vspace*{-.2in}
   \caption{Prophecy Automata Type specifications of message handlers. } %
   \label{fig:spec}
+\vspace*{-.15in}
 \end{figure}
 
 \paragraph{History, current, and prophecy automata} The specifications
@@ -301,9 +308,7 @@ eventually trigger a $\eff{writeRsp}$ message. On the other hand, we
 assume little information about the behaviors of the handlers for
 $\eff{readRsp}$ and $\eff{writeRsp}$ messages, as can been seen by
 their prophecy automata, which provide no guarantees about any future
-messages they may produce ($\allTL$).
-
-To prevent the violation of the RYW policy, a stronger \PAT for \(\eff{writeReq}\) is required, i.e., with the prophecy automata \((\neg \msg{readReq}{\top}) \untilA \msg{writeRsp}{v = \Code{x}}\). This \PAT ensures atomicity by guaranteeing that no read operation occurs before the write operation completes (i.e., before \(\eff{writeRsp}\) is received).
+messages they may produce ($\allTL$).  
 
 \paragraph{Control flow} A handler's \PAT{} also captures its relevant
 control-flow dependencies. For example, the type of $\eff{readReq}$
@@ -322,6 +327,31 @@ Otherwise, as specified by the second \PAT{}, no value has been
 successfully written ($\neg\finalA \msg{writeRsp}{\top}$), and a
 $\eff{readRsp}$ message with a $\false$ status will eventually be sent
 ($\finalA\msg{readRsp}{st = \false}$).
+
+Observe that this specification is actually \emph{incorrect} because
+it allows violations of the RYW property.  Specifically,
+$\eff{readReq}$'s specification allows a successful $\eff{readRsp}$ to
+return the value in the database that exists at the time the
+$\eff{readReq}$ message is handled, ignoring the possibility of other
+$\eff{writeRsp}$ messages that are executed after the $\eff{readReq}$
+but before the corresponding response.  This is precisely the scenario
+depicted by the controller program $P_C$ in \autoref{fig:2pc-term} (lines 5-7).
+To prevent this violation, we could strengthen the specification for
+$\eff{writeReq}$ by prohibiting any $\eff{readReq}$ operation from
+being handled before a $\eff{writeRsp}$ for this request is serviced,
+thereby guaranteeing write atomicity: {\footnotesize
+    \begin{align*}
+      \mykw{gen}~ \eff{writeReq} ~:~ &  \Code{x}\hasnty{int} \sarr \rg{\allTL}{\lastA\msg{writeReq}{v = \Code{x}}}{(\neg \msg{readReq}{\top}) \untilA \msg{writeRsp}{v = \Code{x}}}
+    \end{align*}}
+The subtletly in these specifications, which have intricate non-local
+temporal data dependencies, highlights the fundamental challenge in
+writing correct models for this setting.  It serves as the primary
+motivation for our synthesis procedure, which can be used to
+automatically assess specification fidelity against a desired (and
+typically easier-to-state) global safety or liveness property.
+
+
+
 
 % This structure allows for a more nuanced reasoning about asynchronous message-passing systems, where both past and future events are connected with current events. The inclusion of prophecy automata adds flexibility in reasoning about future states in a way that traditional two-state specification (pre- and post-condition based) cannot, making it particularly suited to reactive systems.
 
@@ -367,10 +397,13 @@ messages are generated ($\epsTL$).
 \subsection{Controller Synthesis}
 
 \begin{figure}[ht!]
+\vspace*{-.1in}
     \centering
     \includegraphics[width=0.95\linewidth]{figures/intuition-plan-syn.drawio.png}
+\vspace*{-.1in}
     \caption{High-level overview of \name{} }
     \label{fig:intuition-algo}
+% \vspace*{-.1in}
 \end{figure}
 
 % For example, desirable controller should uses messages properly with respect to message specification $\Delta$, moreover, can be type checked against \PAT $\rg{\epsTL}{\negSCA}{\epsTL}$.

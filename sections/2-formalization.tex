@@ -2,7 +2,7 @@
 
 \begin{figure}[t!]
   \vspace{-.3cm}
-{\small
+{\footnotesize
   \begin{alignat*}{2}
     \text{\textbf{Variables }}& \quad &\quad& x, y, z, \vnu, ...
     \\\text{\textbf{Base Types}}& \quad & b  ::= \quad &  \Code{unit} ~|~ \Code{bool} ~|~ \Code{nat} ~|~ \Code{int} ~|~ ...
@@ -15,8 +15,10 @@
     \\ \text{\textbf{Expressions}}& \quad & e ::=\quad & v ~|~ \zlet{x{:}b}{\primop\ \overline{v}}{e} ~|~ \zgen{op}{\overline{v}}{e} ~|~ \zobs{\overline{x{:}b}}{op}{e}
     \\ & & \quad & ~|~  \zassert{\phi}{e} ~|~  \zassume{\phi}{e} ~|~ e \oplus e
   \end{alignat*}}
+\vspace*{-.25in}
 \caption{$\DSL$ syntax }
 \label{fig:term-syntax}
+\vspace*{-.2in}
 \end{figure}
 
 We formalize our approach using a core language, $\DSL$, for
@@ -32,6 +34,7 @@ assertions. Effectful operations are categorized as either
 (e.g., $\eff{obs}$).
 
 \begin{figure}[ht!]
+\vspace*{-.15in}
 {\footnotesize
 {\small\begin{align*}
 \text{\textbf{Messages}}& \  & m ::= \   & \zevent{op}{\overline{c}}
@@ -42,6 +45,7 @@ assertions. Effectful operations are categorized as either
     \emptr ~|~ m \;{::}\; \alpha ~|~ \alpha
     \listconcat \alpha
 \end{align*}
+\vspace*{-.2in}
 \begin{align*}
   \text{\textbf{Handler Semantics }} & \fbox{$\alpha \vDash
                                        \zevent{op}{\overline{c}}
@@ -86,8 +90,10 @@ $\steptr{\alpha}{(\buf, \zassume{\phi}{e})}{[]}{(\buf, e\msubst{x}{c})}$
 $\steptr{\alpha}{(\buf, \zassert{\phi}{e}}{[]}{(\buf, e)}$
 }
   }
+\vspace*{-.1in}
   \caption{Selected Operational Semantics}
   \label{fig:selected-semantics}
+\vspace*{-.2in}
 \end{figure}
 
 \paragraph{Operational Semantics} Messages in $\DSL$ are operations
@@ -165,11 +171,11 @@ assert expression to hold in order for it to make progress.
     \\ \text{\textbf{Prophecy Automata Types}}& \quad & \tau  ::= \quad &
     \rg{H}{A}{F} ~|~ x{:}b \garr \tau ~|~ x{:}t\sarr \tau ~|~ \tau \interty \tau
     \\\text{\textbf{Type Contexts}}& \quad &\Gamma ::= \quad  &\emptyset ~|~ x{:}t, \Gamma
-  \end{alignat*}}
-\vspace{-1.8em}}
+  \end{alignat*}}}
+\vspace*{-.15in}
 \caption{\langname{} types.}
 \label{fig:type-syntax}
-\vspace{-.2cm}
+\vspace*{-.15in}
 \end{figure}
 
 
@@ -323,7 +329,7 @@ $\Gamma \vdash F_1 \subseteq F_2$ }
 $\Gamma; \Delta; \Theta \vdash \tau <: \tau'$}
 {TSub}
 {$\Gamma; \Delta; \Theta \vdash e: \tau'$}
-\\[.3em]
+\\[.4em]
 \mprooftr{21mm}
 {
 $\Gamma; \Delta; \Theta \vdash e_1 : \tau$ \quad $\Gamma; \Delta; \Theta \vdash e_2 : \tau$
@@ -341,7 +347,7 @@ $\forall i. \Gamma \vdash v_i : t_i$ \quad
  }
 {TGen}
 {$\Gamma; \Delta; \Theta \vdash \zgen{op}{\overline{v_i}}{e} : \rg{H}{\lastA\msg{op}{\phi\msubst{x_i}{v_i}} \seqA A}{F}$}
-\\[.3em]
+\\[.4em]
 % \mprooftr{15mm}
 % {
 % $\Delta(\eff{op}) \langle \tau, $
@@ -364,9 +370,10 @@ $\Gamma \vdash \tau <: \overline{x_i{:}t_i}\sarr
 {TObs}
 {$\Gamma; \Delta; \{\eff{op}\} \cup \Theta \vdash \zobs{\overline{x}}{op}{e} : \rg{H}{\lastA\msg{op}{\phi} \seqA A}{F}$}
 }
+% \vspace*{-.1in}
 \caption{Selected typing rules.}
 \label{fig:selected-typing-rules}
-\vspace*{-.2in}
+\vspace*{-.15in}
 \end{figure}
 
 \paragraph{Auxiliary typing relations}
@@ -411,7 +418,7 @@ the type of the corresponding handler from $\Delta$,
 $\rg{H}{\lastA\msg{op}{\phi}}{A\seqA F}$, and require that it aligns
 with the \PAT{} of the expression that the operation is being
 performed in:%
-{\small
+{\footnotesize
   \begin{align*}
     \underbrace{ H
     }_\texttt{history}\;\seqA\;\underbrace{ \lastA
@@ -458,7 +465,7 @@ allows controllers to explore different message orderings.
         \Code{y} \land v \not= \Code{x}} \seqA
         \lastA\msg{writeRsp}{v = \Code{y}} \seqA
         \lastA\msg{readReq}{\top}
-        }_\texttt{$A_2$} \seqA \\
+        }_\texttt{$A_2$} \seqA \\[-.3em]
       &\underbrace{ \lastA\msg{writeRsp}{v =
         \Code{x}}
         }_\texttt{$A_3$} \seqA \underbrace{ \lastA\msg{readRsp}{v =

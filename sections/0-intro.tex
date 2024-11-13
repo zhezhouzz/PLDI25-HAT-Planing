@@ -2,18 +2,19 @@
 
 Testing a model of a distributed system can help to find flaws early
 in the development cycle~\cite{BJA+21}.  Frameworks like
-P~\cite{DGJ+13,DPQS18}, for example, express models as (reactive)
-asynchronously communicating state machines (or actors) that implement
-high-level (executable) logic, but which abstract away low-level
-details that a concrete implementation must address.  Actors are also
-responsible for sending and responding to messages from other actors,
-or from messages sent by an external environment, i.e., by users or
-other actors not under test.  Any kind of reasoning of such a system's
+P~\cite{DGJ+13,DPQS18}, for example, allow designers to write
+executable models whose behaviors can be explored using systematic
+testing methods (e.g., bounded model checking).  Models are expressed
+in P as (reactive) asynchronously communicating state machines (or
+actors) that implement high-level logic, but which abstract away
+low-level details that a concrete implementation must address.  Actors
+are also responsible for sending and responding to messages from other
+actors, or from messages sent by an external environment, i.e., by
+users or other actors not under test.  Reasoning over a system's
 design thus typically involves (1) providing definitions for the
 actors that comprise the model; (2) defining an environment that
-closes the system by generating inputs to trigger interesting
-behaviors; and, (3) providing a specification that the model should
-satisfy.
+closes the system by generating inputs to trigger behaviors; and, (3)
+providing a specification that the model should satisfy.
 
 In this setting, the goal of a testing framework is to  explore
 all possible executions of the closed system derived from (1) and (2)
@@ -33,15 +34,16 @@ questions.  Specifically, the controller consists of both (1) an input
 generator that provides input messages to the actors under test, thus
 closing the open system and (2) a scheduler that controls the ordering
 of messages sent and received by actors in the closed system.
-Typically, controllers implement a purely random exploration
-stategy. Although conceptually simple, random exploration makes it
+Typically, controllers implement a random or enumerative exploration
+stategy.  Although conceptually simple, these approaches make it
 problematic to \emph{a priori} determine if the testing framework will
 be effective in finding a model-specific design bug, given the
 typically very large state space of feasible executions that may have
-to be considered. Rather than having the controller use randomization
-for input generation and message ordering, this paper investigates an
-alternative approach that specializes the actions the controller can
-perform, tailored to the safety specification we seek to violate.
+to be considered. Rather than having the controller undertake
+exploration for inputs and message orderings without any foresight on
+the property that we seek to violate, this paper investigates an
+alternative approach that specializes the actions the controller
+performs, explicitly guided by this property.
 
 
 % BD: Do we want to say something about how this model can also be
@@ -137,10 +139,10 @@ expectation we can encode via the following \PAT: {\footnotesize
     \rg{\underbrace{\finalA \msg{putReq}{k = \Code{key}\land v=\Code{val}}}_\texttt{history automaton}} %
     {\underbrace{\lastA \msg{getReq}{k = \Code{key}}}_\texttt{current automaton}}%
     { \underbrace{\finalA \msg{getRsp}{k = \Code{key} \land v = \Code{val}} }_\texttt{prophecy automaton} }
-  \end{align*}}\noindent
+\end{align*}}\noindent
 This type is parameterized by two variables, $\Code{key}$
 and $\Code{val}$, and is comprised of three automata which use
-standard temporal operators, e.g., the eventually operator
+standard temporal modalities, e.g., the eventually operator
 $\finalA$, to express temporal dependencies between messages. The
 first automaton specifies the \emph{history} of messages that occurred
 prior to the handling of a $\eff{putReq}$ event. This specification
@@ -166,13 +168,17 @@ buffer and respond to read and write requests arbitrarily. While
 performant, this policy can be too permissive for users, who may want
 a strongly consistent (SC) store, i.e., one that always returns the
 value of a key at the point their request message is handled.  We
-can specify this safety property as the following LTL$_f$ formula:
+can specify this safety property as the following LTL$_f$ formula\footnote{
+ The specification uses standard temporal logic modalities:
+ $\nextA\ \phi$ requires that $\phi$ hold on the next step in the
+ trace, and $\phi_1 \untilA \phi_2$ requires that $\phi_1$ hold on
+ every following step in the trace at least until $\phi_2$ becomes
+ true.
+}:
  {\footnotesize
   \begin{align*}
 \neg (\msg{putReq}{k = \Code{key} \land v = \Code{val}} \land \nextA (\neg \msg{putReq}{k = \Code{key}} \untilA \msg{getRsp}{k = \Code{key} \land v \not= \Code{val}}))
   \end{align*}}\noindent
-
-{\color{red} AD: lets make sure we have defined the LTL operators before they appear for the first time, next and until.}
 Observe that probing if a store is SC cannot be done by testing how
 messages are handled in isolation, as a violation of SC crucially
 depends on a specific sequence of get and put messages with
@@ -234,9 +240,7 @@ This paper makes the following contributions:
 
 \item We describe the implementation of a tool (\name{}) that realizes
   these ideas, and present a detailed evaluation that uses a diverse
-  set of non-trivial, realistic benchmarks that includes realistic
-  models of Paxos~\cite{Lam02a}, Raft~\cite{OO14}, and chain
-  replication~\cite{RS04}.  Our benchmark results also include a case
+  set of non-trivial, realistic benchmarks, including a case
   study drawn from an application model developed at a major cloud
   vendor.  To the best of our knowledge, \name{} is the first
   synthesis procedure capable of generating controllers from

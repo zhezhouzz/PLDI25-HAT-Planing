@@ -137,7 +137,7 @@ url = {https://doi.org/10.1145/2578855.2535849},
 doi = {10.1145/2578855.2535849},
 abstract = {Symbolic Automata extend classical automata by using symbolic alphabets instead of finite ones. Most of the classical automata algorithms rely on the alphabet being finite, and generalizing them to the symbolic setting is not a trivial task. In this paper we study the problem of minimizing symbolic automata. We formally define and prove the basic properties of minimality in the symbolic setting, and lift classical minimization algorithms (Huffman-Moore's and Hopcroft's algorithms) to symbolic automata. While Hopcroft's algorithm is the fastest known algorithm for DFA minimization, we show how, in the presence of symbolic alphabets, it can incur an exponential blowup. To address this issue, we introduce a new algorithm that fully benefits from the symbolic representation of the alphabet and does not suffer from the exponential blowup. We provide comprehensive performance evaluation of all the algorithms over large benchmarks and against existing state-of-the-art implementations. The experiments show how the new symbolic algorithm is faster than previous implementations.},
 journal = {SIGPLAN Not.},
-month = {jan},
+month = {Jan},
 pages = {541–553},
 numpages = {13},
 keywords = {minimization, symbolic automata}
@@ -148,7 +148,7 @@ keywords = {minimization, symbolic automata}
 @inproceedings{SFA-Transducers,
   title={{The Power of Symbolic Automata and Transducers}},
   author={D’Antoni, Loris and Veanes, Margus},
-  booktitle={Computer Aided Verification: 29th International Conference, CAV 2017, Heidelberg, Germany, July 24-28, 2017, Proceedings, Part I 30},
+  booktitle={Computer Aided Verification},
   pages={47--67},
   year={2017},
   organization={Springer}
@@ -1035,12 +1035,9 @@ isbn="978-3-319-08867-9"
                   Saswat Padhi and
                   Todd D. Millstein and
                   David Walker},
-  editor       = {Alastair F. Donaldson and
-                  Emina Torlak},
   title        = {{Data-driven Inference of Representation Invariants}},
   booktitle    = {Proceedings of the 41st {ACM} {SIGPLAN} International Conference on
-                  Programming Language Design and Implementation, {PLDI} 2020, London,
-                  UK, June 15-20, 2020},
+                  Programming Language Design and Implementation, {PLDI}},
   pages        = {1--15},
   publisher    = {{ACM}},
   year         = {2020},
@@ -1153,7 +1150,7 @@ keywords = {state-chart, typestate, plaid}
                   Damien Zufferey},
   editor       = {Hans{-}Juergen Boehm and
                   Cormac Flanagan},
-  title        = {{P:} safe asynchronous event-driven programming},
+  title        = {{{P:} Safe Asynchronous Event-Driven Programming}},
   booktitle    = {{ACM} {SIGPLAN} Conference on Programming Language Design and Implementation,
                   {PLDI} '13, Seattle, WA, USA, June 16-19, 2013},
   pages        = {321--332},
@@ -1246,11 +1243,9 @@ keywords = {state-chart, typestate, plaid}
 @inproceedings{TB14,
   author       = {Emina Torlak and
                   Rastislav Bod{\'{\i}}k},
-  editor       = {Michael F. P. O'Boyle and
-                  Keshav Pingali},
   title        = {{A Lightweight Symbolic Virtual Machine for Solver-Aided Host Languages}},
-  booktitle    = {{ACM} {SIGPLAN} Conference on Programming Language Design and Implementation,
-                  {PLDI} '14, Edinburgh, United Kingdom - June 09 - 11, 2014},
+  booktitle    = {{ACM} {SIGPLAN} Conference on Programming Language Design and Implementation
+                  (PLDI)},
   pages        = {530--541},
   publisher    = {{ACM}},
   year         = {2014},
@@ -1330,7 +1325,7 @@ series = {IJCAI '13}
 
 @article{tygus,
 author = {Guo, Zheng and James, Michael and Justo, David and Zhou, Jiaxiao and Wang, Ziteng and Jhala, Ranjit and Polikarpova, Nadia},
-title = {Program Synthesis by Type-Guided Abstraction Refinement},
+title = {{Program Synthesis by Type-Guided Abstraction Refinement}},
 year = {2019},
 issue_date = {January 2020},
 publisher = {Association for Computing Machinery},
@@ -1444,8 +1439,6 @@ month = dec
 author = {Bornholt, James and Joshi, Rajeev and Astrauskas, Vytautas and Cully, Brendan and Kragl, Bernhard and Markle, Seth and Sauri, Kyle and Schleit, Drew and Slatton, Grant and Tasiran, Serdar and Van Geffen, Jacob and Warfield, Andrew},
 title = {{Using Lightweight Formal Methods to Validate a Key-Value Storage Node in Amazon S3}},
 year = {2021},
-publisher = {Association for Computing Machinery},
-address = {New York, NY, USA},
 booktitle = {Proceedings of the ACM SIGOPS 28th Symposium on Operating Systems Principles},
 pages = {836–850},
 numpages = {15},
@@ -1529,4 +1522,264 @@ url="https://doi.org/10.1007/978-0-8176-4842-8_1"
   articleno = {159},
   numpages = {30}}
  
+@inproceedings{WW+15,
+  author       = {James R. Wilcox and
+                  Doug Woos and
+                  Pavel Panchekha and
+                  Zachary Tatlock and
+                  Xi Wang and
+                  Michael D. Ernst and
+                  Thomas E. Anderson},
+  editor       = {David Grove and
+                  Stephen M. Blackburn},
+  title        = {{Verdi: A Framework for Implementing and Formally Verifying Distributed
+                  Systems}},
+  booktitle    = {Proceedings of the 36th {ACM} {SIGPLAN} Conference on Programming
+                  Language Design and Implementation, Portland, OR, USA, June 15-17,
+                  2015},
+  pages        = {357--368},
+  publisher    = {{ACM}},
+  year         = {2015},
+  url          = {https://doi.org/10.1145/2737924.2737958},
+  doi          = {10.1145/2737924.2737958},
+  timestamp    = {Sun, 12 Feb 2023 18:48:20 +0100},
+  biburl       = {https://dblp.org/rec/conf/pldi/WilcoxWPTWEA15.bib},
+  bibsource    = {dblp computer science bibliography, https://dblp.org}
+}
+
  
+@article{SWT18,
+  author       = {Ilya Sergey and
+                  James R. Wilcox and
+                  Zachary Tatlock},
+  title        = {{Programming and Proving with Distributed Protocols}},
+  journal      = {Proc. {ACM} Program. Lang.},
+  volume       = {2},
+  number       = {{POPL}},
+  pages        = {28:1--28:30},
+  year         = {2018},
+  url          = {https://doi.org/10.1145/3158116},
+  doi          = {10.1145/3158116},
+  timestamp    = {Sun, 12 Feb 2023 18:49:14 +0100},
+  biburl       = {https://dblp.org/rec/journals/pacmpl/SergeyWT18.bib},
+  bibsource    = {dblp computer science bibliography, https://dblp.org}
+}
+
+@inproceedings{HH+15,
+ author = {Hawblitzel, Chris and Howell, Jon and Kapritsos, Manos and Lorch, Jacob R. and Parno, Bryan and Roberts, Michael L. and Setty, Srinath and Zill, Brian},
+ title = {{IronFleet: Proving Practical Distributed Systems Correct}},
+ year = {2015},
+ publisher = {Association for Computing Machinery},
+ address = {New York, NY, USA},
+ url = {https://doi.org/10.1145/2815400.2815428},
+ doi = {10.1145/2815400.2815428},
+ booktitle = {Proceedings of the 25th Symposium on Operating Systems Principles},
+ pages = {1–17},
+ numpages = {17},
+ location = {Monterey, California},
+ series = {SOSP '15} }
+
+@inproceedings{PM+16,
+  author       = {Oded Padon and
+                  Kenneth L. McMillan and
+                  Aurojit Panda and
+                  Mooly Sagiv and
+                  Sharon Shoham},
+  editor       = {Chandra Krintz and
+                  Emery D. Berger},
+  title        = {{Ivy: Safety Verification by Interactive Generalization}},
+  booktitle    = {Proceedings of the 37th {ACM} {SIGPLAN} Conference on Programming
+                  Language Design and Implementation, {PLDI} 2016, Santa Barbara, CA,
+                  USA, June 13-17, 2016},
+  pages        = {614--630},
+  publisher    = {{ACM}},
+  year         = {2016},
+  url          = {https://doi.org/10.1145/2908080.2908118},
+  doi          = {10.1145/2908080.2908118},
+  timestamp    = {Sat, 30 Sep 2023 09:54:48 +0200},
+  biburl       = {https://dblp.org/rec/conf/pldi/PadonMPSS16.bib},
+  bibsource    = {dblp computer science bibliography, https://dblp.org}
+}
+
+@inproceedings {YR+21,
+author = {Jianan Yao and Runzhou Tao and Ronghui Gu and Jason Nieh and Suman Jana and Gabriel Ryan},
+title = {{{DistAI}: {Data-Driven} Automated Invariant Learning for Distributed Protocols}},
+booktitle = {15th USENIX Symposium on Operating Systems Design and Implementation (OSDI 21)},
+year = {2021},
+isbn = {978-1-939133-22-9},
+pages = {405--421},
+url = {https://www.usenix.org/conference/osdi21/presentation/yao},
+publisher = {USENIX Association},
+month = jul
+}
+
+@inproceedings{MG+19,
+ author = {Ma, Haojun and Goel, Aman and Jeannin, Jean-Baptiste and Kapritsos, Manos and Kasikci, Baris and Sakallah, Karem A.},
+ title = {{I4: incremental Inference of Inductive Invariants for Verification of Distributed Protocols}},
+ year = {2019},
+ isbn = {9781450368735},
+ publisher = {Association for Computing Machinery},
+ address = {New York, NY, USA},
+ url = {https://doi.org/10.1145/3341301.3359651},
+ doi = {10.1145/3341301.3359651},
+ booktitle = {Proceedings of the 27th ACM Symposium on Operating Systems Principles},
+ pages = {370–384},
+ numpages = {15},
+ location = {Huntsville, Ontario, Canada}, series = {SOSP}}
+
+@misc(Jepsen,
+ key = {Jepsen},
+ title = {Jepsen},
+ url = {https://jepsen.io/},
+ year = 2018)
+
+@inproceedings{KA+07,
+ author = {Killian, Charles and Anderson, James W. and Jhala, Ranjit and Vahdat, Amin},
+ title = {Life, Death, and the Critical Transition: Finding Liveness Bugs in Systems Code},
+ booktitle = {Proceedings of the 4th USENIX Conference on Networked Systems Design \&\#38; Implementation},
+ series = {NSDI'07},
+ year = {2007},
+ location = {Cambridge, MA},
+ pages = {18--18},
+ numpages = {1},
+ url = {http://dl.acm.org/citation.cfm?id=1973430.1973448},
+ acmid = {1973448},
+ publisher = {USENIX Association},
+ address = {Berkeley, CA, USA},
+} 
+
+@article{BK+21,
+author = {Biswas, Ranadeep and Kakwani, Diptanshu and Vedurada, Jyothi and Enea, Constantin and Lal, Akash},
+title = {{MonkeyDB: Effectively Testing Correctness under Weak Isolation Levels}},
+year = {2021},
+issue_date = {October 2021},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+volume = {5},
+number = {OOPSLA},
+url = {https://doi.org/10.1145/3485546},
+doi = {10.1145/3485546},
+journal = {Proc. ACM Program. Lang.},
+month = oct,
+articleno = {132},
+numpages = {27}}
+
+@article{RK+19,
+  author       = {Kia Rahmani and
+                  Kartik Nagar and
+                  Benjamin Delaware and
+                  Suresh Jagannathan},
+  title        = {{CLOTHO:} directed test generation for weakly consistent database
+                  systems},
+  journal      = {Proc. {ACM} Program. Lang.},
+  volume       = {3},
+  number       = {{OOPSLA}},
+  pages        = {117:1--117:28},
+  year         = {2019},
+  url          = {https://doi.org/10.1145/3360543},
+  doi          = {10.1145/3360543},
+  timestamp    = {Wed, 17 Feb 2021 08:54:09 +0100},
+  biburl       = {https://dblp.org/rec/journals/pacmpl/RahmaniNDJ19.bib},
+  bibsource    = {dblp computer science bibliography, https://dblp.org}
+}
+
+@inproceedings{RGJ07,
+  author       = {Murali Krishna Ramanathan and
+                  Ananth Grama and
+                  Suresh Jagannathan},
+  title        = {{Path-Sensitive Inference of Function Precedence Protocols}},
+  booktitle    = {29th International Conference on Software Engineering {(ICSE} 2007),
+                  Minneapolis, MN, USA, May 20-26, 2007},
+  pages        = {240--250},
+  publisher    = {{IEEE} Computer Society},
+  year         = {2007},
+  url          = {https://doi.org/10.1109/ICSE.2007.63},
+  doi          = {10.1109/ICSE.2007.63},
+  timestamp    = {Thu, 23 Mar 2023 23:58:12 +0100},
+  biburl       = {https://dblp.org/rec/conf/icse/RamanathanGJ07.bib},
+  bibsource    = {dblp computer science bibliography, https://dblp.org}
+}
+
+@inproceedings{RGJ07a,
+  author       = {Murali Krishna Ramanathan and
+                  Ananth Grama and
+                  Suresh Jagannathan},
+  editor       = {Jeanne Ferrante and
+                  Kathryn S. McKinley},
+  title        = {{Static Specification Inference using Predicate Mining}},
+  booktitle    = {Proceedings of the {ACM} {SIGPLAN} 2007 Conference on Programming
+                  Language Design and Implementation (PLDI)},
+  pages        = {123--134},
+  publisher    = {{ACM}},
+  year         = {2007},
+  url          = {https://doi.org/10.1145/1250734.1250749},
+  doi          = {10.1145/1250734.1250749},
+  timestamp    = {Fri, 25 Jun 2021 14:48:54 +0200},
+  biburl       = {https://dblp.org/rec/conf/pldi/RamanathanGJ07.bib},
+  bibsource    = {dblp computer science bibliography, https://dblp.org}
+}
+
+@inproceedings{CH00,
+author = {Claessen, Koen and Hughes, John},
+title = {{QuickCheck: A Lightweight Tool for Random Testing of Haskell Programs}},
+year = {2000},
+isbn = {1581132026},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+url = {https://doi.org/10.1145/351240.351266},
+doi = {10.1145/351240.351266},
+abstract = {Quick Check is a tool which aids the Haskell programmer in formulating and testing
+properties of programs. Properties are described as Haskell functions, and can be
+automatically tested on random input, but it is also possible to define custom test
+data generators. We present a number of case studies, in which the tool was successfully
+used, and also point out some pitfalls to avoid. Random testing is especially suitable
+for functional programs because properties can be stated at a fine grain. When a function
+is built from separately tested components, then random testing suffices to obtain
+good coverage of the definition under test.},
+booktitle = {Proceedings of the Fifth ACM SIGPLAN International Conference on Functional Programming},
+pages = {268–279},
+numpages = {12},
+series = {ICFP '00}
+}
+
+@inproceedings{HC+24,
+  author       = {Harrison Goldstein and
+                  Joseph W. Cutler and
+                  Daniel Dickstein and
+                  Benjamin C. Pierce and
+                  Andrew Head},
+  title        = {{Property-Based Testing in Practice}},
+  booktitle    = {Proceedings of the 46th {IEEE/ACM} International Conference on Software
+                  Engineering, {ICSE} 2024, Lisbon, Portugal, April 14-20, 2024},
+  pages        = {187:1--187:13},
+  publisher    = {{ACM}},
+  year         = {2024},
+  url          = {https://doi.org/10.1145/3597503.3639581},
+  doi          = {10.1145/3597503.3639581},
+  timestamp    = {Mon, 24 Jun 2024 15:20:25 +0200},
+  biburl       = {https://dblp.org/rec/conf/icse/GoldsteinCDPH24.bib},
+  bibsource    = {dblp computer science bibliography, https://dblp.org}
+}
+
+@inproceedings{WD+23,
+  author       = {Dong Wang and
+                  Wensheng Dou and
+                  Yu Gao and
+                  Chenao Wu and
+                  Jun Wei and
+                  Tao Huang},
+  editor       = {Giuseppe Antonio Di Luna and
+                  Leonardo Querzoni and
+                  Alexandra Fedorova and
+                  Dushyanth Narayanan},
+  title        = {{Model Checking Guided Testing for Distributed Systems}},
+  booktitle    = {Proceedings of the Eighteenth European Conference on Computer Systems (EuroSys)},
+  pages        = {127--143},
+  publisher    = {{ACM}},
+  year         = {2023},
+  url          = {https://doi.org/10.1145/3552326.3587442},
+  doi          = {10.1145/3552326.3587442},
+  timestamp    = {Fri, 14 Jul 2023 07:59:09 +0200},
+  biburl       = {https://dblp.org/rec/conf/eurosys/WangDGWW023.bib},
+  bibsource    = {dblp computer science bibliography, https://dblp.org}
+}
