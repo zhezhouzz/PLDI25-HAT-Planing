@@ -1,9 +1,18 @@
 \newpage
-\section{Auxiliary functions in Synthesis Algorithm}\label{sec:tech:algo}
+\section{Auxiliary Functions for Synthesis}\label{sec:tech:algo}
 
-The normalization function that convert an automata into a union of abstract trace is provided as auxiliary function $\normPlan$ in in \autoref{algo:norm}. The function $\termDerive$ is also provided in \autoref{algo:term-derive}.
+This section describes two auxiliary functions used for controller
+synthesis. The first of these, $\normPlan$, converts a a symbolic
+LTL$_f$ formula into a set of unsafe abstract traces, which are then
+given to \autoref{algo:top-syn} as input. The second, $\termDerive$,
+generates a controller program from a refined abstract trace.
 
-\paragraph{Normalization} The function $\normPlan$ first convert the input automata in s-LTL$_f$ into standard Negation Normal Form (NNF) on line $1$, then inductively translate the input automata into a set of abstract traces. Notice, the nagation operator $\neg$ only appear before the atomic predicates (i.e., $\msg{op}{\phi}$ and $\evparenth{\phi}$).
+\paragraph{Normalization} The function $\normPlan$ first convert an
+input automata expressed in symbolic LTL$_f$ into standard Negation
+Normal Form (NNF) on line $1$, then recursively translates the input
+automata into a set of abstract traces. Note that the negation
+operator $\neg$ only appears before the atomic predicates (i.e.,
+$\msg{op}{\phi}$ and $\evparenth{\phi}$).
 
 \begin{algorithm}[t!]
     \Procedure{$\normPlan(A) := $}{
@@ -11,21 +20,21 @@ The normalization function that convert an automata into a union of abstract tra
     \Match{$A$}{
       \lCase{$\msg{op}{\phi}$}{ \Return{$\{\lastA\msg{op}{\phi} \seqA \allTL \}$} }
       \lCase{$\neg \msg{op}{\phi}$}{ \Return{$\{\lastA\msg{op}{\neg \phi} \seqA \allTL \} \cup \{\lastA\msg{op'}{\top} \seqA \allTL ~|~ \eff{op'} \not= \eff{op} \}$} }
-      \lCase{$\evparenth{\phi}$}{ 
+      \lCase{$\evparenth{\phi}$}{
       \Return{$\{ \lastA \msg{op}{\phi} ~|~ \text{ for all } \eff{op} \}$}}
-      \lCase{$\neg \evparenth{\phi}$}{ 
+      \lCase{$\neg \evparenth{\phi}$}{
       \Return{$\{ \lastA \msg{op}{\neg\phi} ~|~ \text{ for all } \eff{op} \}$}}
       \lCase{$\lastA A$}{ \Return{$\{\lastA\msg{op}{\phi} ~|~ \lastA\msg{op}{\phi} \seqA \Pi \in \normPlan(A) \}$} }
       \lCase{$\nextA A$}{ \Return{$\{ \msg{op}{\top} \seqA \Pi ~|~ \text{ for all } \eff{op}, \Pi \in \normPlan(A) \}$} }
-      \lCase{$A_1 \untilA A_2$}{ 
+      \lCase{$A_1 \untilA A_2$}{
       \Return{$\{ (\globalA\neg A_1) \seqA \Pi_2 ~|~ \Pi_2 \in \normPlan(A_2) \}$}}
       \lCase{$A_1 \seqA A_2$}{ \Return{$\{ \Pi_1 \seqA \Pi_2 ~|~ \Pi_1 \in \normPlan(A_1) \land \Pi_2 \in \normPlan(A_2) \}$}}
-      \lCase{$\finalA A$}{ 
+      \lCase{$\finalA A$}{
       \Return{$\{ \globalA \evparenth{\top} \seqA \Pi \seqA \globalA \evparenth{\top} ~|~ \Pi \in \normPlan(A) \}$}}
-      \lCase{$\globalA A$}{ 
+      \lCase{$\globalA A$}{
       \Return{$\{ \globalA A \}$}}
       \lCase{$A_1 \lorA A_2$}{ \Return{$\normPlan(A_1) \cup \normPlan(A_2)$}}
-      \lCase{$A_1 \land A_2$}{ 
+      \lCase{$A_1 \land A_2$}{
       \Return{$\{ \Pi_1 \land \Pi_2 ~|~ \Pi_1 \in \normPlan(A_1) \land \Pi_2 \in \normPlan(A_2) \}$}}
     }
     }
@@ -33,20 +42,23 @@ The normalization function that convert an automata into a union of abstract tra
     \label{algo:norm}
   \end{algorithm}
 
-\begin{lemma}\label{lemma:traceAnd}[Conjunction perverse abstract traces] The conjunction ($\land$) of two abstract traces is still an abstract traces.
+  \begin{lemma}\label{lemma:traceAnd}[Abstract traces are closed under
+    conjunction] The conjunction ($\land$) of two abstract traces is also
+    an abstract trace.
 \end{lemma}
 
-\begin{lemma}\label{lemma:norm-sound}[Normalization Soundness] The normalized result has the same denotation as the input automata, that is, for all automata $A$ and set of traces $\{\Pi_i\}$,
-{\small\begin{align*}
-    \denot{A} = \bigcup_{i} \denot{\Pi_i}
-\end{align*}}
+\begin{lemma}\label{lemma:norm-sound}[Normalization is sound ]
+  The normalized result has the same denotation as the input automata,
+  that is, for all automata $A$ and set of traces $\{\Pi_i\}$, {\small
+    \begin{align*} \denot{A} = \bigcup_{i} \denot{\Pi_i}
+    \end{align*}}
 \end{lemma}
 
 \begin{algorithm}[t!]
     \Procedure{$\S{TermDerive}(\Gamma, \Pi) := $}{
       \Match{$\Gamma$}{
       \Case{$[]$}{ \Return{$\S{DeriveTrace}(\Pi)$}\; }
-      \Case{$x{:}\rawnuot{b}{\phi} \cons \Gamma'$}{ 
+      \Case{$x{:}\rawnuot{b}{\phi} \cons \Gamma'$}{
       \Return{$\zassume{\phi[\vnu \mapsto x]}{\S{TermDerive}(\Gamma', \Code{ToList}(\Pi))}$}\;
       }
     }
@@ -74,11 +86,30 @@ The normalization function that convert an automata into a union of abstract tra
     \label{algo:trace-derive}
 \end{algorithm}
 
-\paragraph{Term Derivation} The term derivation function \(\S{TermDerive}\) is shown in \autoref{algo:term-derive}. It first converts the input type context into \(\mykw{assume}\) statements over the corresponding qualifiers in pure refinement types (line 6), then derives the abstract trace with the help of the function \(\S{DeriveTrace}\) shown in \autoref{algo:trace-derive}. This function requires the input abstract trace to first be converted into a list of automata (\(\Code{ToList}\)), then transforms this list into a controller program inductively. Note that our algorithm prioritizes shorter controller programs, so \(\S{DeriveTrace}\) skips automata with global modality (\(\globalA A\)) on line 4. For a symbolic event with a generative operator (line 5), \(\S{DeriveTrace}\) derives an \(\mykw{assume}\) expression before the \(\mykw{gen}\) expression on line 7. Conversely, for observable events, \(\S{DeriveTrace}\) derives an \(\mykw{assert}\) expression after the \(\mykw{obs}\) expression on line 10.
+\paragraph{Term Derivation} The term derivation function
+\(\S{TermDerive}\) is shown in \autoref{algo:term-derive}. It first
+converts the input type context into \(\mykw{assume}\) statements over
+the corresponding qualifiers in pure refinement types (line 6), then
+derives the abstract trace with the help of the \(\S{DeriveTrace}\)
+subroutine shown in \autoref{algo:trace-derive}. The input abstract
+trace is first be converted into a list of automata
+(\(\Code{ToList}\)) before the subroutine is called; it then
+recursively transforms this list into a controller program. Note that
+our algorithm prioritizes shorter controller programs, so
+\(\S{DeriveTrace}\) skips automata with global modality
+(\(\globalA A\)) on line 4. For a generable symbolic event (line 5),
+\(\S{DeriveTrace}\) inserts an \(\mykw{assume}\) expression before the
+\(\mykw{gen}\) expression on line 7. Conversely, for observable
+events, \(\S{DeriveTrace}\) adds an \(\mykw{assert}\) expression after
+the \(\mykw{obs}\) expression on line 10.
 
-\begin{lemma}\label{lemma:derive-sound}[Term Derivation Soundness] For given type context $\Gamma$, well-founded type context $\Delta$, abstract trace $\Pi$, and term $e$,
-{\small\begin{align*}
-   (\exists e'. \Gamma;\Delta;\emptyset \vdash e' : \rg{\epsTL}{A}{\epsTL}) \impl
-   \S{TermDerive}(\Gamma, \Pi) = e \impl \Gamma;\Delta;\emptyset \vdash e : \rg{\epsTL}{A}{\epsTL}
-\end{align*}}
+\begin{lemma}\label{lemma:derive-sound}[Term Derivation is Sound]
+  Fora given type context $\Gamma$, well-founded type context
+  $\Delta$, abstract trace $\Pi$, and term $e$,
+  {\small
+    \begin{align*}
+      (\exists e'. \Gamma;\Delta;\emptyset \vdash e' :
+      \rg{\epsTL}{A}{\epsTL}) \impl \S{TermDerive}(\Gamma, \Pi) = e
+      \impl \Gamma;\Delta;\emptyset \vdash e : \rg{\epsTL}{A}{\epsTL}
+    \end{align*}}
 \end{lemma}

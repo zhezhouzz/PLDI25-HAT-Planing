@@ -7,7 +7,7 @@ small-step operational semantics of our core language are shown in
 \begin{figure}[ht!]
 {\footnotesize
 {\small\begin{align*}
-\text{\textbf{Messages}}& \  & m ::= \   & \zevent{op}{\overline{v}}
+\text{\textbf{Messages}}& \  & m ::= \   & \zevent{op}{\overline{c}}
 \qquad
 \text{\textbf{Buffers}}& \  &\beta \in \mathcal{P}(m)  &
 \qquad
@@ -17,14 +17,14 @@ small-step operational semantics of our core language are shown in
 \end{align*}
 \begin{align*}
   \text{\textbf{Handler Semantics }} & \fbox{$\alpha \vDash
-                                       \zevent{op}{\overline{v}}
+                                       \zevent{op}{\overline{c}}
                                        \Downarrow \beta$} &
                                                             \quad\quad\quad
                                                             \text{\textbf{Operational
                                                             Semantics
                                                             }} &
                                                                  \fbox{$\phi
-                                                                 \Downarrow v
+                                                                 \Downarrow c
                                                                  \quad
                                                                  \steptr{\alpha}{(\buf, e)}{\alpha}{(\buf, e)}$}
 \end{align*}}
