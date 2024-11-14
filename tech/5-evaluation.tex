@@ -34,16 +34,16 @@ A Docker image is also provided on Zenodo: \href{https://zenodo.org/records/1416
 \midrule
 \textsf{BankServer} & The user interacts with a bank to withdraw money from their accounts, where the balance is stored in another database component. & \textbf{Strong Consistency}: The bank and underline store should have consistent view of balance of accounts. Precisely, bank should disallows users from withdraw an amount greater than their current balance. & remove negative balance check in bank machine \\
 \midrule
-\textsf{RingLeaderElection} & Ring election algorithm where a group nodes are interconnected in a ring-like structure.  & \textbf{Unique leader policy:} there can only be an unique node that announces itself as leader. & Remove node comparison as introduced in \autoref{sec:impl}. \\
+\textsf{RingLeaderElection} & Ring election algorithm where a group nodes are interconnected in a ring-like structure.  & \textbf{Unique Leader Policy:} there can only be a unique node that announces itself as leader. & Omit a node comparison equality check \\
 \midrule
 \textsf{Firewall} & A set of internal and external nodes communicating
-                    through a firewall. Firewall should block message from an external node, unless this node has received message from internal nodes previously. The firewall actually keep a whitelist of external nodes that can communicate with internal nodes. & \textbf{Liveness:} if a internal node sends a message to an external node, it will be eventually able communicate with external node. & modify the whitelist updating logic.  \\
+                    through a firewall. Firewall should block message from an external node, unless this node has received message from internal nodes previously. The firewall actually keep a whitelist of external nodes that can communicate with internal nodes. & \textbf{Liveness:} if an internal node sends a message to an external node, it will eventually be able communicate with an external node. & modify the whitelist updating logic.  \\
 \midrule
-\textsf{ChainReplication} & Chain replication protocol\cite{RS04}. & \textbf{RYW:} Read-Your-Writes policy. & Remove log recover procedure after node crash  \\
+\textsf{ChainReplication} & Chain replication protocol\cite{RS04}. & \textbf{RYW:} Read-Your-Writes policy. & Remove log recovery logic after node crash  \\
 \midrule
-\textsf{Paxos} & Paxos protocol\cite{Lam02a}. & \textbf{Unique leader policy:} there are multiple proposers are accepted as leaders. This will additionally violates the Paxos agreement policy, i.e., not two distinct learners can learn different values. & A wrong node comparison in leader election \\
+\textsf{Paxos} & Paxos protocol\cite{Lam02a}. & \textbf{Unique Leader Policy:} there are multiple proposers accepted as leaders. This will additionally violates the Paxos agreement policy, i.e.,  two distinct learners cannot learn different values. & A wrong node comparison in leader election logic \\
 \midrule
-\textsf{Raft} & Raft algorithm\cite{OO14}. & \textbf{Strong Consistency:} the consistency of leader's view and committed data, i.e., if a log entry is committed, then it should also be present in the leader's log. & Remove log recover procedure after node crash\\
+\textsf{Raft} & Raft algorithm\cite{OO14}. & \textbf{Strong Consistency:} The leader's view shud committed data, i.e., if a log entry is committed, then it should also be present in the leader's log. & Remove log recover procedure after node crash\\
 \midrule
 \textsf{Anno2PCModel} & Case study in \autoref{sec:impl} & \textbf{Strong Consistency:} the user and the database in 2PC should have the same will view of stored data, as explained in  the case study in \autoref{sec:impl} & Remove buffered transaction update operation  \\
 \bottomrule
