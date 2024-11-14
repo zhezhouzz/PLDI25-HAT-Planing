@@ -33,11 +33,11 @@ assertions. Effectful operations are categorized as either
 \emph{generable} (e.g., $\eff{gen}$) or \emph{observable} messages
 (e.g., $\eff{obs}$).
 
-\begin{figure}[ht!]
+\begin{figure}[t!]
 \vspace*{-.15in}
 {\footnotesize
 {\small\begin{align*}
-\text{\textbf{Messages}}& \  & m ::= \   & \zevent{op}{\overline{v}}
+\text{\textbf{Messages}}& \  & m ::= \   & \zevent{op}{\overline{c}}
 \qquad
 \text{\textbf{Buffers}}& \  &\beta \in \mathcal{P}(m)  &
 \qquad
@@ -48,14 +48,14 @@ assertions. Effectful operations are categorized as either
 \vspace*{-.2in}
 \begin{align*}
   \text{\textbf{Handler Semantics }} & \fbox{$\alpha \vDash
-                                       \zevent{op}{\overline{v}}
+                                       \zevent{op}{\overline{c}}
                                        \Downarrow \beta$} &
                                                             \quad\quad\quad
                                                             \text{\textbf{Operational
                                                             Semantics
                                                             }} &
                                                                  \fbox{$\phi
-                                                                 \Downarrow v
+                                                                 \Downarrow c
                                                                  \quad
                                                                  \steptr{\alpha}{(\buf, e)}{\alpha}{(\buf, e)}$}
 \end{align*}}
@@ -97,9 +97,9 @@ $\steptr{\alpha}{(\buf, \zassert{\phi}{e}}{[]}{(\buf, e)}$
 \end{figure}
 
 \paragraph{Operational Semantics} Messages in $\DSL$ are operations
-applied to concrete values $(\zevent{op}{\overline{v}})$. Evaluating a
+applied to concrete values $(\zevent{op}{\overline{c}})$. Evaluating a
 $\DSL$ program depends on an input \emph{trace}, i.e., a sequence of
-messages, and an input \emph{buffer}, i.e., an element of a bag or multiset of
+messages, and an input \emph{buffer}, i.e., an element of a multiset of
 messages. Each evaluation step produces an output trace and an updated
 buffer. Traces are equipped with the standard list operations (i.e.,
 cons ${::}$ and concatenation $\listconcat{}$).  The operational
@@ -135,8 +135,9 @@ qualifier $\phi$ in the body of an assume expression. The
 \textsc{StAssert} rule, in contrast, requires the qualifier of an
 assert expression to hold in order for it to make progress.
 
-\begin{example}[Operational Semantics]\label{ex:semantics} The first three events in the trace \ref{eqn:traceEx} is
-  produced by the controller program \ref{eqn:autoEx} as follows:
+\begin{example}[Operational Semantics]\label{ex:semantics}
+  The first three events in the trace \ref{eqn:traceEx} are produced by
+  the controller program \ref{eqn:autoEx} as follows:
   {\footnotesize
     \begin{align*}
       {[]}\vDash{(\emptyset,P_C)}
@@ -190,25 +191,29 @@ type-checker can be encoded as effectively propositional (EPR)
 sentences~\cite{Ramsey1987}, which can be efficiently handled by an
 off-the-shelf theorem prover such as Z3~\cite{de2008z3}.
 
-\paragraph{Symbolic Finite Automata} Following other recently proposed
+\paragraph{Symbolic Finite Automata} Following other recent
 trace-based type systems\cite{ZYDJ24}, $\DSL{}$ uses \emph{Symbolic
   Finite Automata} (SFAs)~\cite{Vea13,SFA-minimization,
   SFA-Transducers} to qualify traces, similar to how standard
-refinement types use formulae to qualify the types of pure terms.  The
-front-end language used to express SFAs is a symbolic version of
-LTL$_f$.  A \emph{symbolic event} $\msgB{op}{\overline{x}}{\phi}$ is
-an atomic predicate that describes an effectful operation {$\eff{op}$}
-whose inputs $\overline{x}$ must satisfy the qualifier
-$\phi$.\footnote{When the fields of an event are clear from context,
-  we omit its parameters $\overline{x}$, e.g., $\msg{writeReq}{v > 0}$
-  means $\msgB{writeReq}{v}{v > 0}$.}  The standard temporal operators
+refinement types use formulae to qualify the types of pure terms.  We
+use a symbolic version of LTL$_f$ to express SFAs.  A \emph{symbolic
+  event} $\msgB{op}{\overline{x}}{\phi}$ is an atomic predicate that
+describes an effectful operation {$\eff{op}$} whose inputs
+$\overline{x}$ must satisfy the qualifier $\phi$.\footnote{When the
+  fields of an event are clear from context, we omit its parameters
+  $\overline{x}$, e.g., $\msg{writeReq}{v > 0}$ means
+  $\msgB{writeReq}{v}{v > 0}$.}  The standard temporal operators
 (i.e., test $\evparenth{\phi}$, next $\nextA A$, until $\untilA$) and
 various set operators (i.e., complement $\neg$, intersection $\land$,
 and union $\lorA$) are defined normally. These operators are
-sufficient to express other modalities, e.g., eventually ($\finalA$),
-globally\footnote{Specifically, the formula \(\allTL\), \(\epsTL\), and \(\empTL\) represent the set of all possible traces, the singleton set containing the empty trace ($\{[]\}$), and the empty set of traces, respectively, analogous to \( .^* \), \(\epsilon\), and \(\emptyset\) in regular expressions.} ($\globalA$), and importantly, the singleton (last) modality
+sufficient to capture other modalities, e.g., eventually ($\finalA$),
+globally ($\globalA$), and importantly, the singleton (last) modality
 $\lastA$, which describes a singleton trace, i.e., one which prohibits
-any subsequent effects~\cite{LTLf}.
+any subsequent effects~\cite{LTLf}. SFAs can capture several common
+patterns: the set of all possible traces \(\allTL\), the singleton set
+containing the empty trace \(\epsTL\), and the empty set of traces and
+\(\empTL\); these are analogous to the regular expressions \( .^* \),
+\(\epsilon\), and \(\emptyset\), resp.
 
 % In addition to the temporal next ($\nextA A$) and until operators ($A
 % \untilA A$), the syntax of HATs includes negation ($\neg A$),
@@ -251,8 +256,9 @@ and $\Code{val}$.
       \effLR{(\neg \msg{putReq}{k = \Code{key}}) \untilA \msg{getRsp}{k = \Code{key} \land v = \Code{val}}}
     \end{align*}}
   \noindent The prophecy automata in this \PAT{} requires that no
-  updates ($\eff{putReq}$) to the database happen before a user
-  receives a response to a $\eff{getReq}$ message.
+  updates ($\eff{putReq}$) to the key $\Code{key}$ in the database
+  happen before a user receives a response to a $\eff{getReq}$ message
+  for the key $\Code{key}$.
 \end{example}
 
 \subsection{Typing rules}
@@ -288,9 +294,8 @@ was triggered by a previous event.
 % will sending new messages with name in $B$, which produce more
 % observation capability. We omit them in the rest of rules.
 
-\begin{example}[Capability Context] The handler context $\Delta$ for
-  our running examples augments the four specifications from
-  \autoref{fig:spec} as follows:
+\begin{example} The handler context $\Delta$ for our running examples
+  augments the four specifications from \autoref{fig:spec} as follows:
   {\small
     \begin{align*} \Delta \doteq
       \{ (\eff{readReq}, \langle \ldots, \{\eff{readRsp}\}\rangle),%
@@ -298,7 +303,7 @@ was triggered by a previous event.
       (\eff{writeReq}, \langle \ldots,\{\eff{writeRsp}\} \rangle), %
       (\eff{writeRsp}, \langle \ldots, \emptyset\rangle) \}
 \end{align*}}
-\end{example}
+\end{example}\vspace{-.2cm}
 
 \begin{figure}[!t]
 {\footnotesize
@@ -313,7 +318,7 @@ was triggered by a previous event.
 {$\Gamma \wellfoundedvdash H$ \quad
 $\Gamma \wellfoundedvdash A$ \quad
 $\Gamma \wellfoundedvdash F$ \quad
-$\Gamma \not\vdash H \seqA A \seqA F \subseteq \neg\allTL$ }
+$\Gamma \vdash H \seqA A \seqA F \not \subseteq \neg\allTL$ }
 {WfHAF}
 {$\Gamma \wellfoundedvdash \rg{H}{A}{F}$}
 \
@@ -378,7 +383,7 @@ $\Gamma \vdash \tau <: \overline{x_i{:}t_i}\sarr
 
 \paragraph{Auxiliary typing relations}
 Our system depends on three auxiliary relations: a well-formedness
-relation $\Gamma \wellfoundedvdash \tau$ ensures, e.g., that all
+relation $\Gamma \wellfoundedvdash \tau$ which ensures, e.g., that all
 qualifiers appearing in a type $\tau$ are closed under the current
 typing context $\Gamma$; an inclusion relation on SFAs
 $\Gamma \vdash A \subseteq A$; and a mostly-standard semantic
@@ -390,7 +395,7 @@ of the key rules for these relations. A well-formed \PAT{}
 between their constituent automata under the current type context
 $\Gamma$. Inclusion on the history and prophecy automata is
 contravariant, while current automata are covariant.  Intuitively,
-since both the history and prophecy automata constrain the contexts in
+since both the history and prophecy automata restrict the contexts in
 which a term that produces the current automata may appear, it is safe
 to further constrain both contexts.
 
@@ -432,11 +437,11 @@ performed in:%
 To type the rest of the expression, both rules move the symbolic event
 $\msg{op}{\phi\msubst{x_i}{v_i}}$ from the head of the current
 automata to the tail of the history automata and add any new
-capabilities to $\Theta$. In order to make an observation using
+capabilities to $\Theta$. In order to make an observation on
 $\eff{op}$, \textsc{TObs} additionally requires that the capability
 context has a corresponding capability ($\{\eff{op}\} \cup \Theta$). The
 standard subsumption rule \textsc{TSub} allows us to change the shape
-of a type a term is being typed against. Controller always end in a
+of a type that a term is being typed against. Controllers always end in a
 unit value $()$; thus, the \textsc{TRet} rule requires the current
 automata of this term ($\epsTL$) to only accept the empty trace (i.e.,
 $[]$). The nondeterministic choice operator is typed using the
@@ -473,7 +478,7 @@ allows controllers to explore different message orderings.
         }_\texttt{$A_4$}
     \end{align*}}\noindent
   The first $\mykw{gen}$ expression on line $2$ of $P_C$
-  is typed using \textsc{TGen}. After retrieving the specification of
+  is then typed using \textsc{TGen}. After retrieving the specification of
   $\eff{writeReq}$ from $\Delta$ and uses \textsc{TSub} to adjust it
   into a shape consistent with $\negSCA'$:
   {\footnotesize
@@ -486,9 +491,8 @@ allows controllers to explore different message orderings.
         \Code{x}}}{\finalA\msg{writeRsp}{v = \Code{x}}} \\
         & \underline{\;\quad<: \Code{x}\hasnty{int} \sarr \effLR{\epsTL}\
         \effLR{\lastA\msg{writeReq}{v = \Code{x}}}\ \effLR{A_2 \seqA
-        \lastA\msg{writeRsp}{v = \Code{x}} \seqA A_4}
-        \tag{\textsc{TSub}}} \\
-      &\Gamma;\Delta; \emptyset \vdash P_{C} \text{ (lines $3$ - $7$)}: \rg{\epsTL}{A_1\seqA A_2\seqA A_3\seqA A_4}{\epsTL}
+        \lastA\msg{writeRsp}{v = \Code{x}} \seqA A_4}} \\
+      &\Gamma;\Delta; \emptyset \vdash P_{C} \text{ (lines $2$ - $7$)}: \rg{\epsTL}{A_1\seqA A_2\seqA A_3\seqA A_4}{\epsTL}
         \tag{\textsc{TGen}}
     \end{align*}
   }\noindent %
@@ -501,7 +505,7 @@ Since the type of $\eff{writeReq}$ aligns with the
 \subsection{Type Soundness}
 
 \paragraph{Type denotations} Similar to other refinement type systems~\cite{JV21},
-types in $\DSL$ are denoted as their inhabitants (i.e., $\denot{t}$ and $\denot{\tau}$).  The type context $\Gamma$ is denoted as a \emph{substitution} $\sigma$ (e.g., $[x\mapsto 3, y\mapsto 4]$ in \autoref{ex:semantics}) that provides the assignments for binding variables in $\Gamma$.  Moreover, the denotation (accepting language)
+types in $\DSL$ are denoted as their inhabitants (i.e., $\denot{t}$ and $\denot{\tau}$).  The capability context is denoted as set of message buffers, while the type context $\Gamma$ is denoted as \emph{substitution} $\sigma$ (e.g., $[x\mapsto 3, y\mapsto 4]$ in \autoref{ex:semantics}) that provides the assignments for binding variables in $\Gamma$. Moreover, the denotation (accepting language)
 of SFAs is the set of traces they can accept. Then,  automata
 inclusion under a type context is defined as $\Gamma \vdash A \subseteq
 A' \doteq \forall \sigma \in \denot{\Gamma}. \denot{\sigma(A)}
@@ -528,9 +532,9 @@ auxiliary semantics of handlers introduced in
   \label{lemma:built-in-typing}
   The handler specification $\Delta$ is well-formed iff for all operator $\eff{op}$ and its \PAT $\overline{y{:}b} \garr \overline{x{:}t} \sarr \rg{H}{\lastA\msgB{op}{\overline{y}}{\phi}}{F}$ and capability $\{\overline{\eff{op_i}}\}$ in $\Delta$ satisfying
 {\small\begin{align*}
-    &\forall \overline{y{:}b}.\forall \alpha_h \in \denot{H}. \forall \overline{c \in \denotation{t}}. \forall \overline{c_{ij}}.\forall \overline{\alpha_i}. \alpha_1 \listconcat [\zevent{op_1}{\overline{c_{1j}}}] \listconcat ... [\zevent{op_n}{\overline{c_{nj}}}] \listconcat \alpha_{n+1} \in \denot{F} \impl 
+    &\forall \overline{y{:}b}.\forall \alpha_h \in \denot{H}. \forall \overline{c \in \denotation{t}}. \forall \overline{c_{ij}}.\forall \overline{\alpha_i}. \alpha_1 \listconcat [\zevent{op_1}{\overline{c_{1j}}}] \listconcat ... [\zevent{op_n}{\overline{c_{nj}}}] \listconcat \alpha_{n+1} \in \denot{F} \impl
     \\&\qquad \alpha_h \vDash \zevent{op}{\overline{c}} \Downarrow \{\zevent{op_i}{\overline{c_{ij}}}\} \land \phi\msubst{x}{c}
-\end{align*}} 
+\end{align*}}
 \end{definition}
 
 
