@@ -534,13 +534,12 @@ auxiliary semantics of handlers introduced in
 \end{definition}
 
 
-\begin{theorem}[Fundamental Theorem]\label{theorem:fundamental} Given
-  a well-formed handler specification $\Delta$,
-    the trace of effects produced by a well-typed term
-    $e$ is captured by its corresponding \PAT $\tau$:
-  $\Gamma; \Delta; \Theta \vdash e : \tau \implies \forall \sigma, \sigma \in
-    \denotation{\Gamma} \impl \sigma(e) \in
-    \denotation{\sigma(\tau)}$.\footnote{The proofs of all theorems in this paper are provided in the \techreport{}.}
+\begin{theorem}[Fundamental Theorem]\label{theorem:fundamental}A well-typed term, i.e., \(\Gamma; \Delta; \Theta \vdash e : \rg{H}{A}{F}\), generates traces consistent with the \PAT and can also terminate with the message buffer providing the capability.\footnote{The proofs of all theorems in this paper are provided in the \techreport{}.}
+{\small\begin{align*}
+   &\forall \sigma \in
+    \denotation{\Gamma}. \sigma(e) \in
+    \denotation{\sigma(\rg{H}{A}{F})} \land  \forall \alpha_h \in \denot{\sigma(H)}.\forall \beta \in \denot{\Theta}. \exists \alpha.\exists \beta'. \msteptr{\alpha_h}{(\beta, e)}{\alpha}{(\beta', ())}
+\end{align*}}
 \end{theorem}
 
 \begin{theorem}[Type Soundness]\label{theorem:sound} Given
