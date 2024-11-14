@@ -505,7 +505,7 @@ Since the type of $\eff{writeReq}$ aligns with the
 \subsection{Type Soundness}
 
 \paragraph{Type denotations} Similar to other refinement type systems~\cite{JV21},
-types in $\DSL$ are denoted as their inhabitants (i.e., $\denot{t}$ and $\denot{\tau}$).  The capability context is denoted as set of message buffers, while the type context $\Gamma$ is denoted as \emph{substitution} $\sigma$ (e.g., $[x\mapsto 3, y\mapsto 4]$ in \autoref{ex:semantics}) that provides the assignments for binding variables in $\Gamma$. Moreover, the denotation (accepting language)
+types in $\DSL$ are denoted as their inhabitants (i.e., $\denot{t}$ and $\denot{\tau}$).  The capability context is denoted as message buffers, while the type context $\Gamma$ is denoted as \emph{substitution} $\sigma$ (e.g., $[x\mapsto 3, y\mapsto 4]$ in \autoref{ex:semantics}) that provides the assignments for binding variables in $\Gamma$. Moreover, the denotation (accepting language)
 of SFAs is the set of traces they can accept. Then,  automata
 inclusion under a type context is defined as $\Gamma \vdash A \subseteq
 A' \doteq \forall \sigma \in \denot{\Gamma}. \denot{\sigma(A)}
