@@ -1,18 +1,17 @@
 \section{Overview}
 \label{sec:overview}
 
-To motivate our approach, consider how we might test a (highly
-simplified) model of a distributed database application depicted in
-\autoref{fig:database}. This system includes two actors: a user and a
-database (the
-\begin{wrapfigure}{l}{.6\textwidth}
+\begin{wrapfigure}{l}{.5\textwidth}
   \centering
-  \includegraphics[width=0.8\linewidth]{figures/Controller-Database.drawio.png}
+  \includegraphics[width=0.9\linewidth]{figures/Controller-Database.drawio.png}
   \caption{A simplified database access workflow.}
   \label{fig:database}
   \vspace{-0.5cm}
 \end{wrapfigure}
-system under test).  The user issues read and write messages to the
+\noindent To motivate our approach, consider how we might test a (highly
+simplified) model of a distributed database application depicted in
+\autoref{fig:database}. This system includes two actors: a user and a
+database (the system under test).  The user issues read and write messages to the
 database, and the database is responsible for persisting user-supplied
 writes, and responding to user requests to read its contents.  To
 further simplify the example, we assume the database manages a single
@@ -58,12 +57,11 @@ such messages (and their contents), we refer to them as
 
 \paragraph{Traces and safety}
 An executable model generates a sequence of concrete messages, which
-we refer to as a \emph{trace}.  For our running example, we assume a
-user expects the database to satisfy a \emph{read-your-writes} (RYW)
+we refer to as a \emph{trace}.  For our running example, we expect the
+database to satisfy a \emph{read-your-writes} (RYW)
 policy~\cite{Session} in which reads must see the most recent write
-successfully persisted to the database.  Under a database that
-provides EC semantics, however, users might witness the following
-trace: {\small
+successfully persisted.  Under a database that provides EC semantics,
+however, users might witness the following trace: {\small
   \begin{align}
     &\zevent{writeReq}{3};\zevent{writeReq}{4};\zevent{writeRsp}{4};\eff{readReq};\zevent{writeRsp}{3};\zevent{readRsp}{4,\true}
       \label{eqn:traceEx}\tag{$tr_1$}
@@ -130,18 +128,16 @@ let (y2: int) (s : bool) = ?$\mykw{obs}$? ?$\eff{readRsp}$? in ?$\mykw{assert}$?
 \end{figure}
 
 \paragraph{Controllers}
-As mentioned earlier, testing an open and reactive distributed system
-requires the support of a controller that models the environment in
-which the system is executed.  We introduce a new DSL for expressing
-controllers that is amenable to automated synthesis. Generating a
-message in this DSL is analogous to performing an effect in a
-functional language, with actors playing a similar role to effect
-handlers~\cite{BP15}. A controller program manages the generation of
-messages, schedules message order, and constrains data dependencies
-between messages.  Concretely, to realize the trace \ref{eqn:traceEx},
-the controller must both issue user-generable messages (e.g.,
-$\zevent{writeReq}{3}$), and ensure that $\zevent{writeRsp}{3}$ is
-allowed to be delivered before $\zevent{readRsp}{4,\true}$.
+We introduce a new DSL for expressing controllers that is amenable to
+automated synthesis. Generating a message in this DSL is analogous to
+performing an effect in a functional language, with actors playing a
+similar role to effect handlers~\cite{BP15}. A controller program
+manages the generation of messages, schedules message order, and
+constrains data dependencies between messages.  Concretely, to realize
+the trace \ref{eqn:traceEx}, the controller must both issue
+user-generable messages (e.g., $\zevent{writeReq}{3}$), as well as
+observable ones that e.g., ensure $\zevent{writeRsp}{3}$ is allowed to be
+delivered before $\zevent{readRsp}{4,\true}$.
 
 Programs in our DSL are loop-free sequences of commands that generate
 messages from the environment, and impose constraints on the outputs
@@ -401,7 +397,7 @@ more future messages are generated ($\epsTL$).
     \centering
     \includegraphics[width=0.95\linewidth]{figures/intuition-plan-syn.drawio.png}
 \vspace*{-.1in}
-    \caption{High-level overview of \name{} }
+    \caption{Test controller synthesis pipeline.}
     \label{fig:intuition-algo}
 % \vspace*{-.1in}
 \end{figure}
@@ -414,7 +410,7 @@ a controller as a component-based synthesis problem, guided by the
 SUT. \autoref{fig:intuition-algo} gives a high-level overview of our
 algorithm, which consists of two phases. In the first phase, we
 systematically refine an automaton that captures violations of our
-target safety property $A$ to remove traces that do not correspond to
+target property $A$ to remove traces that do not correspond to
 feasible executions. The resulting automaton $A'$ encodes a stronger
 property on traces, i.e., $A' \subseteq A$, which ensures that each
 message is consistent with its specification. In the second phase, we

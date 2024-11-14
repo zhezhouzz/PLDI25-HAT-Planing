@@ -5,7 +5,7 @@ When typing a program using our declarative typing rules, we can
 freely apply the subsumption rule to align the (ordered) set of events
 performed by the program with a \PAT{} that describes a user's desired
 high-level property. Any \emph{synthesis} procedure based on such a
-high-level specification, must devise a similar ordering alongside the
+high-level specification must devise a similar ordering alongside the
 events in the program it generates. At the same time, each event needs
 to align with the specification of its handler in $\Delta$, i.e., its
 temporal and data-dependency constraints must be satisfied. Our
@@ -63,7 +63,7 @@ an SFA's traces.
 \end{definition}
 
 \begin{example}[Abstract trace] The formula encoding violations of a
-  Read Your Writes policy, \ref{eqn:autoEx}, can be normalized into the
+  Read-Your-Writes policy, \ref{eqn:autoEx}, can be normalized into the
   following abstract trace: %
   {\footnotesize
     \begin{align*}
@@ -365,8 +365,6 @@ forward and backward sets (line $8$).
   The refined trace now includes events for $\eff{writeReq}$ and
   $\eff{readReq}$, and the values of the forward and backwards sets
   enable both events to be targeted by the next iteration of the loop.
-  The remainder of the refinement steps used to construct a violating
-  trace can be found in \techreport{}.
 \end{example}
 
 \begin{theorem}[Synthesis is Sound]
