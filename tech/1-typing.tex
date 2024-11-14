@@ -27,10 +27,80 @@ assume all terms have a basic type.
 \end{alignat*}
 {\small
 \begin{flalign*}
- &\text{\textbf{Well-formedness}} & \fbox{$\Gamma \wellfoundedvdash A \quad \Gamma \wellfoundedvdash B \quad \Gamma \wellfoundedvdash \tau \quad \Gamma \wellfoundedvdash t$}
+ &\text{\textbf{Well-formedness}} & \fbox{$\Gamma \wellfoundedvdash A \quad \Gamma \wellfoundedvdash \tau \quad \Gamma \wellfoundedvdash t$}
 \end{flalign*}
 }
 \\ \
+\begin{prooftree}
+\hypo{
+\S{Ty}(\eff{op}) = \overline{x_i{:}b_i}\sarr \Code{unit} \quad  \eraserf{\Gamma}, \overline{x_i{:}b_i} \basicvdash \phi : \Code{bool}
+}
+\infer1[\textsc{WfEvent}]{
+\Gamma \wellfoundedvdash \msgB{op}{\overline{x_i}}{\phi}
+}
+\end{prooftree}
+\quad
+\begin{prooftree}
+\hypo{
+\eraserf{\Gamma} \basicvdash \phi : \Code{bool}
+}
+\infer1[\textsc{WfTest}]{
+\Gamma \wellfoundedvdash \evparenth{\phi}
+}
+\end{prooftree}
+ \\ \ \\ \ \\
+\begin{prooftree}
+\hypo{\Gamma \wellfoundedvdash A}
+\infer1[\textsc{WfNeg}]{
+\Gamma \wellfoundedvdash \neg A
+}
+\end{prooftree}
+\quad
+\begin{prooftree}
+\hypo{
+\Gamma \wellfoundedvdash A_1 \quad \Gamma \wellfoundedvdash A_2
+}
+\infer1[\textsc{WfAnd}]{
+\Gamma \wellfoundedvdash A_1 \land A_2
+}
+\end{prooftree}
+\quad
+\begin{prooftree}
+\hypo{
+\Gamma \wellfoundedvdash A_1 \quad \Gamma \wellfoundedvdash A_2
+}
+\infer1[\textsc{WfOr}]{
+\Gamma \wellfoundedvdash A_1 \lor A_2
+}
+\end{prooftree}
+ \\ \ \\ \ \\
+ \begin{prooftree}
+\hypo{
+\Gamma \wellfoundedvdash A_1 \quad \Gamma \wellfoundedvdash A_2
+}
+\infer1[\textsc{WfConcat}]{
+\Gamma \wellfoundedvdash A_1;A_2
+}
+\end{prooftree}
+\quad
+\begin{prooftree}
+\hypo{
+\Gamma \wellfoundedvdash A
+}
+\infer1[\textsc{WfNext}]{
+\Gamma \wellfoundedvdash \nextA A
+}
+\end{prooftree}
+\quad
+\begin{prooftree}
+\hypo{
+\Gamma \wellfoundedvdash A_1 \quad \Gamma \wellfoundedvdash A_2
+}
+\infer1[\textsc{WfUntil}]{
+\Gamma \wellfoundedvdash A_1 \untilA A_2
+}
+\end{prooftree}
+\\ \ \\ \ \\ \
 \begin{prooftree}
 \hypo{
 \eraserf{\Gamma}, \vnu{:}b \basicvdash \phi : \Code{bool}
