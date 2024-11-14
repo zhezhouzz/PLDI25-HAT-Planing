@@ -123,7 +123,7 @@ Given an (unsafe) abstract trace $\Pi$ and corresponding ghost variables (e.g., 
 algorithm synthesizes a well-typed $\DSL{}$ controller. The algorithm
 follows the structure given in \autoref{fig:intuition-algo}, using a
 refinement loop (lines $3$ - $9$) to refine the input abstract trace
-$\Pi$ and then deriving the final controller from the refined property
+$\Pi$ and then deriving\footnote{The auxiliary functions (e.g., $\mathbf{DeriveTerm}$) are provided in the \techreport{}.} the final controller from the refined property
 (line $10$). Each iteration of this loop nondeterministically chooses
 a target event that is used to refine the current abstract trace;
 different choices may result in different message orders, and some of
