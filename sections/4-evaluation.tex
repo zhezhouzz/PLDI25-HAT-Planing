@@ -25,11 +25,11 @@ of alternative orderings, returning the set of all controllers found
 within a user-provided time bound.
 % BD: Does my updated text accurately capture our search strategy?
 
-We evaluate our approach in a real-world by integrating our
-synthesized controllers into the testing framework provided by
-P~\cite{DGJ+13,DQ17}, a trace-based, actor-model programming language
-tailored for modeling distributed systems and testing user-defined
-safety and liveness properties.
+We evaluate our approach by integrating our synthesized controllers
+into the testing framework provided by P~\cite{DGJ+13,DQ17}, a
+trace-based, actor-model programming language tailored for modeling
+distributed systems and testing user-defined safety and liveness
+properties.
 % implementing the operational semantics in
 % \autoref{fig:selected-semantics}, where the auxiliary handler
 % semantics ($\alpha \vDash \zevent{op}{\overline{c}} \Downarrow \beta$)
@@ -54,8 +54,11 @@ $\mykw{obs}$ statements in the controller program, allowing it to
 control message scheduling.  The coordinator is also responsible for
 generating and sending messages from the environment (e.g., a logical
 user) to the actors under test, again respecting the order in which
-these messages appear in the synthesized program. 
-The assume statements in the translated coordinator ensure that the generated message always has the expected payloads; assertion failures indicate that the system under test did not encounter the potential bug in this execution, suggesting the need for another attempt. 
+these messages appear in the synthesized program.  The assume
+statements in the translated coordinator ensure that generated
+messages always have the expected payloads; assertion failures
+indicate that the system under test did not encounter the potential
+bug in this execution, indicating the need for another attempt.
 % \BD{Say something about how we handle assertion failures.}
 
 Our experimental evaluation addresses three research questions:
@@ -77,7 +80,7 @@ Our experimental evaluation addresses three research questions:
   % \vspace*{-.1in}
   \caption{\small Experimental results of using \name{} to synthesize
     controller for reactive distributed systems. Benchmarks from prior
-    works are annotated with their source:
+    work are annotated with their source:
     P~\cite{DGJ+13}($^{\dagger}$), ModP~\cite{ModP}($^{\diamond}$) an
     extension of P with support for modules, and
     MessageChain~\cite{MessageChain}($^{\star}$), an automated verification tool for P.  We also include
@@ -139,16 +142,18 @@ Our experimental evaluation addresses three research questions:
 
 We have evaluated \name{} on a corpus of complex reactive system
 models written in P drawn from a variety of sources (described in the
-caption of \autoref{tab:evaluation}) (\textbf{Q1}). We test the
-correctness of these models against a number of consistency and safety
-properties, including the Read-Your-Writes (RYW) consistency policy
-described in \autoref{sec:overview}, eventual consistency, strong
-consistency, unique leader invariants (as defined by
-\textsf{RingLeader}, \textsf{Paxos} and \textsf{Raft}). We introduce synthetic faults into these models manually either by removing necessary
-dependencies or adding incorrect ones; these faults were chosen to be
-triggered under specific message orderings or with specific input
-message contents.  %BD: Who inserted these bugs? Was it us or the
-% authors of the models?
+caption of \autoref{tab:evaluation}); all of the models except for
+\textsf{Database} and \textsf{Raft} were written by others
+(\textbf{Q1}). We test the correctness of these models against a
+number of consistency and safety properties, including the
+Read-Your-Writes (RYW) consistency policy described in
+\autoref{sec:overview}, eventual consistency, strong consistency, and
+unique leader invariants (as defined by \textsf{RingLeader},
+\textsf{Paxos} and \textsf{Raft}). We introduce synthetic faults into
+these models manually either by removing necessary dependencies or
+adding incorrect ones; these faults were chosen to be triggered under
+specific message orderings or with specific input message contents.
+%BD: Who inserted these bugs? Was it us or the authors of the models?
 While these are synthetic design bugs, they are nonetheless
 representative of real and plausible errors that can be introduced
 when designing these models, as was illustrated in
@@ -202,7 +207,11 @@ uses the default P controller to generate input messages and message
 orderings.  This uses random input generation and enumerative state
 exploration to construct schedules, independently of the behaviors of
 the actors under test or the target property.  The second baseline
-(P+M) uses manually written actors from their original source\footnote{There are no existing human-written actors (\(-\) in the table) for two benchmarks from Message Chain (\(^\star\)), which is a verifier, as well as for two benchmarks we provided.} to control input message generation and prevent uninteresting message orderings. 
+(P+M) defines a variant of the original model that injects additional
+actors into the model to control input message generation and prevent
+uninteresting message orderings.\footnote{Benchmarks from Message Chain
+  (\(^\star\)) as well as the two benchmarks we provided
+  (\textsf{Database} and \textsf{Raft}) do not provide these refined models.}
 % BD: Explain where these components come from, use that to justify
 % why the benchmarks marked with "-" are missing.
 These components play a similar role to our synthesized controllers,
@@ -230,7 +239,6 @@ of executions to manifest a bug (e.g., the \textsf{ChainReplication}
 and \textsf{Paxos} benchmarks), compared to the single execution that
 \name{} generates.
 
-
 The last group of columns in \autoref{tab:evaluation} provides details
 on the cost of our synthesis procedure. The first column presents
 total synthesis time (t$_\text{total}$), which takes anywhere from
@@ -251,24 +259,24 @@ resolve.
 
 \paragraph{Case study}
 To demonstrate that \name{} can be effective in real-world scenarios,
-we have applied it to the \textsf{Anon2PCModel} benchmark, which
-models a two-phase commit (2PC) protocol used by a major cloud
-provider. The original P model checks a standard consistency property
-for 2PC transactions, specifically that if there exists a key
+we have applied it to the \textsf{Anon2PCModel}, a model of a
+two-phase commit (2PC) protocol that is currently in use at a major
+cloud provider.  The original P model checks a standard consistency
+property for 2PC transactions, specifically that if there exists a key
 $\Code{k}$ updated within an active transaction $\Code{i}$, any
 successful read response asking its value should return the value last
 written to $\Code{k}$ made by that transaction. We can express a
-violation of this property in LTL$_f$ as:
-{\small
+violation of this property in LTL$_f$ as: {\small
+  \vspace*{-.1in}
   \begin{align*}
     \finalA (&\msg{updateRsp}{tid = \Code{i} \land key = \Code{k}
                \land v = \Code{x} \land st = \Code{OK}} \land \\
              &\nextA \neg
                \msg{updateRsp}{tid = \Code{i} \land key = \Code{k} \land st =
                \Code{OK}} \untilA \msg{readRsp}{tid = \Code{i} \land key =
-               \Code{k} \land v \not= \Code{x} \land st = \Code{OK}})
-  \end{align*}}%
-\noindent where the field $tid$ represents the transaction id, while
+                 \Code{k} \land v \not= \Code{x} \land st = \Code{OK}})
+\end{align*}}%
+\noindent where the field $\mathit{tid}$ represents the transaction id, while
 other fields have the same meanings as in the example from
 \autoref{sec:intro}.  Generating a fault-inducing scenario requires
 (a) initiating a new transaction with transaction id $\Code{i}$, (b)
@@ -285,7 +293,8 @@ strategically requests a new transaction to initiate triggering the
 intended violation.  A version of the benchmark in which this sequence
 structure is enforced by a manually crafted environment can discover
 the violation in 53 executions, but at the cost of more
-user effort. %BD: I don't get why the manually written model is more
+user effort and a less concise model definition.
+%BD: I don't get why the manually written model is more
 % complex... isn't this more a matter of user effort?
 
 
