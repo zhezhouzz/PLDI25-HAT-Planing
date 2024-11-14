@@ -97,7 +97,34 @@ For given specification $\Delta$, type context $\Gamma$, and pure operator $\pri
 
 \subsection{Fundamental Theorems}
 
-Before presenting the proof of the fundamental theorem and type soundness, we introduce several useful lemmas.
+We first prove the fundamental theorem for values.
+
+\begin{theorem}\label{theorem:pure-fundamental-ap}[Pure Fundamental Theorem] For Given type context $\Gamma$ and well-formed value $v$ as well as pure refinement type $t$:
+  $\Gamma \vdash v: t \implies \forall \sigma \in \denot{\Gamma}. \sigma(v) \in \denot{\sigma(t)}$
+\end{theorem}
+\begin{proof} We proceed by induction over our type judgment $\Gamma;\Delta;\Theta \vdash e : \tau$, which has two cases proved as following:
+\begin{enumerate}[label=Case]
+\item:
+{\footnotesize
+\mprooftr{23mm}
+{$\eraserf{\Gamma} \basicvdash v : b$}
+{TVal}
+{$\Gamma \vdash v : \rawnuot{b}{\vnu = v}$}
+\ \\ \ \\}
+where we need to prove $\forall \sigma \in \denot{\Gamma}. \sigma(v) \in\denot{\rawnuot{b}{\vnu = \sigma(v)}}$, which can be directly proved by definition of type denotation.
+\item:
+{\footnotesize
+\mprooftr{38mm}
+{$\Gamma \vdash v : t$ \quad
+$\Gamma \vdash t <: t'$}
+{TPureSub}
+{$\Gamma \vdash v : t'$}
+\ \\ \ \\}
+where we have inductive hypothesis $\forall \sigma \in \denot{\Gamma}. \sigma(v) \in\denot{\sigma(t)}$ and need to prove $\forall \sigma \in \denot{\Gamma}. \sigma(v) \in\denot{\sigma(t')}$, which can be directly proved by soundness lemma of pure subtyping (lemma~\ref{lemma:pure-subtyping}).
+\end{enumerate}
+\end{proof}
+
+The fundamental theorem for controller program contains two parts, 1) the history, current, and future trace of a well-typed term $e$ is consistent with the corresponding \PAT; 2) the realizability guarantee provided by capability. We first prove the first part, as the following.
 
 \begin{theorem}\label{theorem:pure-fundamental-ap}[Pure Fundamental Theorem] For Given type context $\Gamma$ and well-formed value $v$ as well as pure refinement type $t$:
   $\Gamma \vdash v: t \implies \forall \sigma \in \denot{\Gamma}. \sigma(v) \in \denot{\sigma(t)}$
@@ -126,7 +153,7 @@ where we have inductive hypothesis $\forall \sigma \in \denot{\Gamma}. \sigma(v)
 
 
 
-\begin{theorem}\label{theorem:fundamental-ap}[Fundamental Theorem] Given
+\begin{theorem}\label{theorem:fundamental-ap}[Fundamental Theorem For Trace Consistency] Given
   a well-formed handler specification $\Delta$,
     the trace of effects produced by a well-typed term
     $e$ is captured by its corresponding \PAT $\tau$:
