@@ -1,0 +1,101 @@
+\subsection{Algorithm Soundness}
+
+As discussed in \autoref{sec:synthesis}, our synthesis algorithm first refines the input violation property into a set of realizable abstract traces, then uses the \(\S{TermDerive}\) function to translate these traces into a controller program. We first prove the soundness of the forward and backward synthesis steps, as well as the soundness of the top-level synthesis loop. Then, with the support of the lemmas introduced in \autoref{sec:tech:algo}, we establish the overall soundness of the synthesis algorithm.
+
+First, we define the realizable abstract trace formally. Here we take a stronger definition which guarantee all symbolic events in the abstract trace is already realizable, i.e., can be produced by a well-typed term.
+
+\begin{definition}[symbolic event consistent with handler context]
+  \label{def:consistent-event}
+An symbolic event $\msg{op}{\phi}$ in abstract trace $\Pi$ (i.e., $\Pi = \Pi_h \seqA \lastA \msg{op}{\phi} \seqA \Pi_f$) is consistent with handler context $\Delta$ and type context, denoted as $\Gamma;\Delta \vdash_{H} \msg{op}{\phi} \in \Pi$, iff $\phi$ is satisfiable and
+{\small\begin{align*}
+    &\forall \tau. \Delta(\eff{op}) = \langle (\mykw{gen}\;\tau, \Theta) \rangle \land \tau = \overline{y{:}b}\garr\overline{x{:}t}\sarr \rg{H}{A}{F} \impl
+    \\&\quad \Gamma, \overline{y{:}\rawnuot{b}{\top}},\overline{x{:}t} \vdash \rg{H}{A}{F} <: \rg{\Pi_h}{\msg{op}{\phi}}{\Pi_f}
+\end{align*}}\noindent
+\end{definition}
+
+\begin{definition}[Forward Realizability]
+  \label{def:fw-realizable}
+An symbolic event $\msg{op}{\phi}$ in abstract trace $\Pi$ (i.e., $\Pi = \Pi_h \seqA \lastA \msg{op}{\phi} \seqA \Pi_f$) is forward realizable when all message sent by it are received in the future. We denote forward realizability as $\Delta \vdash_\Code{fw} \msg{op}{\phi} \in \Pi$, such that
+{\small\begin{align*}
+    &\Delta(\eff{op}) = \langle (\tau, \Theta) \rangle \impl \exists \overline{\msg{op_i}{\phi_i}}. \Theta = \{\eff{op_i}\} \land \Pi_f = \Pi_1 \seqA \lastA \msg{op_1}{\phi_1} ... \seqA \msg{op_n}{\phi_n} \seqA \Pi_n
+\end{align*}}\noindent
+\end{definition}
+
+\begin{definition}[Backward Realizability]
+  \label{def:bw-realizable}
+An symbolic event $\msg{op}{\phi}$ in abstract trace $\Pi$ (i.e., $\Pi = \Pi_h \seqA \lastA \msg{op}{\phi} \seqA \Pi_f$) is backward realizable when it is an generatable event or there is a previous event who provide capability to received this event. We denote backward realizability as $\Delta \vdash_\Code{bw} \msg{op}{\phi} \in \Pi$, such that
+{\small\begin{align*}
+    &\Delta(\eff{op}) = \langle (\mykw{gen}\;\tau, \Theta) \rangle \lor 
+    \\&\Delta(\eff{op}) = \langle (\mykw{obs}\;\tau, \Theta) \rangle \impl  \exists \msg{op'}{\phi'}\;\tau\;\Theta'. \Pi_h = \Pi' \seqA \lastA\msg{op'}{\phi'} \seqA \Pi'' \land \Delta(\eff{op'}) = \langle (\tau, \{\eff{op}\} \cup \Theta') \rangle
+\end{align*}}\noindent
+\end{definition}
+
+
+\begin{definition}[Realizable abstract trace]
+  \label{def:realizable-trace}
+An abstract trace $\Pi$ is realizable under given well-formed handler context $\Delta$, denoted as $\Gamma;\Delta \vdash_{R} \Pi$, iff all symbolic events in $\Pi$ are consistent with $\Delta$, and are both forward and backward realizable.
+\end{definition}
+
+\begin{lemma}[Realizable Abstract Trace implies well-type term exists]\label{lemma:real-term}
+For given well-formed handler context $\Delta$, and type context $\Gamma$, and abstract trace $\Pi$, we have
+ {\small\begin{align*} 
+ \Gamma;\Delta \vdash_{R} \Pi \impl \exists e. \Gamma;\Delta;\emptyset \vdash e : \rg{\epsTL}{\Pi}{\epsTL}
+\end{align*}}
+\end{lemma}
+
+Before prove the soundness of forward and backward synthesis, we define a relation that help we map effect operators in set (e.g., $\Mfw, \Mbw$) back to locations in abstract trace.
+
+\begin{definition}[Realizable set within abstract trace]
+  \label{def:realizable-set} A set of effect operator $\Theta$ in abstract trace $\Pi$ is realizable under handler context $\Delta$ when all all symbolic events with operator in set $\Theta$ are consistent with $\Delta$ (forward realizable, backward realizable, resp.), denoted as $\Gamma;\Delta \vdash_H \Theta \subseteq \Pi$ ($\vdash_\Code{fw}$, $\vdash_\Code{bw}$, resp.).
+\end{definition}
+
+Now we prove all input and output of both forward and backward synthesis preserve an invariant, such that all symbolic events with operators in $\Code{fw}$ ($\Code{bw}$, resp.) are forward (backward, resp.) realizable. Moreover, the symbolic events with operators in the intersection of these two set are consistent with handler context.
+
+\begin{definition}[Realizable Invariant]
+  \label{def:realizable-inv} Given a handler context $\Delta$, a 6-tuple $(\Gamma, \Mfw, \Mbw,\Pi_h, \lastA \msg{op}{\phi}, \Pi_f)$ satisfies realizable invariant $I_R$ iff
+{\small\begin{align*} 
+\Delta \vdash_\Code{fw} \Mfw \subseteq \Pi_h \seqA \lastA \msg{op}{\phi} \seqA \Pi_f \land 
+\Delta \vdash_\Code{bw} \Mbw \subseteq \Pi_h \seqA \lastA \msg{op}{\phi} \seqA \Pi_f \land
+\Gamma;\Delta \vdash_H (\Mbw \cup \Mfw) \subseteq \Pi_h \seqA \lastA \msg{op}{\phi} \seqA \Pi_f
+\end{align*}}\noindent
+\end{definition}
+
+% \begin{definition}[Recover symbolic event]\label{lemma:recover-loc} We define $\Code{Slice}(\Pi, \eff{op}) = (\Pi_h, \lastA\msg{op}{\phi}, \Pi_f)$ when 
+% $\Pi = \Pi_h \seqA \lastA\msg{op}{\phi} \seqA \Pi_f$.
+% \end{definition}
+
+
+
+\begin{lemma}[Forward Synthesis Soundness]\label{lemma:fw-sound}
+For given well-formed handler context $\Delta$, and type context $\Gamma$, and abstract trace $\Pi$, the forward synthesis preserve invariant $I_R$, moreover,
+ {\small\begin{align*} 
+&\forward(\Delta, \Gamma, \Mfw, \Mbw,\Pi_h, \lastA \msg{op}{\phi}, \Pi_f) = (\Gamma', \Mfw', \Mbw',\Pi_h', \lastA \msg{op}{\phi'}, \Pi_f') \impl
+\\&\quad (\forall \sigma. \sigma \in\denot{\Gamma'} \impl \sigma \in\denot{\Gamma}) \land (\Gamma' \vdash \Pi_h \seqA \lastA \msg{op}{\phi} \seqA \Pi_f \subseteq \Pi_h' \seqA \lastA \msg{op}{\phi'} \seqA \Pi_f' ) \land \eff{op}\in \Mfw'
+\end{align*}}
+\end{lemma}
+\begin{proof} Since $\forward$ functions just adds new variable bindings into the type context on line $3$, thus $\forall \sigma. \sigma \in\denot{\Gamma'} \impl \sigma \in\denot{\Gamma}$ holds. Since $\forward$ functions perform a piecewise automata conjunction on line $4$ - $6$, thus $\Gamma' \vdash \Pi_h \seqA \lastA \msg{op}{\phi} \seqA \Pi_f \subseteq \Pi_h' \seqA \lastA \msg{op}{\phi'} \seqA \Pi_f' $ also holds. Moreover, $\eff{op}\in \Mfw'$ directly satisfied on line $8$. Finally, According to Definition~\ref{def:consistent-event}, Definition~\ref{def:fw-realizable}, Definition~\ref{def:bw-realizable}, $\forward$ functions merge the type of $\eff{op}$ in $\Delta$ (line $2$), also pass the non-emptiness check (line $7$), which preserves realizability invariant.
+\end{proof}
+
+\begin{lemma}[Backward Synthesis Soundness]\label{lemma:bw-sound}
+For given well-formed handler context $\Delta$, and type context $\Gamma$, and abstract trace $\Pi$, the forward synthesis preserve invariant $I_R$, moreover,
+ {\small\begin{align*} 
+&\backward(\Delta, \Gamma, \Mfw, \Mbw,\Pi_h, \lastA \msg{op}{\phi}, \Pi_f) = (\Gamma', \Mfw', \Mbw',\Pi_h', \lastA \msg{op}{\phi'}, \Pi_f') \impl
+\\&\quad (\forall \sigma. \sigma \in\denot{\Gamma'} \impl \sigma \in\denot{\Gamma}) \land (\Gamma' \vdash \Pi_h \seqA \lastA \msg{op}{\phi} \seqA \Pi_f \subseteq \Pi_h' \seqA \lastA \msg{op}{\phi'} \seqA \Pi_f' )  \land \eff{op}\in \Mbw'
+\end{align*}}
+\end{lemma}
+\begin{proof} Since $\backward$ functions just adds new variable bindings into the type context on line $3$, thus $\forall \sigma. \sigma \in\denot{\Gamma'} \impl \sigma \in\denot{\Gamma}$ holds. Since $\backward$ functions perform a piecewise automata conjunction on line $4$ - $6$, thus $\Gamma' \vdash \Pi_h \seqA \lastA \msg{op}{\phi} \seqA \Pi_f \subseteq \Pi_h' \seqA \lastA \msg{op}{\phi'} \seqA \Pi_f' $ also holds. Moreover, $\eff{op}\in \Mbw'$ directly satisfied on line $8$. Finally, According to Definition~\ref{def:consistent-event}, Definition~\ref{def:fw-realizable}, Definition~\ref{def:bw-realizable}, $\forward$ functions merge the type of $\eff{op_{parent}}$ in $\Delta$ (line $2$) which provide capability includes $\eff{op}$, also pass the non-emptiness check (line $7$), which preserves realizability invariant.
+\end{proof}
+
+\begin{theorem}[Synthesis is Sound]
+  \label{theorem:algo-sound-ap}
+  The controller synthesized by the algorithm is type-safe with
+  respect to our declarative typing rules.
+\end{theorem}
+\begin{proof} We first show the refinement loop in the top-level always terminate at a realizable abstract trace. We prove this by contradiction, if this abstract trace $\Pi$ is not realizable, then according to Definition~\ref{def:realizable-trace}, there must exists a symbolic event within this abstract trace which is not realizable. It can be either not forward realizable, or backward realizable, or consistent with the handler context.
+\begin{enumerate}
+    \item If $\Pi = \Pi_h \seqA \lastA \msg{op}{\phi} \seqA \Pi_f$ where $\Gamma;\Delta \not\vdash_\Code{fw} \msg{op}{\phi} \in \Pi$, then according to Lemma~\ref{lemma:fw-sound} and realizable invariant, it cannot be included in $\Mfw$. Then, the refinement loop will not stop since the condition on line $3$ still hold. Moreover, since $\eff{op} \not\in \Mfw$ (line $4$), the refinement loop will perform forward synthesis, which add $\eff{op}$ into $\Mfw$ (Lemma~\ref{lemma:fw-sound}). This makes $\eff{op} \in \Mfw$, which leads a contradiction.
+    \item If $\Pi = \Pi_h \seqA \lastA \msg{op}{\phi} \seqA \Pi_f$ where $\Gamma;\Delta \not\vdash_\Code{bw} \msg{op}{\phi} \in \Pi$ and $\eff{op}$ is an observable operator, then according to Lemma~\ref{lemma:fw-sound} and realizable invariant, it cannot be included in $\Mbw$. Then, the refinement loop will not stop since the condition on line $3$ still hold. Moreover, since $\eff{op} \not\in \Mbw$ and not generatable (line $6$ - $7$), the refinement loop will perform backward synthesis, which add $\eff{op}$ into $\Mbw$ (Lemma~\ref{lemma:bw-sound}). This makes $\eff{op} \in \Mbw$, which leads a contradiction.
+    \item If $\Pi = \Pi_h \seqA \lastA \msg{op}{\phi} \seqA \Pi_f$ where $\Gamma;\Delta \not\vdash_H \msg{op}{\phi} \in \Pi$. According to realizable invariant, it cannot be included in $\Mbw$, it cannot be included in $\Mfw \cap \Mbw$ Then, the refinement loop will not stop since the condition on line $3$ still hold, which leads a contradiction.
+\end{enumerate}
+According discussion above, the refine abstract trace $\Pi$ is realizable under refine type context $\Gamma$ on line $10$. Then Lemma~\ref{lemma:real-term} shows that there exists a term $e$, such that $\Gamma;\Delta;\emptyset \vdash e : \rg{\epsTL}{\Pi}{\epsTL}$. According to the soundness of term derivation (Lemma~\ref{lemma:derive-sound}) which is defined in \autoref{sec:tech:algo}, it is sufficient to prove the synthesized controller $e$ is well-typed.
+\end{proof}

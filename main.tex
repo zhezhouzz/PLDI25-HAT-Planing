@@ -289,16 +289,6 @@
 % \bibliographystyle{ACM-Reference-Format}
 % \bibliography{bibliography}
 
-\newpage
-\appendix
-\subfile{tech/0-semantics}
-\subfile{tech/1-typing}
-\subfile{tech/2-denotation}
-\subfile{tech/3-proof-1}
-\subfile{tech/3-proof-2}
-% \subfile{tech/4-algo}
-% \subfile{tech/5-evaluation}
-
 % \section*{Acknowledgements}
 
 %%
@@ -306,8 +296,21 @@
 %% the bibliography file.
 
 %\bibliographystyle{ACM-Reference-Format}
-\bibliographystyle{plain}
+% \bibliographystyle{plain}
+\bibliographystyle{ACM-Reference-Format}
+\citestyle{acmauthoryear}
 \bibliography{bibliography}
+
+\newpage
+\appendix
+\subfile{tech/0-semantics}
+\subfile{tech/1-typing}
+\subfile{tech/2-denotation}
+\subfile{tech/3-algo}
+\subfile{tech/4-proof-1}
+\subfile{tech/4-proof-2}
+\subfile{tech/4-proof-3}
+\subfile{tech/5-evaluation}
 
 \end{document}
 \endinput

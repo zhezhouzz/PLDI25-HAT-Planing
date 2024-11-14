@@ -7,31 +7,31 @@
 \vspace*{-.1in}
 \footnotesize
 \setlength{\tabcolsep}{2.3pt}
-\begin{tabular}{p{2.2cm}||p{6.5cm}|p{4.5cm}}
+\begin{tabular}{p{2.2cm}||p{4.5cm}|p{3.5cm}|p{3.0cm}}
   \toprule
- Benchmark & Model description & Property expected to violate\\
+ Benchmark & Model description & Property expected to violate & synthetic faults\\
  \midrule
-\textsf{Database} & A simplified database which is introduced as running example in \autoref{sec:overview} & Read-Your-Writes policy introduced in \autoref{sec:overview} \\
+\textsf{Database} & A simplified database which is introduced as running example in \autoref{sec:overview} & Read-Your-Writes policy introduced in \autoref{sec:overview}  & Remove atomicity check \\
 \midrule
-\textsf{EspressoMachine} & The user interacts with the coffee machine through its control panel, where panel must correctly interprets user inputs and handler errors from coffee machine.  & There is no handled ``run out of water'' error from coffee machine. \\
+\textsf{EspressoMachine} & The user interacts with the coffee machine through its control panel, where panel must correctly interprets user inputs and handler errors from coffee machine. & There is no handled ``run out of water'' error from coffee machine.  & Remove error handling \\
 \midrule
-\textsf{Simplified2PC} & A simplified version of two-phase commit protocol (2PC), where we assume transaction can have a single update operation. & Read-Your-Writes policy  \\
+\textsf{Simplified2PC} & A simplified version of two-phase commit protocol (2PC), where we assume transaction can have a single update operation.  & Read-Your-Writes policy & Original implementation doesn't guarantee RWY \\
 \midrule
-\textsf{HeartBeat} & A failure detector that send heartbeat messages to a node to make sure it is alive; it reports error only when the node doesn't reply for multiple rounds by considering network package lose. & If the node is alive, the failure cannot report an false positive error.\\
+\textsf{HeartBeat} & A failure detector that send heartbeat messages to a node to make sure it is alive; it reports error only when the node doesn't reply for multiple rounds by considering network package lose. & If the node is alive, the failure cannot report an false positive error. & Use timer-based implementation which will cause false positive error. \\
 \midrule
-\textsf{BankServer} & The user interact with a bank to withdraw money from their accounts, where the balance is stored in another database component. & Bank should disallow users to withdraw an amount greater than their current balance. \\
+\textsf{BankServer} & The user interact with a bank to withdraw money from their accounts, where the balance is stored in another database component. & Bank should disallow users to withdraw an amount greater than their current balance. & remove negative balance check \\
 \midrule
-\textsf{RingLeaderElection} & Ring election algorithm where a group nodes are interconnected as a ring-like structure.  & Unique leader policy, i.e., there can only be an unique node that announces itself as leader. \\
+\textsf{RingLeaderElection} & Ring election algorithm where a group nodes are interconnected as a ring-like structure.  & Unique leader policy, i.e., there can only be an unique node that announces itself as leader. & Remove node comparison as introduced in \autoref{sec:impl}. \\
 \midrule
-\textsf{Firewall} & A set of internal and external nodes communicating through a firewall, all messages between internal and external nodes should be forward by firewall. & Firewall should block an external node from taking initiative to send message to an internal node. \\
+\textsf{Firewall} & A set of internal and external nodes communicating through a firewall, all messages between internal and external nodes should be forward by firewall. & Firewall should block an external node from taking initiative to send message to an internal node. & Insert wrong nodes into the whitelist.  \\
 \midrule
-\textsf{ChainReplication} & Chain replication protocol\cite{?}. & Read-Your-Writes policy. \\
+\textsf{ChainReplication} & Chain replication protocol\cite{?}. & Read-Your-Writes policy. & Remove log recover procedure after node crash  \\
 \midrule
-\textsf{Paxos} & Paxos protocol\cite{?}. & Paxos agreement policy, i.e., not two distinct learners can learn different values.\cite{?} \\
+\textsf{Paxos} & Paxos protocol\cite{?}. & Paxos agreement policy, i.e., not two distinct learners can learn different values.\cite{?} & A wrong node comparison in leader election \\
 \midrule
-\textsf{Raft} & Raft algorithm\cite{?}. & Leader compeleteness, i.e., if a log entry is committed, then it should be present in the leader's log.\\
+\textsf{Raft} & Raft algorithm\cite{?}. & Leader completeness, i.e., if a log entry is committed, then it should be present in the leader's log. & Remove log recover procedure after node crash\\
 \midrule
-\textsf{Kermit2PCModel} & \multicolumn{2}{p{10cm}}{Case study in \autoref{sec:impl}}\\
+\textsf{Kermit2PCModel} & Case study in \autoref{sec:impl} & Case study in \autoref{sec:impl} & Remove buffered transaction update operation  \\
 \bottomrule
 \end{tabular}
 \label{tab:bench}
