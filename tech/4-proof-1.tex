@@ -1,9 +1,11 @@
 \newpage
 \section{Proofs}\label{sec:tech:proof}
 
-In this paper, we omit the proof of basic typing \(\basicvdash e : s\), assuming that all terms and qualifiers in our typing rules and theorems are type-safe. Before presenting the proof of the fundamental theorem and type soundness, we introduce several useful lemmas.
+In this paper, we omit the proof of basic typing \(\basicvdash e : s\), assuming that all terms and qualifiers in our typing rules and theorems are type-safe. 
 
 \subsection{Lemmas}
+
+Before presenting the proof of the fundamental theorem and type soundness, we introduce several useful lemmas.
 
 \paragraph{Lemmas for s-LTL$_f$} 
 
@@ -94,6 +96,8 @@ For given specification $\Delta$, type context $\Gamma$, and pure operator $\pri
 \end{lemma}
 
 \subsection{Fundamental Theorems}
+
+Before presenting the proof of the fundamental theorem and type soundness, we introduce several useful lemmas.
 
 \begin{theorem}\label{theorem:pure-fundamental-ap}[Pure Fundamental Theorem] For Given type context $\Gamma$ and well-formed value $v$ as well as pure refinement type $t$:
   $\Gamma \vdash v: t \implies \forall \sigma \in \denot{\Gamma}. \sigma(v) \in \denot{\sigma(t)}$

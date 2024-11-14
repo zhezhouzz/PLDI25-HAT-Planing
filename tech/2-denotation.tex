@@ -1,10 +1,11 @@
-\paragraph{Type Denotation}
+\newpage
+\section{Type Denotation}\label{sec:tech:denot}
 
 \begin{figure}[t!]
 \footnotesize{
 {\small
 \begin{flalign*}
- &\text{\textbf{Well-Formed Trace}} & \fbox{$\wfvdash \zevent{op}{\overline{c}} \quad \wfvdash \alpha$}
+ &\text{\textbf{Well-Formed Message, Buffer, and Trace}} & \fbox{$\wfvdash m \quad \wfvdash \beta \quad  \wfvdash \alpha$}
 \end{flalign*}
 \begin{prooftree}
 \hypo{
@@ -16,6 +17,15 @@
 }
 \end{prooftree}
 \quad
+\begin{prooftree}
+\hypo{
+\forall m \in \beta. \wfvdash m
+}
+\infer1[\textsc{WfBuffer}]{
+    \wfvdash \beta
+}
+\end{prooftree}
+\ \\ \ \\ \ \\
 \begin{prooftree}
 \hypo{}
 \infer1[\textsc{WfNil}]{
@@ -92,6 +102,16 @@
     \denot{ x{:}t, \Gamma } &\doteq \{ \sigma[x\mapsto c] ~|~ c\in \denot{t}, \sigma \in \denot{\Gamma[x\mapsto c]} \}
 \end{flalign*}
 }
+\vspace{-1.5em}
+{\small
+\begin{flalign*}
+  &\text{\textbf{Capability Context Denotation}}
+  & \fbox{$\denot{\Theta} \in \mathcal{P}(\beta)$}
+\end{flalign*}}
+\vspace{-1.2em}
+\begin{flalign*}
+    \denot{ \Theta } &\doteq \{ \{\overline{\zevent{op}{\overline{c}}}\} ~|~ \{\eff{op}\} = \Theta \land \wfvdash \{\overline{\zevent{op}{\overline{c}}}\}   \}
+\end{flalign*}
 \vspace{-0.4cm}
 \caption{Type denotations in \langname{}}
 \label{fig:type-denotation}
