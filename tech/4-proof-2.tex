@@ -279,6 +279,16 @@ The case can be directly proved by Lemma~\ref{lemma:subtyping}.
 \end{enumerate}
 \end{proof}
 
+\subsection{Fundamental Theorem} 
+
+\begin{theorem}[Fundamental Theorem]\label{theorem:fundamental-original}A well-typed term, i.e., \(\Gamma; \Delta; \Theta \vdash e : \rg{H}{A}{F}\), generates traces consistent with the \PAT and can also terminate with the message buffer providing the capability.\footnote{The proofs of all theorems in this paper are provided in the \techreport{}.}
+{\small\begin{align*}
+   &\forall \sigma \in
+    \denotation{\Gamma}. \sigma(e) \in
+    \denotation{\sigma(\rg{H}{A}{F})} \land  \forall \alpha_h \in \denot{\sigma(H)}.\forall \beta \in \denot{\Theta}. \exists \alpha.\exists \beta'. \msteptr{\alpha_h}{(\beta, e)}{\alpha}{(\beta', ())}
+\end{align*}}
+\end{theorem}
+
 \subsection{Type Soundness} 
 
 The type soundness can be proved by fundamental theorem and realizability.
