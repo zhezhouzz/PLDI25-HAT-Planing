@@ -1,40 +1,29 @@
-\subsection{Realizability} 
+\paragraph{Realizability} The second part of fundamental theorem provide guarantee for realizability, i.e., a trace can be produce by execution of well-typed term. We say that a trace \emph{realizes} a buffer $\{\overline{m_i}\}$ when
+      it contains all messages in this buffer, i.e.,
+      {\small$\alpha_1 \listconcat [m_1] \listconcat ... [m_{n}] \listconcat
+      \alpha_{n+1}$}. We also generalize this idea to automata.
 
-A trace realizes buffer $\{\overline{m_i}\}$ when it contains all messages in this buffer, i.e., 
-{\small$\alpha_1 \listconcat [m_1] \listconcat ... [m_{n}] \listconcat \alpha_{n+1}$}. We generate this idea to automata.
+\newcommand{\realz}{\lesssim}
 
-\begin{definition}[Automata Realize Capability]\label{def:beta-B} A automata $F$ realizes the capability, denoted as $(\Theta, \{\overline{m_i}\}) \sim F$, when
- {\small\begin{align*}
- \exists \alpha \in \denot{F} \land \exists \overline{\alpha_i}. \alpha_1 \listconcat [m_1] \listconcat ... [m_{n}] \listconcat \alpha_{n+1} = \alpha \land 
-\forall \eff{op}. \eff{op} \in \Theta \iff (\exists \overline{c}. \zevent{op}{\overline{c}} \in \{\overline{m_i}\})
-\end{align*}}
+\begin{definition}[Trace realize buffer]\label{def:tr-buffer} A trace $\alpha$ realizes buffer $\{\overline{m_i}\}$ when it contains all messages in this buffer, i.e., 
+{\small$\alpha = \alpha_1 \listconcat [m_1] \listconcat ... [m_{n}] \listconcat \alpha_{n+1}$}, denoted as $\beta \realz \alpha$. 
 \end{definition}
 
-Then, the prophecy automata in our type judgment always contains at least one trace that realizes the capability.
+\begin{definition}[Automata realize buffer]\label{def:a-buffer} A automata $F$ realizes the buffer $\beta$ iff $\exists \alpha \in \denot{F}. \beta \realz \alpha$, denoted as $\beta \realz F$.
+\end{definition}
 
-\begin{lemma}[Prophecy automata realize capability]\label{lemma:cap-prophecy}
- {\small\begin{align*} 
- \Gamma;\Delta\;\Theta \vdash e : \rg{H}{A}{F} \impl \forall \sigma \in\denot{\Gamma}. \exists \beta. (\Theta, \beta) \sim \sigma(F)
-\end{align*}}
-\end{lemma}
-
-We also need a lemma about buffer which can be proved by basic properties of multi-set.
-
-\begin{lemma}[Buffer Partition]\label{lemma:buf-partition} For all capability $\Theta$, automata $F$ and buffer $\beta$, we have
-\begin{align*}
-    (\Theta_1 \cup \Theta_2, \beta) \sim F \impl
-    \exists \beta_1\;\beta_2. \beta_1 \cup \beta_2 = \beta \land \beta_1 \cap \beta_2 = \emptyset \land (\Theta_1, \beta_1) \sim F \land (\Theta_2, \beta_2) \sim F
-\end{align*}
-\end{lemma}
-
+We now prove a stronger theorem than the second part of the fundamental theorem, where we additionally require that the message buffer after the execution of a well-typed term can be realized by the prophecy automata of the \PAT{}:
 
 \begin{theorem}[Realizability]\label{theorem:realizable} Given a well-formed handler specification $\Delta$, A well typed program $e$ at least realize one trace:
  {\small\begin{align*} 
- \Gamma;\Delta\;\Theta \vdash e : \rg{H}{A}{F} \impl 
- \forall \sigma \in \denot{\Gamma}.\forall \alpha_h \in \denot{\sigma(H)}. \forall \beta. (\Theta, \beta) \sim \sigma(F) \impl \exists \alpha \in\denot{\sigma(A)}. \msteptr{\alpha_h}{(\beta, e)}{\alpha}{(\emptyset, ())}
+&\Gamma;\Delta\;\Theta \vdash e : \rg{H}{A}{F} \impl 
+\\&\qquad \forall \sigma \in
+    \denotation{\Gamma}. \forall \alpha_h \in \denot{\sigma(H)}.\forall \beta \in \denot{\Theta}. \exists \alpha \in \denot{\sigma(A)}.\exists \beta'. \msteptr{\alpha_h}{(\beta, e)}{\alpha}{(\beta', ())} \land \beta' \realz \sigma(F)
 \end{align*}}
 \end{theorem}
-\begin{proof} We proceed by induction over our type judgment $\Gamma;\Delta;\Theta \vdash e : \tau$, which has $8$ cases proved as following:
+\begin{proof} We proceed by induction over our type judgment
+  $\Gamma;\Delta;\Theta \vdash e : \tau$, which consists of the
+  following $8$ cases:
 \begin{enumerate}[label=Case]
 
 \item:
@@ -52,7 +41,9 @@ $\forall i. \Gamma \vdash v_i : t_i$ \quad
 \ \\ \ \\}
 This rule assume that $e \equiv \zgen{op}{\overline{v}}{e}, \tau \equiv \rg{H}{\lastA\msg{op}{\phi\msubst{x}{v}} \seqA A}{F}$, thus we need to prove
 {\footnotesize\begin{align*}
-     \forall \sigma \in \denot{\Gamma}.\forall \alpha_h \in \denot{\sigma(H)}. \exists \beta. \Theta \vdash \beta \land \exists \alpha \in\denot{\sigma(\lastA\msg{op}{\phi\msubst{x_i}{v_i}} \seqA A)}. \msteptr{\alpha_h}{(\beta, \zgen{op}{\overline{v}}{e})}{\alpha}{(\emptyset, ())}
+\forall \sigma \in
+    &\denotation{\Gamma}. \forall \alpha_h \in \denot{\sigma(H)}.\forall \beta \in \denot{\Theta}. 
+    \\&\qquad \exists \alpha \in \denot{\sigma(\lastA\msg{op}{\phi\msubst{x_i}{v_i}} \seqA A)}.\exists \beta'. \msteptr{\alpha_h}{(\beta, \zgen{op}{\overline{v}}{e})}{\alpha}{(\beta', ())} \land \beta' \realz \sigma(F)
 \end{align*}}\noindent
 From the induction hypothesis and the precondition of this rule, we have
 {\footnotesize\begin{alignat}{2}
@@ -62,42 +53,44 @@ From the induction hypothesis and the precondition of this rule, we have
 &\forall i. \Gamma \vdash v_i : t_i \ptag{assumption} \label{real:1-3} \\
 &\Gamma ~|~ \Theta \cup \Theta' \vdash e : \rg{H \seqA \lastA\msg{op}{\phi\msubst{x}{v}}}{A}{F} \ptag{assumption} \label{real:1-4} \\
 &\forall \sigma \in \denot{\Gamma}.\forall \alpha_h \in \denot{\sigma(H \seqA \lastA\msg{op}{\phi\msubst{x}{v}})}. \notag
-\\&\quad \forall \beta. (\Theta \cup \Theta', \beta) \sim \sigma(F) \land \exists \alpha \in\denot{\sigma(A)}. \msteptr{\alpha_h}{(\beta, e)}{\alpha}{(\emptyset, ())}
+\\&\quad \forall \beta \in \denot{\Theta \cup \Theta'}.\exists \alpha \in\denot{\sigma(A)}. \exists \beta'. \msteptr{\alpha_h}{(\beta, e)}{\alpha}{(\beta', ())} \land \beta' \realz \sigma(F)
 \ptag{induction hypothesis} \label{real:1-5} \\
 &\forall i. \forall \sigma \in \denot{\Gamma}. \sigma(v_i) \in  \sigma(\denot{t_i}) \ptag{\ref{real:1-3} and Lemma~\ref{theorem:pure-fundamental-ap}} \label{real:1-6} \\
 &\forall \sigma \in \denot{\Gamma}. \sigma(\phi)\msubst{x_i}{v_i} \ptag{Lemma~\ref{lemma:built-in-typing-sub}, \ref{real:1-1}, \ref{real:1-2}, and \ref{real:1-3}} \label{real:1-7}
-\\&\forall \sigma \in\denot{\Gamma}. \exists \beta. (\Theta \cup \Theta', \beta) \sim \sigma(F) \ptag{Lemma~\ref{lemma:cap-prophecy} and \ref{real:1-4}} \label{real:1-8}
 \end{alignat}}\noindent
-From now, we consider each $\sigma \in \denot{\Gamma}$ and $\alpha_h \in \denot{H}$ and try to prove the subgoal of this case: 
+From now, we consider each $\sigma \in \denot{\Gamma}$, $\beta \in \denot{\Theta}$, and $\alpha_h \in \denot{H}$ and try to prove the subgoal of this case: 
 {\footnotesize\begin{align*}
-    \exists \beta. \Theta \vdash \beta \land \exists \alpha \in\denot{\sigma(\lastA\msg{op}{\phi\msubst{x_i}{v_i}} \seqA A)}. \msteptr{\alpha_h}{(\beta, \zgen{op}{\overline{v}}{e})}{\alpha}{(\emptyset, ())}
+    \exists \alpha \in\denot{\sigma(\lastA\msg{op}{\phi\msubst{x_i}{v_i}} \seqA A)}. \exists \beta'. \msteptr{\alpha_h}{(\beta, \zgen{op}{\overline{v}}{e})}{\alpha}{(\emptyset, ())} \land \beta' \realz \sigma(F)
 \end{align*}}\noindent
 Then we have
 {\footnotesize\begin{alignat}{2}
-&\sigma \in \denot{\Gamma} \land \alpha_h \in \denot{\sigma(H)} \ptag{assumption} \label{real:1-9}
-\\& [\zevent{op}{\overline{\sigma(v_i)}}] \in \denot{\lastA\msg{op}{\sigma(\phi)\msubst{x_i}{v_i}}} \ptag{lemma~\ref{lemma:lastA-denot} and \ref{real:1-8}} \label{real:1-10}
-\\& \alpha_h \listconcat [\zevent{op}{\overline{\sigma(v_i)}}] \in \denot{\sigma(H \seqA \lastA\msg{op}{\phi\msubst{x_i}{v_i}})} \ptag{lemma~\ref{lemma:seqA-denot}, \ref{real:1-9}, and \ref{real:1-10}} \label{real:1-11}
+&\sigma \in \denot{\Gamma} \land \beta \in \denot{\Theta} \land \alpha_h \in \denot{\sigma(H)} \ptag{assumption} \label{real:1-8}
+\\& [\zevent{op}{\overline{\sigma(v_i)}}] \in \denot{\lastA\msg{op}{\sigma(\phi)\msubst{x_i}{v_i}}} \ptag{lemma~\ref{lemma:lastA-denot} and \ref{real:1-7}} \label{real:1-9}
+\\& \alpha_h \listconcat [\zevent{op}{\overline{\sigma(v_i)}}] \in \denot{\sigma(H \seqA \lastA\msg{op}{\phi\msubst{x_i}{v_i}})} \ptag{lemma~\ref{lemma:seqA-denot}, \ref{real:1-8}, and \ref{real:1-9}} \label{real:1-10}
 \end{alignat}}\noindent
-Now, we can apply hypothesis~\ref{real:1-5} with 
+According to the well-formed type context (Lemma~\ref{lemma:built-in-typing-sub}), \ref{real:1-1}, \ref{real:1-2}, \ref{real:1-8}, we have
+{\footnotesize\begin{alignat}{2}
+& \exists \beta_{\eff{op}}. \beta_{\eff{op}} \land \denot{\Theta'} \land \beta_{\eff{op}} \realz \sigma(A\seqA F) \land \alpha_h \vDash \zevent{op}{\overline{c}} \Downarrow \beta_{\eff{op}} \ptag{Lemma~\ref{lemma:built-in-typing-sub}} \label{real:1-11}
+\\& \beta \cup \beta_{\eff{op}} \in  \denot{ \Theta \cup \Theta'} \ptag{Lemma~\ref{lemma:buf-partition} and \ref{real:1-11}} \label{real:1-12}
+\end{alignat}}\noindent
+Now, we can apply hypothesis~\ref{real:1-5} with
 {\footnotesize\begin{align*}
-    &\sigma \mapsto \sigma \quad \alpha_h \mapsto \alpha_h \listconcat [\zevent{op}{\overline{\sigma(v_i)}}]
+    &\sigma \mapsto \sigma \quad \alpha_h \mapsto \alpha_h \listconcat [\zevent{op}{\overline{\sigma(v_i)}}] \quad \beta \mapsto \beta \cup \beta_{\eff{op}}
 \end{align*}}\noindent
 Then we have
 {\footnotesize\begin{alignat}{2}
-&\exists \alpha \in\denot{\sigma(A)}. \msteptr{\alpha_h}{(\beta, e)}{\alpha}{(\emptyset, ())} \ptag{hypothesis~\ref{real:1-5} with \ref{real:1-8}, \ref{real:1-9}, \ref{real:1-11}} \label{real:1-12}
-\\& \exists \beta_1\;\beta_2. \beta_1 \cup \beta_2 = \beta \land \beta_1 \cap \beta_2 = \emptyset \land (\Theta, \beta_1) \sim F \land (\Theta', \beta_2) \sim F \ptag{Lemma~\ref{lemma:buf-partition}} \label{real:1-13}
-\\& \alpha \listconcat [\zevent{op}{\overline{\sigma(v_i)}}] \in \denot{\sigma(\lastA\msg{op}{\phi\msubst{x_i}{v_i}} \seqA A)} \ptag{lemma~\ref{lemma:seqA-denot}, \ref{real:1-10}, and \ref{real:1-12}} \label{real:1-14}
-\\&\exists \alpha_f \in \denot{F} \land \exists \overline{\alpha_i}. \exists \overline{m_i}.\; \alpha_1 \listconcat [m_1] \listconcat ... [m_{n}] \listconcat \alpha_{n+1} = \alpha_f \land \{\overline{m_i}\} = \beta \ptag{definition~\ref{def:beta-B} and \ref{real:1-8}} \label{real:1-15}
+&\exists \alpha \in\denot{\sigma(A)}. \exists \beta'. \msteptr{\alpha_h}{(\beta \cup \beta_{\eff{op}}, e)}{\alpha}{(\beta', ())} \land \beta' \realz \sigma(F) \ptag{hypothesis~\ref{real:1-5} with \ref{real:1-8}, \ref{real:1-10}, and \ref{real:1-11}} \label{real:1-13}
+\\& \alpha \listconcat [\zevent{op}{\overline{\sigma(v_i)}}] \in \denot{\sigma(\lastA\msg{op}{\phi\msubst{x_i}{v_i}} \seqA A)} \ptag{lemma~\ref{lemma:seqA-denot}, \ref{real:1-9}, and \ref{real:1-13}} \label{real:1-14}
 \end{alignat}}\noindent
-With help of hypothesis \ref{real:1-13} and \ref{real:1-14}, we can instantiate the existential quantified variables as $\beta \mapsto \beta_1, \alpha \mapsto [\zevent{op}{\overline{\sigma(v_i)}}] \listconcat \alpha$, and we need to prove
+With help of hypothesis \ref{real:1-13} and \ref{real:1-14}, we can instantiate the existential quantified variables as $\alpha \mapsto [\zevent{op}{\overline{\sigma(v_i)}}] \listconcat \alpha, \beta' \mapsto \beta'$, and we need to prove
 {\footnotesize\begin{align*}
-    \msteptr{\alpha_h}{(\beta_1, \zgen{op}{\overline{v}}{e})}{ \alpha \mapsto [\zevent{op}{\overline{\sigma(v_i)}}] \listconcat \alpha}{(\emptyset, ())}
+    \msteptr{\alpha_h}{(\beta, \zgen{op}{\overline{v}}{e})}{[\zevent{op}{\overline{\sigma(v_i)}}] \listconcat \alpha}{(\beta', ())}
 \end{align*}}\noindent
-According to the well-formed type context (Lemma~\ref{lemma:built-in-typing-sub}), \ref{real:1-1}, \ref{real:1-2}, \ref{real:1-7}, and \ref{real:1-15}, we have
+where
 {\footnotesize\begin{alignat}{2}
-& \alpha_h \vDash \zevent{op}{\overline{c}} \Downarrow \beta_2 \ptag{Lemma~\ref{lemma:built-in-typing-sub}} \label{real:1-16}
-\\& \msteptr{\alpha_h}{(\beta_1 \cup \beta_2, e)}{\alpha}{(\emptyset, ())} \ptag{ \ref{real:1-12} and \ref{real:1-13}} \label{real:1-17}
-\\& \msteptr{\alpha_h}{(\beta_1, \zgen{op}{\overline{v}}{e})}{ \alpha \mapsto [\zevent{op}{\overline{\sigma(v_i)}}] \listconcat \alpha}{(\emptyset, ())} \ptag{\textsc{StGen}, \ref{real:1-17}, and \ref{real:1-12}} \label{real:1-18}
+& \alpha_h \vDash \zevent{op}{\overline{c}} \Downarrow \beta_{\eff{op}} \ptag{hypothesis \ref{real:1-11}} \label{real:1-15}
+\\& \msteptr{\alpha_h}{(\beta \cup \beta_{\eff{op}}, e)}{\alpha}{(\beta', ())} \ptag{hypothesis \ref{real:1-13}} \label{real:1-16}
+\\& \msteptr{\alpha_h}{(\beta, \zgen{op}{\overline{v}}{e})}{ [\zevent{op}{\overline{\sigma(v_i)}}] \listconcat \alpha}{(\beta', ())} \ptag{\textsc{StGen}, \ref{real:1-15}, and \ref{real:1-16}} \label{real:1-17}
 \end{alignat}}\noindent
 which is sufficient to prove the subgoal in this case.
 
@@ -115,7 +108,9 @@ $\Gamma \vdash \tau <: \overline{x_i{:}t_i}\sarr
 \ \\ \ \\}
 This rule assume that $e \equiv \zobs{\overline{x}}{op}{e}, \tau \equiv\rg{H}{\lastA\msg{op}{\phi} \seqA A}{F}, \Theta \equiv \{\eff{op}\} \cup \Theta$, thus we need to prove
 {\footnotesize\begin{align*}
-     \forall \sigma \in \denot{\Gamma}.\forall \alpha_h \in \denot{\sigma(H)}. \exists \beta. \{\eff{op}\} \cup \Theta \vdash \beta \land \exists \alpha \in\denot{\sigma(\lastA\msg{op}{\phi} \seqA A)}. \msteptr{\alpha_h}{(\beta, \zobs{\overline{x}}{op}{e})}{\alpha}{(\emptyset, ())}
+\forall \sigma \in
+    &\denotation{\Gamma}. \forall \alpha_h \in \denot{\sigma(H)}.\forall \beta \in \denot{\{\eff{op}\} \cup \Theta}. 
+    \\&\qquad \exists \alpha \in \denot{\sigma(\lastA\msg{op}{\phi} \seqA A)}.\exists \beta'. \msteptr{\alpha_h}{(\beta, \zobs{\overline{x}}{op}{e})}{\alpha}{(\beta', ())} \land \beta' \realz \sigma(F)
 \end{align*}}\noindent
 From the induction hypothesis and the precondition of this rule, we have
 {\footnotesize\begin{alignat}{2}
@@ -124,40 +119,42 @@ From the induction hypothesis and the precondition of this rule, we have
 &\Gamma \vdash \tau <: \overline{x_i{:}t_i}\sarr\rg{H}{\lastA\msgB{op}{\overline{y}}{\phi \land \overline{y = x}}}{A \seqA F} \ptag{assumption} \label{real:2-2} \\
 &\Gamma, \overline{x{:}t}; \Delta; \Theta \cup \Theta' \vdash e : \rg{H \seqA \lastA\msgB{op}{\overline{y}}{\phi \land \overline{y = x}}}{A}{F} \ptag{assumption} \label{real:2-3} \\
 &\forall \sigma \in \denot{\Gamma, \overline{x{:}t}}.\forall \alpha_h \in \denot{\sigma(H \seqA \lastA\msgB{op}{\overline{y}}{\phi \land \overline{y = x}})}. \notag
-\\&\quad \forall \beta. (\Theta \cup \Theta', \beta) \sim \sigma(F) \land \exists \alpha \in\denot{\sigma(A)}. \msteptr{\alpha_h}{(\beta, e)}{\alpha}{(\emptyset, ())}
+\\&\quad \forall \beta \in \denot{\Theta \cup \Theta'}.\exists \alpha \in\denot{\sigma(A)}. \exists \beta'. \msteptr{\alpha_h}{(\beta, e)}{\alpha}{(\beta', ())} \land \beta' \realz \sigma(F)
 \ptag{induction hypothesis} \label{real:2-4}
-\\&\forall \sigma \in\denot{\Gamma, \overline{x{:}t}}. \exists \beta. (\Theta \cup \Theta', \beta) \sim \sigma(F) \ptag{Lemma~\ref{lemma:cap-prophecy} and \ref{real:1-4}} \label{real:2-5}
 \end{alignat}}\noindent
-From now, we consider each $\sigma\msubst{x_i}{v_i} \in \denot{\Gamma, \overline{x{:}t}}$ and $\alpha_h \in \denot{H}$ and try to prove the subgoal of this case: 
+From now, we consider each $\sigma\msubst{x_i}{v_i} \in \denot{\Gamma, \overline{x{:}t}}$, $\beta \cup \zevent{op}{\overline{\sigma(v_i)}} \in \denot{\{\eff{op}\} \cup \Theta}$, and $\alpha_h \in \denot{H}$ and try to prove the subgoal of this case: 
 {\footnotesize\begin{align*}
-    \exists \beta. \Theta \vdash \beta \land \exists \alpha \in\denot{\sigma(\lastA\msg{op}{\phi} \seqA A)}. \msteptr{\alpha_h}{(\beta, \zobs{\overline{x}}{op}{e})}{\alpha}{(\emptyset, ())}
+    \qquad \exists \alpha \in \denot{\sigma(\lastA\msg{op}{\phi} \seqA A)}.\exists \beta'. \msteptr{\alpha_h}{(\beta, \zobs{\overline{x}}{op}{e})}{\alpha}{(\beta', ())} \land \beta' \realz \sigma(F)
 \end{align*}}\noindent
 Then we have
 {\footnotesize\begin{alignat}{2}
-&\sigma \in \denot{\Gamma} \land \alpha_h \in \denot{\sigma(H)}  \land \forall i. v_i \in\denot{\sigma(t_i)} \ptag{assumption} \label{real:2-6}
-\\& [\zevent{op}{\overline{\sigma(x)}}] \in \denot{\sigma(\lastA\msgB{op}{\overline{y}}{\phi \land \overline{y = x}})} \ptag{lemma~\ref{lemma:lastA-denot}} \label{real:2-7}
-\\& \alpha_h \listconcat [\zevent{op}{\overline{\sigma(x)}}] \in \denot{\sigma(H \seqA \lastA\msgB{op}{\overline{y}}{\phi \land \overline{y = x}})} \ptag{lemma~\ref{lemma:seqA-denot}, \ref{real:2-6}, and \ref{real:2-7}} \label{real:2-8}
+&\sigma \in \denot{\Gamma} \land \alpha_h \in \denot{\sigma(H)} \land \beta \in \denot{\Theta} \land \forall i. \sigma(v_i) \in\denot{\sigma(t_i)} \ptag{assumption} \label{real:2-5}
+\\& [\zevent{op}{\overline{\sigma(x)}}] \in \denot{\sigma(\lastA\msgB{op}{\overline{y}}{\phi \land \overline{y = x}})} \ptag{lemma~\ref{lemma:lastA-denot}} \label{real:2-6}
+\\& \alpha_h \listconcat [\zevent{op}{\overline{\sigma(x)}}] \in \denot{\sigma(H \seqA \lastA\msgB{op}{\overline{y}}{\phi \land \overline{y = x}})} \ptag{lemma~\ref{lemma:seqA-denot}, \ref{real:2-5}, and \ref{real:2-6}} \label{real:2-7}
+\end{alignat}}\noindent
+According to the well-formed type context (Lemma~\ref{lemma:built-in-typing-sub}), \ref{real:2-1}, \ref{real:2-2}, and \ref{real:2-7}, we have
+{\footnotesize\begin{alignat}{2}
+& \exists \beta_{\eff{op}}. \beta_{\eff{op}} \land \denot{\Theta'} \land \beta_{\eff{op}} \realz \sigma(A\seqA F) \land \alpha_h \vDash \zevent{op}{\overline{\sigma(v_i)}} \Downarrow \beta_{\eff{op}} \ptag{Lemma~\ref{lemma:built-in-typing-sub}} \label{real:2-8}
+\\& \beta \cup \beta_{\eff{op}} \in  \denot{ \Theta \cup \Theta'} \ptag{Lemma~\ref{lemma:buf-partition} and \ref{real:2-8}} \label{real:2-9}
 \end{alignat}}\noindent
 Now, we can apply hypothesis~\ref{real:2-4} with
 {\footnotesize\begin{align*}
-    &\sigma \mapsto \sigma\msubst{x_i}{v_i} \quad \alpha_h \mapsto \alpha_h \listconcat [\zevent{op}{\overline{\sigma(v_i)}}]
+    &\sigma \mapsto \sigma\msubst{x_i}{v_i} \quad \alpha_h \mapsto \alpha_h \listconcat [\zevent{op}{\overline{\sigma(v_i)}}] \quad \beta \mapsto \beta \cup \beta_{\eff{op}}
 \end{align*}}\noindent
 Then we have
 {\footnotesize\begin{alignat}{2}
-&\exists \alpha \in\denot{\sigma(A)}. \msteptr{\alpha_h}{(\beta, e)}{\alpha}{(\emptyset, ())} \ptag{hypothesis~\ref{real:2-4} with \ref{real:1-8}, \ref{real:1-9}, \ref{real:1-11}} \label{real:2-9}
-\\& \exists \beta_1\;\beta_2. \beta_1 \cup \beta_2 = \beta \land \beta_1 \cap \beta_2 = \emptyset \land (\Theta, \beta_1) \sim F \land (\Theta', \beta_2) \sim F \ptag{Lemma~\ref{lemma:buf-partition}} \label{real:2-10}
-\\& \alpha \listconcat [\zevent{op}{\overline{\sigma(v_i)}}] \in \denot{\sigma(\msgB{op}{\overline{y}}{\phi \land \overline{y = x}} \seqA A)} \ptag{lemma~\ref{lemma:seqA-denot}, \ref{real:2-7}, and \ref{real:2-9}} \label{real:2-11}
-\\&\exists \alpha_f \in \denot{F} \land \exists \overline{\alpha_i}. \exists \overline{m_i}.\; \alpha_1 \listconcat [m_1] \listconcat ... [m_{n}] \listconcat \alpha_{n+1} = \alpha_f \land \{\overline{m_i}\} = \beta \ptag{definition~\ref{def:beta-B} and \ref{real:2-5}} \label{real:2-12}
+&\exists \alpha \in\denot{\sigma(A)}. \exists \beta'. \msteptr{\alpha_h}{(\beta \cup \beta_{\eff{op}}, e)}{\alpha}{(\beta', ())} \land \beta' \realz \sigma(F) \ptag{hypothesis~\ref{real:2-4} with \ref{real:2-5}, \ref{real:2-7}, and \ref{real:2-9}} \label{real:2-10}
+\\& \alpha \listconcat [\zevent{op}{\overline{\sigma(v_i)}}] \in \denot{\sigma(\lastA\msgB{op}{\overline{y}}{\phi \land \overline{y = x}} \seqA A)} \ptag{lemma~\ref{lemma:seqA-denot}, \ref{real:1-6}, and \ref{real:1-10}} \label{real:1-11}
 \end{alignat}}\noindent
-With help of hypothesis \ref{real:1-11} and \ref{real:1-12}, we can instantiate the existential quantified variables as $\beta \mapsto \{ \zevent{op}{\overline{\sigma(v_i)}} \}\cup \beta_1, \alpha \mapsto [\zevent{op}{\overline{\sigma(v_i)}}] \listconcat \alpha$, and we need to prove
+With help of hypothesis \ref{real:1-10} and \ref{real:1-11}, we can instantiate the existential quantified variables as $\beta \mapsto \{ \zevent{op}{\overline{\sigma(v_i)}} \}\cup \beta, \alpha \mapsto [\zevent{op}{\overline{\sigma(v_i)}}] \listconcat \alpha$, and we need to prove
 {\footnotesize\begin{align*}
-    \msteptr{\alpha_h}{(\{ \zevent{op}{\overline{\sigma(v_i)}} \}\cup \beta_1, \zobs{\overline{x}}{op}{e})}{[\zevent{op}{\overline{\sigma(v_i)}}] \listconcat \alpha }{(\emptyset, ())}
+    \msteptr{\alpha_h}{(\beta, \zgen{op}{\overline{v}}{e})}{[\zevent{op}{\overline{\sigma(v_i)}}] \listconcat \alpha}{(\beta', ())}
 \end{align*}}\noindent
-According to the well-formed type context (Lemma~\ref{lemma:built-in-typing-sub}), \ref{real:2-1}, \ref{real:2-2}, and \ref{real:1-12}, we have
+where
 {\footnotesize\begin{alignat}{2}
-& \alpha_h \vDash \zevent{op}{\overline{c}} \Downarrow \beta_2 \ptag{Lemma~\ref{lemma:built-in-typing-sub}} \label{real:2-13}
-\\& \msteptr{\alpha_h}{(\beta_1 \cup \beta_2, e)}{\alpha}{(\emptyset, ())} \ptag{hypothesis \ref{real:2-9} and \ref{real:2-10}} \label{real:2-14}
-\\& \msteptr{\alpha_h}{(\{ \zevent{op}{\overline{\sigma(v_i)}} \}\cup \beta_1, \zobs{\overline{x}}{op}{e})}{[\zevent{op}{\overline{\sigma(v_i)}}] \listconcat \alpha }{(\emptyset, ())} \ptag{\textsc{StObs}, \ref{real:2-13}, and \ref{real:2-14}}
+& \alpha_h \vDash \zevent{op}{\overline{c}} \Downarrow \beta_{\eff{op}} \ptag{hypothesis \ref{real:2-8}} \label{real:1-12}
+\\& \msteptr{\alpha_h}{(\beta \cup \beta_{\eff{op}}, e)}{\alpha}{(\beta', ())} \ptag{hypothesis \ref{real:1-10}} \label{real:1-13}
+\\& \msteptr{\alpha_h}{(\beta, \zgen{op}{\overline{v}}{e})}{ [\zevent{op}{\overline{\sigma(v_i)}}] \listconcat \alpha}{(\beta', ())} \ptag{\textsc{StGen}, \ref{real:1-12}, and \ref{real:1-13}} \label{real:1-14}
 \end{alignat}}\noindent
 which is sufficient to prove the subgoal in this case.
 
@@ -170,50 +167,53 @@ which is sufficient to prove the subgoal in this case.
 \ \\ \ \\}
 This rule assume that $\Theta \equiv \emptyset, e \equiv (), \tau \equiv \rg{H}{\epsTL}{F}$, thus we need to prove
 {\footnotesize\begin{align*}
-     \forall \sigma \in \denot{\Gamma}.\forall \alpha_h \in \denot{\sigma(H)}. \forall \beta. (\emptyset, \beta) \sim \sigma(F) \impl \exists \alpha \in\denot{\sigma(\epsTL)}. \msteptr{\alpha_h}{(\beta, ())}{\alpha}{(\emptyset, ())}
+\forall \sigma \in
+    \denotation{\Gamma}. \forall \alpha_h \in \denot{\sigma(H)}.\forall \beta \in \denot{\Theta}. \exists \alpha \in \denot{\sigma(\epsTL)}.\exists \beta'. \msteptr{\alpha_h}{(\beta, ())}{\alpha}{(\beta', ())} \land \beta' \realz \sigma(F)
 \end{align*}}\noindent
-Note that only an empty buffer can has empty capability, also only empty trace $[]$ is in the denotation of $\sigma(\epsTL)$. Thus we need to prove $\msteptr{\alpha_h}{(\emptyset, ())}{[]}{(\emptyset, ())}$ which immediate holds.
+Note that the denotation of empty capability only contains an empty buffer, also only empty trace $[]$ is in the denotation of $\sigma(\epsTL)$. Thus, we can instantiate $\beta'$ as $\emptyset$ and prove $\msteptr{\alpha_h}{(\emptyset, ())}{[]}{(\emptyset, ())}$, which immediate holds.
 
 \item:
 {\footnotesize
-\mprooftr{21mm}
+\mprooftr{50mm}
 {
 $\Gamma; \Delta; \Theta \vdash e_1 : \rg{H}{A}{F}$ \quad $\Gamma; \Delta; \Theta \vdash e_2 : \rg{H}{A}{F}$
  }
 {TChoice}
 {$\Gamma; \Delta; \Theta \vdash e_1 \oplus e_2 : \rg{H}{A}{F}$}
 \ \\ \ \\}
-This rule assume that $e \equiv e_1 \oplus e_2$, thus we need to prove
+This rule assumes that $e \equiv e_1 \oplus e_2$, thus we need to prove
 {\footnotesize\begin{align*}
- \forall \sigma \in \denot{\Gamma}.\forall \alpha_h \in \denot{\sigma(H)}. \forall \beta. (\Theta, \beta) \sim \sigma(F) \impl \exists \alpha \in\denot{\sigma(A)}. \msteptr{\alpha_h}{(\beta, e_1 \oplus e_2)}{\alpha}{(\emptyset, ())}
+\forall \sigma \in
+    \denotation{\Gamma}. \forall \alpha_h \in \denot{\sigma(H)}.\forall \beta \in \denot{\Theta}. \exists \alpha \in \denot{\sigma(A)}.\exists \beta'. \msteptr{\alpha_h}{(\beta, e_1 \oplus e_2)}{\alpha}{(\beta', ())} \land \beta' \realz \sigma(F)
 \end{align*}}\noindent
 From the inductive hypothesis of this case, we know
 {\footnotesize\begin{align*}
-    & \forall \sigma \in \denot{\Gamma}.\forall \alpha_h \in \denot{\sigma(H)}. \forall \beta. (\Theta, \beta) \sim \sigma(F) \impl \exists \alpha \in\denot{\sigma(A)}. \msteptr{\alpha_h}{(\beta, e_1)}{\alpha}{(\emptyset, ())}
-    \\& \forall \sigma \in \denot{\Gamma}.\forall \alpha_h \in \denot{\sigma(H)}. \forall \beta. (\Theta, \beta) \sim \sigma(F) \impl \exists \alpha \in\denot{\sigma(A)}. \msteptr{\alpha_h}{(\beta, e_2)}{\alpha}{(\emptyset, ())}
+    & \forall \sigma \in
+    \denotation{\Gamma}. \forall \alpha_h \in \denot{\sigma(H)}.\forall \beta \in \denot{\Theta}. \exists \alpha \in \denot{\sigma(A)}.\exists \beta'. \msteptr{\alpha_h}{(\beta, e_1)}{\alpha}{(\beta', ())} \land \beta' \realz \sigma(F)
 \end{align*}}\noindent
-Then the \textsc{StChoice} is sufficient to prove the subgoal of this case.
+We also know $\msteptr{\alpha_h}{(\beta, e_1 \oplus e_2)}{[]}{(\beta, e_1)}$ from \textsc{StChoice}, Then it is sufficient to prove the subgoal of this case.
 
 \item:
 {\footnotesize
-\mprooftr{50mm}
+\mprooftr{60mm}
 {$\Gamma, z\hasoty{unit}{\phi};\Delta;\Theta \vdash e : \rg{H}{A}{F}$ \quad $z$ is fresh}
 {TAssume}
 {$\Gamma;\Delta;\Theta  \vdash \zassume{\phi}{e} : \rg{H}{A}{F}  $}
 \ \\ \ \\}
 This rule assume that $e \equiv \zassume{\phi}{e}$, thus we need to prove
 {\footnotesize\begin{align*}
- \forall \sigma \in \denot{\Gamma}.\forall \alpha_h \in \denot{\sigma(H)}. \forall \beta. (\Theta, \beta) \sim \sigma(F) \impl \exists \alpha \in\denot{\sigma(A)}. \msteptr{\alpha_h}{(\beta, \zassume{\phi}{e})}{\alpha}{(\emptyset, ())}
+\forall \sigma \in
+    \denotation{\Gamma}. \forall \alpha_h \in \denot{\sigma(H)}.\forall \beta \in \denot{\Theta}. \exists \alpha \in \denot{\sigma(A)}.\exists \beta'. \msteptr{\alpha_h}{(\beta, \zassume{\phi}{e})}{\alpha}{(\beta', ())} \land \beta' \realz \sigma(F)
 \end{align*}}\noindent
 From the inductive hypothesis of this case, we know
 {\footnotesize\begin{align*}
-    & \forall \sigma \in \denot{\Gamma, z\hasoty{unit}{\phi}}.\forall \alpha_h \in \denot{\sigma(H)}. \forall \beta. (\Theta, \beta) \sim \sigma(F) \impl \exists \alpha \in\denot{\sigma(A)}. \msteptr{\alpha_h}{(\beta, e)}{\alpha}{(\emptyset, ())}
+    & \forall \sigma \in \denot{\Gamma, z\hasoty{unit}{\phi}}.\forall \alpha_h \in \denot{\sigma(H)}.\forall \beta \in \denot{\Theta}. \exists \alpha \in \denot{\sigma(A)}.\exists \beta'. \msteptr{\alpha_h}{(\beta, e)}{\alpha}{(\beta', ())} \land \beta' \realz \sigma(F)
 \end{align*}}\noindent
 Since $z$ is a fresh variable, then we have
 {\footnotesize\begin{align*}
     &\forall \sigma, \sigma \in \denot{\Gamma, z\hasoty{unit}{\phi}} \impl \exists \sigma'. \sigma'[\overline{z \mapsto ()}] = \sigma. \sigma'(e) \in \denot{\sigma'(\tau)}
 \end{align*}}\noindent
-Moreover, according to the definition of type context denotation, 
+Moreover, according to the definition of type context denotation,
 {\footnotesize\begin{align*}
     &\forall \sigma, \sigma \in \denot{\Gamma} \land \sigma(\phi) \iff \sigma[\overline{z \mapsto ()}] \in \denot{\Gamma, z\hasoty{unit}{\phi}}
 \end{align*}}\noindent
@@ -229,12 +229,14 @@ $\Gamma \vdash () : \nuot{unit}{\phi}$}
 \ \\ \ \\}
 This rule assume that $e \equiv \zassert{\phi}{e}$, thus we need to prove
 {\footnotesize\begin{align*}
- \forall \sigma \in \denot{\Gamma}.\forall \alpha_h \in \denot{\sigma(H)}. \forall \beta. (\Theta, \beta) \sim \sigma(F) \impl \exists \alpha \in\denot{\sigma(A)}. \msteptr{\alpha_h}{(\beta, \zassert{\phi}{e})}{\alpha}{(\emptyset, ())}
+\forall \sigma \in
+    \denotation{\Gamma}. \forall \alpha_h \in \denot{\sigma(H)}.\forall \beta \in \denot{\Theta}. \exists \alpha \in \denot{\sigma(A)}.\exists \beta'. \msteptr{\alpha_h}{(\beta, \zassert{\phi}{e})}{\alpha}{(\beta', ())} \land \beta' \realz \sigma(F)
 \end{align*}}\noindent
 From the assumption and inductive hypothesis of this case, we know
 {\footnotesize\begin{align*}
-    & \forall \sigma \in \denot{\Gamma}.\forall \alpha_h \in \denot{\sigma(H)}. \forall \beta. (\Theta, \beta) \sim \sigma(F) \impl \exists \alpha \in\denot{\sigma(A)}. \msteptr{\alpha_h}{(\beta, e)}{\alpha}{(\emptyset, ())}
+    & \forall \sigma \in \denot{\Gamma}.\forall \alpha_h \in \denot{\sigma(H)}.\forall \beta \in \denot{\Theta}. \exists \alpha \in \denot{\sigma(A)}.\exists \beta'. \msteptr{\alpha_h}{(\beta, e)}{\alpha}{(\beta', ())} \land \beta' \realz \sigma(F)
 \end{align*}}\noindent
+Since $\Gamma \vdash () : \nuot{unit}{\phi}$, we know $\sigma(\phi)$ holds.
 Now, we need to show $\zassert{\phi}{e}$ can reduced into $e$ without add new effect, which is can be proved by \textsc{StAssert} and $\sigma(\phi)$. Then the proof immediate holds in this case.
 
 \item:
@@ -250,7 +252,8 @@ $\Gamma, x{:}t_x\msubst{y}{v};\Delta;\Theta \vdash e : \rg{H}{A}{F}$
 \ \\ \ \\}
 This rule assume that $e \equiv \zlet{x{:}b}{\primop\ \overline{v}}{e}$, thus we need to prove
 {\footnotesize\begin{align*}
-  \forall \sigma \in \denot{\Gamma}.\forall \alpha_h \in \denot{\sigma(H)}. \forall \beta. (\Theta, \beta) \sim \sigma(F) \impl \exists \alpha \in\denot{\sigma(A)}. \msteptr{\alpha_h}{(\beta, \zlet{x{:}b}{\primop\ \overline{v}}{e})}{\alpha}{(\emptyset, ())}
+\forall \sigma \in
+    \denotation{\Gamma}. \forall \alpha_h \in \denot{\sigma(H)}.\forall \beta \in \denot{\Theta}. \exists \alpha \in \denot{\sigma(A)}.\exists \beta'. \msteptr{\alpha_h}{(\beta, \zlet{x{:}b}{\primop\ \overline{v}}{e})}{\alpha}{(\beta', ())} \land \beta' \realz \sigma(F)
 \end{align*}}\noindent
 From the assumption and inductive hypothesis of this case, we know
 {\footnotesize\begin{alignat}{2}
@@ -260,8 +263,8 @@ From the assumption and inductive hypothesis of this case, we know
 &\forall i. \Gamma \vdash v_i : t_i \ptag{assumption} \label{real:3-3} \\
 &\Gamma, x{:}t_x\msubst{y}{v};\Delta;\Theta \vdash e : \tau \ptag{assumption} \label{real:3-4} \\
 &\forall v_x. \Gamma \vdash v_x : t_x\msubst{y}{v} \impl \Gamma;\Delta;\Theta \vdash e[x\mapsto v_x] : \tau[x\mapsto v_x] \ptag{Lemma~\ref{lemma:subt} and \ref{real:3-4}} \label{real:3-5} \\
-& \forall \sigma \in \denot{\Gamma,  x{:}t_x\msubst{y}{v}}.\forall \alpha_h \in \denot{\sigma(H)}. \forall \beta. (\Theta, \beta) \sim \sigma(F) \impl 
-\\&\quad \exists \alpha \in\denot{\sigma(A)}. \msteptr{\alpha_h}{(\beta, e)}{\alpha}{(\emptyset, ())}
+& \forall \sigma \in \denot{\Gamma,  x{:}t_x\msubst{y}{v}}.\forall \alpha_h \in \denot{\sigma(H)}. \forall \beta \in \denot{\Theta}.  \notag
+\\&\quad \exists \alpha \in \denot{\sigma(A)}. \exists \beta'. \msteptr{\alpha_h}{(\beta, e)}{\alpha}{(\beta', ())} \land \beta' \realz \sigma(F)
 \ptag{induction hypothesis and \ref{real:3-4}} \label{real:3-6}
 \end{alignat}}\noindent
 This reduction step is pure, thus we can directly instantiate $\alpha$ in subgoal as $\alpha$ and apply hypothesis~\ref{real:3-6}, then which is sufficient to prove this case.
@@ -279,17 +282,20 @@ The case can be directly proved by Lemma~\ref{lemma:subtyping}.
 \end{enumerate}
 \end{proof}
 
-\subsection{Fundamental Theorem} 
+\paragraph{Fundamental Theorem} Now fundamental theorem can be proved with the help of Theorem~\ref{theorem:fundamental-ap} and Theorem~\ref{theorem:realizable}.
 
-\begin{theorem}[Fundamental Theorem]\label{theorem:fundamental-original}A well-typed term, i.e., \(\Gamma; \Delta; \Theta \vdash e : \rg{H}{A}{F}\), generates traces consistent with the \PAT and can also terminate with the message buffer providing the capability.\footnote{The proofs of all theorems in this paper are provided in the \techreport{}.}
+\begin{theorem}[Fundamental Theorem]\label{theorem:fundamental-original}A well-typed term, i.e., \(\Gamma; \Delta; \Theta \vdash e : \rg{H}{A}{F}\), generates traces consistent with the \PAT and can also terminate with the message buffer providing the capability.
 {\small\begin{align*}
    &\forall \sigma \in
     \denotation{\Gamma}. \sigma(e) \in
     \denotation{\sigma(\rg{H}{A}{F})} \land  \forall \alpha_h \in \denot{\sigma(H)}.\forall \beta \in \denot{\Theta}. \exists \alpha.\exists \beta'. \msteptr{\alpha_h}{(\beta, e)}{\alpha}{(\beta', ())}
 \end{align*}}
 \end{theorem}
+\begin{proof} For $\sigma \in\denotation{\Gamma}$, the first conjunct $\sigma(e) \in
+    \denotation{\sigma(\rg{H}{A}{F})}$ can be provided directly via Theorem~\ref{theorem:fundamental-ap}. Additionally, for $ \alpha_h \in \denot{\sigma(H)}$ and  $\beta \in \denot{\Theta}$, Theorem~\ref{theorem:fundamental-ap} shows that $\exists \alpha \in \denot{\sigma(A)}.\exists \beta'. \msteptr{\alpha_h}{(\beta, e)}{\alpha}{(\beta', ())} \land \beta' \realz \sigma(F)$, which is sufficient to proved the second conjunct.
+\end{proof}
 
-\subsection{Type Soundness} 
+\subsection{Type Soundness}
 
 The type soundness can be proved by fundamental theorem and realizability.
 
@@ -313,25 +319,33 @@ The type soundness can be proved by fundamental theorem and realizability.
     \denot{\overline{x{:\rawnuot{b}{\top}}}} \iff \exists \overline{c{:}b}. \sigma =\msubst{x}{c}  \ptag{definition of $\denot{\Gamma}$ and \ref{sound:2}}  \label{sound:3}
     \\&\forall \overline{c{:}b}. e\msubst{x}{c} \in
     \denot{\rg{\epsTL}{A\msubst{x}{c}}{\epsTL}} \ptag{hypothesis~\ref{sound:2} and \ref{sound:3}} \label{sound:4}
-    \\& \forall \sigma \in \denot{\overline{x{:\rawnuot{b}{\top}}}}.\forall \alpha_h \in \denot{\sigma(\epsTL)}. \forall \beta. (\emptyset, \beta) \sim \sigma(\epsTL) \impl \notag \\&\quad\exists \alpha \in\denot{\sigma(A)}. \msteptr{\alpha_h}{(\beta, e)}{\alpha}{(\emptyset, ())} 
+    \\&\forall \sigma \in
+    \denotation{\Gamma}. \forall \alpha_h \in \denot{\sigma(\epsTL)}.\forall \beta \in \denot{\emptyset}. \notag
+    \\&\qquad \exists \alpha \in \denot{\sigma(A)}.\exists \beta'. \msteptr{\alpha_h}{(\beta, e)}{\alpha}{(\beta', ())} \land \beta' \realz \sigma(\epsTL)
     \ptag{\autoref{theorem:realizable} and \ref{sound:1}} \label{sound:5}
+    \\&\forall \alpha. \alpha \in \denot{\epsTL} \iff \alpha = []
+    \ptag{Lemma~\ref{lemma:espTL}} \label{sound:6}
+    \\&\forall \beta. \beta \in \denot{\emptyset} \iff \beta = \emptyset
+    \ptag{Definition of capability denotation} \label{sound:7}
+    \\&\forall \beta. \beta \realz \epsTL \iff \beta = \emptyset
+    \ptag{Lemma~\ref{lemma:espTL-realz}} \label{sound:8}
     \\&\exists \overline{c{:}b}. \exists \alpha. \msteptr{[]}{(\emptyset, e\msubst{x}{c})}{\alpha}{(\emptyset, ())} 
-    \ptag{Lemma~\ref{lemma:espTL} and \ref{sound:5}} \label{sound:6}
+    \ptag{\ref{sound:5} with \ref{sound:3},  \ref{sound:6}, \ref{sound:7}, \ref{sound:8}} \label{sound:9}
 \end{alignat}}\noindent
+Then, the $\alpha$ is the trace realized by the term $e$. Now we just need to prove $\alpha \in \denot{A\msubst{x}{c}}$.
+Notice that the denotation of empty capability only contains empty buffer, 
 the definition of \PAT denotation as shown in \autoref{fig:type-denotation} indicates
 {\footnotesize\begin{align*}
     &\forall \alpha_h \in\denot{\sigma(\epsTL)}.\forall \alpha_f \in\denot{\sigma(\epsTL)}. \forall \alpha\; \beta\;\beta'\;e_h\;e_f.
   \\&\qquad \msteptr{[]}{(\emptyset, e_h)}{\alpha_h}{(\beta, ())}\land \msteptr{\alpha_h}{(\beta, e)}{\alpha}{(\beta', ())} \land \msteptr{\alpha_h \listconcat \alpha }{(\beta', e_f)}{\alpha_f}{(\emptyset, ())} \impl \alpha \in\denot{A\msubst{x}{c}}
 \end{align*}}\noindent
-Again, according to Lemma~\ref{lemma:espTL}, we have
+Again, according to Lemma~\ref{lemma:espTL},
 {\footnotesize\begin{alignat}{2}
-  &\forall \alpha\;\beta\;\beta'\;e_h\;e_f. \notag
-  \\&\quad \msteptr{[]}{(\emptyset, e_h)}{[]}{(\beta, ())} \land \msteptr{[]}{(\beta, e)}{\alpha}{(\beta', ())} \land \msteptr{\alpha }{(\beta', e_f)}{[]}{(\emptyset, ())} \impl \alpha \in\denot{A} \label{sound:7}
-  \\&\msteptr{[]}{(\emptyset, ())}{[]}{(\emptyset, ())} \ptag{definition of $\hookrightarrow^*$} \label{sound:8}
-  \\&\msteptr{\alpha}{(\emptyset, ())}{[]}{(\emptyset, ())} \ptag{definition of $\hookrightarrow^*$} \label{sound:9}
+  &\msteptr{[]}{(\emptyset, ())}{[]}{(\emptyset, ())} \ptag{definition of $\hookrightarrow^*$} \label{sound:10}
+  \\&\msteptr{\alpha}{(\emptyset, ())}{[]}{(\emptyset, ())} \ptag{definition of $\hookrightarrow^*$} \label{sound:11}
   \\&\exists \overline{c{:}b}.\exists \alpha \in\denot{\sigma(A\msubst{x}{c})}. \msteptr{[]}{(\emptyset, e)}{\alpha}{(\emptyset, ())}
-\ptag{hypothesis~\ref{sound:7}, \ref{sound:6},\ref{sound:8}, and \ref{sound:9}}
-  \label{sound:10}
+\ptag{Denotation of \PAT, \ref{sound:9},\ref{sound:10}, and \ref{sound:11}}
+  \label{sound:12}
 \end{alignat}}\noindent
 This is sufficient to establish the original theorem we aim to prove.
 \end{proof}
@@ -351,8 +365,8 @@ This is sufficient to establish the original theorem we aim to prove.
 
 
 % \begin{theorem}\label{theorem:algo-sound}[Algorithm Soundness] Under a complete handler specification, with ghost variables $\overline{x{:}b}$ and a safety property $A$, the synthesized program $e$ realizes at least one trace that violate $A$, i.e.,
-% {\small\begin{align*} 
-% \exists \overline{c{:}b}. \exists \alpha. 
+% {\small\begin{align*}
+% \exists \overline{c{:}b}. \exists \alpha.
 % \msteptr{[]}{([],e[\overline{x\mapsto c}])}{\alpha}{([], ())} \land \alpha \not\in
 %     \denot{A[\overline{x\mapsto c}]}
 % \end{align*}}

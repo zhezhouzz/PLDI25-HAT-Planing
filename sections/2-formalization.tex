@@ -269,7 +269,7 @@ are not allowed to contain \PAT{}s--- doing so breaks several
 structural properties (e.g., weakening) that are used to prove type
 safety. The handler context, $\Delta$, maps operations to two key
 pieces of information: a specification of its handler as a \PAT{}
-tagged with whether it is observable or generable, and the operations
+that is tagged with whether it is observable or generable, and the operations
 its handler adds to the buffer. The capability context, $\Theta$,
 records the set of observable messages that are in scope. This context
 is used to ensure that every observation corresponds to a message that

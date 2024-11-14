@@ -340,7 +340,7 @@ request is serviced, thereby guaranteeing write atomicity:
 {\footnotesize
     \begin{align*}
       \mykw{gen}~ \eff{writeReq} ~:~ &  \Code{x}\hasnty{int} \sarr \rg{\allTL}{\lastA\msg{writeReq}{v = \Code{x}}}{(\neg \msg{readReq}{\top}) \untilA \msg{writeRsp}{v = \Code{x}}}
-    \end{align*}}
+    \end{align*}}\noindent
 The subtletly in these specifications, which have intricate non-local
 temporal data dependencies, highlights the fundamental challenge in
 writing correct models for this setting.  It serves as the primary
@@ -419,8 +419,8 @@ traces captured by \ref{eqn:autoEx} can be refined into: %
 {\footnotesize
   \begin{align*}
   &\lastA \msg{writeReq}{v = \Code{x}} \seqA
-   \lastA \msg{writeReq}{v =\Code{y} \land v \not=\Code{x}} \seqA \lastA \msg{readReq}{\top} \seqA \\
-    &\lastA \msg{writeRsp}{v = \Code{y}} \seqA
+   \lastA \msg{writeReq}{v =\Code{y} \land v \not=\Code{x}} \seqA \lastA \msg{writeRsp}{v = \Code{y}} \seqA \\
+    &\lastA \msg{readReq}{\top} \seqA 
     \lastA \msg{writeRsp}{v = \Code{x}} \seqA
     \lastA \msg{readRsp}{v = \Code{y} \land st = \true \land v \not=
     \Code{x}}

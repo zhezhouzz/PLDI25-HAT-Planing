@@ -8,14 +8,14 @@ correctness guarantees at the cost of significant investment on the
 part of the proof engineer, who is responsible for, e.g., defining
 suitable inductive invariants for the verification
 task~\cite{PM+16,YR+21,MG+19}.  In contrast, our focus in this work is
-to improve the effectiveness of falsification techniques-- validating
+to improve the effectiveness of falsification techniques--- validating
 the presence of bugs in a distributed protocol design, rather than
 their absence. In this sense, we are more closely related to recently
 proposed approaches for formally reasoning about
 incorrectness~\cite{OHP19, LR+22, RBD+20, casl}.  While
 \name{} cannot verify the correctness of a model, the burden we impose
 on test engineers, i.e., providing handler specifications as PAT{}s,
-as well as a global safety/liveness property in LTL$_f$, is a
+as well as a global safety/liveness property in LTL$_f$, is
 significantly less than what is required to verify full functional
 correctness of these designs.
 
@@ -64,13 +64,13 @@ a component-based synthesis procedure, and the top-down (TLA) vs.
 bottom-up (\name{}) exploration mechanism, differentiates \name{}'s
 motivation and design from TLA+ and TLC in obvious ways.  Type and
 effect systems that target \emph{temporal} properties on the sequences
-of effects a program may \emph{produce} is a well-studied subject. For
+of effects that a program may \emph{produce} is a well-studied subject. For
 example, \citet{SS+04} presents a type and effect system for reasoning
 about the shape of histories (i.e., finite traces) of events embedded
 in a program.  \citet{KT+14} present a type and effect system that
 additionally supports verification properties of infinite traces,
 specified as B\"{u}chi automata.  More recently,
-\citet{Temporal-Verification} has considered how to support richer
+\citet{Temporal-Verification} have considered how to support richer
 control flow structures, e.g., delimited continuations, in such an
 effect system.  Closest to our work are the recently proposed
 \emph{Hoare Automata Types} (\textsc{HAT}s)~\cite{ZYDJ24}, which
@@ -85,7 +85,7 @@ yet to be handled.
 
 \section{Conclusions}\label{sec:conc}
 
-This paper examines a property-guided testing framework for open
+This paper proposes a property-guided testing framework for open
 reactive distributed system models.  Our key innovation is the use of
 prophecy automata types (\PAT{}s) to enable the specification of
 message handlers in terms of history and future traces.  Our
