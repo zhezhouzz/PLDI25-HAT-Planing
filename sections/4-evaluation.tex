@@ -6,23 +6,24 @@ message-passing systems defined as a collection of actors). \name{}
 consists of approximately 14K lines of OCaml code and uses
 Z3~\cite{de2008z3} as its backend SMT solver.\footnote{The
   supplemental material provides additional explanation of our
-  experiments as well as a docker image that contains the \name{}'s
-  source code and benchmarks.}
+  experiments as well as a docker image that contains the source code
+  of \name{} and our benchmarks.}
 
 \paragraph{Evaluation setting} \name{} takes two inputs: a target
 safety property, expressed in symbolic LTL$_f$, and a handler context,
 $\Delta$, that captures the behavior of actors in terms of
-\PAT{}s. \name{} includes signatures for a number of primitives in
-$\Delta$ by default, including the pure operators listed in
-\autoref{fig:term-syntax}.  During synthesis, \name{} first negates
-the target property in order to capture unsafe traces (e.g., $\negSCA$
-in \autoref{sec:overview}), and then explores the space of possible
-controllers, looking for those that can guide executions towards those
-that are both unsafe and consistent with $\Delta$. Each synthesized
-controller fixes a particular message order and payload for generated
-(environment) messages, so \name{} systematically explores the space
-of alternative orderings, returning the set of all controllers found
-within a user-provided time bound.
+\PAT{}s. % \name{} includes signatures for a number of primitives in
+% $\Delta$ by default, including the pure operators listed in
+% \autoref{fig:term-syntax}.
+During synthesis, \name{} first negates the target property in order
+to capture unsafe traces (e.g., \ref{eqn:autoEx}), and then explores
+the space of possible controllers, looking for those that can guide
+executions towards those that are both unsafe and consistent with
+$\Delta$. Each controller synthesized by \autoref{algo:top-syn} fixes
+a particular message order for generable (i.e., environment) messages,
+so \name{} systematically explores the space of alternative orderings,
+returning the set of all controllers found within a user-provided time
+bound.
 % BD: Does my updated text accurately capture our search strategy?
 
 We evaluate our approach by integrating our synthesized controllers
@@ -204,14 +205,15 @@ not directly affect the property of interest.
 The third group of columns compares the performance results of our
 synthesized controller compared to two baselines.  The first (P+Rand)
 uses the default P controller to generate input messages and message
-orderings.  This uses random input generation and enumerative state
-exploration to construct schedules, independently of the behaviors of
-the actors under test or the target property.  The second baseline
-(P+M) defines a variant of the original model that injects additional
-actors into the model to control input message generation and prevent
-uninteresting message orderings.\footnote{Benchmarks from Message Chain
-  (\(^\star\)) as well as the two benchmarks we provided
-  (\textsf{Database} and \textsf{Raft}) do not provide these refined models.}
+orderings.  This baseline uses random input generation and enumerative
+state exploration to construct schedules, independently of the
+behaviors of the actors under test or the target property.  The second
+baseline (P+M) uses manually written variants of the original model
+which inject additional actors into the model to control input message
+generation and prevent uninteresting message
+orderings.\footnote{Benchmarks from Message Chain (\(^\star\)) as well
+  as the two benchmarks we authored (\textsf{Database} and
+  \textsf{Raft}) do not provide these refined models.}
 % BD: Explain where these components come from, use that to justify
 % why the benchmarks marked with "-" are missing.
 These components play a similar role to our synthesized controllers,
@@ -259,15 +261,16 @@ resolve.
 
 \paragraph{Case study}
 To demonstrate that \name{} can be effective in real-world scenarios,
-we have applied it to the \textsf{Anon2PCModel}, a model of a
-two-phase commit (2PC) protocol that is currently in use at a major
-cloud provider.  The original P model checks a standard consistency
-property for 2PC transactions, specifically that if there exists a key
+we have applied it to \textsf{Anon2PCModel}, a model of a two-phase
+commit (2PC) protocol that is currently in use at a major cloud
+provider.  The original P model checks a standard consistency property
+for 2PC transactions, specifically that if there exists a key
 $\Code{k}$ updated within an active transaction $\Code{i}$, any
 successful read response asking its value should return the value last
 written to $\Code{k}$ made by that transaction. We can express a
-violation of this property in LTL$_f$ as: {\small
-  \vspace*{-.1in}
+violation of this property in LTL$_f$ as: %
+{\small
+  % \vspace*{-.1in}
   \begin{align*}
     \finalA (&\msg{updateRsp}{tid = \Code{i} \land key = \Code{k}
                \land v = \Code{x} \land st = \Code{OK}} \land \\
