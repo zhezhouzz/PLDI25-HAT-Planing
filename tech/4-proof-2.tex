@@ -1,40 +1,66 @@
-\subsection{Realizability} 
+\subsection{Realizability}
 
-A trace realizes buffer $\{\overline{m_i}\}$ when it contains all messages in this buffer, i.e., 
-{\small$\alpha_1 \listconcat [m_1] \listconcat ... [m_{n}] \listconcat \alpha_{n+1}$}. We generate this idea to automata.
+We say that a trace \emph{realizes} a buffer $\{\overline{m_i}\}$ when
+it contains all messages in this buffer, i.e.,
+{\small$\alpha_1 \listconcat [m_1] \listconcat ... [m_{n}] \listconcat
+  \alpha_{n+1}$}. We can generalize this idea to automata.
 
-\begin{definition}[Automata Realize Capability]\label{def:beta-B} A automata $F$ realizes the capability, denoted as $(\Theta, \{\overline{m_i}\}) \sim F$, when
- {\small\begin{align*}
- \exists \alpha \in \denot{F} \land \exists \overline{\alpha_i}. \alpha_1 \listconcat [m_1] \listconcat ... [m_{n}] \listconcat \alpha_{n+1} = \alpha \land 
-\forall \eff{op}. \eff{op} \in \Theta \iff (\exists \overline{c}. \zevent{op}{\overline{c}} \in \{\overline{m_i}\})
+\begin{definition}[Automata Realize Capability]
+  \label{def:beta-B}
+  A automata $F$ realizes the capability, denoted as
+  $(\Theta, \{\overline{m_i}\}) \sim F$, when %
+  {\small
+    \begin{align*}
+      \exists \alpha \in \denot{F} \land \exists
+      \overline{\alpha_i}. \alpha_1 \listconcat [m_1] \listconcat
+      ... [m_{n}] \listconcat \alpha_{n+1} = \alpha \land \forall
+      \eff{op}. \eff{op} \in \Theta \iff (\exists
+      \overline{c}. \zevent{op}{\overline{c}} \in \{\overline{m_i}\})
 \end{align*}}
 \end{definition}
 
-Then, the prophecy automata in our type judgment always contains at least one trace that realizes the capability.
+Then, the prophecy automata in our type judgment always contains at
+least one trace that realizes the capability.
 
-\begin{lemma}[Prophecy automata realize capability]\label{lemma:cap-prophecy}
- {\small\begin{align*} 
- \Gamma;\Delta\;\Theta \vdash e : \rg{H}{A}{F} \impl \forall \sigma \in\denot{\Gamma}. \exists \beta. (\Theta, \beta) \sim \sigma(F)
+\begin{lemma}[Prophecy automata realize capability]
+  \label{lemma:cap-prophecy}
+  {\small
+    \begin{align*} \Gamma;\Delta\;\Theta \vdash e : \rg{H}{A}{F} \impl
+      \forall \sigma \in\denot{\Gamma}. \exists \beta. (\Theta, \beta)
+      \sim \sigma(F)
 \end{align*}}
 \end{lemma}
 
-We also need a lemma about buffer which can be proved by basic properties of multi-set.
+We also need a lemma about buffer which can be proved by basic
+properties of multiset.
 
-\begin{lemma}[Buffer Partition]\label{lemma:buf-partition} For all capability $\Theta$, automata $F$ and buffer $\beta$, we have
+\begin{lemma}[Buffer Partition]
+  \label{lemma:buf-partition}
+  For all capability contexts $\Theta$, automata $F$ and buffer
+  $\beta$, we have
 \begin{align*}
-    (\Theta_1 \cup \Theta_2, \beta) \sim F \impl
-    \exists \beta_1\;\beta_2. \beta_1 \cup \beta_2 = \beta \land \beta_1 \cap \beta_2 = \emptyset \land (\Theta_1, \beta_1) \sim F \land (\Theta_2, \beta_2) \sim F
+  (\Theta_1 \cup \Theta_2, \beta) \sim F \impl
+  \exists \beta_1\;\beta_2. \beta_1 \cup \beta_2 = \beta \land \beta_1 \cap \beta_2 = \emptyset \land (\Theta_1, \beta_1) \sim F \land (\Theta_2, \beta_2) \sim F
 \end{align*}
 \end{lemma}
 
-
-\begin{theorem}[Realizability]\label{theorem:realizable} Given a well-formed handler specification $\Delta$, A well typed program $e$ at least realize one trace:
- {\small\begin{align*} 
- \Gamma;\Delta\;\Theta \vdash e : \rg{H}{A}{F} \impl 
- \forall \sigma \in \denot{\Gamma}.\forall \alpha_h \in \denot{\sigma(H)}. \forall \beta. (\Theta, \beta) \sim \sigma(F) \impl \exists \alpha \in\denot{\sigma(A)}. \msteptr{\alpha_h}{(\beta, e)}{\alpha}{(\emptyset, ())}
+\begin{theorem}[Realizability]
+  \label{theorem:realizable}
+  Given a well-formed handler specification $\Delta$, A well typed
+  program $e$ at least realize one trace:%
+  {\small
+    \begin{align*}
+      \Gamma;\Delta\;\Theta \vdash e : \rg{H}{A}{F} \impl \forall
+      \sigma \in \denot{\Gamma}.\forall \alpha_h \in
+      \denot{\sigma(H)}. \forall \beta. (\Theta, \beta) \sim \sigma(F)
+      \impl \exists \alpha
+      \in\denot{\sigma(A)}. \msteptr{\alpha_h}{(\beta,
+        e)}{\alpha}{(\emptyset, ())}
 \end{align*}}
 \end{theorem}
-\begin{proof} We proceed by induction over our type judgment $\Gamma;\Delta;\Theta \vdash e : \tau$, which has $8$ cases proved as following:
+\begin{proof} We proceed by induction over our type judgment
+  $\Gamma;\Delta;\Theta \vdash e : \tau$, which consists of the
+  following $8$ cases:
 \begin{enumerate}[label=Case]
 
 \item:
@@ -68,7 +94,7 @@ From the induction hypothesis and the precondition of this rule, we have
 &\forall \sigma \in \denot{\Gamma}. \sigma(\phi)\msubst{x_i}{v_i} \ptag{Lemma~\ref{lemma:built-in-typing-sub}, \ref{real:1-1}, \ref{real:1-2}, and \ref{real:1-3}} \label{real:1-7}
 \\&\forall \sigma \in\denot{\Gamma}. \exists \beta. (\Theta \cup \Theta', \beta) \sim \sigma(F) \ptag{Lemma~\ref{lemma:cap-prophecy} and \ref{real:1-4}} \label{real:1-8}
 \end{alignat}}\noindent
-From now, we consider each $\sigma \in \denot{\Gamma}$ and $\alpha_h \in \denot{H}$ and try to prove the subgoal of this case: 
+From now, we consider each $\sigma \in \denot{\Gamma}$ and $\alpha_h \in \denot{H}$ and try to prove the subgoal of this case:
 {\footnotesize\begin{align*}
     \exists \beta. \Theta \vdash \beta \land \exists \alpha \in\denot{\sigma(\lastA\msg{op}{\phi\msubst{x_i}{v_i}} \seqA A)}. \msteptr{\alpha_h}{(\beta, \zgen{op}{\overline{v}}{e})}{\alpha}{(\emptyset, ())}
 \end{align*}}\noindent
@@ -78,7 +104,7 @@ Then we have
 \\& [\zevent{op}{\overline{\sigma(v_i)}}] \in \denot{\lastA\msg{op}{\sigma(\phi)\msubst{x_i}{v_i}}} \ptag{lemma~\ref{lemma:lastA-denot} and \ref{real:1-8}} \label{real:1-10}
 \\& \alpha_h \listconcat [\zevent{op}{\overline{\sigma(v_i)}}] \in \denot{\sigma(H \seqA \lastA\msg{op}{\phi\msubst{x_i}{v_i}})} \ptag{lemma~\ref{lemma:seqA-denot}, \ref{real:1-9}, and \ref{real:1-10}} \label{real:1-11}
 \end{alignat}}\noindent
-Now, we can apply hypothesis~\ref{real:1-5} with 
+Now, we can apply hypothesis~\ref{real:1-5} with
 {\footnotesize\begin{align*}
     &\sigma \mapsto \sigma \quad \alpha_h \mapsto \alpha_h \listconcat [\zevent{op}{\overline{\sigma(v_i)}}]
 \end{align*}}\noindent
@@ -128,7 +154,7 @@ From the induction hypothesis and the precondition of this rule, we have
 \ptag{induction hypothesis} \label{real:2-4}
 \\&\forall \sigma \in\denot{\Gamma, \overline{x{:}t}}. \exists \beta. (\Theta \cup \Theta', \beta) \sim \sigma(F) \ptag{Lemma~\ref{lemma:cap-prophecy} and \ref{real:1-4}} \label{real:2-5}
 \end{alignat}}\noindent
-From now, we consider each $\sigma\msubst{x_i}{v_i} \in \denot{\Gamma, \overline{x{:}t}}$ and $\alpha_h \in \denot{H}$ and try to prove the subgoal of this case: 
+From now, we consider each $\sigma\msubst{x_i}{v_i} \in \denot{\Gamma, \overline{x{:}t}}$ and $\alpha_h \in \denot{H}$ and try to prove the subgoal of this case:
 {\footnotesize\begin{align*}
     \exists \beta. \Theta \vdash \beta \land \exists \alpha \in\denot{\sigma(\lastA\msg{op}{\phi} \seqA A)}. \msteptr{\alpha_h}{(\beta, \zobs{\overline{x}}{op}{e})}{\alpha}{(\emptyset, ())}
 \end{align*}}\noindent
@@ -171,8 +197,8 @@ which is sufficient to prove the subgoal in this case.
 This rule assume that $\Theta \equiv \emptyset, e \equiv (), \tau \equiv \rg{H}{\epsTL}{F}$, thus we need to prove
 {\footnotesize\begin{align*}
      \forall \sigma \in \denot{\Gamma}.\forall \alpha_h \in \denot{\sigma(H)}. \forall \beta. (\emptyset, \beta) \sim \sigma(F) \impl \exists \alpha \in\denot{\sigma(\epsTL)}. \msteptr{\alpha_h}{(\beta, ())}{\alpha}{(\emptyset, ())}
-\end{align*}}\noindent
-Note that only an empty buffer can has empty capability, also only empty trace $[]$ is in the denotation of $\sigma(\epsTL)$. Thus we need to prove $\msteptr{\alpha_h}{(\emptyset, ())}{[]}{(\emptyset, ())}$ which immediate holds.
+              \end{align*}}\noindent
+            Note that only an empty buffer can has empty capability, also only th empty trace $[]$ is in the denotation of $\sigma(\epsTL)$. Thus we need to prove $\msteptr{\alpha_h}{(\emptyset, ())}{[]}{(\emptyset, ())}$ which immediate holds.
 
 \item:
 {\footnotesize
@@ -183,7 +209,7 @@ $\Gamma; \Delta; \Theta \vdash e_1 : \rg{H}{A}{F}$ \quad $\Gamma; \Delta; \Theta
 {TChoice}
 {$\Gamma; \Delta; \Theta \vdash e_1 \oplus e_2 : \rg{H}{A}{F}$}
 \ \\ \ \\}
-This rule assume that $e \equiv e_1 \oplus e_2$, thus we need to prove
+This rule assumes that $e \equiv e_1 \oplus e_2$, thus we need to prove
 {\footnotesize\begin{align*}
  \forall \sigma \in \denot{\Gamma}.\forall \alpha_h \in \denot{\sigma(H)}. \forall \beta. (\Theta, \beta) \sim \sigma(F) \impl \exists \alpha \in\denot{\sigma(A)}. \msteptr{\alpha_h}{(\beta, e_1 \oplus e_2)}{\alpha}{(\emptyset, ())}
 \end{align*}}\noindent
@@ -192,7 +218,7 @@ From the inductive hypothesis of this case, we know
     & \forall \sigma \in \denot{\Gamma}.\forall \alpha_h \in \denot{\sigma(H)}. \forall \beta. (\Theta, \beta) \sim \sigma(F) \impl \exists \alpha \in\denot{\sigma(A)}. \msteptr{\alpha_h}{(\beta, e_1)}{\alpha}{(\emptyset, ())}
     \\& \forall \sigma \in \denot{\Gamma}.\forall \alpha_h \in \denot{\sigma(H)}. \forall \beta. (\Theta, \beta) \sim \sigma(F) \impl \exists \alpha \in\denot{\sigma(A)}. \msteptr{\alpha_h}{(\beta, e_2)}{\alpha}{(\emptyset, ())}
 \end{align*}}\noindent
-Then the \textsc{StChoice} is sufficient to prove the subgoal of this case.
+Then the \textsc{StChoice} fule is sufficient to prove the subgoal of this case.
 
 \item:
 {\footnotesize
@@ -213,7 +239,7 @@ Since $z$ is a fresh variable, then we have
 {\footnotesize\begin{align*}
     &\forall \sigma, \sigma \in \denot{\Gamma, z\hasoty{unit}{\phi}} \impl \exists \sigma'. \sigma'[\overline{z \mapsto ()}] = \sigma. \sigma'(e) \in \denot{\sigma'(\tau)}
 \end{align*}}\noindent
-Moreover, according to the definition of type context denotation, 
+Moreover, according to the definition of type context denotation,
 {\footnotesize\begin{align*}
     &\forall \sigma, \sigma \in \denot{\Gamma} \land \sigma(\phi) \iff \sigma[\overline{z \mapsto ()}] \in \denot{\Gamma, z\hasoty{unit}{\phi}}
 \end{align*}}\noindent
@@ -260,7 +286,7 @@ From the assumption and inductive hypothesis of this case, we know
 &\forall i. \Gamma \vdash v_i : t_i \ptag{assumption} \label{real:3-3} \\
 &\Gamma, x{:}t_x\msubst{y}{v};\Delta;\Theta \vdash e : \tau \ptag{assumption} \label{real:3-4} \\
 &\forall v_x. \Gamma \vdash v_x : t_x\msubst{y}{v} \impl \Gamma;\Delta;\Theta \vdash e[x\mapsto v_x] : \tau[x\mapsto v_x] \ptag{Lemma~\ref{lemma:subt} and \ref{real:3-4}} \label{real:3-5} \\
-& \forall \sigma \in \denot{\Gamma,  x{:}t_x\msubst{y}{v}}.\forall \alpha_h \in \denot{\sigma(H)}. \forall \beta. (\Theta, \beta) \sim \sigma(F) \impl 
+& \forall \sigma \in \denot{\Gamma,  x{:}t_x\msubst{y}{v}}.\forall \alpha_h \in \denot{\sigma(H)}. \forall \beta. (\Theta, \beta) \sim \sigma(F) \impl
 \\&\quad \exists \alpha \in\denot{\sigma(A)}. \msteptr{\alpha_h}{(\beta, e)}{\alpha}{(\emptyset, ())}
 \ptag{induction hypothesis and \ref{real:3-4}} \label{real:3-6}
 \end{alignat}}\noindent
@@ -279,7 +305,7 @@ The case can be directly proved by Lemma~\ref{lemma:subtyping}.
 \end{enumerate}
 \end{proof}
 
-\subsection{Fundamental Theorem} 
+\subsection{Fundamental Theorem}
 
 \begin{theorem}[Fundamental Theorem]\label{theorem:fundamental-original}A well-typed term, i.e., \(\Gamma; \Delta; \Theta \vdash e : \rg{H}{A}{F}\), generates traces consistent with the \PAT and can also terminate with the message buffer providing the capability.\footnote{The proofs of all theorems in this paper are provided in the \techreport{}.}
 {\small\begin{align*}
@@ -289,7 +315,7 @@ The case can be directly proved by Lemma~\ref{lemma:subtyping}.
 \end{align*}}
 \end{theorem}
 
-\subsection{Type Soundness} 
+\subsection{Type Soundness}
 
 The type soundness can be proved by fundamental theorem and realizability.
 
@@ -313,9 +339,9 @@ The type soundness can be proved by fundamental theorem and realizability.
     \denot{\overline{x{:\rawnuot{b}{\top}}}} \iff \exists \overline{c{:}b}. \sigma =\msubst{x}{c}  \ptag{definition of $\denot{\Gamma}$ and \ref{sound:2}}  \label{sound:3}
     \\&\forall \overline{c{:}b}. e\msubst{x}{c} \in
     \denot{\rg{\epsTL}{A\msubst{x}{c}}{\epsTL}} \ptag{hypothesis~\ref{sound:2} and \ref{sound:3}} \label{sound:4}
-    \\& \forall \sigma \in \denot{\overline{x{:\rawnuot{b}{\top}}}}.\forall \alpha_h \in \denot{\sigma(\epsTL)}. \forall \beta. (\emptyset, \beta) \sim \sigma(\epsTL) \impl \notag \\&\quad\exists \alpha \in\denot{\sigma(A)}. \msteptr{\alpha_h}{(\beta, e)}{\alpha}{(\emptyset, ())} 
+    \\& \forall \sigma \in \denot{\overline{x{:\rawnuot{b}{\top}}}}.\forall \alpha_h \in \denot{\sigma(\epsTL)}. \forall \beta. (\emptyset, \beta) \sim \sigma(\epsTL) \impl \notag \\&\quad\exists \alpha \in\denot{\sigma(A)}. \msteptr{\alpha_h}{(\beta, e)}{\alpha}{(\emptyset, ())}
     \ptag{\autoref{theorem:realizable} and \ref{sound:1}} \label{sound:5}
-    \\&\exists \overline{c{:}b}. \exists \alpha. \msteptr{[]}{(\emptyset, e\msubst{x}{c})}{\alpha}{(\emptyset, ())} 
+    \\&\exists \overline{c{:}b}. \exists \alpha. \msteptr{[]}{(\emptyset, e\msubst{x}{c})}{\alpha}{(\emptyset, ())}
     \ptag{Lemma~\ref{lemma:espTL} and \ref{sound:5}} \label{sound:6}
 \end{alignat}}\noindent
 the definition of \PAT denotation as shown in \autoref{fig:type-denotation} indicates
@@ -332,8 +358,8 @@ Again, according to Lemma~\ref{lemma:espTL}, we have
   \\&\exists \overline{c{:}b}.\exists \alpha \in\denot{\sigma(A\msubst{x}{c})}. \msteptr{[]}{(\emptyset, e)}{\alpha}{(\emptyset, ())}
 \ptag{hypothesis~\ref{sound:7}, \ref{sound:6},\ref{sound:8}, and \ref{sound:9}}
   \label{sound:10}
-\end{alignat}}\noindent
-This is sufficient to establish the original theorem we aim to prove.
+\end{alignat}}\noindent This is sufficient to establish our original
+theorem.
 \end{proof}
 
 % Our synthesis algorithm is sound, ensuring that it always produces type-safe controllers. Furthermore, the synthesized controller can realize an execution trace when the handler specification $\Delta$ is complete, meaning that all behaviors permitted by $\Delta$ are realizable.
@@ -351,8 +377,8 @@ This is sufficient to establish the original theorem we aim to prove.
 
 
 % \begin{theorem}\label{theorem:algo-sound}[Algorithm Soundness] Under a complete handler specification, with ghost variables $\overline{x{:}b}$ and a safety property $A$, the synthesized program $e$ realizes at least one trace that violate $A$, i.e.,
-% {\small\begin{align*} 
-% \exists \overline{c{:}b}. \exists \alpha. 
+% {\small\begin{align*}
+% \exists \overline{c{:}b}. \exists \alpha.
 % \msteptr{[]}{([],e[\overline{x\mapsto c}])}{\alpha}{([], ())} \land \alpha \not\in
 %     \denot{A[\overline{x\mapsto c}]}
 % \end{align*}}
