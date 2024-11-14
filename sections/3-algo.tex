@@ -119,18 +119,22 @@ $e \leftarrow \S{DeriveTerm}(\Gamma, \Pi)$ \tcp*[l]{derive controller program}
 \end{algorithm}
 
 Our top-level synthesis algorithm is shown in \autoref{algo:top-syn}.
-Given an (unsafe) abstract trace $\Pi$ and corresponding ghost variables (e.g., $\Code{x}$ and $\Code{y}$ in \ref{eqn:abstraceEx}) as input, this nondeterministic
-algorithm synthesizes a well-typed $\DSL{}$ controller. The algorithm
-follows the structure given in \autoref{fig:intuition-algo}, using a
-refinement loop (lines $3$ - $9$) to refine the input abstract trace
-$\Pi$ and then deriving\footnote{The auxiliary functions (e.g., $\mathbf{DeriveTerm}$) are provided in the \techreport{}.} the final controller from the refined property
-(line $10$). Each iteration of this loop nondeterministically chooses
-a target event that is used to refine the current abstract trace;
-different choices may result in different message orders, and some of
-these choices may cause the algorithm to fail.  Our implementation
-resolves this nondeterminism in the algorithm via an efficient
-backtracking search procedure that takes the union of all successful
-runs in order to capture different orderings.
+Given an (unsafe) abstract trace $\Pi$ and corresponding ghost
+variables (e.g., $\Code{x}$ and $\Code{y}$ in \ref{eqn:abstraceEx}) as
+input, this nondeterministic algorithm synthesizes a well-typed
+$\DSL{}$ controller. The algorithm follows the structure given in
+\autoref{fig:intuition-algo}, using a refinement loop (lines $3$ -
+$9$) to refine the input abstract trace $\Pi$ and then
+deriving\footnote{The auxiliary functions (e.g.,
+  $\mathbf{DeriveTerm}$) are provided in the \techreport{}.} the final
+controller from the refined property (line $10$). Each iteration of
+this loop nondeterministically chooses a target event that is used to
+refine the current abstract trace; different choices may result in
+different message orders, and some of these choices may cause the
+algorithm to fail.  Our implementation resolves this nondeterminism in
+the algorithm via an efficient backtracking search procedure that
+takes the union of all successful runs in order to capture different
+orderings.
 
 % \paragraph{Type context} In order to derive necessary
 % assumption and assertions over variables in the synthesized program,

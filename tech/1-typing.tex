@@ -2,11 +2,12 @@
 \section{Declarative Typing Rules}\label{sec:tech:typing}
 
 The full set of rules for our auxiliary typing relations are shown in
-\autoref{fig:full-wf-rules} and \autoref{fig:full-sub-rules}. The full set of declarative typing
-rules are shown in \autoref{fig:full-typing-rules}. We elide the basic
-typing relation ({\small$\emptyset \basicvdash e : s$}) in the
-premises of the rules in \autoref{fig:full-typing-rules}; which
-assume all terms have a basic type.
+\autoref{fig:full-wf-rules} and \autoref{fig:full-sub-rules}. The full
+set of declarative typing rules are shown in
+\autoref{fig:full-typing-rules}. We elide the basic typing relation
+({\small$\emptyset \basicvdash e : s$}) in the premises of the rules
+in \autoref{fig:full-typing-rules}; all of these rules assume any
+terms they reference have a basic type.
 
 \begin{figure}[!t]
 {\footnotesize
@@ -128,7 +129,7 @@ assume all terms have a basic type.
 $\Gamma \wellfoundedvdash H$ \quad
 $\Gamma \wellfoundedvdash A$ \quad
 $\Gamma \wellfoundedvdash F$ \quad
-$\Gamma \not\vdash H \seqA A \seqA F \subseteq \neg\allTL$
+$\Gamma \vdash H \seqA A \seqA F \not \subseteq \neg\allTL$
 }
 }
 \infer1[\textsc{WfHAF}]{
@@ -201,7 +202,7 @@ $\Gamma \not\vdash H \seqA A \seqA F \subseteq \neg\allTL$
 \parbox{50mm}{\center
   $\Gamma \vdash H_2 \subseteq H_1$ \quad
   $\Gamma \vdash A_1 \subseteq A_2$ \quad
-  $\Gamma \vdash F_2 \subseteq F_1$ 
+  $\Gamma \vdash F_2 \subseteq F_1$
 }
 }
 \infer1[\textsc{SubHAF}]{
@@ -215,7 +216,7 @@ $\Gamma \not\vdash H \seqA A \seqA F \subseteq \neg\allTL$
 \parbox{50mm}{\center
   $\Gamma \vdash H_2 \subseteq H_1$ \quad
   $\Gamma \vdash A_1 \subseteq A_2$ \quad
-  $\Gamma \vdash F_2 \subseteq F_1$ 
+  $\Gamma \vdash F_2 \subseteq F_1$
 }
 }
 \infer1[\textsc{SubHAFB}]{
