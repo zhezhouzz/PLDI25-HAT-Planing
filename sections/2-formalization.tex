@@ -254,8 +254,8 @@ and $\Code{val}$.
       \Code{val}\hasnty{tVal} \garr & \Code{key}\hasoty{tKey}{\top} \sarr  \effLR{\finalA \msg{putReq}{k = \Code{key} \land v = \Code{val}} \land \nextA \neg \finalA \msg{putReq}{k = \Code{key}} } %
       \\& \quad \effLR{\lastA \msg{getReq}{k = \Code{key}}}%
       \effLR{(\neg \msg{putReq}{k = \Code{key}}) \untilA \msg{getRsp}{k = \Code{key} \land v = \Code{val}}}
-    \end{align*}}
-  \noindent The prophecy automata in this \PAT{} requires that no
+    \end{align*}}\noindent 
+The prophecy automata in this \PAT{} requires that no
   updates ($\eff{putReq}$) to the key $\Code{key}$ in the database
   happen before a user receives a response to a $\eff{getReq}$ message
   for the key $\Code{key}$.
