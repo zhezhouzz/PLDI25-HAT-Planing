@@ -51,8 +51,21 @@ several useful lemmas.
 \end{align*}}
 \end{lemma}
 
-% [\zevent{op}{\overline{\sigma(v_i)}}] \in \denot{\lastA\msg{op}{\sigma(\phi)\msubst{x_i}{v_i}}}
-% \\& \alpha_h \listconcat [\zevent{op}{\overline{\sigma(v_i)}}] \in \denot{\sigma(H \seqA \lastA\msg{op}{\phi\msubst{x_i}{v_i}})}
+\begin{lemma}[Buffer Partition]\label{lemma:buf-partition} For all capability $\Theta$, automata $F$ and buffer $\beta$, we have
+\begin{align*}
+    \beta \in \denot{\Theta_1 \cup \Theta_2} \iff
+    \exists \beta_1\;\beta_2. \beta_1 \cup \beta_2 = \beta \land \beta_1 \cap \beta_2 = \emptyset \land \beta_1 \in \Theta_1 \land \beta_2 \in \Theta_2
+\end{align*}
+\end{lemma}
+
+% \begin{lemma}[Buffer Partition]\label{lemma:buf-partition} For all capability $\Theta$, automata $F$ and buffer $\beta$, we have
+% \begin{align*}
+%     (\Theta_1 \cup \Theta_2, \beta) \sim F \impl
+%     \exists \beta_1\;\beta_2. \beta_1 \cup \beta_2 = \beta \land \beta_1 \cap \beta_2 = \emptyset \land (\Theta_1, \beta_1) \sim F \land (\Theta_2, \beta_2) \sim F
+% \end{align*}
+% \end{lemma}
+
+% [\zevent{op}{\overline{\sigma(v_i)}}] \in \denot{\lastA\msg{op}{\sigma(\phi)\msubst{x_i}{v_i}}} 
 
 \subsubsection{Subtyping}
 
@@ -129,34 +142,8 @@ where we have inductive hypothesis $\forall \sigma \in \denot{\Gamma}. \sigma(v)
 \end{enumerate}
 \end{proof}
 
-The fundamental theorem for controller program contains two parts, 1) the history, current, and future trace of a well-typed term $e$ is consistent with the corresponding \PAT; 2) the realizability guarantee provided by capability. We first prove the first part, as the following.
 
-\begin{theorem}\label{theorem:pure-fundamental-ap}[Pure Fundamental Theorem] For Given type context $\Gamma$ and well-formed value $v$ as well as pure refinement type $t$:
-  $\Gamma \vdash v: t \implies \forall \sigma \in \denot{\Gamma}. \sigma(v) \in \denot{\sigma(t)}$
-\end{theorem}
-\begin{proof} We proceed by induction over our type judgment $\Gamma;\Delta;\Theta \vdash e : \tau$, which has two cases proved as following:
-\begin{enumerate}[label=Case]
-\item:
-{\footnotesize
-\mprooftr{23mm}
-{$\eraserf{\Gamma} \basicvdash v : b$}
-{TVal}
-{$\Gamma \vdash v : \rawnuot{b}{\vnu = v}$}
-\ \\ \ \\}
-where we need to prove $\forall \sigma \in \denot{\Gamma}. \sigma(v) \in\denot{\rawnuot{b}{\vnu = \sigma(v)}}$, which can be directly proved by definition of type denotation.
-\item:
-{\footnotesize
-\mprooftr{38mm}
-{$\Gamma \vdash v : t$ \quad
-$\Gamma \vdash t <: t'$}
-{TPureSub}
-{$\Gamma \vdash v : t'$}
-\ \\ \ \\}
-where we have inductive hypothesis $\forall \sigma \in \denot{\Gamma}. \sigma(v) \in\denot{\sigma(t)}$ and need to prove $\forall \sigma \in \denot{\Gamma}. \sigma(v) \in\denot{\sigma(t')}$, which can be directly proved by soundness lemma of pure subtyping (lemma~\ref{lemma:pure-subtyping}).
-\end{enumerate}
-\end{proof}
-
-
+The fundamental theorem for a controller program consists of two parts: (1) the history, current, and future traces of a well-typed term \( e \) are consistent with the corresponding \PAT; (2) the realizability guarantee provided by the capability. We first prove the first part, as follows.
 
 \begin{theorem}\label{theorem:fundamental-ap}[Fundamental Theorem For Trace Consistency] Given
   a well-formed handler specification $\Delta$,
@@ -164,7 +151,7 @@ where we have inductive hypothesis $\forall \sigma \in \denot{\Gamma}. \sigma(v)
     $e$ is captured by its corresponding \PAT $\tau$:
   $\Gamma; \Delta; \Theta \vdash e : \tau \implies \forall \sigma, \sigma \in
     \denotation{\Gamma} \impl \sigma(e) \in
-    \denotation{\sigma(\tau)}$.\footnote{The proofs of theorems in this section are provided in the \techreport{}.}
+    \denotation{\sigma(\tau)}$.
 \end{theorem}
 \begin{proof} We proceed by induction over our type judgment $\Gamma;\Delta;\Theta \vdash e : \tau$, which has $8$ cases proved as following:
 \begin{enumerate}[label=Case]
