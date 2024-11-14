@@ -1,4 +1,8 @@
-\section{Benchmark Details}
+\newpage
+\section{Evaluation Details}\label{sec:tech:evaluation}
+
+\autoref{tab:bench} lists the details for the benchmarks used in our evaluation section. The complete benchmark suite and source code of \name{} are available at the following anonymous link ???. A Docker image is also provided on Zenodo: ???
+
 
 \begin{table}[ht!]
   \renewcommand{\arraystretch}{0.8}
@@ -25,11 +29,11 @@
 \midrule
 \textsf{Firewall} & A set of internal and external nodes communicating through a firewall, all messages between internal and external nodes should be forward by firewall. & Firewall should block an external node from taking initiative to send message to an internal node. & Insert wrong nodes into the whitelist.  \\
 \midrule
-\textsf{ChainReplication} & Chain replication protocol\cite{?}. & Read-Your-Writes policy. & Remove log recover procedure after node crash  \\
+\textsf{ChainReplication} & Chain replication protocol\cite{RS04}. & Read-Your-Writes policy. & Remove log recover procedure after node crash  \\
 \midrule
-\textsf{Paxos} & Paxos protocol\cite{?}. & Paxos agreement policy, i.e., not two distinct learners can learn different values.\cite{?} & A wrong node comparison in leader election \\
+\textsf{Paxos} & Paxos protocol\cite{Lam02a}. & Paxos agreement policy, i.e., not two distinct learners can learn different values. & A wrong node comparison in leader election \\
 \midrule
-\textsf{Raft} & Raft algorithm\cite{?}. & Leader completeness, i.e., if a log entry is committed, then it should be present in the leader's log. & Remove log recover procedure after node crash\\
+\textsf{Raft} & Raft algorithm\cite{OO14}. & Leader completeness, i.e., if a log entry is committed, then it should be present in the leader's log. & Remove log recover procedure after node crash\\
 \midrule
 \textsf{Anno2PCModel} & Case study in \autoref{sec:impl} & Case study in \autoref{sec:impl} & Remove buffered transaction update operation  \\
 \bottomrule
