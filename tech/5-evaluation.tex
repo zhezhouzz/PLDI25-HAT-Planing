@@ -11,40 +11,37 @@
 \vspace*{-.1in}
 \footnotesize
 \setlength{\tabcolsep}{2.3pt}
-\begin{tabular}{p{2.2cm}||p{4.5cm}|p{3.5cm}|p{3.0cm}}
+\begin{tabular}{p{2.0cm}||p{4.7cm}|p{4.5cm}|p{2.0cm}}
   \toprule
  Benchmark & Model description & Property expected to violate & synthetic faults\\
  \midrule
-\textsf{Database} & The simplified database used as the running example in \autoref{sec:overview} & Read-Your-Writes policy described in \autoref{sec:overview}  & Remove atomicity check \\
+\textsf{Database} & The simplified database used as the running example in \autoref{sec:overview} & \textbf{RWY}: Read-Your-Writes policy described in \autoref{sec:overview}  & Remove atomicity check \\
 \midrule
 \textsf{EspressoMachine} & The user interacts with a coffee machine
-                           through its control panel, where the panel must correctly interpret user inputs and handler errors from coffee machine. & There is no ``run out of water'' error from coffee machine.  & Remove error handling \\
+                           through its control panel, where the panel must correctly interpret user inputs and handler errors from coffee machine. & \textbf{Strong Consistent}: The user, panel, and underline coffee machine should have a consistent view of the state of coffee machine. Precisely, if the coffee machine is in a state ``run out of water'', the user should get notification.  & Remove error forwarding in panel machine \\
 \midrule
-\textsf{Simplified2PC} & A simplified version of two-phase commit protocol (2PC), where we assume transactions have a single update operation.  & Read-Your-Writes policy & Original implementation doesn't guarantee RWY \\
+\textsf{Simplified2PC} & A simplified version of two-phase commit protocol (2PC), where we assume transactions have a single update operation.  & \textbf{RWY}: Read-Your-Writes policy & Original implementation doesn't guarantee RWY \\
 \midrule
 \textsf{HeartBeat} & A failure detector that send heartbeat messages
                      to a node to make sure it is alive; it reports
                      error only when the node doesn't reply for
                      multiple rounds, considering the network package
-                     lost. & If the node is alive, the detector will not report a false positive error. & Use timer-based implementation which will cause false positive error. \\
+                     lost. & \textbf{Eventual Consistent}: The node and detector should have the same view of state of node (alive or crashed) eventually. Precisely, if the node is alive, the detector will not report a false positive error. & Use timer-based implementation which will cause false positive error. \\
 \midrule
-\textsf{BankServer} & The user interacts with a bank to withdraw money from their accounts, where the balance is stored in another database component. & Bank disallows users from withdraw an amount greater than their current balance. & remove negative balance check \\
+\textsf{BankServer} & The user interacts with a bank to withdraw money from their accounts, where the balance is stored in another database component. & \textbf{Strong Consistent}: The bank and underline store should have consistent view of balance of accounts. Precisely, bank should disallows users from withdraw an amount greater than their current balance. & remove negative balance check in bank machine \\
 \midrule
-\textsf{RingLeaderElection} & Ring election algorithm where a group nodes are interconnected as a ring-like structure.  & Unique leader policy, i.e., there can only be an unique node that announces itself as leader. & Remove node comparison as introduced in \autoref{sec:impl}. \\
+\textsf{RingLeaderElection} & Ring election algorithm where a group nodes are interconnected as a ring-like structure.  & \textbf{Unique leader policy:} there can only be an unique node that announces itself as leader. & Remove node comparison as introduced in \autoref{sec:impl}. \\
 \midrule
 \textsf{Firewall} & A set of internal and external nodes communicating
-                    through a firewall, all messages between internal
-                    and external nodes should be forward by
-                    firewall. & Firewall should block an external node
-                                from directly sending a message to an internal node. & Insert wrong nodes into the whitelist.  \\
+                    through a firewall. Firewall should block message from an external node, unless this node has received message from internal nodes previously. The firewall actually keep a whitelist of external nodes that can communicate with internal nodes. & \textbf{Liveness:} if a internal node sends a message to an external node, it will be eventually able communicate with external node. & modify the whitelist updating logic.  \\
 \midrule
-\textsf{ChainReplication} & Chain replication protocol\cite{RS04}. & Read-Your-Writes policy. & Remove log recover procedure after node crash  \\
+\textsf{ChainReplication} & Chain replication protocol\cite{RS04}. & \textbf{RYW:} Read-Your-Writes policy. & Remove log recover procedure after node crash  \\
 \midrule
-\textsf{Paxos} & Paxos protocol\cite{Lam02a}. & Paxos agreement policy, i.e., not two distinct learners can learn different values. & A wrong node comparison in leader election \\
+\textsf{Paxos} & Paxos protocol\cite{Lam02a}. & \textbf{Unique leader policy:} there are multiple proposers are accepted as leaders. This will additionally violates the Paxos agreement policy, i.e., not two distinct learners can learn different values. & A wrong node comparison in leader election \\
 \midrule
-\textsf{Raft} & Raft algorithm\cite{OO14}. & Leader completeness, i.e., if a log entry is committed, then it should be present in the leader's log. & Remove log recover procedure after node crash\\
+\textsf{Raft} & Raft algorithm\cite{OO14}. & \textbf{Strong Consistency:} the consistency of leader's view and committed data, i.e., if a log entry is committed, then it should also be present in the leader's log. & Remove log recover procedure after node crash\\
 \midrule
-\textsf{Anno2PCModel} & Case study in \autoref{sec:impl} & Case study in \autoref{sec:impl} & Remove buffered transaction update operation  \\
+\textsf{Anno2PCModel} & Case study in \autoref{sec:impl} & \textbf{Strong Consistency:} the user and the database in 2PC should have the same will view of stored data, as explained in  the case study in \autoref{sec:impl} & Remove buffered transaction update operation  \\
 \bottomrule
 \end{tabular}
 \label{tab:bench}
