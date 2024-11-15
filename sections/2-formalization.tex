@@ -537,7 +537,7 @@ auxiliary semantics of handlers introduced in
 \end{definition}
 
 
-\begin{theorem}[Fundamental Theorem]\label{theorem:fundamental}A well-typed term, i.e., \(\Gamma; \Delta; \Theta \vdash e : \rg{H}{A}{F}\), generates traces consistent with the \PAT and can also terminate with the message buffer providing the capability.\footnote{The proofs of all theorems in this paper are provided in the \techreport{}.}
+\begin{theorem}[Fundamental Theorem]\label{theorem:fundamental}A well-typed term, i.e., \(\Gamma; \Delta; \Theta \vdash e : \rg{H}{A}{F}\), generates traces consistent with the \PAT and can also terminate with a message buffer denoted by capability $\Theta$.\footnote{The proofs of all theorems in this paper are provided in the \techreport{}.}
 {\small\begin{align*}
    &\forall \sigma \in
     \denotation{\Gamma}. \sigma(e) \in
@@ -545,9 +545,7 @@ auxiliary semantics of handlers introduced in
 \end{align*}}
 \end{theorem}
 
-\begin{theorem}[Type Soundness]\label{theorem:sound} Given
-  a well-formed handler specification $\Delta$, with ghost variables $\overline{x{:}b}$ and a violation property $A$, a controller $e$ that satisfies
-  $\overline{x{:\rawnuot{b}{\top}}};\Delta;\emptyset \vdash e : \rg{\epsTL}{A}{\epsTL}$, then $e$ at least realize one trace consistent with $A$:
+\begin{theorem}[Type Soundness]\label{theorem:sound} Given a well-formed handler specification \(\Delta\), with ghost variables \(\overline{x{:}b}\) and a violation property \(A\), a controller \(e\) that satisfies \(\overline{x{:\rawnuot{b}{\top}}};\Delta;\emptyset \vdash e : \rg{\epsTL}{A}{\epsTL}\) will realize at least one trace consistent with \(A\), i.e., 
  {\small\begin{align*} \exists
     \overline{c{:}b}. \exists \alpha. \msteptr{[]}{(\emptyset,
       e[\overline{x\mapsto c}])}{\alpha}{(\emptyset, ())} \land \alpha \in
