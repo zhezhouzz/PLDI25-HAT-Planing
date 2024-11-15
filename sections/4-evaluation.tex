@@ -27,8 +27,7 @@ bound.
 % BD: Does my updated text accurately capture our search strategy?
 
 We evaluate our approach by integrating our synthesized controllers
-into the testing framework provided by P~\cite{DGJ+13,DQ17}, a a
-state-machine based, actor-style programming language tailored for
+into the testing framework provided by P~\cite{DGJ+13,DQ17}, a state-machine based, actor-style programming language tailored for
 modeling distributed systems and testing user-defined safety and
 liveness properties.
 % implementing the operational semantics in
@@ -234,11 +233,11 @@ non-determinism (e.g., \textsf{EspressoMachine} simulates a coffee
 machine that can non-deterministically fail because the machine runs
 out of water or beans), a small number of additional runs were
 required to explore different possible paths.  Not surprisingly,
-manually crafted P environments (P+M) often greatly improve upon the
+manually crafted P environments (P+M) can improve upon the
 purely random baseline, but even here may sometimes require hundreds
 of executions to manifest a bug (e.g., the \textsf{ChainReplication}
 and \textsf{Paxos} benchmarks), compared to the single execution that
-\name{} generates.
+\name{} generates.  In summary, \name{} is able to synthesize controllers that emit executions targeted to the violation property significantly more effectively than the two baselines (\textbf{Q2}).
 
 The last group of columns in \autoref{tab:evaluation} provides details
 on the cost of our synthesis procedure. The first column presents
