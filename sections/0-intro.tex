@@ -122,9 +122,9 @@ future actions the system can take.
 \PAT{} automata are acceptors over LTL$_f$, the language of linear
 temporal logic over finite traces; notably, this language is equipped
 with efficient decision procedures~\cite{LTLf}, enabling our synthesis
-procedure to be highly-automated. Intuively, while each actor
+procedure to be highly-automated. Intutively, while each actor
 implements its own (potentially complex) internal logic, testing
-behaviors of the entire syste, requires exploring how these individual
+behaviors of the entire system requires exploring how these individual
 programs interact; \PAT{}s capture the temporal and data dependencies
 between the messages that define these interactions.
 
@@ -210,17 +210,16 @@ synthesizers decompose the problem by first selecting a candidate
 component (e.g., a library method) and recursively synthesizing its
 arguments, using a component's specification to constrain the space of
 candidate arguments. In our setting, however, determining the
-appropriate handler to use in the construction of a synthesized
-controller depends on both the messages that precede it and the
-requirements of the handlers for the messages that follow it.  Our
-synthesis algorithm thus uses the data-dependent temporal relations
-defined by \PAT{}s to guide the search for a controller program.  This
-program denotes a set of possible concrete traces that the SUT is
-permitted to generate. Each execution determines a fixed order in
-which trigger messages are sent from the environment, and
-sent/received by the model's actors.  As it executes, the controller
-instantiates concrete values for environment messages, to yield a
-concrete schedule.
+appropriate handler to use while synthesizing a controller depends on
+both the messages that precede it and the requirements of the handlers
+for the messages that follow it.  Our synthesis algorithm thus uses
+the data-dependent temporal relations defined by \PAT{}s to guide the
+search for a controller program.  This program denotes a set of
+concrete traces that the SUT is permitted to generate. Each
+execution determines a fixed order in which trigger messages are sent
+from the environment, and sent/received by the model's actors.  As it
+executes, the controller instantiates concrete values for environment
+messages, to yield a concrete schedule.
 
 This paper makes the following contributions:
 
