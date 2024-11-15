@@ -122,19 +122,25 @@ future actions the system can take.
 \PAT{} automata are acceptors over LTL$_f$, the language of linear
 temporal logic over finite traces; notably, this language is equipped
 with efficient decision procedures~\cite{LTLf}, enabling our synthesis
-procedure to be highly-automated.
+procedure to be highly-automated. Intuively, while each actor
+implements its own (potentially complex) internal logic, testing
+behaviors of the entire syste, requires exploring how these individual
+programs interact; \PAT{}s capture the temporal and data dependencies
+between the messages that define these interactions.
 
-To ground the discussion, consider the specification of a handler for
-a $\eff{getReq}(\mathit{k})$ message that queries a key-value store
-for the value of a key $\mathit{k}$.  Because of inherent asynchrony
-in the way requests and responses are handled, we can expect that
-receipt of a $\eff{getReq}$ message by its handler will induce a
-$\eff{getResp}(\mathit{k},\mathit{v})$ message from the store at some
-arbitrary future point in the execution; this response message holds
-the value $\mathit{v}$ associated with $\mathit{k}$. At a minimum,
-$\mathit{v}$ should be the same as \emph{some} previously stored
-value, an expectation we can encode via the following \PAT: {
-  \footnotesize
+To ground the discussion, consider how an actor that maintains a
+simple key-value store might respond to a message
+$\eff{getReq}(\mathit{k})$ asking for the value of a key $\mathit{k}$.
+Because of the inherent asynchrony in the way requests and responses
+are handled, we can expect that after receiving this $\eff{getReq}$
+message, the actor will respond with a
+$\eff{getResp}(\mathit{k},\mathit{v})$ message at some arbitrary point
+in the future; this response message holds the value $\mathit{v}$
+associated with $\mathit{k}$. In any reasonable implementation,
+$\mathit{v}$ should be the same as \emph{some} value the actor stored
+in response to an earlier message. We can encode the dependencies
+between these three messages via the following \PAT{}:%
+{ \footnotesize
   \begin{align*}
     % \Code{y{:}int} \garr
     \rg{\underbrace{\finalA \msg{putReq}{k = \Code{key}\land v=\Code{val}}}_\texttt{history automaton}} %
@@ -151,7 +157,7 @@ trace that has stored the value $\Code{val}$ in key $\Code{key}$.  The
 second automaton describes the \emph{current} event, captured in this
 case as a singleton trace consisting of a $\eff{getReq}$ event over
 the key $\Code{key}$ (captured via the singleton modality $\lastA$).
-The traces that may follow this event are described by a 
+The traces that may follow this event are described by a
 \emph{prophecy} automaton that stipulates that a $\eff{getRsp}$
 message whose input contains the key $\Code{key}$ and value
 $\Code{val}$ will eventually appear, thus guaranteeing that every
@@ -178,13 +184,14 @@ formula:\footnote{This specification uses two additional standard
     \neg (\msg{putReq}{k = \Code{key} \land v = \Code{val}} \land \nextA (\neg \msg{putReq}{k = \Code{key}} \untilA \msg{getRsp}{k = \Code{key} \land v \not= \Code{val}}))
   \end{align*}
 }\noindent Observe that probing if a store is SC cannot be done by
-testing how messages are handled in isolation, as a violation of SC
-crucially depends on a specific sequence of $\eff{get}$ and $\eff{put}$
-messages with appropriate inputs.  The above specification identifies
-an erroneous execution as one whose last $\eff{putReq}$ binds
-$\Code{key}$ to $\Code{val}$ but in which a $\eff{getRsp}$ message on
-$\Code{key}$ generated in response to a previously issued
-$\eff{getReq}$ message returns a value other than $\Code{val}$.
+testing how the actor maintaing the store handles these messages in
+isolation: a violation of SC crucially depends on a specific sequence
+of get and put messages with appropriate inputs. The above
+specification identifies an erroneous execution of the SUT as
+one whose last $\eff{putReq}$ binds $\Code{key}$ to $\Code{val}$ but
+in which a $\eff{getRsp}$ message on $\Code{key}$ generated in
+response to a previously issued $\eff{getReq}$ message returns a value
+other than $\Code{val}$.
 
 Our tool, \name{}, generates executions that can test the behavior of
 distributed system models by synthesizing a controller program
