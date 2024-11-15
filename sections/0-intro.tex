@@ -215,11 +215,11 @@ both the messages that precede it and the requirements of the handlers
 for the messages that follow it.  Our synthesis algorithm thus uses
 the data-dependent temporal relations defined by \PAT{}s to guide the
 search for a controller program.  This program denotes a set of
-concrete traces that the SUT is permitted to generate. Each
-execution determines a fixed order in which trigger messages are sent
-from the environment, and sent/received by the model's actors.  As it
-executes, the controller instantiates concrete values for environment
-messages, to yield a concrete schedule.
+concrete traces in the SUT that should be explored. Each execution
+determines a fixed order in which trigger messages are sent from the
+environment, and sent/received by the model's actors.  As it executes,
+the controller instantiates concrete values for environment messages,
+to yield a concrete schedule.
 
 This paper makes the following contributions:
 
