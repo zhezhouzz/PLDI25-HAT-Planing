@@ -30,8 +30,7 @@ itself. The syntax of $\DSL$ is shown in \autoref{fig:term-syntax}; it
 includes both pure and effectful operations ($\primop$ and
 $\eff{op}$), non-deterministic choice ($\oplus$), and
 assertions. Effectful operations are categorized as either
-\emph{generable} (e.g., $\eff{gen}$) or \emph{observable} messages
-(e.g., $\eff{obs}$).
+\emph{generable} ($\eff{gen}$) or \emph{observable} ($\eff{obs}$).
 
 \begin{figure}[t!]
 \vspace*{-.15in}
@@ -203,7 +202,7 @@ $\overline{x}$ must satisfy the qualifier $\phi$.\footnote{When the
   fields of an event are clear from context, we omit its parameters
   $\overline{x}$, e.g., $\msg{writeReq}{v > 0}$ means
   $\msgB{writeReq}{v}{v > 0}$.}  The standard temporal operators
-(i.e., test $\evparenth{\phi}$, next $\nextA A$, until $\untilA$) and
+(e.g., test $\evparenth{\phi}$, next $\nextA A$, until $\untilA$) and
 various set operators (i.e., complement $\neg$, intersection $\land$,
 and union $\lorA$) are defined normally. These operators are
 sufficient to capture other modalities, e.g., eventually ($\finalA$),
@@ -254,9 +253,9 @@ and $\Code{val}$.
       \Code{val}\hasnty{tVal} \garr & \Code{key}\hasoty{tKey}{\top} \sarr  \effLR{\finalA \msg{putReq}{k = \Code{key} \land v = \Code{val}} \land \nextA \neg \finalA \msg{putReq}{k = \Code{key}} } %
       \\& \quad \effLR{\lastA \msg{getReq}{k = \Code{key}}}%
       \effLR{(\neg \msg{putReq}{k = \Code{key}}) \untilA \msg{getRsp}{k = \Code{key} \land v = \Code{val}}}
-    \end{align*}}\noindent 
-The prophecy automata in this \PAT{} requires that no
-  updates ($\eff{putReq}$) to the key $\Code{key}$ in the database
+    \end{align*}}
+  \noindent The prophecy automata in this \PAT{} requires that no
+  updates ($\eff{putReq}$) to $\Code{key}$ in the database
   happen before a user receives a response to a $\eff{getReq}$ message
   for the key $\Code{key}$.
 \end{example}
@@ -268,9 +267,9 @@ type context, $\Gamma$ maps from variables to pure refinement types
 (i.e., $t$). As in other trace-based refinement type systems, contexts
 are not allowed to contain \PAT{}s--- doing so breaks several
 structural properties (e.g., weakening) that are used to prove type
-safety. The handler context, $\Delta$ maps operations to two key
+safety. The handler context, $\Delta$, maps operations to two key
 pieces of information: a specification of its handler as a \PAT{}
-tagged with whether it is observable or generable, and the operations
+that is tagged with whether it is observable or generable, and the operations
 its handler adds to the buffer. The capability context, $\Theta$,
 records the set of observable messages that are in scope. This context
 is used to ensure that every observation corresponds to a message that
@@ -455,7 +454,7 @@ allows controllers to explore different message orderings.
 % rules in standard refinement typing, it additionally
 
 \begin{example}[Controller Typing] We provide an informal typing
-  derivation of $P_C$ against a \PAT{} that encodes a violation of RYR
+  derivation of $P_C$ against a \PAT{} that encodes a violation of an RYR
   policy, $\rg{\epsTL}{\negSCA}{\epsTL}$, under the type context
   $\Gamma \doteq \Code{x}\hasoty{int}{\top}, \Code{y}\hasoty{int}{v
     \not= x}$. The first step of our derivation uses \textsc{TSub} to
@@ -509,7 +508,7 @@ types in $\DSL$ are denoted as their inhabitants (i.e., $\denot{t}$ and $\denot{
 of SFAs is the set of traces they can accept. Then,  automata
 inclusion under a type context is defined as $\Gamma \vdash A \subseteq
 A' \doteq \forall \sigma \in \denot{\Gamma}. \denot{\sigma(A)}
-\subseteq \denot{\sigma(B)}$.\footnote{The details of these definition can be find in our \techreport{}.}
+\subseteq \denot{\sigma(B)}$.\footnote{The details of these definition can be found in our \techreport{}.}
 % {\small\begin{align*}
 %     \Gamma \vdash A \subseteq A' \doteq \forall \sigma \in \denot{\Gamma}. \denot{A} \subseteq \denot{B}
 % \end{align*}}\noindent

@@ -27,10 +27,10 @@ bound.
 % BD: Does my updated text accurately capture our search strategy?
 
 We evaluate our approach by integrating our synthesized controllers
-into the testing framework provided by P~\cite{DGJ+13,DQ17}, a
-trace-based, actor-model programming language tailored for modeling
-distributed systems and testing user-defined safety and liveness
-properties.
+into the testing framework provided by P~\cite{DGJ+13,DQ17}, a a
+state-machine based, actor-style programming language tailored for
+modeling distributed systems and testing user-defined safety and
+liveness properties.
 % implementing the operational semantics in
 % \autoref{fig:selected-semantics}, where the auxiliary handler
 % semantics ($\alpha \vDash \zevent{op}{\overline{c}} \Downarrow \beta$)
@@ -39,8 +39,8 @@ properties.
 % approach in a more realistic setting,
 In the P framework, actors are executable programs that communicate
 via message passing.  To test a system, P's runtime monitors message
-traffic between actors, and it produces a trace that is evaluated
-against a user-specified property. By default, P’s runtime scheduler
+traffic between actors, checking that global safety and liveness
+properties are maintained. By default, P’s runtime scheduler
 systematically explores arbitrary message interleavings during
 execution.
 
@@ -80,7 +80,7 @@ Our experimental evaluation addresses three research questions:
   \renewcommand{\arraystretch}{0.8}
   % \vspace*{-.1in}
   \caption{\small Experimental results of using \name{} to synthesize
-    controller for reactive distributed systems. Benchmarks from prior
+    controllers for reactive distributed systems. Benchmarks from prior
     work are annotated with their source:
     P~\cite{DGJ+13}($^{\dagger}$), ModP~\cite{ModP}($^{\diamond}$) an
     extension of P with support for modules, and
@@ -149,11 +149,10 @@ caption of \autoref{tab:evaluation}); all of the models except for
 number of consistency and safety properties, including the
 Read-Your-Writes (RYW) consistency policy described in
 \autoref{sec:overview}, eventual consistency, strong consistency, and
-unique leader invariants (as defined by \textsf{RingLeader},
-\textsf{Paxos} and \textsf{Raft}). We introduce synthetic faults into
-these models manually either by removing necessary dependencies or
-adding incorrect ones; these faults were chosen to be triggered under
-specific message orderings or with specific input message contents.
+unique leader invariants (as defined by \textsf{RingLeader} and
+\textsf{Paxos}). We introduce synthetic faults into these models
+manually and expose subtle bugs that can be triggered under specific
+message orderings or with specific input message contents.  
 %BD: Who inserted these bugs? Was it us or the authors of the models?
 While these are synthetic design bugs, they are nonetheless
 representative of real and plausible errors that can be introduced
@@ -261,10 +260,10 @@ resolve.
 
 \paragraph{Case study}
 To demonstrate that \name{} can be effective in real-world scenarios,
-we have applied it to \textsf{Anon2PCModel}, a model of a two-phase
-commit (2PC) protocol that is currently in use at a major cloud
-provider.  The original P model checks a standard consistency property
-for 2PC transactions, specifically that if there exists a key
+we have applied it to \textsf{Anon2PCModel}, a model of a
+two-phase commit (2PC) protocol that is currently in use at a major
+cloud provider.  The original P model checks a standard consistency
+property for 2PC transactions, specifically that if there exists a key
 $\Code{k}$ updated within an active transaction $\Code{i}$, any
 successful read response asking its value should return the value last
 written to $\Code{k}$ made by that transaction. We can express a

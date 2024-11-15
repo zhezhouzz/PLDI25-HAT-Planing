@@ -5,7 +5,7 @@ When typing a program using our declarative typing rules, we can
 freely apply the subsumption rule to align the (ordered) set of events
 performed by the program with a \PAT{} that describes a user's desired
 high-level property. Any \emph{synthesis} procedure based on such a
-high-level specification, must devise a similar ordering alongside the
+high-level specification must devise a similar ordering alongside the
 events in the program it generates. At the same time, each event needs
 to align with the specification of its handler in $\Delta$, i.e., its
 temporal and data-dependency constraints must be satisfied. Our
@@ -161,8 +161,7 @@ declarative typing rules did via $\Theta$. Instead, each iteration of
 the loop detects the unresolved dependencies of a target event in the
 current abstract trace and repairs them by inserting appropriate
 events before and after it. Intuitively, each observable event
-$\eff{op_{child}}$ must follow a handler of an operation that produces
-it, $\eff{op_{parent}}$, forming a tree-like dependency structure
+$\eff{op_{child}}$ must follow an operation $\eff{op_{parent}}$, whose handler produces it, forming a tree-like dependency structure
 similar to that described by \citet{MessageChain}. The refinement loop
 reconstructs these trees from the target node, refining the candidate
 abstract trace into one that satisfies these dependencies.
@@ -233,7 +232,7 @@ future trace.
 \Procedure{$\forward(\Delta, \Gamma, \Mfw, \Mbw,\Pi_h, \lastA \msg{op}{\phi}, \Pi_f)$}{
   \tcp{Select the \PAT of $\eff{op}$ from handler context}
     % \SJ{I don't understand this form - the braces at the end are not part of a PAT}
-    \If{$\Delta(\eff{op}) = \langle \overline{z{:}b}\garr\overline{y{:}t}\sarr\rg{H}{\lastA\msg{op}{\phi'}}{F}, B \rangle \in \Delta$}{
+    \If{$\Delta(\eff{op}) = \langle \overline{z{:}b}\garr\overline{y{:}t}\sarr\rg{H}{\lastA\msg{op}{\phi'}}{F}, B \rangle $}{
         $\Gamma \leftarrow \Gamma, \overline{z{:}\rawnuot{b}{\top}}, \overline{y{:}t}$ \tcp*[l]{add ghost variables and parameters types to type context}
       % \tcp{add qualifier of $\eff{op}$ event into type context}
       % \SJ{Didn't we already do this at line 4 in Algorithm 1?}
@@ -295,7 +294,7 @@ well as updated forward and backward sets (line $8$).
     \If{$\Delta(\eff{op_{parent}}) = \langle
       \overline{z{:}b}\garr\overline{y{:}t}\sarr\rg{H}{\msg{op_{parent}}{\phi_\Code{parent}}}{F_1
         \seqA \lastA \msg{op}{\phi'} \seqA F_2}, \{\eff{op}\} \cup
-      \Theta\rangle \in \Delta$}{
+      \Theta\rangle$}{
         % \tcp{add qualifier of $\eff{op_{parent}}$ and $\eff{op}$ event into type context}
         $\Gamma \leftarrow \Gamma, \overline{z{:}\rawnuot{b}{\top}}, \overline{y{:}t}$ \tcp*[l]{add ghost variables and parameters types to the type context}
         $\msg{op}{\phi} \leftarrow \msg{op}{\phi \land \phi'}$ \tcp*[l]{merge current automata}
@@ -388,8 +387,6 @@ forward and backward sets (line $8$).
   The refined trace now includes events for $\eff{writeReq}$ and
   $\eff{readReq}$, and the values of the forward and backwards sets
   enable both events to be targeted by the next iteration of the loop.
-  % The remainder of the refinement steps used to construct a violating
-  % trace can be found in \techreport{}.
 \end{example}
 
 \begin{theorem}[Synthesis is Sound]

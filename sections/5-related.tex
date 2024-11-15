@@ -22,32 +22,33 @@ correctness of these designs.
 \paragraph{{\it Testing}} Outside of the aforementioned P
 language~\cite{DGJ+13,ModP}, several other efforts have considered how
 to improve the capabilities of testing frameworks for distributed
-systems.  Jepsen~\cite{Jepsen} is a randomized testing system that seeks
-to reveal bugs when an application is deployed on a weakly-consistent
-storage system; \citet{OM+18} define a randomized testing procedure
-for message-passing distributed systems with guaranteed lower bounds
-on the probability of finding a depth-$d$ bug, where $d$ is the
-minimum length of the sequence of events sufficent to witness the
-error.  Morpheus~\cite{YY20} uses partial order sampling and conflict
-analysis to control scheduling decisions. MonkeyDB~\cite{RK+19} uses a
-demonic scheduling mechanism to expose safety violations in SQL
-applications that interact with a weakly-isolated storage backend.
-Clotho~\cite{RK+19} combines static analysis with a bounded
-model-checker to generate tests that expose serializability violations
-in weakly-consistent database systems.  While these efforts are
-agnostic to the property under test, \name{}'s property-guided
-synthesis procedure derives a controller specialized to the target
-property and handler specifications. In this sense, our approach can
-be seen as a form of property-based testing (PBT)~\cite{CH00, HC+24}
-applied to open reactive systems.  Broadly related to our approach is
-Mocket~\cite{WD+23}, a PBT-style testing framework that uses the state
-space graph extracted from model-checking TLA+
-specifications~\cite{Lam02} to force executions to follow specific
-paths in the graph.  Unlike \name{}, Mocket requires manual
-instrumentation of implementations to align actions defined in the
-specification with the corresponding code in the implementation, and
-relies on the TLC model-checker to produce the state space graph.  In
-constrast, \name{} uses a compositional refinement type system to
+systems.  Jepsen~\cite{Jepsen} is a randomized testing system that
+seeks to reveal bugs when an application is deployed on a
+weakly-consistent storage system; \citet{OM+18} defines a randomized
+testing procedure for message-passing distributed systems with
+guaranteed lower bounds on the probability of finding a depth-$d$ bug,
+where $d$ is the minimum length of the sequence of events sufficent to
+witness the error.  Morpheus~\cite{YY20} uses partial order sampling
+and conflict analysis to control scheduling
+decisions. MonkeyDB~\cite{RK+19} uses a demonic scheduling mechanism
+to expose safety violations in SQL applications that interact with a
+weakly-isolated storage backend.  Clotho~\cite{RK+19} combines static
+analysis with a bounded model-checker to generate tests that expose
+serializability violations in weakly-consistent database systems.
+While these efforts are all agnostic to the property under test,
+\name{}'s property-guided synthesis procedure derives a controller
+specialized to the target property and handler specifications that
+capture temporal dependencies between actors. In this sense, our
+approach can be seen as a form of property-based testing
+(PBT)~\cite{CH00, HC+24} applied to open reactive systems.  Broadly
+related to our approach is Mocket~\cite{WD+23}, a PBT-style testing
+framework that uses the state space graph extracted from
+model-checking TLA+ specifications~\cite{Lam02} to force executions to
+follow specific paths in the graph.  Unlike \name{}, Mocket requires
+manual instrumentation of implementations to align actions defined in
+the specification with the corresponding code in the implementation,
+and relies on the TLC model-checker to produce the state space graph.
+In constrast, \name{} uses a compositional refinement type system to
 drive synthesis, and requires no instrumentation or \emph{a priori}
 enumeration of the state space to synthesize its controllers.
 
@@ -82,7 +83,7 @@ in a distributed setting in which constraints on the history of
 previous messages as well as requirements of future messages that have
 yet to be handled.
 
-\section{Conclusion}\label{sec:conc}
+\section{Conclusions}\label{sec:conc}
 
 This paper proposes a property-guided testing framework for open
 reactive distributed system models.  Our key innovation is the use of
