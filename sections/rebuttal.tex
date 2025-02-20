@@ -1,18 +1,156 @@
+\textbf{SJ start}
+
 \section{Main Response}
 
 We thank the reviewers for their detailed comments and suggestions.
 
-\paragraph{Compare with model checking (Reviewer B and E)} It is not oblivious how to preform "model checking for PAT" (Reviewer E). First of all, to enable model check on open systems, users still need to close the system by providing the input generation program that interacts with handlers (actors). Moreover, \PAT provides the \emph{local} specification for each handlers, it is non-trivial how to lift them into \emph{global} level since these specifications may conflict with each others. Synthesizing controller by naive enumeration is exactly an possible implementation of this lifting procedure. Finally, this model checking still cause nontrivial vast search space and requires smart searching strategies.
+\subsection{Overview}
 
-Given concerns above, instead of "fully explorable" (Reviewer E), \PAT offers an incomplete but a light way approach that efficiently explores executions guided by the properties we aim to reason about. Thus, \PAT doesn't work as "an abstract version of the implementation" (Reviewer C) or "a complete, symbolic description of the system under test" (Reviewer E) in model check setting, but more like specifications that are sufficient to help us prune out executions that cannot violate the given properties in the test setting.
+Our response first provides general clarification on questions that
+were raised by multiple reviewers.  Specifically, we (a) characterize
+the expressivity and limitations of our PAT type abstraction; (b)
+relate the novelty of our methodology to other PBT and model-checking
+techniques; and (c) justify our use of PATs as being particularly
+well-suited to property-based testing of distributed system models.
 
-\paragraph{Expressivity and Limitations of \PAT (All Reviewers)} As mentioned by Reviewer E, the ghost variables increase the expressive power of our SFAs to be "more similar to, e.g., data/register automata that can save values". We would also like to highlight that \PAT provide constraints over each actor on its \emph{local} view where the controller has an \emph{global} view. This design make the trace in our approach is not just "one global trace of all events in the system" (Reviewer E), but an merged views of all actors. There can be multiple events for the same operation, comes from different actors under different local view. Then the global property can specify these events are consistent or not. The "multiple traces per thread" properties (e.g., sequential consistency) and network behaviors can then expressed in this way, where we provides examples in the details response to Reviewer E. We also provide the \PAT and explanation for all benchmarks in the attached file of author response.
+We then present a detailed changelist that proposes (a) additional
+explanation on our methodology and its applicability to distributed
+systems testing; (b) incorporation of additional related work as
+suggested by the reviewers; and (c) more experimental details as well
+as additional examples demonstrating how PATs can be used to express
+well-understood consistency and network delivery properties.
 
-The limitations of \PAT mostly stem from the limitations of SFAs. For example, SFAs cannot express counting properties (e.g., an event appearing twice as often as another event), as this exceeds the expressive power of regular languages. Additionally, since we only consider finite traces, we cannot express properties involving infinite traces (e.g., an event appearing finitely many times in the future). The "liveness property" mentioned in our paper actually refers to "eventually exists within a finite number of steps," following an informal interpretation of liveness: "something good will eventually happen." We apologize for this misuse and promise to clarify it in our paper revision.
+Finally, we provide detailed responses to the questions raised by
+individual reviewers.
+
+\subsection{Expressivity, Framework, and Methodology (All Reviewers)}
+
+\subsubsection{Expressivity}
+
+Unlike traditional PBT approaches that only specify a property of
+interest that should be falsified, our technique additionally allows
+rich specifications in the form of PATs (Prophecy Automata Types) to
+be attached to the actors comprising a SUT.  Beyond the ability to
+express temporal modalities on events, the PAT specification language
+allows the use of ghost variables to capture data dependencies among
+specification events, resulting in a level of expressive power akin to
+data/register automata that are equipped with memory (Reviewer E),
+while still being amenable to efficient SMT encodings.  This
+additional expressivity easily allows the expression of various
+consistency and network delivery properties relevant to distributed
+systems; we elaborate on this point in the individual responses, and
+provide details in the attached file.
+
+The limitations of these specifications mostly stem from the
+limitations of SFAs that they compile into. For example, SFAs (even
+when equipped with ghost variables) cannot express counting properties
+(e.g., an event appearing twice as often as another event), as this
+exceeds the expressive power of regular languages. Additionally, since
+we only consider finite traces, we cannot express properties involving
+infinite traces (e.g., an event appearing infinitely many times in the
+future).  For properties that are amenable to PBT-style testing,
+however, our SFA representation appears to be particularly well-suited
+and effective.
+
+\subsection{Framework}
+
+There are two distinguishing features of our framework that we believe
+separate it from other proposed PBT-style techniques.  First, it is
+intended to operate in an open system in which external clients can
+inject messages into the SUT.  Second, PATs provide local
+specifications to each actor that constrain the set of allowed global
+traces the (synthesized) controller can generate.  PATs thus enable a
+PBT system to be significantly more directed in its search for a
+violating execution than would otherwise be possible - history
+automata induce ``precondition'' constraints on allowed behaviors that
+permit the actor to generate a new event, while prophecy automata
+induce ``postcondition'' constraints that regulate future actions by
+the actor.  This capability of dividing symbolic traces into a history
+and a future is especially valuable in the concurrent/asynchronous
+setting we consider.
+
+\subsection{Comparison to model-checking and related techniques}
+
+It's not immediately apparent to us how we might transform the
+abstract traces that govern the test controller synthesis algorithm to
+a state exploration procedure that a model-checker might use.  This is
+because traces under-specify the structure of states.  To make such
+traces ``fully explorable'' (Reviewer E) would require us to engineer
+state (and path) equivalence checkers, frame rules, and other
+mechanisms to minimize redundant and uninteresting exploration.  We
+propose a lighterweight procedure that leverages traces, not for state
+space exploration, but to search for candidate controllers.  In doing
+so, we tradeoff engineering complexity for incompleteness in the
+synthesis algorithm: a synthesized controller is only guaranteed to
+generate some (but not all) feasible executions consistent with
+provided specifications.  Our experimental evidence supports our
+contention that this tradeoff works well in practice.
+
+
+\textbf{SJ end}
+
+\paragraph{Summary of Proposed Changes}
+
+
+
+
+
+
+{Detailed Response}
+
+\paragraph{Compare with model checking (Reviewer B and E)} It is
+not oblivious how to preform "model checking for PAT" (Reviewer
+E). First of all, to enable model check on open systems, users still
+need to close the system by providing the input generation program
+that interacts with handlers (actors). Moreover, \PAT provides the
+\emph{local} specification for each handlers, it is non-trivial how to
+lift them into \emph{global} level since these specifications may
+conflict with each others. Synthesizing controller by naive
+enumeration is exactly an possible implementation of this lifting
+procedure. Finally, this model checking still cause nontrivial vast
+search space and requires smart searching strategies.
+
+Given concerns above, instead of "fully explorable" (Reviewer E), \PAT
+offers an incomplete but a light way approach that efficiently
+explores executions guided by the properties we aim to reason
+about. Thus, \PAT doesn't work as "an abstract version of the
+implementation" (Reviewer C) or "a complete, symbolic description of
+the system under test" (Reviewer E) in model check setting, but more
+like specifications that are sufficient to help us prune out
+executions that cannot violate the given properties in the test
+setting.
+
+\paragraph{Expressivity and Limitations of \PAT (All Reviewers)} As mentioned by
+Reviewer E, the ghost variables increase the expressive power of our
+SFAs to be "more similar to, e.g., data/register automata that can
+save values". We would also like to highlight that \PAT provide
+constraints over each actor on its \emph{local} view where the
+controller has an \emph{global} view. This design make the trace in
+our approach is not just "one global trace of all events in the
+system" (Reviewer E), but an merged views of all actors. There can be
+multiple events for the same operation, comes from different actors
+under different local view. Then the global property can specify these
+events are consistent or not. The "multiple traces per thread"
+properties (e.g., sequential consistency) and network behaviors can
+then expressed in this way, where we provides examples in the details
+response to Reviewer E. We also provide the \PAT and explanation for
+all benchmarks in the attached file of author response.
+
+The limitations of \PAT mostly stem from the limitations of SFAs. For
+example, SFAs cannot express counting properties (e.g., an event
+appearing twice as often as another event), as this exceeds the
+expressive power of regular languages. Additionally, since we only
+consider finite traces, we cannot express properties involving
+infinite traces (e.g., an event appearing finitely many times in the
+future). The "liveness property" mentioned in our paper actually
+refers to "eventually exists within a finite number of steps,"
+following an informal interpretation of liveness: "something good will
+eventually happen." We apologize for this misuse and promise to
+clarify it in our paper revision.
 
 \paragraph{LTL$_f$, SFA, and Abstract Trace (All reviewers)} We clarify that {\sf Clouseau} indeed is based on SFAs, and it can accepts any frontend language (e.g., symbolic regex commended by reviewers) that can be compiled into SFAs. Then our abstract trace can be treat as "symbolic regex" without \emph{top-level} union $\Pi ::= \msgB{op}{\overline{x}}{\phi} ~|~ \Pi \seqA \Pi ~|~ A^*$. Then, we can normalize each SFA into a finite set of abstract traces, as normalization process will preserve the star term instead of unfolding it. Current presentation in our paper attempts to mimic this simple idea in LTL$_f$, which has led to a lot of confusion. We promise to present the abstract trace and normalization in symbolic regex in our revised paper.
 
-\paragraph{Summary of Proposed Changes}
+
 
 \section{Attached File}
 
