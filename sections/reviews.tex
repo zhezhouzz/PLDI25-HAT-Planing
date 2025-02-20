@@ -1,0 +1,58 @@
+\section{Rebuttal}
+
+\subsection{Review Summary}
+
+\paragraph{Reviewer A: 4 (2)} He read carefully.
+\begin{enumerate}
+    \item Expressiveness/Limitations about PAT, synthesis algorithm, impelementation. Particularly, $\Code{DeriveTrace}$. \ZZ{Derive trace doesn't do anything fancy, we are an incomplete approach. During synthesis algorithm, it is no barrier to force unfolding $\globalA \neg \mathbf{write}$ which leads new synthesis sub obligations. We didn't do it for the reason to exploring shorter traces. }
+    \item Evaluation: 
+    \begin{enumerate}
+        \item Add execution time. \ZZ{Sure. Let me try to report it in our rebuttal.}
+        \item Explain of SMT usage. \ZZ{During synthesis and assume/assert.}
+        \item How assume/assert can be satisfied? \ZZ{Sure, maybe explain solver-aided language, and show VCs}
+        \item Distinguish the bugs into control-flow/data-flow, which is more challenging \ZZ{The condition also depends on data, for example, if read/write are on the same key. We can explain which one is more challenging. }
+        \item More information about M. \ZZ{They are human written, property + imp specific generator. }
+    \end{enumerate}
+    \item SubHAF. \ZZ{It is a typo, the version in supplemental materiel is correct. We will provide type denotation from supplemental materiel into our revision.}
+    \item Normalization and more examples. \ZZ{It is a typo, there should be no negation, we will provide the examples and proof of normalization. }
+    \item Semantics of $\Pi$.
+\end{enumerate}
+
+\paragraph{Reviewer B: 3 (2)}
+\begin{enumerate}
+    \item More related works in beginning of paper, TLA+/IVy.
+    \item Evaluation: test bound. \ZZ{We choose the a number bound instead of a time bound since different benchmarks has different execution time, a number bound can unify it. }
+    \item Evaluation: systematically injected issues?
+    \item LTL instead of regex?: \ZZ{You are right, we can also choose regex. Our approach is based on Automata, which allows us to accept any possible frontend language that can be compile into automata. We choose LTL because some of existing properties we try to test against are already presented as LTL. }
+\end{enumerate}
+
+\paragraph{Reviewer C: 3 (3)}
+\begin{enumerate}
+    \item How reduce into EPR? \ZZ{Similar with reviewer A}
+    \item Specification is too complicated, cannot be practical.
+    \item Incomplete/get stuck. \ZZ{Yes we are not complete (in finite time), but we will not get stuck. Our algorithm is a backtrack algorithm (line 628). In our example, we show how we backtrack to another choice when face error (line 753-755)}
+    \item Termination? \ZZ{If there exists a solution, shall we add a proof?}
+\end{enumerate}
+
+\paragraph{Reviewer D: 2 (3)}
+\begin{enumerate}
+    \item Related works: PBT Erlang-based (ICFP'09 PLUSE)...
+    \item Formatting: \ZZ{Although I used vspace in figure, but I didn't do anything fancy at the lines he pointed, maybe we should use a small font for all event name. }
+\end{enumerate}
+
+\paragraph{Reviewer E: 2 (4)}
+\begin{enumerate}
+    \item Expressive power, why not all execution lead bugs? \ZZ{Some benchmark (e.g., EspressoMachine), as explain on line 873-876, it comes from the non-deterministic choices picked by handlers are not consistent with assumption on controller side. For non-deterministic handler, we only guarantee there exists one execution trigger the bug. It is also consistent with our Thm 4.5 which indicate there exists one execution.  }
+    \item Why test but not model checking? \ZZ{We should re-state our setting.}
+    \item Why automata? It is less expressive than regex? \ZZ{Similar with reviewer B.}
+    \item Abstract Trace, expressive power, normalization? \ZZ{Similar with reviewer A. We explain how we express until, conjunction, disjunction. We can provide both regex/LTL proof in our rebuttal. }
+    \item DSL or trace? \ZZ{The DSL is different from trace + assertions because of the local variables, where controller can use them to \emph{store} the result from handlers (like register automata). Our case study (line 961 - 965) we highlight that our synthesized controller is better than random controller because it can require an transaction id $tid$ and use it in the future messages. DSL cannot expressive this situation  without the local variables. }
+    \item Liveness? \ZZ{We do have it (e.g., firewall), using our special semantics to express liveness violation (in finite trace). }
+    \item Expressive, spec on $84-85$ only one event? \ZZ{We can express it as ...}
+    \item How to define 2PC/RingLeaderElection \ZZ{We will add more examples in our revision.}
+    \item Global trace. \ZZ{Yes, it is our limitation, but make property we can check easier to encode and understand.}
+    \item Network. \ZZ{It is out-order and that what our controller try to control. We can simulate message lose (e.g., in HeartBeart), we will add it into our revision}
+    \item Mocket. \ZZ{I need read this paper carefully...}
+    \item Related works.
+    \item Normalization. \ZZ{simliar with previous reviewers. }
+\end{enumerate}

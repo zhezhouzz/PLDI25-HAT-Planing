@@ -1,0 +1,61 @@
+\section{Main Response}
+
+We thank the reviewers for their detailed comments and suggestions.
+
+\paragraph{Compare with model checking (Reviewer B and E)} It is not oblivious how to preform "model checking for PAT" (Reviewer E). First of all, to enable model check on open systems, users still need to close the system by providing the input generation program that interacts with handlers (actors). Moreover, \PAT provides the \emph{local} specification for each handlers, it is non-trivial how to lift them into \emph{global} level since these specifications may conflict with each others. Synthesizing controller by naive enumeration is exactly an possible implementation of this lifting procedure. Finally, this model checking still cause nontrivial vast search space and requires smart searching strategies.
+
+Given concerns above, instead of "fully explorable" (Reviewer E), \PAT offers an incomplete but a light way approach that efficiently explores executions guided by the properties we aim to reason about. Thus, \PAT doesn't work as "an abstract version of the implementation" (Reviewer C) or "a complete, symbolic description of the system under test" (Reviewer E) in model check setting, but more like specifications that are sufficient to help us prune out executions that cannot violate the given properties in the test setting.
+
+\paragraph{Expressivity and Limitations of \PAT (All Reviewers)} As mentioned by Reviewer E, the ghost variables increase the expressive power of our SFAs to be "more similar to, e.g., data/register automata that can save values". We would also like to highlight that \PAT provide constraints over each actor on its \emph{local} view where the controller has an \emph{global} view. This design make the trace in our approach is not just "one global trace of all events in the system" (Reviewer E), but an merged views of all actors. There can be multiple events for the same operation, comes from different actors under different local view. Then the global property can specify these events are consistent or not. The "multiple traces per thread" properties (e.g., sequential consistency) and network behaviors can then expressed in this way, where we provides examples in the details response to Reviewer E. We also provide the \PAT and explanation for all benchmarks in the attached file of author response.
+
+The limitations of \PAT mostly stem from the limitations of SFAs. For example, SFAs cannot express counting properties (e.g., an event appearing twice as often as another event), as this exceeds the expressive power of regular languages. Additionally, since we only consider finite traces, we cannot express properties involving infinite traces (e.g., an event appearing finitely many times in the future). The "liveness property" mentioned in our paper actually refers to "eventually exists within a finite number of steps," following an informal interpretation of liveness: "something good will eventually happen." We apologize for this misuse and promise to clarify it in our paper revision.
+
+\paragraph{LTL$_f$, SFA, and Abstract Trace (All reviewers)} We clarify that {\sf Clouseau} indeed is based on SFAs, and it can accepts any frontend language (e.g., symbolic regex commended by reviewers) that can be compiled into SFAs. Then our abstract trace can be treat as "symbolic regex" without \emph{top-level} union $\Pi ::= \msgB{op}{\overline{x}}{\phi} ~|~ \Pi \seqA \Pi ~|~ A^*$. Then, we can normalize each SFA into a finite set of abstract traces, as normalization process will preserve the star term instead of unfolding it. Current presentation in our paper attempts to mimic this simple idea in LTL$_f$, which has led to a lot of confusion. We promise to present the abstract trace and normalization in symbolic regex in our revised paper.
+
+\paragraph{Summary of Proposed Changes}
+
+\section{Attached File}
+
+\paragraph{Detailed Response}
+
+\paragraph{Expressivity and Limitations of \PAT (All Reviewers)}
+
+We clarify that the Prophecy Automata Type (\PAT) \(\rg{H}{A}{F}\) indeed uses SFAs (i.e., \(H\), \(A\), and \(F\)) to encode history, current, and future traces. Similar to other trace-based refinement types \cite{HAT}, LTL\(_f\) serves as a user-friendly frontend language for SFAs, improving readability, and is later compiled into SFAs in {\sf Clouseau}. We also allow users to write symbolic regular language (SRL) or linear dynamic logic (LDL\(_f\)) \cite{LTLf}, which are more powerful than LTL\(_f\), as long as they can be compiled into SFAs.
+
+The limitations of \PAT mostly stem from the limitations of SFAs. For example, SFAs cannot express counting properties (e.g., an event appearing twice as often as another event), as this exceeds the expressive power of regular languages. Additionally, since we only consider finite traces, we cannot express properties involving infinite traces (e.g., an event appearing finitely many times in the future). The "liveness property" mentioned in our paper actually refers to "eventually exists within a finite number of steps," following an informal interpretation of liveness: "something good will eventually happen." We apologize for this misuse and promise to clarify it in our paper revision.
+
+Despite these limitations inherited from SFAs, our approach can still express interesting properties with the help of ghost variables, which connect events within SFAs, and prophecy automata, which allow to express \emph{local} views for each handler (actor). All verification conditions in our setting check whether the qualifiers in symbolic events are satisfiable to prevent unrealizable traces (Reviewer A). Thus, adding ghost variables (universally quantified variables) still keeps our VCs within EPR, as long as the qualifiers remain in EPR (thanks to Reviewer E; we will highlight this point in the paper revision).  
+We address the expressivity concerns raised by Reviewer E with the following examples.
+\begin{enumerate}
+    \item Expressing "exactly one". We can add a request ID as the \(\I{rid}\) field for request and response events, then constrain it so that there is at most one request and one response for each ghost variable \(i\). For example,
+    \begin{align*}
+        i{:}\Code{rId} \sarr \rg{H}{\msg{putRsp}{rid = i}}{F \land \neg \finalA (\msg{putRsp}{rid = i} \land \nextA \finalA \msg{putRsp}{rid = i})}
+    \end{align*}
+    \item Expressing sequential consistency, linearizability, deadlock freedom, etc. \PAT{} indeed uses a global trace but can still express properties involving multiple participants through the local views provided by \PAT{}. We demonstrate how to encode Lamport's sequential consistency property \cite{Lamport1979} with a simple example where multiple nodes (processes) perform read and write operations on a database. Each node communicates with the database using \(\eff{readReq/Resp}\) and \(\eff{writeReq/Resp}\) events, which represent the local view of each process. Meanwhile, the controller also sends auxiliary events, \(\eff{gReadReq/Resp}\) and \(\eff{gWriteReq/Resp}\), to the database to indicate a global sequential order. By default, the order of global read/write events and actual read/write events is completely independent. Sequential consistency requires that the global order matches the local view, which can be expressed by the following property:
+    \begin{align*}
+        \forall i{:}\Code{requestId}, &(\msg{writeReq}{\I{rid} = i} \implies \nextA \msg{gWriteReq}{\I{rid} = i}) \land 
+        \\&(\msg{writeResp}{\I{rid} = i} \implies \nextA \msg{gWriteResp}{\I{rid} = i}) \land ...
+    \end{align*}
+    where we require that local read and write operations align with the global ones. Additionally, sequential consistency mandates that the execution remains the same as if all operations were performed in the global order. We can formalize this constraint using the \PAT{} of the database and nodes, ensuring that the database returns the last \emph{globally} written value as its read result
+    {\small\begin{align*}
+        i{:}\Code{rId} \garr \Code{x}\hasnty{int} \sarr \rg{\finalA \msg{gWriteReq}{v = \Code{x}} \land \nextA \neg \finalA \eff{gWriteReq}}{\lastA \msg{readReq}{\I{id} = i}}{\msg{readRsp}{v = \Code{x} \land \I{id} = i}}
+    \end{align*}}
+    and node expected the last \emph{local} written value as read result.
+    {\small\begin{align*}
+        i{:}\Code{rId} \sarr \Code{x}\hasnty{int} \sarr \rg{\finalA \msg{writeReq}{v = \Code{x}} \land \nextA \neg \eff{writeReq} \untilA \msg{readReq}{\I{id} = i} }{\lastA \msg{readRsq}{\I{id} = i}}{\allTL}
+    \end{align*}}
+    The \PAT{} of the database uses prophecy automata to \emph{predict} that the event \(\eff{readRsp}\) contains the last written value in the global view, while the \PAT{} of the node uses current automata to validate that the same event \(\eff{readRsp}\) returns the last written value in the local view. In general, \PAT{} allows handlers to impose multiple constraints on the same event from their respective views, effectively expressing consistency properties involving multiple participants.
+    
+    \item Expressing Network Behavior. In-order and out-of-order delivery can be specified using the prophecy automata in the \PAT{} of each handler. Suppose a handler sends event \(\eff{E_1}\) followed by \(\eff{E_2}\). The following \PAT{} enforces in-order delivery by ensuring that \(\eff{E_1}\) is received before \(\eff{E_2}\):
+    \begin{align*}
+        \rg{H}{A}{\finalA (\eff{E_1} \land \nextA \finalA \eff{E_2})}
+    \end{align*}
+    then the following \PAT allows that $\eff{E_1}$ and $\eff{E_2}$ appears in arbitrary order:
+    \begin{align*}
+        \rg{H}{A}{(\finalA \eff{E_1}) \land (\finalA \eff{E_2})}
+    \end{align*}
+    Node failure can be represented as a special event, \(\eff{crash}\), sent by the controller. When a node receives this event, it will no longer respond to any incoming messages. This means that an handler can handle messages normally if and only if it has not received the \(\eff{crash}\) event:
+    \begin{align*}
+        \rg{H \land \neg (\finalA \eff{crash})}{A}{F}
+    \end{align*}
+\end{enumerate}

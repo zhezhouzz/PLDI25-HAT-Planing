@@ -38,7 +38,7 @@ make it problematic to \emph{a priori} determine if the testing
 framework will be effective in finding a model-specific design bug,
 given the typically very large state space of feasible executions that
 may have to be considered. Rather than having the controller undertake
-exploration for inputs and message orderings without any foresight on
+exploration for inputs and message orderings without any insight on
 the property that we seek to violate, this paper investigates an
 alternative approach that specializes the actions the controller
 performs, explicitly guided by this property.
@@ -167,9 +167,8 @@ returns some written value.  % These constraints enforce an
 % asynchronous semantics, the desired behavior specified by this type
 % requires all correct executions to be strongly consistent.
 
-Intuitively, this type only ensures eventually consistent (EC)
-guarantees~\cite{Burckhardt2014,Session}, since the store is free to
-buffer and respond to read and write requests arbitrarily. While
+Intuitively, this type guides the controller to produce tests  that exhibit eventually consistent (EC)~\cite{Burckhardt2014,Session} behavior, since the store is free to
+buffer and respond to read and write requests arbitrarily.  While
 performant, this policy can be too permissive for users, who may
 expect the store to be strongly consistent (SC), i.e., one that always
 returns the value of a key at the point a request message is
