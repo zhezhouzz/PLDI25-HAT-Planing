@@ -1,8 +1,25 @@
+\section{Main Response}
+
 We thank the reviewers for their detailed comments and suggestions.
 
-\paragraph{Compare with model checking (Reviewer B and E)} For model checking on open systems, users are still required to provide an input generation program (controller or test generator) that interacts with handlers (actors). This makes it unclear what "model checking for PAT" truly means. To meet the "fully explorable" requirement suggested by Reviewer E, it might imply using random input generation to explore all possible inputs similar to the P+Rand setting in our experiments. The P language does have a model checking mode, but our experiments show that it performs significantly worse than P+Rand (\ZZ{TODO: some results to support this}). Notably, P is already a state-of-the-art model checker that uses traces instead of states (e.g., compared to TLA+), making search space more compact (e.g., message buffer is builtin in P language, however, a state-based approach needs to encode it manually). (\ZZ{TODO: some complexity insights here}). Given this vast search space, instead of full exploration, \PAT offers an incomplete but highly efficient approach to exploring executions, guided by the properties we aim to reason about. Thus, \PAT doesn't work as "an abstract version of the implementation" (Reviewer C) or "a complete, symbolic description of the system under test" (Reviewer E) in model check setting, but more like specifications that are sufficient to help us prune out executions that cannot violate the given properties in the test setting.
+\paragraph{Compare with model checking (Reviewer B and E)} It is not oblivious how to preform "model checking for PAT" (Reviewer E). First of all, to enable model check on open systems, users still need to close the system by providing the input generation program that interacts with handlers (actors). Moreover, \PAT provides the \emph{local} specification for each handlers, it is non-trivial how to lift them into \emph{global} level since these specifications may conflict with each others. Synthesizing controller by naive enumeration is exactly an possible implementation of this lifting procedure. Finally, this model checking still cause nontrivial vast search space and requires smart searching strategies.
 
-\paragraph{Expressivity and Limitations of \PAT (All Reviewers)} 
+Given concerns above, instead of "fully explorable" (Reviewer E), \PAT offers an incomplete but a light way approach that efficiently explores executions guided by the properties we aim to reason about. Thus, \PAT doesn't work as "an abstract version of the implementation" (Reviewer C) or "a complete, symbolic description of the system under test" (Reviewer E) in model check setting, but more like specifications that are sufficient to help us prune out executions that cannot violate the given properties in the test setting.
+
+\paragraph{Expressivity and Limitations of \PAT (All Reviewers)} As mentioned by Reviewer E, the ghost variables increase the expressive power of our SFAs to be "more similar to, e.g., data/register automata that can save values". We would also like to highlight that \PAT provide constraints over each actor on its \emph{local} view where the controller has an \emph{global} view. This design make the trace in our approach is not just "one global trace of all events in the system" (Reviewer E), but an merged views of all actors. There can be multiple events for the same operation, comes from different actors under different local view. Then the global property can specify these events are consistent or not. The "multiple traces per thread" properties (e.g., sequential consistency) and network behaviors can then expressed in this way, where we provides examples in the details response to Reviewer E. We also provide the \PAT and explanation for all benchmarks in the attached file of author response.
+
+The limitations of \PAT mostly stem from the limitations of SFAs. For example, SFAs cannot express counting properties (e.g., an event appearing twice as often as another event), as this exceeds the expressive power of regular languages. Additionally, since we only consider finite traces, we cannot express properties involving infinite traces (e.g., an event appearing finitely many times in the future). The "liveness property" mentioned in our paper actually refers to "eventually exists within a finite number of steps," following an informal interpretation of liveness: "something good will eventually happen." We apologize for this misuse and promise to clarify it in our paper revision.
+
+\paragraph{LTL$_f$, SFA, and Abstract Trace (All reviewers)} We clarify that {\sf Clouseau} indeed is based on SFAs, and it can accepts any frontend language (e.g., symbolic regex commended by reviewers) that can be compiled into SFAs. Then our abstract trace can be treat as "symbolic regex" without \emph{top-level} union $\Pi ::= \msgB{op}{\overline{x}}{\phi} ~|~ \Pi \seqA \Pi ~|~ A^*$. Then, we can normalize each SFA into a finite set of abstract traces, as normalization process will preserve the star term instead of unfolding it. Current presentation in our paper attempts to mimic this simple idea in LTL$_f$, which has led to a lot of confusion. We promise to present the abstract trace and normalization in symbolic regex in our revised paper.
+
+\paragraph{Summary of Proposed Changes}
+
+\section{Attached File}
+
+\paragraph{Detailed Response}
+
+\paragraph{Expressivity and Limitations of \PAT (All Reviewers)}
+
 We clarify that the Prophecy Automata Type (\PAT) \(\rg{H}{A}{F}\) indeed uses SFAs (i.e., \(H\), \(A\), and \(F\)) to encode history, current, and future traces. Similar to other trace-based refinement types \cite{HAT}, LTL\(_f\) serves as a user-friendly frontend language for SFAs, improving readability, and is later compiled into SFAs in {\sf Clouseau}. We also allow users to write symbolic regular language (SRL) or linear dynamic logic (LDL\(_f\)) \cite{LTLf}, which are more powerful than LTL\(_f\), as long as they can be compiled into SFAs.
 
 The limitations of \PAT mostly stem from the limitations of SFAs. For example, SFAs cannot express counting properties (e.g., an event appearing twice as often as another event), as this exceeds the expressive power of regular languages. Additionally, since we only consider finite traces, we cannot express properties involving infinite traces (e.g., an event appearing finitely many times in the future). The "liveness property" mentioned in our paper actually refers to "eventually exists within a finite number of steps," following an informal interpretation of liveness: "something good will eventually happen." We apologize for this misuse and promise to clarify it in our paper revision.
@@ -42,20 +59,3 @@ We address the expressivity concerns raised by Reviewer E with the following exa
         \rg{H \land \neg (\finalA \eff{crash})}{A}{F}
     \end{align*}
 \end{enumerate}
-
-\paragraph{Abstract Trace and Normalization (All reviewers)} 
-We clarify the semantics of our abstract traces and normalization in our algorithm. Regarding the SFA used by \PAT and the symbolic regular language (SRL), which has been proven to have equal expressive power:
-\begin{align*}
-    STL ::= \emptyset ~|~ \epsilon ~|~ \msgB{op}{\overline{x}}{\phi} ~|~ A \lorA A ~|~ A \seqA A ~|~ A^*
-\end{align*}
-our abstract trace does not include \emph{top-level} union (though union can still appear inside the star operator, and $\epsilon$ can be expressed as $\epsilon^*$)."
-\begin{align*}
-    \Pi ::= \msgB{op}{\overline{x}}{\phi} ~|~ \Pi \seqA \Pi ~|~ A^*
-\end{align*}
-Then, we can normalize each automaton in SRL into a set of abstract traces. This set is obviously finite because there are a finite number of union operators in a term, and the normalization process will preserve the star term instead of unfolding it. The main algorithm, $\Code{Synthesis}$, presented in our paper will smartly unfold the star closure $A^*$ as needed, and $\Code{DeriveTerm}$ will specialize the remaining $A^*$ into $\epsilon$ to achieve a shorter trace, as Reviewer A interpreted. We can manually unfold $A^*$ during synthesis to generate a larger program, although {\sf Clouseau} doesn't do this for efficiency reasons. The current presentation in our paper attempts to mimic this simple idea in LTL$_f$ instead of SRL, which has led to a lot of confusion. We promise to present the abstract trace and normalization in SRL in our revised paper.
-
-\paragraph{Type-based local and global trace-based reasoning approach} Unlike other existing approaches in distributed systems, we would like to highlight that \PAT is a trace-based refinement type system that provides compositionality, as well as a decidable and automated verification procedure. Moreover, with prophecy automata, one event can be constrained by multiple participants, allowing \PAT to describe both local and global views. We have already shown the expressive power in our benchmarks and examples listed above; we believe this trace-based local and global view setting aligns more closely with both the programming paradigm of distributed systems and human understanding.
-
-\paragraph{Summary of Proposed Changes}
-
-\paragraph{Detailed Response}
