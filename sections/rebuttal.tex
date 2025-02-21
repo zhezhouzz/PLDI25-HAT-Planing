@@ -148,12 +148,15 @@ induce ``postcondition'' constraints that regulate future actions by
 the actor. This capability of dividing symbolic traces into a history
 and a future is especially valuable in the concurrent/asynchronous
 setting we target.
+% Need to additionally emphasize that we are property-directed, PULSE
+% and Concuerror appear to be property agnostic-- the former
+% implements a "randomized scheduler", while the latter
+% "systematically explores process interleaving". Quickstrom, on the
+% other hand, does not have information about future events-- it
+% randomly chooses an action that is 'enabled' in the current state.
 
 % Quickstrom: No postconditions, not property-directed, actions chosen
 % randomly from a set of enabled actions
-
-% Need to Read: Finding Race Conditions in Erlang with QuickCheck and
-% PULSE, ICFP 2009
 
 \textbf{SJ end}
 
