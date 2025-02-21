@@ -138,14 +138,17 @@ specific criticisms posed by the reviewers addressed below:
 
 #### Reviewer A
 
-- $\Code{DeriveTerm}$ function. Reviewer is correct where
-$\Code{DeriveTerm}$ function will specialize the remaining $\globalA
-A$ into $\epsilon$ to achieve a shorter program. We can synthesize
-longer programs by forcing the unfolding of $\globalA A$ during
-synthesis to explore longer abstract traces, although {\sf Clouseau}
-does not do this for efficiency reasons.
+1. Behavior of `DeriveTerm`. The reviewer correctly notes that
+`DeriveTerm` removes any remaining $$\globalA A$$ when building a
+controller program from an abstract trace. Intuitively, the violation
+encoded in the abstract trace is independent of any events in
+$$\globalA A$$, eliding them allows Clouseau to safely focus on the
+events that are core to the violation.
 
-- SMT solver usage and VCs. The reviewer is correct; solvers are used
+2. SMT solver usage and VCs.
+
+
+The reviewer is correct; solvers are used
 in SFA inclusion checks in \textsc{WfHAF} and \textsc{SubHAF}.
 Following the standard minterm-based SFA algorithm [12], the VCs are
 proof obligations that all qualifiers of symbolic events (i.e., $\phi$
