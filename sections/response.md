@@ -25,7 +25,7 @@ individual reviewers.
 
 ## Shared Concerns
 
-### Expressivity
+### Expressivity of PATs
 
 Beyond the ability to express temporal modalities on events, the PAT
 specification language allows the use of ghost variables to capture
@@ -54,6 +54,8 @@ testing, however, our SFA representations appears to be particularly
 well-suited and effective.
 
 ### Model Checking Open Distributed Systems
+
+% Say that we are not doing model checking.
 
 There are (at least) three main challenges to applying model checking
 the sorts of open distributed systems we target. First, these systems
@@ -138,143 +140,182 @@ specific criticisms posed by the reviewers addressed below:
 
 #### Reviewer A
 
-1. Behavior of `DeriveTerm`. The reviewer correctly notes that
-`DeriveTerm` removes any remaining $$\globalA A$$ when building a
-controller program from an abstract trace. Intuitively, the violation
-encoded in the abstract trace is independent of any events in
-$$\globalA A$$, eliding them allows Clouseau to safely focus on the
-events that are core to the violation.
+- Q: How does `DeriveTerm` handle $$\globalA A$$?
 
-2. SMT solver usage and VCs.
++ A: The reviewer correctly notes that `DeriveTerm` removes any
+remaining $$\globalA A$$ when building a controller program from an
+abstract trace. Intuitively, the violation encoded in the abstract
+trace is independent of any events in $$\globalA A$$, eliding them
+allows Clouseau to safely focus on the events that are core to the
+violation.
 
+- Q: Where is the SMT solver invoked?
 
-The reviewer is correct; solvers are used
-in SFA inclusion checks in \textsc{WfHAF} and \textsc{SubHAF}.
-Following the standard minterm-based SFA algorithm [12], the VCs are
-proof obligations that all qualifiers of symbolic events (i.e., $\phi$
-in $\msgB{op}{\overline{x}}{\phi}$) are satisfiable. We will add VC
-examples in the revision of our paper.
++ A: Our framework uses SMT solver in two places: first, a solver is
+used to perform the SFA inclusion checks in the **WfHAF**
+and **SubHAF** rules; these are implemented using a standard
+minterm-based SFA algorithm [12]. We will clarify this point in future
+versions of the paper and provide a simplified example of the SMT
+query, if space permits. Second, we use a solver to handle `assume`
+and `assert` statements when executing test controllers.
 
-- Execution and assume/assert. The reviewer is correct; the
-execution needs to ensure that assertions hold, and we do use an SMT
-solver here.
+- Q: Are the properties data-dependent?
 
-- Data sensitivity. Our properties are data-dependent, so bugs are
-also data-sensitive, but not in the sense that "a bug is very
-sensitive to particular values." For example, in the motivating
-example, we need at least two $\eff{write}$ operations on the same key
-with different data (as in $A'_\Code{violateRYW}$ on line 357) to lead
-to a potential inconsistent situation. There are no specific
-constraints about the values of the key or data here.
++ A: Many of the properties we target are data-dependent, in that many
+of these properties impose a particular relationship between the
+contents of the messages in the system; in general it is not the case
+that "a bug is very sensitive to particular values." In the motivating
+example, for instance, we must see at least two $\eff{write}$
+operations on the same key with different data (as in
+$A'_\Code{violateRYW}$ on line 357) in order to trigger violation---
+this bug is does not depend on a specific value of the key or data.
 
-- More information about "P+M". The "M" is provided from the source of
-benchmarks, which also contains the human-written "controller" to
-close the open system. Reviewer is correct that "the best such M would
-be equivalent to one of your synthesized controllers," but most of the
-time, M is not, as it is not aware of the property to test.
+- Q: Where do the manually written controllers come from?
 
-- SubHAF. The reviewer is correct; it is a typo, and the version in
-the supplemental material is correct. We will include the type
-denotation from our supplemental material in the revision.
++ A: Several of our benchmarks provide a manually written controller
+that closes the system-- we use these independently written
+controllers as the "M"s in our "P+M" benchmarks. Indeed, "the best
+such M would be equivalent to one of your synthesized controllers,"
+but as our experiments show, this is not the case for many of our
+benchmarks, partly due to the fact that these controllers were written
+independently of the property under test.
 
-- Abstract traces. The reviewer is correct; $A \untilA B$ should be
-normalized as $\globalA A \seqA B$ (no negation). This is a typo. The
-meaning of $\globalA \evparenth{\phi}\seqA\Pi$ is exactly as the
-reviewer states. \end{enumerate}
+- Q: Is F in SubHAF co- or contravariant?
+
++ A: The rule in Figure 8 is incorrect-- F is indeed is indeed
+contravariant, per the supplementary material. Thanks for catching
+this!
+
+- Q: How is $A \untilA B$ normalized?
+
++ A: This is a typo: $A \untilA B$ actually normalizes into $\globalA
+A \seqA B$ (no negation). The meaning of $\globalA
+\evparenth{\phi}\seqA\Pi$ is exactly as the reviewer states.
 
 #### Reviewer B
-- Bug injection. The bugs are injected by deleting control flow from
-the original distributed models directly or by simulating a weakly
-consistent model (e.g., returning some value written before instead of
-the last written one).
+- Q: How are bug injected into the benchmarks?
 
-- LTL$_f$ vs. (symbolic) regex. We clarify that PAT is indeed based on
-SFAs, and we can accept any front-end language (e.g., symbolic regex,
-as suggested by reviewers) that can be compiled into SFAs.
-\end{enumerate} We will clarify all these in the paper's revision.
++ A: We introduce bugs in two ways: 1) by deleting control flow paths
+from the original distributed models, and 2) by introducing weakly
+consistent behaviors (e.g., returning some value written before the
+last one written).
+
+- Q: Could PATs also use (symbolic) regexes?
+
++ A: Indeed, since PATs are based on SFAs, we can accept any front-end
+language that can be compiled into SFAs, including symbolic regexes.
 
 #### Reviewer C
-- Guarantee constraints are in EPR. We require the qualifiers to be
-quantifier-free formulas to guarantee that the derived VCs are in EPR.
-Following the standard minterm-based SFA algorithm [12], the VCs are
-proof obligations that all qualifiers of symbolic events (i.e., $\phi$
-in $\msgB{op}{\overline{x}}{\phi}$) are satisfiable under the type
-context. The type context is interpreted as prefix universally
-quantified substitutions (lines $565$ and $580$), which guarantees
-that the derived VCs are in EPR. We will highlight the constraints on
-qualifiers in the revision.
 
-- Incomplete and getting stuck. The reviewer is correct that our
-approach is not complete. We would like to clarify that our algorithm
-is based on backtracking (line 628) and thus will not get stuck when
-"picking the wrong values or choices." In our motivating example, we
-show how we shift to another choice when picking the wrong one (lines
-753-755). \end{enumerate}
+- Q: Aren't LTL specifications are complicated and error-prone?
+
++ A: Many tools use variants of LTL to express the behavior of
+concurrent systems, including both model checkers (e.g., the popular
+TLA+ toolchain) and automated testing frameworks (e.g., Quickstrom).
+
+- Q: Why are constraints guaranteed to be in EPR?
+
++ A: The reviewer is correct that our rules do not currently ensure
+that all VCs are in EPR. This can be easily accomplished, however, by
+restricting qualifiers to be quantifier-free formulas (a restriction
+satisfied by all of our benchmarks). Under the standard minterm-based
+SFA algorithm [12], the VCs are proof obligations that all qualifiers
+of symbolic events (i.e., $\phi$ in $\msgB{op}{\overline{x}}{\phi}$)
+are satisfiable under the current typing context. Typing contexts are
+interpreted as a prefix of universally quantified substitutions (lines
+$565$ and $580$), thus guaranteeing that the resulting VCs are in EPR.
+We will update the well-formedness rules to enforce this constraint,
+which can be accomplished via a simple syntactic check on PATs.
+
+- Q: What happens if the synthesis algorithm gets stuck?
+
++A: Our implementation of the synthesis algorithm implements a
+backtracking search (line 628), and thus cannot get stuck by "picking
+the wrong values or choices." Example 4.4 gives an example of how the
+algorithm recovers from a bad choice (lines 753-755).
 
 #### Reviewer D
 
-Thank you for pointing out the spacing issues in our submission. We
-will definitely fix them in the revision of our paper!
+- Q: How does Clouseau compare to PULSE / Concuerror / Quickstrom?
+
++ A:
+
+- Q: Why so many spacing problems?
+
++ A: Our apologies, we will certainly fix these in the next version of
+the paper.
 
 #### Reviewer E
 
-- Guarantee of witnessing a bug. As mentioned by the reviewer, Theorem
-4.5 guarantees that the synthesized controller is type-safe, which
-provides the bug witness guarantee. Precisely, this guarantee is
-defined as type soundness (Theorem 3.7), which states "will realize at
-least one trace consistent with $A$." When the execution is
-non-deterministic (i.e., the system may randomly pick different
-executions), we only guarantee that there \emph{exists} one execution
-that triggers the bug. This is also consistent with the runtime
-failures observed by reviewer in some benchmarks (e.g.,
-EspressoMachine), as explained in lines 873-876, whose handlers
-(actors) can non-deterministically fail. The reviewer is correct that
-runtime failures come from assertion violations, which indicate that
-the controller's view conflicts with the handlers' view.
+- Q: Why do controller executions sometimes fail to manifest the bug?
 
-- Abstract trace and normalization. We clarify that {\sf Clouseau} is
-indeed based on SFAs, and it can accept any frontend language (e.g.,
-symbolic regex) that can be compiled into SFAs. Our abstract trace can
-be treated as a symbolic regex without a \emph{top-level} union
-$\Pi ::= \msgB{op}{\overline{x}}{\phi} ~|~ \Pi \seqA \Pi ~|~ A^*$.
-Then, we can normalize each SFA into a finite set of abstract traces,
-as the normalization process preserves the star term instead of
-unfolding it. The current presentation in our paper attempts to mimic
-this simple idea in LTL$_f$, which has led to a lot of confusion. We
-promise to clarify this and provide a correctness proof of
-normalization in our revised paper.
++ A: Our type soundness guarantees only promises that our controllers
+"will realize _at least one_ trace consistent with $A$". The actors in
+a sytem may be nondeterministic, and may not thus may opt to act in
+way that (while consistent with its PAT) does not induce the desired
+trace. Indeed, this is the case with the EspressoMachine benchmark,
+which has actors that can non-deterministically fail (lines 873-875).
+Since our controllers use assertions to check whether an actor behaved
+in a way that could trigger a violation, Closeau reports a runtime
+failure in these cases and tries again.
 
-- Liveness. The "liveness property" mentioned in our paper actually
-refers to "eventually exists within a finite number of steps,"
-following an informal interpretation of liveness: "something good will
-eventually happen." We apologize for this misuse and promise to
-clarify it in our paper revision.
+- Q: Why LTLf?
 
-- Expressivity. We would also like to highlight that PAT provides
-constraints over each actor on its \emph{local} view, while the
-controller has a \emph{global} view. This design ensures that the
-trace in our approach is not just "one global trace of all events in
-the system" (Reviewer E), but a merged view of all actors. There can
-be multiple events for the same operation, coming from different
-actors under different local views. The global property can then
-specify whether these events are consistent or not. We provide PAT
-examples of "multiple traces per thread" properties (e.g., sequential
-consistency) and network behaviors expressed in this way, as well as a
-detailed explanation of PAT in our benchmarks (e.g., 2PC and
-RingLeaderElection) in the attached file of the author response.
++ A: Indeed, PATs use SFAs "under the hood" and could in principle accept
+any frontend language (e.g., symbolic regex) that can be compiled into
+SFAs. Accordingly, our abstract traces can actually be thought of as a
+symbolic regex without a _top-level_ union:
 
-- Using trace instead of DSL. The DSL is different from "traces
-together with some assumption(s) and assertion(s)" because of the
-local variables, which the controller can use to \emph{store} the
-results from handlers (like register automata). In our case study
-(lines 961-965), we highlight that our synthesized controller is
-better than a random controller because it can request a transaction
-id $\I{tid}$ from the database and use it in future messages. The DSL
-cannot express this situation without local variables.
+$\Pi ::=\msgB{op}{\overline{x}}{\phi} ~|~ \Pi \seqA \Pi ~|~ A^*$.
 
-- Comparison with state-of-the-art baseline. We do compare with the P
-language, which is indeed a state-of-the-art baseline that has
-verified realistic distributed models from major cloud vendors in
-recent years. The reviewer is correct that Mocket is a relevant tool;
-however, we will not add this comparison in our plan due to the
-limited revision period.
+This is actually how we normalize SFAs into a finite set of abstract
+traces, with the normalization process preserving the star term
+instead of unfolding it. Our current presentation attempted to mimic
+this idea in the less expressive setting of LTL$_f$, but is admitted
+only confusing matters. We will clean up our description and provide a
+correctness proof of normalization in the next iteration of the paper.
+
+- Q: Can Closseau test liveness properties?
+
++ A: Our paper uses the informal definition of a "liveness" property
+as "something good will eventually happen." Since we only consider
+finite traces, this means we can only check that something good will
+eventually happen after a finite number of states, and not, e.g., that
+something good will happen infinitely often. We will drop the
+reference to liveness properties in subsequent versions of the paper.
+
+- Q: Is it possible to test properties such as sequential consistency,
+linearizability, and deadlock freedom in Closeau?
+
+ + A: It is possible to capture sequential consistency and
+linearizability: the attached file includes examples of properties
+involving "multiple traces", like sequential consistency, as well as
+explanations of the PATs in our benchmarks (e.g., 2PC and
+RingLeaderElection) in the attached file. The key insight is that the
+same logical operation can trigger multiple events, spawned from
+different actors with different local views. The global property can
+then specify whether these events are consistent or not. While
+deadlock freedom
+
+- Q: Is a controller DSL anything more than a single trace with some
+constraints?
+
++ A: Controller programs are distinguished from "a single trace
+together with some assumption(s) and assertion(s)" in two important
+respects: First, controller DSLs can use local variables to store the
+contents of received messages (akin to register automata). In our case
+study (lines 961-965), for example, the synthesized controller
+requests a transaction id `tid` from the database that is used in
+future messages, something that is not possible without local
+variables. Next, our DSL's nondeterministic choice operator `⊕`,
+allows a controller to comprise multiple different abstract traces,
+which can be chosen between during execution.
+
+- Q: How does Clouseau compare to a state-of-the-art baseline?
+
++ A: We argue that our comparison with P constitues such a baseline,
+ as P is a state-of-the-art tool that has been used to validate
+ realistic distributed models at a major cloud vendor in recent
+ years. While a comparison with Mocket would certainly provide another
+ useful baseline, doing so would require a significant amount of time
+ and effort.
