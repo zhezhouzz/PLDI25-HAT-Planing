@@ -2,23 +2,20 @@
 
 We thank the reviewers for their detailed comments and suggestions.
 
-
 We begin by clarifying concerns that were shared by multiple
-reviewers. Specifically, we: (a) characterize the expressivity and limitations of our
-PAT-based type abstraction; (b) relateg the novelty of our
-methodology to other PBT and model-checking techniques; and (c)
-justify our use of PATs as being particularly well-suited to
-property-based testing of distributed system models.
-
-_BD: We do not specifically target the last point._
+reviewers. Specifically, we: (a) characterize the expressivity and
+limitations of our PAT-based type abstraction; (b) compare how our
+approach differs in terms of its goals and techniques from distributed
+systems model-checking; and, (c) relate the novelty of our methodology
+to other PBT systems.
 
 We then present a detailed changelist that proposes to (a) better
 clarify our methodology and its applicability to distributed systems
 testing; (b) incorporate additional related work as suggested by the
 reviewers; and (c) elaborate and expand our evaluation by providing
-additional experimental details as well as additional experiments
-demonstrating that our technique applies to test well-understood
-consistency and network delivery properties.
+additional experimental details as well as experiments demonstrating
+that our technique can be applied to test e.g., well-understood consistency
+and network delivery properties.
 
 Finally, we provide detailed responses to the questions raised by
 individual reviewers.
@@ -39,15 +36,15 @@ behaviors are delegated to the synthesized controllers, allowing us to
 capture and test for wide range of consistency, (e.g., XXX) and
 network delivery properties (e.g., YYY) relevant to distributed
 systems (Reviewers E); we elaborate on this point in the individual
-responses, and provide detailed examples of these in the attached
-file.
+responses, provide detailed examples of these in the attached file,
+and will incorporate these obesrvations in the revised version.
 
 Our PAT-based specifications inherit the limitations of the SFAs that
 they compile into. As one example, SFAs (even when equipped with ghost
-variables) cannot express counting properties (e.g., an event
-appearing twice as often as another event), as this exceeds the
-expressive power of regular languages. Additionally, since we only
-consider finite traces, we cannot express properties involving
+variables) cannot express counting properties (e.g., specifying that
+an event appears twice as often as another event in a trace), as this
+exceeds the expressive power of regular languages. Additionally, since
+we only consider finite traces, we cannot express properties over
 infinite traces (e.g., an event appearing infinitely many times in the
 future). For properties that are amenable to PBT-style automated
 testing, however, our SFA representations appears to be particularly
