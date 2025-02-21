@@ -180,9 +180,61 @@ clarify it in our paper revision.
 
 
 
-\section{Attached File}
+Concretely, we propose the implement the following changes in the revision, or order to address the issues discussed above and the specific criticisms posed by the reviewers addressed below:
+
+\begin{enumerate}
+    \item We will clarify that \PAT is indeed based on SFAs, accepts both symbolic LTL$_f$ and symbolic regex as frontend languages (Reviewers A, B, and E). We will also clarify the definition of abstract trace and provide a correctness proof of normalization (Reviewer E).
+    \item To provide a better interpretation of \PAT, we will include the type denotation from our supplemental material in the revision (Reviewer A).
+    \item To demonstrate that \PAT is highly automated, we will highlight that the qualifiers in \PAT are quantifier-free, which guarantees that the VCs are in EPR (Reviewer C). We will also provide additional examples of VCs derived from auxiliary type judgments (Reviewer A).
+    \item We will elaborate on our discussion in the evaluation section to provide additional details on the sorts of properties in benchmarks with respect to their testing difficulty (Reviewer A), highlight the experimental setup of the second baseline "P+M" (Reviewer A), and explain how bugs are injected into our benchmarks (Reviewer B). We will also report the average execution time (Reviewer A) and set a 2-hour time bound (Reviewer B) for the P baseline.
+    \item We will incorporate all the suggestions made by the referees regarding related work on PBT (Reviewer D), model checking (Reviewer E), and verification (Reviewers B and E), and frame our contributions in the context of these work. Thank you for bringing these to our attention!
+    \item We will fix all typos, broken space, and unclear technical terms.
+\end{enumerate}
 
 \paragraph{Detailed Response}
+
+\paragraph{Reviewer A}
+\begin{enumerate}
+    \item $\Code{DeriveTerm}$ function. Reviewer is correct where $\Code{DeriveTerm}$ function will specialize the remaining $\globalA A$ into $\epsilon$ to achieve a shorter program. We can synthesize longer programs by forcing the unfolding of $\globalA A$ during synthesis to explore longer abstract traces, although {\sf Clouseau} does not do this for efficiency reasons.
+    \item SMT solver usage and VCs. The reviewer is correct; solvers are used in SFA inclusion checks in \textsc{WfHAF} and \textsc{SubHAF}. Following the standard minterm-based SFA algorithm [12], the VCs are proof obligations that all qualifiers of symbolic events (i.e., $\phi$ in $\msgB{op}{\overline{x}}{\phi}$) are satisfiable. We will add VC examples in the revision of our paper.
+    \item Execution and assume/assert. The reviewer is correct; the execution needs to ensure that assertions hold, and we do use an SMT solver here.
+    \item Data sensitivity. Our properties are data-dependent, so bugs are also data-sensitive, but not in the sense that "a bug is very sensitive to particular values." For example, in the motivating example, we need at least two $\eff{write}$ operations on the same key with different data (as in $A'_\Code{violateRYW}$ on line 357) to lead to a potential inconsistent situation. There are no specific constraints about the values of the key or data here.
+    \item More information about "P+M". The "M" is provided from the source of benchmarks, which also contains the human-written "controller" to close the open system. Reviewer is correct that "the best such M would be equivalent to one of your synthesized controllers," but most of the time, M is not, as it is not aware of the property to test.
+    \item SubHAF. The reviewer is correct; it is a typo, and the version in the supplemental material is correct. We will include the type denotation from our supplemental material in the revision.
+    \item Abstract traces. The reviewer is correct; $A \untilA B$ should be normalized as $\globalA A \seqA B$ (no negation). This is a typo. The meaning of $\globalA \evparenth{\phi}\seqA\Pi$ is exactly as the reviewer states.
+\end{enumerate}
+
+\paragraph{Reviewer B} 
+\begin{enumerate}
+    \item Bug injection. The bugs are injected by deleting control flow from the original distributed models directly or by simulating a weakly consistent model (e.g., returning some value written before instead of the last written one).
+    \item LTL$_f$ vs. (symbolic) regex. We clarify that \PAT is indeed based on SFAs, and we can accept any front-end language (e.g., symbolic regex, as suggested by reviewers) that can be compiled into SFAs.
+\end{enumerate}
+We will clarify all these in the paper's revision. 
+
+\paragraph{Reviewer C}
+\begin{enumerate}
+    \item Guarantee constraints are in EPR. We require the qualifiers to be quantifier-free formulas to guarantee that the derived VCs are in EPR. Following the standard minterm-based SFA algorithm [12], the VCs are proof obligations that all qualifiers of symbolic events (i.e., $\phi$ in $\msgB{op}{\overline{x}}{\phi}$) are satisfiable under the type context. The type context is interpreted as prefix universally quantified substitutions (lines $565$ and $580$), which guarantees that the derived VCs are in EPR. We will highlight the constraints on qualifiers in the revision.
+    \item Incomplete and getting stuck. The reviewer is correct that our approach is not complete. We would like to clarify that our algorithm is based on backtracking (line 628) and thus will not get stuck when "picking the wrong values or choices." In our motivating example, we show how we shift to another choice when picking the wrong one (lines 753-755).
+\end{enumerate}
+
+\paragraph{Reviewer D} Thank you for pointing out the spacing issues in our submission. We will definitely fix them in the revision of our paper!
+
+\paragraph{Reviewer E}
+
+Here is the grammar-checked version of your text:
+
+\begin{enumerate}
+    \item Guarantee of witnessing a bug. As mentioned by the reviewer, Theorem 4.5 guarantees that the synthesized controller is type-safe, which provides the bug witness guarantee. Precisely, this guarantee is defined as type soundness (Theorem 3.7), which states "will realize at least one trace consistent with $A$." When the execution is non-deterministic (i.e., the system may randomly pick different executions), we only guarantee that there \emph{exists} one execution that triggers the bug. This is also consistent with the runtime failures observed by reviewer in some benchmarks (e.g., EspressoMachine), as explained in lines 873-876, whose handlers (actors) can non-deterministically fail. The reviewer is correct that runtime failures come from assertion violations, which indicate that the controller's view conflicts with the handlers' view.
+    \item Abstract trace and normalization. We clarify that {\sf Clouseau} is indeed based on SFAs, and it can accept any frontend language (e.g., symbolic regex) that can be compiled into SFAs. Our abstract trace can be treated as a symbolic regex without a \emph{top-level} union $\Pi ::= \msgB{op}{\overline{x}}{\phi} ~|~ \Pi \seqA \Pi ~|~ A^*$. Then, we can normalize each SFA into a finite set of abstract traces, as the normalization process preserves the star term instead of unfolding it. The current presentation in our paper attempts to mimic this simple idea in LTL$_f$, which has led to a lot of confusion. We promise to clarify this and provide a correctness proof of normalization in our revised paper.
+    \item Liveness. The "liveness property" mentioned in our paper actually refers to "eventually exists within a finite number of steps," following an informal interpretation of liveness: "something good will eventually happen." We apologize for this misuse and promise to clarify it in our paper revision.
+    \item Expressivity. We would also like to highlight that \PAT provides constraints over each actor on its \emph{local} view, while the controller has a \emph{global} view. This design ensures that the trace in our approach is not just "one global trace of all events in the system" (Reviewer E), but a merged view of all actors. There can be multiple events for the same operation, coming from different actors under different local views. The global property can then specify whether these events are consistent or not. We provide \PAT examples of "multiple traces per thread" properties (e.g., sequential consistency) and network behaviors expressed in this way, as well as a detailed explanation of \PAT in our benchmarks (e.g., 2PC and RingLeaderElection) in the attached file of the author response.
+    \item Using trace instead of DSL. The DSL is different from "traces together with some assumption(s) and assertion(s)" because of the local variables, which the controller can use to \emph{store} the results from handlers (like register automata). In our case study (lines 961-965), we highlight that our synthesized controller is better than a random controller because it can request a transaction id $\I{tid}$ from the database and use it in future messages. The DSL cannot express this situation without local variables.
+    \item Comparison with state-of-the-art baseline. We do compare with the P language, which is indeed a state-of-the-art baseline that has verified realistic distributed models from major cloud vendors in recent years. The reviewer is correct that Mocket is a relevant tool; however, we will not add this comparison in our plan due to the limited revision period.
+\end{enumerate}
+
+\section{Attached File}
+
+\section{More \PAT examples}
 
 \paragraph{Expressivity and Limitations of \PAT (All Reviewers)}
 
@@ -225,3 +277,14 @@ We address the expressivity concerns raised by Reviewer E with the following exa
         \rg{H \land \neg (\finalA \eff{crash})}{A}{F}
     \end{align*}
 \end{enumerate}
+
+\paragraph{Abstract Trace and Normalization (All reviewers)} 
+We clarify the semantics of our abstract traces and normalization in our algorithm. Regarding the SFA used by \PAT and the symbolic regular language (SRL), which has been proven to have equal expressive power:
+\begin{align*}
+    STL ::= \emptyset ~|~ \epsilon ~|~ \msgB{op}{\overline{x}}{\phi} ~|~ A \lorA A ~|~ A \seqA A ~|~ A^*
+\end{align*}
+our abstract trace does not include \emph{top-level} union (though union can still appear inside the star operator, and $\epsilon$ can be expressed as $\epsilon^*$)."
+\begin{align*}
+    \Pi ::= \msgB{op}{\overline{x}}{\phi} ~|~ \Pi \seqA \Pi ~|~ A^*
+\end{align*}
+Then, we can normalize each automaton in SRL into a set of abstract traces. This set is obviously finite because there are a finite number of union operators in a term, and the normalization process will preserve the star term instead of unfolding it. The main algorithm, $\Code{Synthesis}$, presented in our paper will smartly unfold the star closure $A^*$ as needed, and $\Code{DeriveTerm}$ will specialize the remaining $A^*$ into $\epsilon$ to achieve a shorter trace, as Reviewer A interpreted. We can manually unfold $A^*$ during synthesis to generate a larger program, although {\sf Clouseau} doesn't do this for efficiency reasons. The current presentation in our paper attempts to mimic this simple idea in LTL$_f$ instead of SRL, which has led to a lot of confusion. We promise to present the abstract trace and normalization in SRL in our revised paper.
