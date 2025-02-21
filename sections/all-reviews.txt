@@ -1,0 +1,362 @@
+PLDI 2025 Paper #51 Reviews and Comments
+===========================================================================
+Paper #51 Synthesizing Test Controllers from Types: Property-Guided
+Bug-Finding for Distributed System Models
+
+
+Review #51A
+===========================================================================
+
+Overall merit
+-------------
+4. Accept
+
+Reviewer expertise
+------------------
+2. Some familiarity
+
+Paper summary
+-------------
+This paper introduces an approach for effective bug-finding in distributed system models. Observing that finding bugs in distributed systems is challenging due to the state explosion stemming from both large input spaces (i.e., messages accepted by the system) and message delivery schedules, the approach outlined in the paper is to effectively prune this search space by generating a test controller _specialized_ to the property in question. These generated controllers dictate which messages are generated and when.
+
+To this end, the paper first introduces a simple loop-free language $\lambda_c$ (Lc) of test controllers, plus a type system based on Prophecy Automata Types (PATs). A PAT is essentially an LTL_f specification of the behavior of some component in some _context_, that is, another specification of the the _history_ that is assumed to precede the component and a specification of the _future_ trace that is assumed to extend it. The payoff is that if a term has the PAT $[\square \bot][A][\square\bot]$, then `e` will witness traces consistent with `A`. The paper moves on to a synthesis algorithm that produces controllers (Lc terms) given a set of handlers and a property. The result of the algorithm is a well typed term that hence witnesses traces consistent with the given property.
+
+Finally, the paper describes an implementation of the idea for P plus an evaluation. The evaluation demonstrates that a small number of controllers (often, one) is sufficient for detecting manually-injected bugs in a set of benchmarks with realistic safety properties.
+
+Comments for authors
+--------------------
+I enjoyed reading this paper. As the main ideas came into focus, it was easy to see where the paper was going, which I take as a sign of good structure and exposition.
+
+# Strengths
+- Well written with a good primary example
+- Well explained principal insights and contributions
+- Factoring the approach into the "specification" (i.e., type system) + synthesis is a good separation of concerns
+
+# Weaknesses
+- Some details regarding potential limitations are a bit murky or implicit
+- There is some room for improvement in the evaluation
+
+# Comments/Questions
+
+## Expressiveness/Limitations
+
+I think the paper could be made much stronger by discussing any potential limitations of either the approach as a whole, the particular synthesis algorithm, or the actual implementation. For example, I was actually curious about your main example when it came to section 4. Here we see the abstract trace `S<writeRsp | v = x> . [](!<writeRsp | T>) . S<readRsp | v = y && ...> . []<T>`. In the synthesis algorithm, the `[](!<writeRsp | T>)` component is not "filled-in," so to speak, so I took a look at the `DeriveTrace` implementation and saw that `DeriveTrace([]A)` doesn't actually result in any "interesting" terms. This must mean that there are potential traces that will never be explored by such synthesized controllers (even with infinite time)? That's fine, of course, but it is worth discussing.
+
+## Evaluation
+
+In general these sorts of evaluations are hard - even if there are related techniques, it is difficult to compare against _implementations_ of those techniques when the implementations are for different languages (i.e., not P). Nevertheless, I can see a few opportunities for improving the evaluation:
+- Table 1 reports synthesis time plus number of executions. I would like to see execution time as well: for example, perhaps `P+Rand` must explore a large number of executions, but can it do so before synthesis completes in some cases?
+- I can probably fill in the blanks on my own, but there isn't an explicit explanation of where the SMT solver is invoked. I believe the first mention of SMT solvers is in 3.1, but they are not mentioned again until Sec 5. Since the formal definitions of inclusion (i.e. in WfHAF) and subtyping are not included in the main paper in totality, it is not immediately apparent where you are querying a theorem prover or what the VCs look like.
+- It is a little bit unclear to me what an "execution" is. That is, the synthesized controllers exhibit some degree of data dependence (viz. assume/assert statements). My _expectation_ is that in general you'll run into a few invalid values before triggering a bug. (Actually, it was not clear to me _how_ you generate inputs that satisfy the assume statements - are you using an SMT solver here, or are you fuzzing?) If that's the case, then an execution must correspond to a test controller (which makes sense, since each controller is a fixed schedule, i.e. family of executions). If it's not the case, it would be worth clarifying (see again the question about how you make sure assumes/asserts are satisfied).
+- Relatedly, is there an opportunity here to discuss which sorts of properties you expect to be handled well by your approach, and which (if any) you expect to be more challenging? I wonder if the properties here could be classified as, roughly, "control-flow" vs. "data-flow" dependent (many of the bugs you've injected seem to be related to branch conditions). Again, if a bug is very sensitive to particular _values_, then without knowing how you sample input values I am not sure if I should expect your approach to be particularly effective. 
+- I would like to see a little more information about the "M" in P+M. That is, who supplied the M or how was it constructed? In principle, for a given property, the best such M would be equivalent to one of your synthesized controllers, correct?
+
+## General comments/questions
+
+- I was actually puzzled by SubHAF for a moment because the text said inclusion on the history/prophecy automata (H and F) is contravariant, yet the rule shows covariance for F. Then, I wasn't sure if this was a simple typo or if F should _actually_ be covariant. I was able to resolve this via the supplemental material, but it made me wonder if showing the interpretation of a [H][A][F] specification would improve section 3.
+
+- Connected with the earlier discussion, it would be helpful to show at least a few cases of how traces and terms are derived. Related to this, I saw that `A U B` is normalized to `[]!A . B`. Why is this correct? Isn't the semantics of "until" that `A` holds "at least" until `B` holds (i.e., not `!A`)?
+
+- in Algorithm 1, `y` appears to be undefined
+
+- The semantics of $\Pi$ is a little confusing. I'm guessing that  $\square\phi \cdot \Pi$ simply means some finite trace satisfying $\square\phi$ is concatenated with $\Pi$? That is, $\phi$ need not hold in $\Pi$?
+
+
+451: $\lambda^U$? should that be $\lambda^C$?
+
+454: We haven't really seen what the VCs are at this point, so mentioning them here is a little jarring.
+
+
+
+Review #51B
+===========================================================================
+
+Overall merit
+-------------
+3. Weak accept
+
+Reviewer expertise
+------------------
+2. Some familiarity
+
+Paper summary
+-------------
+Testing and model checking have been shown to be highly effective at finding critical bugs in complex distributed systems. A key challenge in model checking distributed systems is in exhaustively exploring the set of "schedules" to account for asynchronous execution order. Many property violations only occur when specific messages with specific inputs are exchanged in a particular order. Existing testing and model checking tools typically enumerate tests exhaustively (e.g., breadth first) or randomly and thus can easily miss such subtle and complex test cases that cause critical property violations.
+
+The paper considers a model of distributed systems where both inputs and the execution schedule are controllable. It makes use of the insight that one can generate inputs and schedules that are "property-directed" and thus more likely and quicker to uncover issues in a distributed model.
+
+Users provide message handlers for events that specify an over approximation (specification) of the intended behavior of the system using prophecy automata types (PATs) that are based on a fragment of symbolic linear temporal logic over finite traces. From these types, a synthesis algorithm uses a form of bidirectional backtracking search to generate programs in a domain-specific language $\lambda^c$ that are used to generate model test cases that force a violation of the property of interest.
+
+The authors implement this idea in a tool called Clouseau and integrate with the P language. They evaluate Clouseau on a set of existing benchmarks consisting of distributed models written in P and demonstrate that it can find property violations of incorrect distributed implementations in just a few test cases compared to the native P model checker, which explores all possible orderings.
+
+Comments for authors
+--------------------
+Thanks for the submission to PLDI! Overall, I found this to be a neat paper that takes a technically deep & interesting approach to help solve what is a classic problem in distributed systems. The paper is reasonably well written and makes good use of a relatively easy-to-understand running example to motivate each part of the technical approach.
+
+As I understand it, this is effectively a form of specification or property-based testing. While I'm not an expert in this area, I'm surprised that there is not more work in applying specification-based testing to distributed systems given it is a natural idea. Perhaps including a more thorough breakdown of the similarities and differences with similar work earlier in the paper could be helpful. For instance, even after reading the related work section I still did not fully understand how this approach compares to say using the TLA+ model checker to generate tests that are consistent with the temporal logic specification. While the technical approaches are quite different, is the end result similar? Or for example, how it compares to other specification-based testing tools for distributed systems like [Ivy](https://link.springer.com/chapter/10.1007/978-3-030-53291-8_12) [31], which is listed for verification but can also be used to derive tests.
+
+I also did not get a sense of whether Clouseau really improves the ability of model checkers to find bugs in practice. Given that most bugs can be found in shallow executions and given that Clouseau requires extra work on behalf of the user to provide message handler specification, it seems important to demonstrate that it can find bugs that naive model checkers cannot. For example, in the evaluation why set an arbitrary bound of 10K executions for P and (P+M)? This seems quite low and arbitrary to me, and I would have expected that you allow a more generous timeout of a few hours.
+
+It would have been nice to provide more details on how you systematically injected issues into the distributed models that you then tested with Clouseau.
+
+Why use LTL_f considering that regular expressions are strictly more expressive over finite traces and also compile to symbolic automata?
+
+Line 90: The singleton modality $\mathcal{S}$ coincides with the typical "since" operator $a \mathcal{S} b$ in LTL_f.
+
+Line 545: "violation of an RYR policy," -> RYW
+
+Line 769: "14K lines of OCaml code" why so many lines of code?
+
+
+
+Review #51C
+===========================================================================
+
+Overall merit
+-------------
+3. Weak accept
+
+Reviewer expertise
+------------------
+3. Knowledgeable
+
+Paper summary
+-------------
+This paper presents a technique and tool to generate bug triggering tests for distributed systems based on a given desired property and specifications of the handlers. The properties and the specifications of the handlers are specified using a symbolic variant of linear temporal logic. The specifications of handlers use "Prophecy Automata Types" that include both the history and future traces for a given event. The paper presents a DSL to capture test programs. It presents a type system that checks whether a given (test) program compiles with the handler specifications. It also presents an iterative synthesis process that starts with the negation of the desired property, and iteratively adds events to make every event in the trace compliant with its specification. The paper reports successful evaluation of the resulting tool on a number of use-cases written in P.
+
+Comments for authors
+--------------------
+Pros:
++ Property-guided test generation can be more directed and effective.
++ Automation
+
+Cons:
+- Practicality. The required specifications are complicated and error-prone.
+- Incompleteness of the approach
+
+This paper takes a property and tries to accordingly synthesize a test program. Starting from the property can focus the search and make it more scalable.
+
+Further, the paper claims that the process is highly-automated. In particular, it states that the constraints are reduced to effectively propositional (EPR)
+sentences. However, it does not provide any evidence for this reduction. Automation is an advantage compared to manual verification efforts.
+
+However, although the paper presents application of the approach to a number of use-cases, the approach does not seem to be practical. The required specifications are complicated, and require extra effort to be written, and to be written correctly. They are an abstract version of the implementation. For example, intersection should model branches in the implementation. Further, the approach is applied to a few properties: Read-Your-Writes (RYW), eventual consistency, strong consistency, and unique leader invariants. It is not clear if it is more widely applicable.
+
+Finally, the synthesis process is an iterative search. It is not a complete process. It may pick the wrong values or choices and get stuck. For example, it can pick the wrong intersection (branch), or pick the wrong values for messages.
+
+Line 41. "(b) captures". Is it (c)?
+
+Line 76 "Pats capture temporal and data dependencies between ...". At this point, it is vague how it does that.
+
+The introduction did not quite communicate what is hard and what is novel.
+
+Line 123: "As it executes, ...". At his point, it is not clear how.
+
+Line 133: "a type system". The role of the type system was not described properly in the introduction.
+
+Line 210: "not contain request the messages that must precede them". Incorrect grammar?
+
+Line 235: "our synthesis algorithm adds these assertions selectively". It is not clear how.
+
+Line 236: "The correctness of this program is established ..." This sentence is vague.
+
+Line 243" "its parameter types define constraints on message contents". An example can clarify this.
+
+Line 308: "at the cost of excluding some potentially erroneous executions." Later, the paper has a soundness theorem for the synthesis process. However, there seems to be no completeness. Is that correct?
+
+Line 312: "Well-typed controller programs do not generate uninteresting traces". "uninteresting traces" is informal and vague in this statement.
+
+Line 450: At the beginning of the type system section, it is good to say what the guarantee of the type system is.
+
+Line 74: "Highly automated."
+Line 454: "Verification conditions generated by our type-checker can be encoded as effectively propositional (EPR) sentences". How? The form of the constraints is not explained in the paper.
+
+Line 494: F_1 \subseteq F_2. Is this contravariant? Should it be the other way around?
+
+Line 553: "from Δ and uses TSub". Incorrect grammar?
+
+Line 377: "recursively repairs". 
+Line 597: "single even"
+The synthesis process tries to "fix" an event by adding other events. Is the any guarantee that this will end? Also can the addition of the events break the compliance of the events that are previously visited?
+
+Line 629: "takes the union of all successful runs in order to capture different orderings." It is not clear.
+
+Line 679: "Π_f and Π_f". Should it be "Π_h and Π_f"?
+
+
+
+Review #51D
+===========================================================================
+
+Overall merit
+-------------
+2. Weak reject
+
+Reviewer expertise
+------------------
+3. Knowledgeable
+
+Paper summary
+-------------
+
+This paper focuses on testing distributed systems, 
+and in particular they use a linear temporal logic inspired
+refinement type system to characterize the behavior of a system,
+and they synthesize controllers that aim to invalidate 
+speficiations written in this form: programs that generate and schedule
+interactions with the system under test.
+
+Comments for authors
+--------------------
+I really wanted to like this paper. I find the premise and the 
+domain fascinating, and the technical core---the formalization of the 
+type system---is well presented with helpful examples throughout. 
+The key idea that, if I understand correctly, makes Clouseau effective
+is the ability to use the properties under test themselves to guide 
+generation of tests: the ability to specify a historical trace that 
+must preceed a particular message, and then the ability to synthesize 
+such a trace in a compositional fashion is intriguing, well-motivated,
+and clearly quite effective.
+
+My main complaint, however, is that for a paper on property-guided bug finding
+it is missing a lot of very relevant related work---to the point where I am not 
+sure I can support this paper in its current form. In particular, as the authors
+themselves claim the paper's approach "can be seen as a form of property-based testing 
+(PBT) applied to open reactive systems". But they don't follow up with the 
+vast literature of property-based testing in this domain! 
+
+Starting with Claessen et al.'s paper on PULSE at ICFP '09, the Erlang community 
+has developed multiple PBT and model checking tools for testing distributed Erlang programs.
+As Erlang is a message-passing based general purpose language built to support 
+distributed systems, it is a also testbed for testing such systems with multiple ideas
+and papers:
+- Claessen et al. Finding Race Conditions in Erlang with QuickCheck and PULSE, ICFP 2009 
+presents a QuickCheck-style library and a user-level scheduler and applies it to testing 
+Erlang's process registry, where they identify faults of similar or greater complexity to the 2PC 
+constrained 3-sequence fault-inducing scenario. Multiple papers follow on this line of work 
+to apply it to different distributed systems (e.g. John Hughes' Mysteries of Dropbox), so it 
+would be good to know what your system adds over this. 
+- Christakis et al. Systematic Testing for Detecting Concurrency Errors in Erlang Programs, ICST 2013
+present Concuerror, a tool for systematic testing of concurrent programs by taking advantage 
+of Erlang's actor model (similar to the actors/state machines of this work). Multiple subsequent advances
+(e.g. in partial order reduction techniques) have been made to improve its efficiency.
+- O'Connor and Wickstrom. Quickstrom: property-based acceptance testing with LTL specifications. PLDI 2022
+is perhaps the closest related work: they use a testing-specific variant LTL to specify properties and 
+generate interactions to test against. 
+
+This is by no means an exhaustive list of papers, but these came to mind off the top of my head and 
+seem particularly relevant. I'm probably missing a lot of citations as this is not my area, but I'd appreciate 
+some comments by the authors in the rebuttal about the relation of Clouseau to these tools. 
+
+As an aside, the amount of vspace-hacking in this submission is 
+way over the top, to the point where it significantly distracts the 
+reader and detracts from internalizing its presentation. 
+* Way too many paragraphs have their line spacing broken (most likely
+by a negative vspace in a nearby math environment). Examples:
+ - Lines 77-82
+ - Lines 189
+ - Lines 295-301
+ - Lines 337-342
+ - Lines 527-530
+ - Lines 544-547
+ - Lines 746-750
+ - Lines 753-756
+ - Lines 897-901
+
+* The captions of figures 1 + 5 have virtually no separation from 
+the subsequent text.
+
+
+
+Review #51E
+===========================================================================
+
+Overall merit
+-------------
+2. Weak reject
+
+Reviewer expertise
+------------------
+4. Expert
+
+Paper summary
+-------------
+This paper describes a technique for identifying bugs in actor-based models of distributed systems. The core technical abstraction is that of a *prophecy automata type* (PAT), which consists of triple `[A][B][C]` where A, B, and C are formulas in a symbolic variant of LTL over finite traces (such LTL formulae can be translated to symbolic finite automata which are acceptors over the traces); the semantics of such a triple is, given any prefix of a trace satisfying A and index of the trace satisfying B at that index, the suffix of the trace should satisfy C. Given PATs for (1) constraints on all actors in the system, (2) a specification of the trace property that we are interested in, the tool automatically synthesizes a controller that guides the execution (including requiring control over explicit scheduling of events) of the distributed system to traces violating the specification. The approach is implemented in a tool called Clouseau and evaluated in comparison to naive baselines.
+
+As a type-directed approach, the work is somewhere between a testing and verification tool. The controller synthesis problem takes as input a complete model of the distributed system (similar to existing work, e.g. P), including the PATs for all handlers, and uses this to generate a test controler which is guaranteed to be type-safe. Thus it statically prunes out some, but not all, executions that need to be explored at runtime.
+
+Comments for authors
+--------------------
+This was an interesting paper to read. I like the idea of using symbolic automata and LTL (describing regular properties over symbolic traces) for specifying distributed systems, and this is amenable to formal techniques including model checking and test synthesis. I believe that PATs are novel. The paper is technically deep and shares connections to recent work using symbolic automata for interesting practical applications, including the HAT trick work at PLDI last year. However, I have several concerns with this paper and many questions that came up while reading it, which I will describe below. I believe that some of these concerns are a matter of presentation and could be clarified in the text (which at present is perhaps a bit on the difficult-to-digest side), but others may require more substantial changes. My prevailing concerns can be summarized as:
+
+1. The technical contributions leave some concerns and/or holes regarding what can be shown using PATs;
+
+2. The demonstrated applicability to distributed systems practice is limited.
+
+Regarding the first point, here are some more specific questions and technical discrepancies I would like to understand:
+
+- Controller synthesis is proven to be sound (see Theorem 4.5) meaning it is guaranteed to produce traces consistent with all of the PAT in context, including the PAT for the handlers and the specification. However, in the overall approach, rather than a sequence of messages that is guaranteed to witness a bug, we are given a set of candidate controllers and must run them on the (executable) model of the system to determine if the traces found are feasible. Indeed, we see later in the evaluation (e.g. EspressoMachine in Table 1) that it sometimes requires multiple controller executions to manifest the bug. What accounts for such runtime failures? (I suspect the answer has to do with the assume() statements in the controller DSL, and may also have to do with the ghost variables allowed which parameterize the LTL used by PAT.) The technical reason for this and the interesting expressiveness questions that are likely behind this are not explored in the paper.
+
+- Related to the above, testing is normally useful when we do not have a complete, symbolic description of the system under test. In this case we have a complete description of the system (via PAT) and that model is executable, meaning that the system should, in theory, be fully explorable. Therefore, why do the authors opt for a controller synthesis approach rather than model checking? I suspect that there is a reason is again that model checking for PAT is not tractable, but the reason for this is not explored well in the paper.
+
+- The paper describes the types as "Prophecy automata types", due to their connection with symbolic finite automata. However, the actual formalism supported is a variant of LTL over finite traces with symbolic variables. Additionally, LTL are traditionally less expressive than full regular languages (denoting only the star-free fragment), and moreover, symbolic automata traditionally cannot express some of the notions that PAT are argued to be able to express in the examples, such as "if the first event has value Send(k, v), it is later followed by an event Receive(k, v)". Indeed, these are supported through the use of "ghost variables" which parameterize the LTL formula used, making them somewhat more similar to, e.g., data/register automata that can save values. Given these discrepancies, and the fact that automata are not present in the paper at all, why did the authors choose to call the refinement type system "automata types"?
+
+- In the synthesis section comes the definition of an Abstract Trace (4.1) which appears to be a vast simplification of what either symbolic automata or LTL_f can express. The paper states "Every symbolic LTL_f formula can be normalized into a finite set of abstract traces"; I suspect this to be false as abstract traces lack Until and conjunction/intersection, which don't always decompose into concatenations. Regardless, abstract traces are described as "a sequence of singleton events" which is not an accurate description of the grammar, which describes sequences of singleton events and box expressions. The statement of equivalence is missing a proof.
+
+- At certain points when reading the paper I wondered if the approach a bit technically over-complicated. For example the controller DSL Lambda_c (Fig. 2) is more or less straight-line code without loops. So I wonder if the techniques could be phrased in a more light-weight way, for example as specific traces together with some assumption(s) and assertion(s) on those traces. Based on the example in Fig. 2, my impression was that the controller DSL does not do much more than specify a single trace with some constraints to be executed, but perhaps I am missing something more subtle about the syntax.
+
+- Finally, the paper states that both safety and liveness properties are supported, but focuses on finite traces. How are you able to encode liveness properties, as LTL over finite traces traditionally cannot express them?
+
+Regarding the connection to distributed systems practice:
+
+- The "toy" examples presented in the early sections are helpful for understanding the techniques, but are very simplified compared to real distributed systems concerns, and focus only on simple properties like strong consistency and eventual consistency of single read/write traces. Even then, the LTL used cannot fully describe certain aspects, for example the request/response LTL formulas shown appear to only constraint *at least one* response event corresponding to each put event (L84-85), rather than *exactly one*. I would like to better understand how one goes from simple examples like these to the 2PC and examples like RingLeaderElection in the evaluation.
+
+- Additionally, the approach is carried out using only one global trace of all events in the system, rather than, e.g. multiple traces per thread. As such, it is not possible to (directly) describe properties such as sequential consistency, linearizability, deadlock freedom, etc. on such traces.
+
+- I would have liked to see more details on the network model and or model(s) that can be supported. Is your approach compatible both with, for example, in-order delivery and out-of-order delivery? With allowing dropped messages? Can node failures and byzantine actors be modeled using PAT? (I suspect that they can! However, a section explicitly discussing how to model different network & failure assumptions using PAT would be invaluable.)
+
+- The paper evaluation is nice, but features only a set of case studies and examples and no state-of-the-art baseline. Of the RW, it appears that Mocket would be highly relevant. Is it possible to compare the tool with Mocket? (Also, the paper states that Mocket "requires manual instrumentation of implementations to align actions defined in the specification with the corresponding code in the implementation", but the present work does not use an implementation at all instead using only an executable model of the SUT, so I wasn't sure if this comparison is fair.)
+
+- I did greatly appreciate the 2PC case study that was carried out near the end of the evaluation (L896-915) to help demonstrate the applicability of the ideas to practice.
+
+As a final note, I felt that the work could be compared to additional related work, especially in model-based verification and model checking of distributed systems and runtime verification of distributed systems, much of which has (historically) been based on LTL, including LTL over finite traces. The paper states in the RW: "the burden we impose on test engineers, i.e., providing handler specifications as PATs, as well as a global safety/liveness property in LTL_f, is significantly less than what is required to verify full functional correctness of these designs." But this objection would not apply to automated verification using model checking, which would have a similar input/output to the present work. I would have liked to see comparisons to other *potentially* related work (please note that I am not claiming the following are necessarily related, only that they may be a starting point to search for others) such as:
+
+- Types as Models: Model Checking Message-Passing Programs.
+Sagar Chaki, Sriram K. Rajamani, and Jakob Rehof, POPL 2002
+
+- Decentralized Runtime Verification of LTL Specifications in Distributed Systems.
+Menna Mostafa and Borzoo Bonakdarpour, 2015
+
+- Distributed Synthesis for LTL Fragments
+Krishnendu Chatterjee, Thomas A. Henzinger, Jan Otop, Andreas Pavlogiannis, FMCAD 2013
+
+Line-by-line feedback
+
+L7 infinitesimally
+I would prefer a different word choice as *infinitesimally* is a word whose technical meaning does not apply here.
+
+L77-81 Something is wrong with the spacing in this paragraph (and other paragraphs throughout the paper, next example on L95)
+
+L82 "these three messages"
+The message putReq has not been mentioned
+
+L89-90
+A persistent question at this point is what might happen if two values are stored for the same key (as eventually alone does not preclude such history traces)
+
+L97-99 and L477-481 "strongly consistent (SC), i.e.,"
+This definition of strong consistency is not universal, for example this differs from linearizability, sequential consistency, which are often referred to as strong consistency.
+
+L125
+The meaning of "trace-based" is not clear at this point in the paper (and in the abstract), I'm not sure it is needed
+
+L311-312 "Well-typed controller programs do not generate uninteresting traces"
+The meaning of "uninteresting" is not defined, please replace with a more precise statement.
+
+L344-355 Fig. 5
+The grammar lists "message kinds" k but then explicitly lists out gen and obs in the expression syntax e, can the message kinds k be removed?
+
+L505 "as in other trace-based refinement type systems"
+citation needed to the trace-based refinement type system(s) in question
+
+L605-612
+This definition is quite confusing.
+Not all SFA can be written in this form, nor even all LTL formulae. The example on L616 contains a negation but the grammar on L611 does not contain negation.
