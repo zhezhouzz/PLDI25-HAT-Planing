@@ -38,7 +38,7 @@ data/register automata that are equipped with memory (Reviewer E),
 while still being amenable to efficient SMT encodings.  This
 additional expressivity easily allows the expression of various
 consistency and network delivery properties relevant to distributed
-systems; we elaborate on this point in the individual responses, and
+systems (Reviewers E); we elaborate on this point in the individual responses, and
 provide details in the attached file.
 
 The limitations of these specifications mostly stem from the
@@ -51,6 +51,19 @@ infinite traces (e.g., an event appearing infinitely many times in the
 future).  For properties that are amenable to PBT-style testing,
 however, our SFA representation appears to be particularly well-suited
 and effective.
+
+% Completeness:
+
+%- l823: Our implementation resolves this nondeterminism
+% in the algorithm via an efficient backtracking search procedure that
+% takes the union of all successful runs in order to capture different
+% orderings.
+%
+% - l921: Each controller synthesized by Algo rithm 1 fixes a
+% particular message order for generable (i.e., environment) messages,
+% so Clouseau systematically explores the space of alternative
+% orderings, returning the set of all controllers found within a
+% user-provided time bound.
 
 \subsection{Framework}
 
@@ -69,6 +82,12 @@ the actor.  This capability of dividing symbolic traces into a history
 and a future is especially valuable in the concurrent/asynchronous
 setting we consider.
 
+% Quickstrom: No postconditions, not property-directed, actions chosen
+% randomly from a set of enabled actions
+
+% Need to Read: Finding Race Conditions in Erlang with QuickCheck and
+% PULSE, ICFP 2009
+
 \subsection{Comparison to model-checking and related techniques}
 
 It's not immediately apparent to us how we might transform the
@@ -86,6 +105,15 @@ generate some (but not all) feasible executions consistent with
 provided specifications.  Our experimental evidence supports our
 contention that this tradeoff works well in practice.
 
+% Three challenges:
+%
+% 1: Need to close the system
+% 2: Complete characterization of components (to be sound)
+% 3: Huge state space, need to explore somehow
+
+% QE: In this case we have a complete description of the system (via PAT)
+% and that model is executable, meaning that the system should, in
+% theory, be fully explorable.
 
 \textbf{SJ end}
 
@@ -162,7 +190,7 @@ We clarify that the Prophecy Automata Type (\PAT) \(\rg{H}{A}{F}\) indeed uses S
 
 The limitations of \PAT mostly stem from the limitations of SFAs. For example, SFAs cannot express counting properties (e.g., an event appearing twice as often as another event), as this exceeds the expressive power of regular languages. Additionally, since we only consider finite traces, we cannot express properties involving infinite traces (e.g., an event appearing finitely many times in the future). The "liveness property" mentioned in our paper actually refers to "eventually exists within a finite number of steps," following an informal interpretation of liveness: "something good will eventually happen." We apologize for this misuse and promise to clarify it in our paper revision.
 
-Despite these limitations inherited from SFAs, our approach can still express interesting properties with the help of ghost variables, which connect events within SFAs, and prophecy automata, which allow to express \emph{local} views for each handler (actor). All verification conditions in our setting check whether the qualifiers in symbolic events are satisfiable to prevent unrealizable traces (Reviewer A). Thus, adding ghost variables (universally quantified variables) still keeps our VCs within EPR, as long as the qualifiers remain in EPR (thanks to Reviewer E; we will highlight this point in the paper revision).  
+Despite these limitations inherited from SFAs, our approach can still express interesting properties with the help of ghost variables, which connect events within SFAs, and prophecy automata, which allow to express \emph{local} views for each handler (actor). All verification conditions in our setting check whether the qualifiers in symbolic events are satisfiable to prevent unrealizable traces (Reviewer A). Thus, adding ghost variables (universally quantified variables) still keeps our VCs within EPR, as long as the qualifiers remain in EPR (thanks to Reviewer E; we will highlight this point in the paper revision).
 We address the expressivity concerns raised by Reviewer E with the following examples.
 \begin{enumerate}
     \item Expressing "exactly one". We can add a request ID as the \(\I{rid}\) field for request and response events, then constrain it so that there is at most one request and one response for each ghost variable \(i\). For example,
@@ -171,7 +199,7 @@ We address the expressivity concerns raised by Reviewer E with the following exa
     \end{align*}
     \item Expressing sequential consistency, linearizability, deadlock freedom, etc. \PAT{} indeed uses a global trace but can still express properties involving multiple participants through the local views provided by \PAT{}. We demonstrate how to encode Lamport's sequential consistency property \cite{Lamport1979} with a simple example where multiple nodes (processes) perform read and write operations on a database. Each node communicates with the database using \(\eff{readReq/Resp}\) and \(\eff{writeReq/Resp}\) events, which represent the local view of each process. Meanwhile, the controller also sends auxiliary events, \(\eff{gReadReq/Resp}\) and \(\eff{gWriteReq/Resp}\), to the database to indicate a global sequential order. By default, the order of global read/write events and actual read/write events is completely independent. Sequential consistency requires that the global order matches the local view, which can be expressed by the following property:
     \begin{align*}
-        \forall i{:}\Code{requestId}, &(\msg{writeReq}{\I{rid} = i} \implies \nextA \msg{gWriteReq}{\I{rid} = i}) \land 
+        \forall i{:}\Code{requestId}, &(\msg{writeReq}{\I{rid} = i} \implies \nextA \msg{gWriteReq}{\I{rid} = i}) \land
         \\&(\msg{writeResp}{\I{rid} = i} \implies \nextA \msg{gWriteResp}{\I{rid} = i}) \land ...
     \end{align*}
     where we require that local read and write operations align with the global ones. Additionally, sequential consistency mandates that the execution remains the same as if all operations were performed in the global order. We can formalize this constraint using the \PAT{} of the database and nodes, ensuring that the database returns the last \emph{globally} written value as its read result
@@ -183,7 +211,7 @@ We address the expressivity concerns raised by Reviewer E with the following exa
         i{:}\Code{rId} \sarr \Code{x}\hasnty{int} \sarr \rg{\finalA \msg{writeReq}{v = \Code{x}} \land \nextA \neg \eff{writeReq} \untilA \msg{readReq}{\I{id} = i} }{\lastA \msg{readRsq}{\I{id} = i}}{\allTL}
     \end{align*}}
     The \PAT{} of the database uses prophecy automata to \emph{predict} that the event \(\eff{readRsp}\) contains the last written value in the global view, while the \PAT{} of the node uses current automata to validate that the same event \(\eff{readRsp}\) returns the last written value in the local view. In general, \PAT{} allows handlers to impose multiple constraints on the same event from their respective views, effectively expressing consistency properties involving multiple participants.
-    
+
     \item Expressing Network Behavior. In-order and out-of-order delivery can be specified using the prophecy automata in the \PAT{} of each handler. Suppose a handler sends event \(\eff{E_1}\) followed by \(\eff{E_2}\). The following \PAT{} enforces in-order delivery by ensuring that \(\eff{E_1}\) is received before \(\eff{E_2}\):
     \begin{align*}
         \rg{H}{A}{\finalA (\eff{E_1} \land \nextA \finalA \eff{E_2})}
