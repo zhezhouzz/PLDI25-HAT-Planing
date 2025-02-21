@@ -5,12 +5,9 @@ We thank the reviewers for their detailed comments and suggestions.
 
 We begin by clarifying concerns that were shared by multiple
 reviewers. Specifically, we: (a) characterize the expressivity and limitations of our
-PAT-based type abstraction; (b) relateg the novelty of our
-methodology to other PBT and model-checking techniques; and (c)
-justify our use of PATs as being particularly well-suited to
-property-based testing of distributed system models.
-
-_BD: We do not specifically target the last point._
+PAT-based type abstraction and (b) relate the novelty of our
+methodology to other PBT and model-checking techniques for
+distributed systems.
 
 We then present a detailed changelist that proposes to (a) better
 clarify our methodology and its applicability to distributed systems
@@ -53,49 +50,33 @@ future). For properties that are amenable to PBT-style automated
 testing, however, our SFA representations appears to be particularly
 well-suited and effective.
 
-### Model Checking Open Distributed Systems
+### Comparison with Property-Based Testing and Verification of Open Distributed Systems
 
-% Say that we are not doing model checking.
-
-There are (at least) three main challenges to applying model checking
-the sorts of open distributed systems we target. First, these systems
-must be completed by providing a model of the unknown components. More
-importantly, our PAT specifications approximate the behavior of the
-underlying actors-- any violations found by model checking these
-specifications would have to be validated on the underlying P
-implementation of the system. Finally, the state space of these
-systems is enormous-- to fully explore the traces would require us to
-engineer state (and path) equivalence checkers, frame rules, and other
-mechanisms to minimize redundant and uninteresting exploration. This
-is precisely why P's existing model checker opts to trade off
-engineering complexity for a potentially incomplete search through the
-space, driven by a controller. The key insight of this work is that we
-can use partial specifications of actors to synthesize controllers
-that explore the space of executions in a targeted, property-directed.
-As the reviewers note, these controllers are typically incomplete: our
-algorithm is only guaranteed to produce a set of controllers that
-capture a subset of the feasible executions consistent with provided
-specifications (lines 627-629, 776-778). Our experimental evidence
-supports our contention that this tradeoff works well in practice.
-
-### Property-Based Testing of Distributed Systems
-
-There are two distinguishing features of our framework whose
-combination (we believe) separate it from other proposed PBT-style
-techniques for distributed systems. First, we target open systems, in
-which external clients can inject messages into the SUT. Second, in
-contrast to other PBT-style systems that treat the SUT as a black box,
-the (local) PAT specifications of the actors provide visibility into
-the system in terms of which (global) traces are feasible. This
-information enables us to be significantly more targeted in our search
-for a violating execution, allowing us to synthesize schedules
-_tailored to the property of interest_--- history automata induce
-"precondition" constraints on allowed behaviors that permit the
-actor to generate a new event, while prophecy automata induce
-"postcondition" constraints that regulate future actions by the
+While Clouseau's use of LTL in PATs and top-level specifications
+evokes their traditional use in the _verification_ of distributed and
+concurrent systems, we emphasize that our goal is to automatically
+test these systems in a rigorous way. While our overall methodology is
+reminiscent of other PBT-style techniques for distributed systems,
+there are two distinguishing features of our framework whose
+combination (we believe) separate it existing work. First, we target
+open systems, in which external clients can inject messages into the
+SUT. Second, in contrast to other PBT-style systems that treat the SUT
+as a black box, the (local) PAT specifications of the actors provide
+visibility into the system in terms of which (global) traces are
+feasible. This information enables us to be significantly more
+targeted in our search for a violating execution, allowing us to
+synthesize schedules _tailored to the property of interest_--- history
+automata induce "precondition" constraints on allowed behaviors that
+permit the actor to generate a new event, while prophecy automata
+induce "postcondition" constraints that regulate future actions by the
 actor. The capability of dividing symbolic traces into a history and a
 future is especially valuable in the concurrent/asynchronous setting
-we target.
+we target. As with any testing methodology, our controllers are
+typically incomplete: our algorithm is only guaranteed to produce a
+set of controllers that capture a subset of the feasible executions
+consistent with provided specifications (lines 627-629, 776-778),
+although our experimental evidence supports our contention that this
+tradeoff works well in practice.
 
 ## Summary of Proposed Changes
 Concretely, we propose the implement the following changes in the
@@ -236,9 +217,25 @@ algorithm recovers from a bad choice (lines 753-755).
 
 #### Reviewer D
 
-- Q: How does Clouseau compare to PULSE / Concuerror / Quickstrom?
+- Q: How does Clouseau compare to Claessen et al. / Concuerror / Quickstrom?
 
-+ A:
++ A: Like Clouseau, all three of these works rely on some
+specification of what actions are allowed at each step to drive
+testing: Claessen et al. use Quviq QuickCheck's support for state
+machine models to produce sequences of calls to the system under test,
+Concuerror systematically explores possible process interleavings, and
+Quickstrom uses specifications of the possible actions in its
+Specstrom language to dynamically choose the next step to take.
+Importantly, however, Quviq and Quickstrom require users to explicitly
+constrain the set of allowable actions at each step, while Concuerror
+chooses between its next schedule in a property independent way.
+Clouseau, in contrast, automatically synthesizes its search strategy
+based on both the global property of interest and the local
+specifications of the components in the SUT. Importantly, it uses the
+prophecy automata to intelligent choose actions that are relevant to
+the eventual violation of the target property.
+
+*BD: This is not my finest work, please revise :) *
 
 - Q: Why so many spacing problems?
 
@@ -319,3 +316,80 @@ which can be chosen between during execution.
  years. While a comparison with Mocket would certainly provide another
  useful baseline, doing so would require a significant amount of time
  and effort.
+
+ - Q: Why not just use model checking?
+
+There are (at least) three main challenges to applying model checking
+the sorts of open distributed systems we target. First, these systems
+must be completed by providing a model of the unknown components. More
+importantly, our PAT specifications approximate the behavior of the
+underlying actors-- any violations found by model checking these
+specifications would have to be validated on the underlying P
+implementation of the system. Finally, the state space of these
+systems is enormous-- to fully explore the traces would require us to
+engineer state (and path) equivalence checkers, frame rules, and other
+mechanisms to minimize redundant and uninteresting exploration. This
+is precisely why P's existing model checker opts to trade off
+engineering complexity for a potentially incomplete search through the
+space, driven by a controller.
+
+
+#### Scratchpad:
+
+The key insight of this work is
+that, in exchange for partial specifications of the actors in the
+sytem under test, in the form of PATs, Closeau is able to produce a
+controller that focuses the testing effort on a space of executions
+that are relevant to the property of interest.
+
+There are two distinguishing features of our framework whose
+combination (we believe) separate it from other proposed PBT-style
+techniques for distributed systems. First, we target open systems, in
+which external clients can inject messages into the SUT. Second, in
+contrast to other PBT-style systems that treat the SUT as a black box,
+the (local) PAT specifications of the actors provide visibility into
+the system in terms of which (global) traces are feasible. This
+information enables us to be significantly more targeted in our search
+for a violating execution, allowing us to synthesize schedules
+_tailored to the property of interest_--- history automata induce
+"precondition" constraints on allowed behaviors that permit the actor
+to generate a new event, while prophecy automata induce
+"postcondition" constraints that regulate future actions by the actor.
+The capability of dividing symbolic traces into a history and a future
+is especially valuable in the concurrent/asynchronous setting we
+target.
+
+
+
+As with any testing
+methodology, our controllers are typically incomplete: our algorithm
+is only guaranteed to produce a set of controllers that capture a
+subset of the feasible executions consistent with provided
+specifications (lines 627-629, 776-778), although our experimental
+evidence supports our contention that this tradeoff works well in
+practice.
+
+
+
+% Say that we are not doing model checking.
+
+There are (at least) three main challenges to applying model checking
+the sorts of open distributed systems we target. First, these systems
+must be completed by providing a model of the unknown components. More
+importantly, our PAT specifications approximate the behavior of the
+underlying actors-- any violations found by model checking these
+specifications would have to be validated on the underlying P
+implementation of the system. Finally, the state space of these
+systems is enormous-- to fully explore the traces would require us to
+engineer state (and path) equivalence checkers, frame rules, and other
+mechanisms to minimize redundant and uninteresting exploration. This
+is precisely why P's existing model checker opts to trade off
+engineering complexity for a potentially incomplete search through the
+space, driven by a controller. The key insight of this work is that we
+can use partial specifications of actors to synthesize controllers
+that explore the space of executions in a targeted, property-directed.
+As the reviewers note, these controllers are typically incomplete: our
+algorithm is only guaranteed to produce a set of controllers that
+capture a subset of the feasible executions consistent with provided
+specifications (lines 627-629, 776-778). Our experimental evidence
+supports our contention that this tradeoff works well in practice.
