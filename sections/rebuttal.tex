@@ -29,16 +29,16 @@ message via a \(\I{rid}\) field and then constrain it to be unique:
 Lamport's sequential consistency property with a simple example where
 multiple nodes (processes) perform read and write operations on a
 database. Each node communicates with the database using
-\(\eff{readReq/Resp}\) and \(\eff{writeReq/Resp}\) events, which
+\(\eff{readReq/Rsp}\) and \(\eff{writeReq/Rsp}\) events, which
 represent the local view of each process. For each of these
 operations, the controller also sends duplicate auxiliary events
-\(\eff{gReadReq/Resp}\) and \(\eff{gWriteReq/Resp}\). Then sequential
+\(\eff{gReadReq/Rsp}\) and \(\eff{gWriteReq/Rsp}\). Then sequential
 consistency can be stated as: %
 \begin{enumerate}
 \item The global order matches the local view:
   {\small\begin{align*}
            i{:}\Code{requestId} \garr &(\msg{writeReq}{\I{rid} = i} \implies \nextA \msg{gWriteReq}{\I{rid} = i}) \land
-           \\&(\msg{writeResp}{\I{rid} = i} \implies \nextA \msg{gWriteResp}{\I{rid} = i}) \land ...
+           \\&(\msg{writeRsp}{\I{rid} = i} \implies \nextA \msg{gWriteRsp}{\I{rid} = i}) \land ...
          \end{align*}}\noindent
        which requires that local operations are immediately matched by an
        auxillary operation.
@@ -47,12 +47,14 @@ consistency can be stated as: %
        performed in the global order, which can be captured in the
        types of $\eff{readReq}$ and $\eff{readRsq}$:
        {\small\begin{align*}
-        &i{:}\Code{rId} \garr \Code{x}\hasnty{int} \sarr \rg{(\finalA \msg{gWriteReq}{v = \Code{x}} \land \nextA \neg \finalA \eff{gWriteReq})}{\lastA \msg{readReq}{\I{id} = i}}{\msg{readRsp}{v = \Code{x} \land \I{id} = i}}
-        \\ & i{:}\Code{rId} \sarr \Code{x}\hasnty{int} \sarr \rg{(\finalA \msg{writeReq}{v = \Code{x}} \land \nextA \neg \eff{writeReq} \untilA \msg{readResp}{v = \Code{x} \land \I{id} = i }) }{\lastA \msg{readResp}{\I{id} = i}}{\allTL}
+        \eff{readReq}&: i{:}\Code{rId} \garr \Code{x}\hasnty{int} \sarr
+        \\&\rg{\finalA (\msg{gWriteReq}{v = \Code{x}} \land \nextA \neg \finalA \eff{gWriteReq})}{\lastA \msg{readReq}{\I{id} = i}}{\msg{readRsp}{v = \Code{x} \land \I{id} = i}}
+        \\\eff{readRsq}&: i{:}\Code{rId} \sarr \Code{x}\hasnty{int} \sarr
+        \\&\rg{\finalA (\msg{writeReq}{v = \Code{x}} \land \nextA ((\neg \eff{writeReq}) \untilA \msg{readRsp}{v = \Code{x} \land \I{id} = i })) }{\lastA \msg{readRsp}{\I{id} = i}}{\allTL}
     \end{align*}}\noindent
   where the \PAT{} of $\eff{readReq}$ requires the value read to be
   last written value according to the controller's view
-  ($\eff{gWriteReq}$), and the \PAT{} of $\eff{readResp}$ requires it
+  ($\eff{gWriteReq}$), and the \PAT{} of $\eff{readRsp}$ requires it
   to be the last value of  under actor's view
   ($\eff{writeReq}$).
 
@@ -146,12 +148,14 @@ operators are defined as the following: %
 
 {\small\begin{align*}
   \eff{readReq}&: \rg{\allTL}{\lastA\msg{readReq}{\top}}{\finalA\msg{getReq}{\top}}
-  \\\eff{getReq}&: \rg{\neg \finalA \msg{commit}{\top}}{\lastA\msg{getReq}{\top}}{\finalA\msg{getRsp}{v = -1}} \interty
-  \\&\quad x{:}\Code{tVal}\garr \rg{\finalA\msg{putReq}{v = x} \land \nextA(\finalA \msg{commit}{\top} \land \finalA\msg{putReq}{\top})}{\lastA\msg{getReq}{\top}}{\finalA\msg{getRsp}{v = x}}
+  \\\eff{getReq}&: x{:}\Code{tVal}\garr
+  \\&\rg{\finalA(\msg{putReq}{v = x} \land \nextA(\finalA \msg{commit}{\top} \land \finalA\msg{putReq}{\top}))}{\lastA\msg{getReq}{\top}}{\finalA\msg{getRsp}{v = x}} \interty
+  \\&\rg{\neg \finalA \msg{commit}{\top}}{\lastA\msg{getReq}{\top}}{\finalA\msg{getRsp}{v = -1}}
   \\\eff{writeReq}&: x{:}\Code{tVal}\sarr \rg{\allTL}{\msg{writeReq}{v= x}}{\finalA\msg{putReq}{v = x}}
   \\\eff{putReq}&: x{:}\Code{tVal}\sarr \rg{\allTL}{\msg{putReq}{v= x}}{\finalA\msg{putRsp}{v = x}}
-  \\\eff{putRsp}&: x{:}\Code{tVal}\sarr s{:}\Code{status}\sarr \\&\quad\rg{\allTL}{\msg{putRsp}{v= x \land \I{stat} = s \land s}}{\finalA\msg{writeRsp}{v = x \land \I{stat}} \land \finalA\msg{commit}{\top}} \interty
-  \\&\quad\rg{\allTL}{\msg{putRsp}{v= x \land \I{stat} = s \land \neg s}}{\finalA\msg{writeRsp}{v = x \land \neg \I{stat}} \land \finalA\msg{abort}{\top}}
+  \\\eff{putRsp}&: x{:}\Code{tVal}\sarr s{:}\Code{status}\sarr 
+  \\&\rg{\allTL}{\msg{putRsp}{v= x \land \I{stat} = s \land s}}{\finalA\msg{writeRsp}{v = x \land \I{stat}} \land \finalA\msg{commit}{\top}} \interty
+  \\&\rg{\allTL}{\msg{putRsp}{v= x \land \I{stat} = s \land \neg s}}{\finalA\msg{writeRsp}{v = x \land \neg \I{stat}} \land \finalA\msg{abort}{\top}}
 \end{align*}}\noindent
 
 Note that the database handles the \(\eff{getReq}\) message by
@@ -207,3 +211,28 @@ receive a response.
   \\\eff{eNoBeansError}&: \rg{\allTL}{\lastA\msg{eNoBeansError}{\top}}{\finalA\msg{eCoffeeMakerError}{\I{er} = \Code{NoBeansError}}}
 \end{align*}}\noindent
 When the coffee machine processes the \(\eff{eGrindBeansReq}\) and \(\eff{eStartEspressoReq}\) messages, it non-deterministically sends \(\eff{eNoWaterError}\) and \(\eff{eNoBeansError}\) to the panel. The panel then directly reports these errors to the controller via \(\eff{eCoffeeMakerError}\).
+
+\paragraph{\textsc{BankServer}} The controller simulate an user that interacts with a bank to withdraw money from their accounts, where the balance is stored in another database component.
+{\small\begin{align*}
+  &\eff{eInitAccount}: \Code{ac{:}aid} \sarr \Code{ba{:}int} \sarr 
+  \\&\quad \rg{\neg\finalA\msg{eInitAccount}{\I{accountId} = \Code{ac}}}{\lastA\msg{eInitAccount}{\I{accountId} = \Code{ac} \land \I{balance} = \Code{ba}}}{\allTL}
+  \\&\eff{eWithDrawReq}: \Code{id{:}rid} \sarr \Code{ac{:}aid} \sarr \Code{am{:}int} \sarr 
+  \\&\quad \effLR{\allTL}\effLR{\lastA\msg{eWithDrawReq}{\I{rId} = \Code{id}\land\I{accountId} = \Code{ac} \land \I{amount} = \Code{am}}}
+  \\&\quad \effLR{\finalA\msg{eReadQuery}{\I{rId} = \Code{id}\land\I{accountId} = \Code{ac} \land \I{amount} = \Code{am}}}
+  \\&\eff{eWithDrawResp}: \Code{id{:}rid} \sarr \Code{ac{:}aid} \sarr \Code{ba{:}int} \sarr \Code{st{:}status} \sarr 
+  \\&\quad \rg{\allTL}{\lastA\msg{eWithDrawResp}{\I{rId} = \Code{id}\land\I{accountId} = \Code{ac} \land \I{balance} = \Code{ba} \land \I{status} = \Code{st}}}{\allTL}
+  \\&\eff{eUpdateQuery}: \Code{ac{:}aid} \sarr \Code{ba{:}int} \sarr
+  \\&\quad \rg{\allTL}{\lastA\msg{eUpdateQuery}{\I{accountId} = \Code{ac} \land \I{balance} = \Code{ba}}}{\allTL}
+  \\&\eff{eReadQuery}: \Code{ba{:}int} \garr \Code{id{:}rid} \sarr \Code{ac{:}aid} \sarr \Code{am{:}int} \sarr 
+  \\&\quad \effLR{\finalA (\msg{eInitAccount}{\I{accountId} = \Code{ac} \land \I{balance} = \Code{ba}} \land \neg\finalA \msg{eUpdateQuery}{\I{accountId} = \Code{ac}})}
+  \\&\quad \effLR{\lastA\msg{eReadQuery}{\I{rId} = \Code{id}\land\I{accountId} = \Code{ac} \land \I{amount} = \Code{am}}}
+  \\&\quad \effLR{\finalA\msg{eReadQueryResp}{\I{rId} = \Code{id}\land\I{accountId} = \Code{ac} \land \I{amount} = \Code{am}}\land \I{balance} = \Code{ba}} \interty
+  \\&\quad \effLR{\finalA (\msg{eUpdateQuery}{\I{accountId} = \Code{ac} \land \I{balance} = \Code{ba}} \land \neg\finalA \msg{eUpdateQuery}{\I{accountId} = \Code{ac}})}
+  \\&\quad \effLR{\lastA\msg{eReadQuery}{\I{rId} = \Code{id}\land\I{accountId} = \Code{ac} \land \I{amount} = \Code{am}}}
+  \\&\quad \effLR{\finalA\msg{eReadQueryResp}{\I{rId} = \Code{id}\land\I{accountId} = \Code{ac} \land \I{amount} = \Code{am}}\land \I{balance} = \Code{ba}}
+  \\&\eff{eReadQueryResp}: \Code{id{:}rid} \sarr \Code{ac{:}aid} \sarr \Code{am{:}int} \sarr \Code{ba{:}int} \sarr 
+  \\&\quad \effLR{\allTL}\effLR{\lastA\msg{eReadQueryResp}{\I{rId} = \Code{id}\land\I{accountId} = \Code{ac} \land \I{amount} = \Code{am} \land \I{balance} = \Code{ba} \land \neg \Code{ba \geq am}}}
+  \\&\quad \effLR{\finalA\msg{eWithDrawResp}{\I{rId} = \Code{id}\land\I{accountId} = \Code{ac} \land \neg\I{status}}} \interty
+  \\&\quad \effLR{\allTL}\effLR{\lastA\msg{eReadQueryResp}{\I{rId} = \Code{id}\land\I{accountId} = \Code{ac} \land \I{amount} = \Code{am} \land \I{balance} = \Code{ba}} \land \Code{ba \geq am}}  
+  \\&\quad \effLR{\finalA\msg{eWithDrawResp}{\I{rId} = \Code{id}\land\I{accountId} = \Code{ac} \land \I{status}} \land \finalA\msg{eUpdateQuery}{\I{accountId} = \Code{ac} \land \I{balance} = \Code{ba - am}}}
+\end{align*}}\noindent
