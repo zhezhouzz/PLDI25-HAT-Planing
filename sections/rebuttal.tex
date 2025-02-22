@@ -49,7 +49,7 @@ The \PAT{}s are shown as below:
   \\\eff{won}&: \Code{n}\hasoty{tNode}{\top} \sarr \rg{\allTL}{\msg{won}{\I{l} = n}}{\allTL}
   \\\eff{wakeup}&: \Code{m}{:}\Code{tNode}\sarr \rg{\allTL}{\msg{wakeup}{\I{n} = \Code{m}}}{\finalA \msg{nominate}{\I{s} = \Code{m} \land \I{d} = \I{next}(\Code{m}) \land \I{l} = \Code{m}}}
 \end{align*}}\noindent
-The predicate \(\I{next}(n_1, n_2)\) indicates that node \(n_2\) is the next node of \(n_1\) in the ring. The two intersected \PATs of \(\eff{nominate}\) describe two situations when a node receives a nomination message:  
+The predicate \(\I{next}(n_1, n_2)\) indicates that node \(n_2\) is the next node of \(n_1\) in the ring. The two intersected \PAT{}s of \(\eff{nominate}\) describe two situations when a node receives a nomination message:  
 \begin{enumerate}  
     \item If the nominated leader has an equal ID, announce itself as the leader.  
     \item If the nominated leader has a different ID, nominate this leader.  
