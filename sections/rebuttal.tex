@@ -1,44 +1,111 @@
 
 \section{Attached File}
 
-We provide three additional examples to address the expressivity concerns from Reviewer E: 1) "exactly one put event"; 2) "multiple traces per thread" properties (i.e., sequential consistency and deadlock freedom); 3) network behaviors. We also elaborate all \PAT in our benchmarks (e.g., 2PC and RingLeaderElection required by Reviewer E).
+We provide four new examples that demonstrate the expressivity
+of \PAT{}s (Reviewer E):
+\begin{enumerate}
+\item "exactly one put event"
+
+\item sequential consistency (i.e., a behavior involving multiple
+  logical threads)
+
+\item deadlock freedom
+
+\item network behaviors
+\end{enumerate}
+We also include all the \PAT{}s used in our experimental evaluation,
+starting with the two requested by the reviewers (2PC and
+RingLeaderElection).
 
 \subsection{Additional Examples}
 
-\paragraph{Exactly one put event} We can add a request ID as the \(\I{rid}\) field and then constrain it to be unique:
+\paragraph{Exactly one put event} We can add a request ID to each
+message via a \(\I{rid}\) field and then constrain it to be unique:
 {\small\begin{align*}
-    i{:}\Code{rId} \sarr \rg{H}{\msg{putRsp}{rid = i}}{F \land \neg \finalA (\msg{putRsp}{rid = i} \land \nextA \finalA \msg{putRsp}{rid = i})}
+    i{:}\Code{rId} \sarr \rg{H}{\lastA \msg{putRsp}{rid = i}}{F \land \neg \finalA (\msg{putRsp}{rid = i} \land \nextA \finalA \msg{putRsp}{rid = i})}
 \end{align*}}
 
-\paragraph{Sequential consistency} We demonstrate how to encode Lamport's sequential consistency property with a simple example where multiple nodes (processes) perform read and write operations on a database. Each node communicates with the database using \(\eff{readReq/Resp}\) and \(\eff{writeReq/Resp}\) events, which represent the local view of each process. Meanwhile, the controller also sends auxiliary events \(\eff{gReadReq/Resp}\) and \(\eff{gWriteReq/Resp}\). Then Sequential consistency requires 
+\paragraph{Sequential consistency} We demonstrate how to encode
+Lamport's sequential consistency property with a simple example where
+multiple nodes (processes) perform read and write operations on a
+database. Each node communicates with the database using
+\(\eff{readReq/Resp}\) and \(\eff{writeReq/Resp}\) events, which
+represent the local view of each process. For each of these
+operations, the controller also sends duplicate auxiliary events
+\(\eff{gReadReq/Resp}\) and \(\eff{gWriteReq/Resp}\). Then sequential
+consistency can be stated as: %
 \begin{enumerate}
-    \item the global order matches the local view:
-    {\small\begin{align*}
-        i{:}\Code{requestId} \garr &(\msg{writeReq}{\I{rid} = i} \implies \nextA \msg{gWriteReq}{\I{rid} = i}) \land
-        \\&(\msg{writeResp}{\I{rid} = i} \implies \nextA \msg{gWriteResp}{\I{rid} = i}) \land ...
+\item The global order matches the local view:
+  {\small\begin{align*}
+           i{:}\Code{requestId} \garr &(\msg{writeReq}{\I{rid} = i} \implies \nextA \msg{gWriteReq}{\I{rid} = i}) \land
+           \\&(\msg{writeResp}{\I{rid} = i} \implies \nextA \msg{gWriteResp}{\I{rid} = i}) \land ...
+         \end{align*}}\noindent
+       which requires that local operations are immediately matched by an
+       auxillary operation.
+
+     \item The execution remains the same as if all operations were
+       performed in the global order, which can be captured in the
+       types of $\eff{readReq}$ and $\eff{readRsq}$:
+       {\small\begin{align*}
+        &i{:}\Code{rId} \garr \Code{x}\hasnty{int} \sarr \rg{(\finalA \msg{gWriteReq}{v = \Code{x}} \land \nextA \neg \finalA \eff{gWriteReq})}{\lastA \msg{readReq}{\I{id} = i}}{\msg{readRsp}{v = \Code{x} \land \I{id} = i}}
+        \\ & i{:}\Code{rId} \sarr \Code{x}\hasnty{int} \sarr \rg{(\finalA \msg{writeReq}{v = \Code{x}} \land \nextA \neg \eff{writeReq} \untilA \msg{readResp}{v = \Code{x} \land \I{id} = i }) }{\lastA \msg{readResp}{\I{id} = i}}{\allTL}
     \end{align*}}\noindent
-    which requires that local operations align with the global ones via next modality.
-    \item the execution remains the same as if all operations were performed in the global order, which can be expressed as type of $\eff{readReq}$ and $\eff{readRsq}$:
-    {\small\begin{align*}
-        &i{:}\Code{rId} \garr \Code{x}\hasnty{int} \sarr \rg{\finalA \msg{gWriteReq}{v = \Code{x}} \land \nextA \neg \finalA \eff{gWriteReq}}{\lastA \msg{readReq}{\I{id} = i}}{\msg{readRsp}{v = \Code{x} \land \I{id} = i}}
-        \\ & i{:}\Code{rId} \sarr \Code{x}\hasnty{int} \sarr \rg{\finalA \msg{writeReq}{v = \Code{x}} \land \nextA \neg \eff{writeReq} \untilA \msg{readRsq}{v = \Code{x} \land \I{id} = i } }{\lastA \msg{readRsq}{\I{id} = i}}{\allTL}
-    \end{align*}}\noindent
-    where the \PAT of $\eff{readReq}$ requires read value to be last written value under controller's view ($\eff{gWriteReq}$), and \PAT of $\eff{readRsq}$ require it as under actor's view ($\eff{writeReq}$).
+  where the \PAT{} of $\eff{readReq}$ requires the value read to be
+  last written value according to the controller's view
+  ($\eff{gWriteReq}$), and the \PAT{} of $\eff{readResp}$ requires it
+  to be the last value of  under actor's view
+  ($\eff{writeReq}$).
+
 \end{enumerate}
 
-\paragraph{Deadlock Freedom} We demonstrate how to encode deadlock freedom using a set of nodes that require resources to process. A node \( n \) can use \(\eff{require}(n, r)\) and \(\eff{release}(n, r)\) events to request and release a resource \( r \).  
-A controller will receive \(\eff{stuck}(n, r)\), which indicates that node \( n \) is stuck on resource \( r \) (i.e., it fails to \(\eff{require}\) the resource \( r \)). The controller can send an \(\eff{invoke}(n)\) message to notify node \( n \) that the corresponding resource is now available. Deadlock occurs when all nodes \( m \) are stuck on some resource:  
-{\small\(\finalA (\msg{stuck}{\I{n} = m} \land \neg\finalA\msg{invoke}{\I{n} = m})\)}.
+\paragraph{Deadlock Freedom}
 
-\paragraph{Network Behavior} Suppose an actor sends message \(\eff{E_1}\) followed by \(\eff{E_2}\). Then, in-order delivery can be expressed as {\small\(\rg{H}{A}{\finalA (\eff{E_1} \land \nextA \finalA \eff{E_2})}\)}, and out-of-order delivery can be expressed as {\small\(\rg{H}{A}{(\finalA \eff{E_1}) \land (\finalA \eff{E_2})}\)}.  
-Node failure can be represented as a special event, \(\eff{crash}\), sent by the controller. Then, a handler can process messages normally only if it has not received the \(\eff{crash}\) event: {\small\(\rg{H \land \neg (\finalA \eff{crash})}{A}{F}\)}.
+We demonstrate how to encode deadlock freedom using a set of nodes,
+each of which requires holding some resources before it can make
+progress. A node \( n \) will use the \(\eff{aquire}(n, r)\) and
+\(\eff{release}(n, r)\) events to request and release a resource
+\( r \). A controller will use the \(\eff{stuck}(n, r)\) to record
+that node \( n \) is waiting to claim a resource \( r \) (i.e., it
+fails to \(\eff{aquire}\) the resource \( r \)). The controller uses
+the \(\eff{invoke}(n)\) message to notify node \( n \) that the
+corresponding resource is now available. Deadlock occurs when all
+nodes \( m \) are stuck on some resource:
+{\small\(\finalA (\msg{stuck}{\I{n} = m} \land
+  \neg\finalA\msg{invoke}{\I{n} = m})\)}.
+
+\paragraph{Network Behavior}
+Suppose an actor sends message \(\eff{E_1}\) followed by
+\(\eff{E_2}\). Then, it can stipulate in-order delivery of these
+messages via the \PAT{} {\small\(\rg{H}{A}{\finalA (\eff{E_1} \land \nextA \finalA
+    \eff{E_2})}\)}, while an out-of-order delivery is expressed as
+{\small\(\rg{H}{A}{(\finalA \eff{E_1}) \land (\finalA \eff{E_2})}\)}.
+Node failures can be represented as a special event, \(\eff{crash}\),
+sent by the controller; the following \PAT{} states that an actor can
+only process messages if it has not received a \(\eff{crash}\) event:
+{\small\(\rg{H \land \neg (\finalA \eff{crash})}{A}{F}\)}.
 
 \subsection{Benchmark Explanation}
 
-\paragraph{\textsc{RingLeaderElection}} The benchmark involves three events: 1) The message \(\eff{nominate}(\I{s},\I{d},\I{l})\) indicates that node \(\I{s}\) sends a message to node \(\I{d}\) to nominate node \(\I{l}\) as the leader; 2) The message \(\eff{won}(\I{l})\) announces that node \(\I{l}\) is the leader;  3) The message \(\eff{wakeup}(\I{n})\) enables node \(\I{n}\) to elect a leader.  
-The unique leader property requires that no two different nodes are announced as leaders.
-The \PAT{}s are shown as below:
-{\small\begin{align*}
+\paragraph{\textsc{RingLeaderElection}} The benchmark involves three
+events:
+\begin{enumerate}
+
+\item The message \(\eff{nominate}(\I{s},\I{d},\I{l})\) indicates that
+  node \(\I{s}\) sends a message to node \(\I{d}\) to nominate node
+  \(\I{l}\) as the leader;
+
+\item The message \(\eff{won}(\I{l})\) announces
+  that node \(\I{l}\) is the leader;
+
+\item The message \(\eff{wakeup}(\I{n})\) enables node \(\I{n}\) to
+  elect a leader.
+\end{enumerate}
+  The unique leader property requires that no two
+  different nodes are announced as the leader. The \PAT{}s used in
+  this benchmark are:
+%
+  {\small
+    \begin{align*}
     \eff{nominate}&: \Code{n}\hasoty{tNode}{\top} \sarr \Code{m}\hasoty{tNode}{\top}
   \sarr \Code{ld}\hasoty{tNode}{\top} \sarr
   \\&\quad \rg{\globalA\evparenth{\top}}{\lastA\msg{nominate}{
@@ -49,43 +116,77 @@ The \PAT{}s are shown as below:
   \\\eff{won}&: \Code{n}\hasoty{tNode}{\top} \sarr \rg{\allTL}{\msg{won}{\I{l} = n}}{\allTL}
   \\\eff{wakeup}&: \Code{m}{:}\Code{tNode}\sarr \rg{\allTL}{\msg{wakeup}{\I{n} = \Code{m}}}{\finalA \msg{nominate}{\I{s} = \Code{m} \land \I{d} = \I{next}(\Code{m}) \land \I{l} = \Code{m}}}
 \end{align*}}\noindent
-The predicate \(\I{next}(n_1, n_2)\) indicates that node \(n_2\) is the next node of \(n_1\) in the ring. The two intersected \PAT{}s of \(\eff{nominate}\) describe two situations when a node receives a nomination message:  
-\begin{enumerate}  
-    \item If the nominated leader has an equal ID, announce itself as the leader.  
-    \item If the nominated leader has a different ID, nominate this leader.  
-\end{enumerate}  
-The protocol is incorrect with respect to the unique leader property because it should only agree with the input nomination message when the nominated leader has a greater ID, rather than a different ID.
 
-\paragraph{\textsc{Simplified2PC}} In this simplified version of the two-phase commit protocol, we assume transactions consist of a single update operation. The controller communicates with the coordinator via \(\eff{read/write}\) messages, and the coordinator communicates with the underlying database via \(\eff{put/get}\) messages. Depending on the response from the database, the coordinator can \(\eff{commit/abort}\) a transaction. The \PAT{}s of \(\eff{readRsp/writeRsp/commit/abort}\) are not particularly interesting, as handling these messages does not lead to sending new messages; thus, we omit them.
-The \PAT{}s of rest operators are defined as the following:
+The predicate \(\I{next}(n_1, n_2)\) indicates that node \(n_2\) is
+the next node of \(n_1\) in the ring. The two intersected \PAT{}s of
+\(\eff{nominate}\) describe two situations in which a node can receive
+a nomination message:
+
+\begin{enumerate}
+    \item If the nominated leader has an equal ID, announce itself as the leader.
+    \item If the nominated leader has a different ID, nominate this leader.
+\end{enumerate}
+
+The protocol is incorrect with respect to the unique leader property
+because a node should only confirm a previous nomination if the
+nominated leader has a greater ID, rather than a different ID.
+
+\paragraph{\textsc{Simplified2PC}}
+
+In this simplified version of the two-phase commit protocol, we assume
+transactions consist of a single update operation. The controller
+communicates with the coordinator via \(\eff{read/write}\) messages,
+and the coordinator communicates with the underlying database via
+\(\eff{put/get}\) messages. Depending on the response from the
+database, the coordinator can \(\eff{commit/abort}\) a transaction.
+The \PAT{}s of \(\eff{readRsp/writeRsp/commit/abort}\) are not
+particularly interesting, as handling these messages does not result
+in new messages being sent; thus, we omit them. The \PAT{}s of rest
+operators are defined as the following: %
+
 {\small\begin{align*}
   \eff{readReq}&: \rg{\allTL}{\lastA\msg{readReq}{\top}}{\finalA\msg{getReq}{\top}}
-  \\\eff{getReq}&: \rg{\neg \finalA \msg{commit}{\top}}{\lastA\msg{getReq}{\top}}{\finalA\msg{getRsp}{v = -1}} \interty 
+  \\\eff{getReq}&: \rg{\neg \finalA \msg{commit}{\top}}{\lastA\msg{getReq}{\top}}{\finalA\msg{getRsp}{v = -1}} \interty
   \\&\quad x{:}\Code{tVal}\garr \rg{\finalA\msg{putReq}{v = x} \land \nextA(\finalA \msg{commit}{\top} \land \finalA\msg{putReq}{\top})}{\lastA\msg{getReq}{\top}}{\finalA\msg{getRsp}{v = x}}
   \\\eff{writeReq}&: x{:}\Code{tVal}\sarr \rg{\allTL}{\msg{writeReq}{v= x}}{\finalA\msg{putReq}{v = x}}
   \\\eff{putReq}&: x{:}\Code{tVal}\sarr \rg{\allTL}{\msg{putReq}{v= x}}{\finalA\msg{putRsp}{v = x}}
   \\\eff{putRsp}&: x{:}\Code{tVal}\sarr s{:}\Code{status}\sarr \\&\quad\rg{\allTL}{\msg{putRsp}{v= x \land \I{stat} = s \land s}}{\finalA\msg{writeRsp}{v = x \land \I{stat}} \land \finalA\msg{commit}{\top}} \interty
   \\&\quad\rg{\allTL}{\msg{putRsp}{v= x \land \I{stat} = s \land \neg s}}{\finalA\msg{writeRsp}{v = x \land \neg \I{stat}} \land \finalA\msg{abort}{\top}}
 \end{align*}}\noindent
-Note that the database handles the \(\eff{getReq}\) message by returning the default value (\(-1\)) when no commit has occurred yet; otherwise, it returns the last committed value. The coordinator handles the \(\eff{getReq}\) message by sending a write response to the controller and \emph{simultaneously} sending a commit/abort to the database, which leads to a violation of the RYW property.
 
-\paragraph{\textsc{Database}} We already introduced it as our motivating example.
+Note that the database handles the \(\eff{getReq}\) message by
+returning the default value (\(-1\)) when no commit has occurred yet;
+otherwise, it returns the last committed value. The coordinator
+handles the \(\eff{getReq}\) message by sending a write response to
+the controller and \emph{simultaneously} sending a commit/abort to the
+database, which leads to a violation of the RYW property.
 
-\paragraph{\textsc{Firewall}} A set of internal and external nodes communicate through a firewall. The firewall should block messages from an external node unless that node has previously received a message from an internal node. In practice, the firewall maintains a whitelist of external nodes that are permitted to communicate with internal nodes.
-{\small\begin{align*}
-  \eff{internalReq}&: \Code{n}\hasoty{tNode}{\I{internal}(\vnu)} \sarr \Code{m}\hasoty{tNode}{\I{external}(\vnu)} \sarr 
+\paragraph{\textsc{Database}} This benchmark was used as the
+motivating example in the paper.
+
+\paragraph{\textsc{Firewall}} A set of internal and external nodes
+communicate through a firewall. The firewall should block messages
+from an external node unless that node has previously received a
+message from an internal node. In practice, the firewall maintains a
+whitelist of external nodes that are permitted to communicate with
+internal nodes. {\small\begin{align*}
+  \eff{internalReq}&: \Code{n}\hasoty{tNode}{\I{internal}(\vnu)} \sarr \Code{m}\hasoty{tNode}{\I{external}(\vnu)} \sarr
   \\&\quad\rg{\allTL}{\lastA\msg{internalReq}{\I{s} = n \land \I{d} = m}}{\finalA\msg{forwardReq}{\I{s} = n \land \I{d} = m}}
-  \\\eff{forwardReq}&: \Code{n}\hasoty{tNode}{\I{internal}(\vnu)} \sarr \Code{m}\hasoty{tNode}{\I{external}(\vnu)} \sarr 
+  \\\eff{forwardReq}&: \Code{n}\hasoty{tNode}{\I{internal}(\vnu)} \sarr \Code{m}\hasoty{tNode}{\I{external}(\vnu)} \sarr
   \\&\quad\rg{\allTL}{\lastA\msg{forwardReq}{\I{s} = n \land \I{d} = m}}{\finalA\msg{externalReq}{\I{s} = m \land \I{d} = n}}
-  \\\eff{externalReq}&: \Code{m}\hasoty{tNode}{\I{external}(\vnu)} \sarr \Code{n}\hasoty{tNode}{\I{internal}(\vnu)} \sarr 
+  \\\eff{externalReq}&: \Code{m}\hasoty{tNode}{\I{external}(\vnu)} \sarr \Code{n}\hasoty{tNode}{\I{internal}(\vnu)} \sarr
   \\&\quad
   \effLR{\finalA \msg{internalReq}{\I{d} = m}\land \neg\nextA\finalA\msg{internalReq}{\top}}
   \effLR{\lastA\msg{externalReq}{\I{s} = n \land \I{d} = m}}\\&\qquad\effLR{\finalA\msg{externalRsp}{\I{s} = n \land \I{d} = m}}\interty
   \\&\quad\rg{\neg(\finalA \msg{internalReq}{\I{d} = m}\land \neg\nextA\finalA\msg{internalReq}{\top})}{\lastA\msg{externalReq}{\I{s} = n \land \I{d} = m}}{\allTL}
-  \\\eff{externalRsp}&: \Code{m}\hasoty{tNode}{\I{external}(\vnu)} \sarr \Code{n}\hasoty{tNode}{\I{internal}(\vnu)} \sarr 
+  \\\eff{externalRsp}&: \Code{m}\hasoty{tNode}{\I{external}(\vnu)} \sarr \Code{n}\hasoty{tNode}{\I{internal}(\vnu)} \sarr
   \rg{\allTL}{\lastA\msg{externalRsp}{\I{s} = n \land \I{d} = m}}{\allTL}
 \end{align*}}\noindent
-Note that this whitelist only stores the most recent external node (as specified in the first \PAT of \(\eff{externalReq}\)), which violates the (informal) liveness property stating that all messages should eventually receive a response.
+
+Note that this whitelist only stores the most recent external node (as
+specified in the first \PAT of \(\eff{externalReq}\)), which violates
+the (informal) liveness property that all messages should eventually
+receive a response.
 
 \paragraph{\textsc{EspressoMachine}} The user interacts with a coffee machine through its control panel, where the panel must correctly interpret user inputs and handler errors from coffee machine.
 {\small\begin{align*}
@@ -95,9 +196,9 @@ Note that this whitelist only stores the most recent external node (as specified
   \\\eff{eCoffeeMakerError}&: \rg{\allTL}{\lastA\msg{eCoffeeMakerError}{\top}}{\allTL}
   \\\eff{eCoffeeMakerReady}&: \rg{\allTL}{\lastA\msg{eCoffeeMakerReady}{\top}}{\allTL}
   \\\eff{eWarmUpReq}&: \rg{\allTL}{\lastA\msg{eWarmUpReq}{\top}}{\finalA\msg{eWarmUpCompleted}{\top}}
-  \\\eff{eGrindBeansReq}&: \rg{\allTL}{\lastA\msg{eGrindBeansReq}{\top}}{\finalA\msg{eNoBeansError}{\top}} \interty 
+  \\\eff{eGrindBeansReq}&: \rg{\allTL}{\lastA\msg{eGrindBeansReq}{\top}}{\finalA\msg{eNoBeansError}{\top}} \interty
   \\&\quad \rg{\allTL}{\lastA\msg{eGrindBeansReq}{\top}}{\finalA\msg{eGrindBeansCompleted}{\top}}
-  \\\eff{eStartEspressoReq}&: \rg{\allTL}{\lastA\msg{eStartEspressoReq}{\top}}{\finalA\msg{eNoWaterError}{\top}} \interty 
+  \\\eff{eStartEspressoReq}&: \rg{\allTL}{\lastA\msg{eStartEspressoReq}{\top}}{\finalA\msg{eNoWaterError}{\top}} \interty
   \\&\quad \rg{\allTL}{\lastA\msg{eStartEspressoReq}{\top}}{\finalA\msg{eEspressoCompleted}{\top}}
   \\\eff{eGrindBeansCompleted}&: \rg{\allTL}{\lastA\msg{eGrindBeansCompleted}{\top}}{\finalA\msg{eStartEspressoReq}{\top}}
   \\\eff{eEspressoCompleted}&: \rg{\allTL}{\lastA\msg{eEspressoCompleted}{\top}}{\finalA\msg{eCoffeeMakerCompleted}{\top}}
@@ -106,4 +207,3 @@ Note that this whitelist only stores the most recent external node (as specified
   \\\eff{eNoBeansError}&: \rg{\allTL}{\lastA\msg{eNoBeansError}{\top}}{\finalA\msg{eCoffeeMakerError}{\I{er} = \Code{NoBeansError}}}
 \end{align*}}\noindent
 When the coffee machine processes the \(\eff{eGrindBeansReq}\) and \(\eff{eStartEspressoReq}\) messages, it non-deterministically sends \(\eff{eNoWaterError}\) and \(\eff{eNoBeansError}\) to the panel. The panel then directly reports these errors to the controller via \(\eff{eCoffeeMakerError}\).
-
