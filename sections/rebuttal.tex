@@ -220,6 +220,15 @@ When the coffee machine processes the \(\eff{eGrindBeansReq}\) and \(\eff{eStart
   \\&\eff{eUpdateQuery}: \Code{ac{:}aid} \sarr \Code{ba{:}int} \sarr
   \\&\quad \rg{\allTL}{\lastA\msg{eUpdateQuery}{\I{accountId} = \Code{ac} \land \I{balance} = \Code{ba}}}{\allTL}
   \\&\eff{eReadQuery}: \Code{ba{:}int} \garr \Code{id{:}rid} \sarr \Code{ac{:}aid} \sarr \Code{am{:}int} \sarr 
-  \\&\quad \effLR{\finalA \msg{eInitAccount}{}}\effLR{\lastA\msg{eReadQuery}{\I{rId} = \Code{id}\land\I{accountId} = \Code{ac} \land \I{amount} = \Code{am}}}
-  \\&\quad \effLR{\finalA\msg{eReadQuery}{\I{rId} = \Code{id}\land\I{accountId} = \Code{ac} \land \I{amount} = \Code{am}}}
+  \\&\quad \effLR{\finalA (\msg{eInitAccount}{\I{accountId} = \Code{ac} \land \I{balance} = \Code{ba}} \land \neg\finalA \msg{eUpdateQuery}{\I{accountId} = \Code{ac}})}
+  \\&\quad \effLR{\lastA\msg{eReadQuery}{\I{rId} = \Code{id}\land\I{accountId} = \Code{ac} \land \I{amount} = \Code{am}}}
+  \\&\quad \effLR{\finalA\msg{eReadQueryResp}{\I{rId} = \Code{id}\land\I{accountId} = \Code{ac} \land \I{amount} = \Code{am}}\land \I{balance} = \Code{ba}} \interty
+  \\&\quad \effLR{\finalA (\msg{eUpdateQuery}{\I{accountId} = \Code{ac} \land \I{balance} = \Code{ba}} \land \neg\finalA \msg{eUpdateQuery}{\I{accountId} = \Code{ac}})}
+  \\&\quad \effLR{\lastA\msg{eReadQuery}{\I{rId} = \Code{id}\land\I{accountId} = \Code{ac} \land \I{amount} = \Code{am}}}
+  \\&\quad \effLR{\finalA\msg{eReadQueryResp}{\I{rId} = \Code{id}\land\I{accountId} = \Code{ac} \land \I{amount} = \Code{am}}\land \I{balance} = \Code{ba}}
+  \\&\eff{eReadQueryResp}: \Code{id{:}rid} \sarr \Code{ac{:}aid} \sarr \Code{am{:}int} \sarr \Code{ba{:}int} \sarr 
+  \\&\quad \effLR{\allTL}\effLR{\lastA\msg{eReadQueryResp}{\I{rId} = \Code{id}\land\I{accountId} = \Code{ac} \land \I{amount} = \Code{am} \land \I{balance} = \Code{ba} \land \neg \Code{ba \geq am}}}
+  \\&\quad \effLR{\finalA\msg{eWithDrawResp}{\I{rId} = \Code{id}\land\I{accountId} = \Code{ac} \land \neg\I{status}}} \interty
+  \\&\quad \effLR{\allTL}\effLR{\lastA\msg{eReadQueryResp}{\I{rId} = \Code{id}\land\I{accountId} = \Code{ac} \land \I{amount} = \Code{am} \land \I{balance} = \Code{ba}} \land \Code{ba \geq am}}  
+  \\&\quad \effLR{\finalA\msg{eWithDrawResp}{\I{rId} = \Code{id}\land\I{accountId} = \Code{ac} \land \I{status}} \land \finalA\msg{eUpdateQuery}{\I{accountId} = \Code{ac} \land \I{balance} = \Code{ba - am}}}
 \end{align*}}\noindent
