@@ -29,16 +29,16 @@ message via a \(\I{rid}\) field and then constrain it to be unique:
 Lamport's sequential consistency property with a simple example where
 multiple nodes (processes) perform read and write operations on a
 database. Each node communicates with the database using
-\(\eff{readReq/Resp}\) and \(\eff{writeReq/Resp}\) events, which
+\(\eff{readReq/Rsp}\) and \(\eff{writeReq/Rsp}\) events, which
 represent the local view of each process. For each of these
 operations, the controller also sends duplicate auxiliary events
-\(\eff{gReadReq/Resp}\) and \(\eff{gWriteReq/Resp}\). Then sequential
+\(\eff{gReadReq/Rsp}\) and \(\eff{gWriteReq/Rsp}\). Then sequential
 consistency can be stated as: %
 \begin{enumerate}
 \item The global order matches the local view:
   {\small\begin{align*}
            i{:}\Code{requestId} \garr &(\msg{writeReq}{\I{rid} = i} \implies \nextA \msg{gWriteReq}{\I{rid} = i}) \land
-           \\&(\msg{writeResp}{\I{rid} = i} \implies \nextA \msg{gWriteResp}{\I{rid} = i}) \land ...
+           \\&(\msg{writeRsp}{\I{rid} = i} \implies \nextA \msg{gWriteRsp}{\I{rid} = i}) \land ...
          \end{align*}}\noindent
        which requires that local operations are immediately matched by an
        auxillary operation.
@@ -47,12 +47,14 @@ consistency can be stated as: %
        performed in the global order, which can be captured in the
        types of $\eff{readReq}$ and $\eff{readRsq}$:
        {\small\begin{align*}
-        &i{:}\Code{rId} \garr \Code{x}\hasnty{int} \sarr \rg{(\finalA \msg{gWriteReq}{v = \Code{x}} \land \nextA \neg \finalA \eff{gWriteReq})}{\lastA \msg{readReq}{\I{id} = i}}{\msg{readRsp}{v = \Code{x} \land \I{id} = i}}
-        \\ & i{:}\Code{rId} \sarr \Code{x}\hasnty{int} \sarr \rg{(\finalA \msg{writeReq}{v = \Code{x}} \land \nextA \neg \eff{writeReq} \untilA \msg{readResp}{v = \Code{x} \land \I{id} = i }) }{\lastA \msg{readResp}{\I{id} = i}}{\allTL}
+        \eff{readReq}&: i{:}\Code{rId} \garr \Code{x}\hasnty{int} \sarr
+        \\&\rg{\finalA (\msg{gWriteReq}{v = \Code{x}} \land \nextA \neg \finalA \eff{gWriteReq})}{\lastA \msg{readReq}{\I{id} = i}}{\msg{readRsp}{v = \Code{x} \land \I{id} = i}}
+        \\\eff{readRsq}&: i{:}\Code{rId} \sarr \Code{x}\hasnty{int} \sarr
+        \\&\rg{\finalA (\msg{writeReq}{v = \Code{x}} \land \nextA ((\neg \eff{writeReq}) \untilA \msg{readRsp}{v = \Code{x} \land \I{id} = i })) }{\lastA \msg{readRsp}{\I{id} = i}}{\allTL}
     \end{align*}}\noindent
   where the \PAT{} of $\eff{readReq}$ requires the value read to be
   last written value according to the controller's view
-  ($\eff{gWriteReq}$), and the \PAT{} of $\eff{readResp}$ requires it
+  ($\eff{gWriteReq}$), and the \PAT{} of $\eff{readRsp}$ requires it
   to be the last value of  under actor's view
   ($\eff{writeReq}$).
 
@@ -146,12 +148,14 @@ operators are defined as the following: %
 
 {\small\begin{align*}
   \eff{readReq}&: \rg{\allTL}{\lastA\msg{readReq}{\top}}{\finalA\msg{getReq}{\top}}
-  \\\eff{getReq}&: \rg{\neg \finalA \msg{commit}{\top}}{\lastA\msg{getReq}{\top}}{\finalA\msg{getRsp}{v = -1}} \interty
-  \\&\quad x{:}\Code{tVal}\garr \rg{\finalA\msg{putReq}{v = x} \land \nextA(\finalA \msg{commit}{\top} \land \finalA\msg{putReq}{\top})}{\lastA\msg{getReq}{\top}}{\finalA\msg{getRsp}{v = x}}
+  \\\eff{getReq}&: x{:}\Code{tVal}\garr
+  \\&\rg{\finalA(\msg{putReq}{v = x} \land \nextA(\finalA \msg{commit}{\top} \land \finalA\msg{putReq}{\top}))}{\lastA\msg{getReq}{\top}}{\finalA\msg{getRsp}{v = x}} \interty
+  \\&\rg{\neg \finalA \msg{commit}{\top}}{\lastA\msg{getReq}{\top}}{\finalA\msg{getRsp}{v = -1}}
   \\\eff{writeReq}&: x{:}\Code{tVal}\sarr \rg{\allTL}{\msg{writeReq}{v= x}}{\finalA\msg{putReq}{v = x}}
   \\\eff{putReq}&: x{:}\Code{tVal}\sarr \rg{\allTL}{\msg{putReq}{v= x}}{\finalA\msg{putRsp}{v = x}}
-  \\\eff{putRsp}&: x{:}\Code{tVal}\sarr s{:}\Code{status}\sarr \\&\quad\rg{\allTL}{\msg{putRsp}{v= x \land \I{stat} = s \land s}}{\finalA\msg{writeRsp}{v = x \land \I{stat}} \land \finalA\msg{commit}{\top}} \interty
-  \\&\quad\rg{\allTL}{\msg{putRsp}{v= x \land \I{stat} = s \land \neg s}}{\finalA\msg{writeRsp}{v = x \land \neg \I{stat}} \land \finalA\msg{abort}{\top}}
+  \\\eff{putRsp}&: x{:}\Code{tVal}\sarr s{:}\Code{status}\sarr 
+  \\&\rg{\allTL}{\msg{putRsp}{v= x \land \I{stat} = s \land s}}{\finalA\msg{writeRsp}{v = x \land \I{stat}} \land \finalA\msg{commit}{\top}} \interty
+  \\&\rg{\allTL}{\msg{putRsp}{v= x \land \I{stat} = s \land \neg s}}{\finalA\msg{writeRsp}{v = x \land \neg \I{stat}} \land \finalA\msg{abort}{\top}}
 \end{align*}}\noindent
 
 Note that the database handles the \(\eff{getReq}\) message by
