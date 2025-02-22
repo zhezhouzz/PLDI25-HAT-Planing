@@ -32,8 +32,8 @@ encodings. This additional power allows us to capture fine-grained
 dependencies between the actors in the SUT, while at the same time not
 overly constraining the behavior of the complete system. Enforcing these
 behaviors are delegated to the synthesized controllers, allowing us to
-capture and test for wide range of consistency, (e.g., XXX) and
-network delivery properties (e.g., YYY) relevant to distributed
+capture and test for wide range of consistency, (e.g., sequential consistency and deadlock freedom) and
+network delivery properties (e.g., in-order/out-of-order delivery and node failure) relevant to distributed
 systems (Reviewer E); we elaborate on this point in the individual
 responses, provide detailed examples of these in the attached file,
 and will incorporate these obesrvations in the revised version.
@@ -309,7 +309,7 @@ linearizability, and deadlock freedom in Closeau?
 
  + A: It is possible to capture these properties: the attached file
 includes examples of properties involving "multiple traces", like
-sequential consistency, as well as explanations of the PATs in our
+sequential consistency and deadlock freedom, as well as explanations of the PATs in our
 benchmarks (e.g., 2PC and RingLeaderElection) in the attached
 file. The key insight is that the same logical operation can trigger
 multiple events, spawned from different actors with different local
