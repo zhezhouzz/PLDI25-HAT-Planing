@@ -9,34 +9,37 @@ novelty of our methodology to other PBT and model-checking techniques
 for distributed systems.
 
 We then present a detailed changelist that proposes to (a) better
-clarify our methodology and its applicability to distributed systems
-testing; (b) incorporate additional related work as suggested by the
-reviewers; and (c) elaborate and expand our evaluation by providing
-additional experimental details as well as experiments demonstrating
-that our technique can be applied to test e.g., well-understood
-consistency and network delivery properties.
+clarify our methodology and its applicability to testing of
+distributed systems; (b) incorporate additional related work as
+suggested by the reviewers; and (c) elaborate and expand our
+evaluation by providing further experimental details as well as
+additional experiments demonstrating that our technique can be applied
+to test e.g., well-understood consistency and network delivery
+properties.
 
-Finally, we provide detailed responses to the questions raised by
-individual reviewers.
+Finally, we conclude with detailed responses to the questions raised
+by individual reviewers.
 
 ## Shared Concerns
 
 ### Expressivity of PATs
 
 Beyond the ability to express temporal modalities on events, the PAT
-specification language allows the use of ghost variables to capture
+specification language supports the use of ghost variables to capture
 data dependencies among specification events, resulting in a level of
-expressive power akin to data/register automata that are equipped with
-memory (Reviewer E), while still being amenable to efficient SMT
-encodings. This additional power allows us to capture fine-grained
-dependencies between the actors in the SUT, while at the same time not
-overly constraining the behavior of the complete system. Enforcing these
-behaviors are delegated to the synthesized controllers, allowing us to
-capture and test for wide range of consistency, (e.g., sequential consistency and deadlock freedom) and
-network delivery properties (e.g., in-order/out-of-order delivery and node failure) relevant to distributed
-systems (Reviewer E); we elaborate on this point in the individual
-responses, provide detailed examples of these in the attached file,
-and will incorporate these obesrvations in the revised version.
+expressive power akin to data/register automata (Reviewer E), while
+still being amenable to efficient SMT encodings. This additional power
+allows us to capture fine-grained dependencies between the actors in
+the SUT, while at the same time not overly constraining the behavior
+of the complete system. Enforcing these behaviors are delegated to the
+synthesized controllers, allowing us to capture and test for wide
+range of consistency, (e.g., sequential consistency and deadlock
+freedom) and network delivery properties (e.g., e.g.,
+in-order/out-of-order delivery and node failures) relevant to
+distributed systems (Reviewer E); we elaborate on this point in the
+individual responses, provide detailed examples of these in the
+attached file, and will incorporate these obesrvations in the revised
+version.
 
 Our PAT-based specifications inherit the limitations of the SFAs that
 they compile into. As one example, SFAs (even when equipped with ghost
@@ -336,7 +339,7 @@ which can be chosen between during execution.
 + A: We argue that our comparison with P constitues such a baseline,
  as P is a state-of-the-art tool that has been used to validate
  realistic distributed models at major cloud vendors such as Amazon in
- recent years. 
+ recent years.
 
  - Q: Why not just use model checking?
 
