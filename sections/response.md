@@ -9,34 +9,36 @@ novelty of our methodology to other PBT and model-checking techniques
 for distributed systems.
 
 We then present a detailed changelist that proposes to (a) better
-clarify our methodology and its applicability to distributed systems
-testing; (b) incorporate additional related work as suggested by the
-reviewers; and (c) elaborate and expand our evaluation by providing
-additional experimental details as well as experiments demonstrating
-that our technique can be applied to test e.g., well-understood
-consistency and network delivery properties.
+clarify our methodology and its applicability to testing of
+distributed systems; (b) incorporate additional related work as
+suggested by the reviewers; and (c) elaborate and expand our
+evaluation by providing further experimental details as well as
+additional experiments demonstrating that our technique can be applied
+to test e.g., well-understood consistency and network delivery
+properties.
 
-Finally, we provide detailed responses to the questions raised by
-individual reviewers.
+Finally, we conclude with detailed responses to the questions raised
+by individual reviewers.
 
 ## Shared Concerns
 
 ### Expressivity of PATs
 
 Beyond the ability to express temporal modalities on events, the PAT
-specification language allows the use of ghost variables to capture
+specification language supports the use of ghost variables to capture
 data dependencies among specification events, resulting in a level of
-expressive power akin to data/register automata that are equipped with
-memory (Reviewer E), while still being amenable to efficient SMT
-encodings. This additional power allows us to capture fine-grained
-dependencies between the actors in the SUT, while at the same time not
-overly constraining the behavior of the complete system. Enforcing these
-behaviors are delegated to the synthesized controllers, allowing us to
-capture and test for wide range of consistency, (e.g., sequential consistency and deadlock freedom) and
-network delivery properties (e.g., in-order/out-of-order delivery and node failure) relevant to distributed
-systems (Reviewer E); we elaborate on this point in the individual
-responses, provide detailed examples of these in the attached file,
-and will incorporate these obesrvations in the revised version.
+expressive power akin to data/register automata (Reviewer E), while
+still being amenable to efficient SMT encodings. This additional power
+allows us to capture fine-grained dependencies between the actors in
+the SUT, while at the same time not overly constraining the behavior
+of the complete system. Enforcing these behaviors are delegated to the
+synthesized controllers, allowing us to capture and test for wide
+range of consistency, (e.g., sequential consistency and deadlock
+freedom) and network delivery properties (e.g., in-order/out-of-order
+delivery and node failures) relevant to distributed systems (Reviewer
+E); we elaborate on this point in the individual responses, provide
+detailed examples of these in the attached file, and will incorporate
+these obesrvations in the revised version.
 
 Our PAT-based specifications inherit the limitations of the SFAs that
 they compile into. As one example, SFAs (even when equipped with ghost
@@ -46,19 +48,18 @@ exceeds the expressive power of regular languages. Additionally, since
 we only consider finite traces, we cannot express properties over
 infinite traces (e.g., an event appearing infinitely many times in the
 future). For properties that are amenable to PBT-style automated
-testing, however, our SFA representation appears to be particularly
-well-suited and effective.
+testing, however, SFAs appear to be particularly well-suited and
+effective.
 
 ### Comparison with Property-Based Testing and Verification of Open Distributed Systems
 
 While Clouseau's use of LTL in PATs and top-level specifications
 evokes their traditional use in the _verification_ of distributed and
-concurrent systems, we emphasize that our goal is instead focussed on
-_automatically testing_ these systems in a rigorous way.  In
-particular, PAT specifications are expected to be tailored to the
-property whose violation we are interested in exhibiting; they are
-_not_ intended to serve as a complete functional specification of an
-actor's behavior.
+concurrent systems, we emphasize that our focus is on _automatically
+testing_ these systems in a rigorous way.  As a consequence, PAT
+specifications are expected to be tailored to the property whose
+violation we are interested in exhibiting; they are _not_ intended to
+serve as a complete functional specification of an actor's behavior.
 
 In this sense, our overall methodology is more reminiscent of other
 PBT-style techniques for distributed systems.  However, there are
@@ -77,8 +78,8 @@ prophecy automata component induces "postcondition" constraints that
 regulate future actions by the actor. The capability of dividing
 symbolic traces into a history and a future is especially valuable in
 the concurrent/asynchronous setting we target.  Third, the synthesized
-controller effectively represents a state machine model that mediates the
-allowed actions actors may perform; unlike other techniques that
+controller effectively represents a state machine model that mediates
+the allowed actions actors may perform; unlike other techniques that
 require this structure to be either explicitly specified or
 implemented, Clouseau automatically generates this component from the
 set of PAT specifications attached to actors, and the global property
@@ -96,8 +97,8 @@ Concretely, we propose to implement the following changes in the
 revision, in order to clarify the issues discussed above and the
 specific criticisms posed by the reviewers addressed below:
 
--  We will clarify that PATs are indeed implemented using SFAs,
-  and support both symbolic LTL$_f$ and symbolic regex as frontend
+-  We will clarify that PATs are indeed implemented using SFAs, and
+  can support both symbolic LTL$_f$ and symbolic regexes as frontend
   languages (Reviewers A, B, and E). We will also clarify the
   definition of abstract traces and provide a correctness proof of
   normalization (Reviewer E).
@@ -106,8 +107,8 @@ specific criticisms posed by the reviewers addressed below:
   the type denotation from our supplemental material in the
   revision (Reviewer A).
 
-- To demonstrate that PATs enable a high degree of automation,
-  we will highlight that the qualifiers in PAT are quantifier-free,
+- To demonstrate that PATs enable a high degree of automation, we will
+  highlight that we target PATs whose qualifiers are quantifier-free,
   which guarantees that the VCs are in EPR (Reviewer C). We will also
   provide additional examples of VCs derived from auxiliary type
   judgments (Reviewer A).
@@ -118,8 +119,8 @@ specific criticisms posed by the reviewers addressed below:
   setup of the second baseline "P+M" (Reviewer A), and explain how
   bugs are injected into our benchmarks (Reviewer B). We will also
   report the average execution time (Reviewer A) and set a multi-hour
-  (2 or greater) time bound (Reviewer B) for the P (and P+M) baselines,
-  rather than just limiting the number of executions.
+  (3+) time bound (Reviewer B) for the P (and P+M) baselines,[^1] rather
+  than just limiting the number of executions.
 
 - We will incorporate all the suggestions made by the reviewers to
   expand our discussion of related work, better contextualizing our
@@ -131,6 +132,10 @@ specific criticisms posed by the reviewers addressed below:
 - We will fix all typos and spacing problems identified by the
   reviewers.
 
+[^1] We have already run a preliminary version of this experiment on
+  both the Paxos and Raft benchmarks using the random controller and a
+  timeout of 3 hours; in both cases no violations were detected.
+
 ## Responses to Specific Questions
 
 #### Reviewer A
@@ -138,7 +143,7 @@ specific criticisms posed by the reviewers addressed below:
 - Q: How does `DeriveTerm` handle $$\globalA A$$?
 
 + A: The reviewer correctly notes that `DeriveTerm` removes any
-remaining $$\globalA A$$ when building a controller program from an
+remaining $$\globalA A$$s when building a controller program from an
 abstract trace. Intuitively, the violation encoded in the abstract
 trace is independent of any events in $$\globalA A$$; eliding them
 allows Clouseau to safely focus on the events that are core to the
@@ -163,11 +168,11 @@ that "a bug is very sensitive to particular values." In the motivating
 example, for instance, we must see at least two $\eff{write}$
 operations on the same key with different data (as in
 $A'_\Code{violateRYW}$ on line 357) in order to trigger violation---
-however, this bug does not depend on a specific value of the key or data.
+however, this bug does not depend on a specific key or value.
 
 - Q: Where do the manually written controllers come from?
 
-+ A: Several of our benchmarks provide a manually written controller
++ A: Several of our benchmarks include a manually written controller
 that closes the system-- we use these independently written
 controllers as the "M"s in our "P+M" benchmarks. Indeed, "the best
 such M would be equivalent to one of your synthesized controllers,"
@@ -188,7 +193,18 @@ A \seqA B$ (no negation). The meaning of $\globalA
 \evparenth{\phi}\seqA\Pi$ is exactly as the reviewer states.
 
 #### Reviewer B
-- Q: How are bug injected into the benchmarks?
+
+- Q: Why bound the number of executions instead of setting a timeout
+  of a few hours?
+
+- A: This is an excellent suggestion! We have run this experiment on
+  both the Paxos and Raft benchmarks using the random controller and a
+  timeout of 3 hours; in both cases no violations were detected. We
+  plan to run a more comprehensive version of this experiment for all
+  of our benchmarks and include the results in the next iteration of
+  the paper.
+
+- Q: How are bugs injected into the benchmarks?
 
 + A: We introduce bugs in two ways: 1) by deleting control flow paths
 from the original distributed models, and 2) by introducing weakly
@@ -225,9 +241,9 @@ which can be accomplished via a simple syntactic check on PATs.
 
 - Q: What happens if the synthesis algorithm gets stuck?
 
-+A: Our implementation of the synthesis algorithm implements a
-backtracking search (line 628), and thus cannot get stuck by "picking
-the wrong values or choices." Example 4.4 gives an example of how the
++A: Our implementation of the synthesis algorithm uses a backtracking
+search procedure (line 628), and thus cannot get stuck by "picking the
+wrong values or choices." Example 4.4 gives an example of how the
 algorithm recovers from a bad choice (lines 753-755).
 
 #### Reviewer D
@@ -245,38 +261,38 @@ Importantly, however, Quviq and Quickstrom require users to explicitly
 constrain the set of allowable actions at each step, while Concuerror
 chooses between its next schedule in a property independent way.
 Clouseau, in contrast, automatically synthesizes its search strategy
-based on both the global property of interest and the local
-specifications of the components in the SUT. Importantly, it uses the
+based on both the global property of interest and the local PAT
+specifications of the components in the SUT. Importantly, it uses
 prophecy automata to intelligent choose actions that are relevant to
 the eventual violation of the target property, a major point of
 distinction from these other efforts.  Another way to think about
-these different systems compare is that while all of them effectively
-use some kind of model-based state machine structure to regulate
-interactions among the components under test, only Clouseau considers
-how we might generate this state machine model (aka test controller)
-automatically from actor-local specifications.
+these different systems is that while all four effectively use some
+kind of model-based state machine structure to regulate interactions
+among the components under test, only Clouseau considers how we might
+generate this state machine model (aka test controller) automatically
+from actor-local specifications.
 
 - Q: Why so many spacing problems?
 
 + A: Our apologies, although the spacing issues were triggered by
-"acmart", we will certainly work to fixing them in the next version
-of the paper.
+`acmart`, we will certainly work to fixing them in the next version of
+the paper.
 
 #### Reviewer E
 
 - Q: Why do controller executions sometimes fail to manifest the bug?
 
-+ A: Our type soundness guarantees only promises that our controllers
++ A: Our type soundness guarantee only promises that our controllers
 "will realize _at least one_ trace consistent with $A$". The actors in
 a sytem may be nondeterministic, and may not thus may opt to act in
-ways that (while consistent with its PAT) does not induce the desired
+ways that (while consistent with their PATs) do not induce the desired
 trace. Indeed, this is the case with the EspressoMachine benchmark,
 which has actors that can non-deterministically fail (lines 873-875).
 Since our controllers use assertions to check whether an actor behaved
 in a way that could trigger a violation, Closeau reports a runtime
 failure in these cases and tries again.
 
-- Q: Why LTLf?
+- Q: Why LTL$_f$?
 
 + A: Indeed, PATs use SFAs "under the hood" and could in principle accept
 any frontend language (e.g., symbolic regex) that can be compiled into
@@ -286,13 +302,13 @@ symbolic regex without a _top-level_ union:
 $\Pi ::=\msgB{op}{\overline{x}}{\phi} ~|~ \Pi \seqA \Pi ~|~ A^*$.
 
 This is actually how we normalize SFAs into a finite set of abstract
-traces, with the normalization process preserving the star term
-instead of unfolding it. Our current presentation attempted to mimic
-this idea in the less expressive setting of LTL$_f$ to simplify the
+traces, with the normalization process preserving Kleene star instead
+of unrolling it. Our current presentation attempted to mimic this idea
+in the less expressive setting of LTL$_f$, in order to simplify the
 presentation, but we will be more explicit about the underlying SFA
-representation and the normalization procedure.  We will clarify our
-description on this issue and provide a correctness proof of
-normalization in the next iteration of the paper.
+representation and the normalization procedure going forward.  We will
+clarify our description on this issue and provide a correctness proof
+of normalization in the next iteration of the paper.
 
 - Q: Can Closseau test liveness properties?
 
@@ -300,22 +316,22 @@ normalization in the next iteration of the paper.
 as "something good will eventually happen." Since we only consider
 finite traces, this means we can only check that something good will
 eventually happen after a finite number of states, and not, e.g., that
-something good will happen infinitely often. We will be precise about
-our characterization of what we mean by liveness or drop the
-reference altogether in subsequent versions of the paper.
+something good will happen infinitely often. We will either be precise
+about what we mean by liveness or drop the reference altogether in
+subsequent versions of the paper.
 
 - Q: Is it possible to test properties such as sequential consistency,
 linearizability, and deadlock freedom in Closeau?
 
- + A: It is possible to capture these properties: the attached file
-includes examples of properties involving "multiple traces", like
-sequential consistency and deadlock freedom, as well as explanations of the PATs in our
-benchmarks (e.g., 2PC and RingLeaderElection) in the attached
-file. The key insight is that the same logical operation can trigger
-multiple events, spawned from different actors with different local
-views. The global property can then specify whether these events are
-consistent or not.  Similar reasoning can be used to specify
-deadlocks; please see the attached file for details.
+ + A: It is indeed possible to capture these properties: the attached
+file includes examples of properties involving "multiple traces", like
+sequential consistency and deadlock freedom, as well as explanations
+of the PATs in our benchmarks (e.g., 2PC and RingLeaderElection) in
+the attached file. The key insight is that the same logical operation
+can trigger multiple events, spawned from different actors with
+different local views. The global property can then specify whether
+these events are consistent or not.  Similar reasoning can be used to
+specify deadlocks; please see the attached file for details.
 
 - Q: Is a controller DSL anything more than a single trace with some
 constraints?
@@ -336,7 +352,7 @@ which can be chosen between during execution.
 + A: We argue that our comparison with P constitues such a baseline,
  as P is a state-of-the-art tool that has been used to validate
  realistic distributed models at major cloud vendors such as Amazon in
- recent years. 
+ recent years.
 
  - Q: Why not just use model checking?
 
@@ -344,8 +360,8 @@ There are (at least) three main challenges to applying model checking
 the sorts of open distributed systems we target. First, these systems
 must be completed by providing a model of the unknown components
 (e.g., the client). More importantly, our PAT specifications
-approximate the behavior of the underlying actors-- any violations
-found by model checking these specifications would have to be
+_approximate_ the behavior of the underlying actors-- any violations
+found by model checking these specifications would still have to be
 validated on the underlying P implementation of the system. Finally,
 the state space of these systems is enormous-- to fully explore the
 traces would require us to engineer state (and path) equivalence
@@ -354,7 +370,6 @@ uninteresting exploration.  For these reasons, we choose to trade off
 the inherent engineering complexity that would be required to build an
 effective model-checking implementation for a potentially incomplete
 search through the space, driven by a controller.
-
 
 #### Scratchpad:
 
