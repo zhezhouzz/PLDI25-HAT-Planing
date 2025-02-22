@@ -119,8 +119,8 @@ specific criticisms posed by the reviewers addressed below:
   setup of the second baseline "P+M" (Reviewer A), and explain how
   bugs are injected into our benchmarks (Reviewer B). We will also
   report the average execution time (Reviewer A) and set a multi-hour
-  (2 or greater) time bound (Reviewer B) for the P (and P+M) baselines,
-  rather than just limiting the number of executions.
+  (3+) time bound (Reviewer B) for the P (and P+M) baselines,[^1] rather
+  than just limiting the number of executions.
 
 - We will incorporate all the suggestions made by the reviewers to
   expand our discussion of related work, better contextualizing our
@@ -131,6 +131,10 @@ specific criticisms posed by the reviewers addressed below:
 
 - We will fix all typos and spacing problems identified by the
   reviewers.
+
+[^1] We have already run a preliminary version of this experiment on
+  both the Paxos and Raft benchmarks using the random controller and a
+  timeout of 3 hours; in both cases no violations were detected.
 
 ## Responses to Specific Questions
 
@@ -189,6 +193,17 @@ A \seqA B$ (no negation). The meaning of $\globalA
 \evparenth{\phi}\seqA\Pi$ is exactly as the reviewer states.
 
 #### Reviewer B
+
+- Q: Why bound the number of executions instead of setting a timeout
+  of a few hours?
+
+- A: This is an excellent suggestion! We have run this experiment on
+  both the Paxos and Raft benchmarks using the random controller and a
+  timeout of 3 hours; in both cases no violations were detected. We
+  plan to run a more comprehensive version of this experiment for all
+  of our benchmarks and include the results in the next iteration of
+  the paper.
+
 - Q: How are bugs injected into the benchmarks?
 
 + A: We introduce bugs in two ways: 1) by deleting control flow paths
