@@ -107,18 +107,3 @@ Note that this whitelist only stores the most recent external node (as specified
 \end{align*}}\noindent
 When the coffee machine processes the \(\eff{eGrindBeansReq}\) and \(\eff{eStartEspressoReq}\) messages, it non-deterministically sends \(\eff{eNoWaterError}\) and \(\eff{eNoBeansError}\) to the panel. The panel then directly reports these errors to the controller via \(\eff{eCoffeeMakerError}\).
 
-% \paragraph{\textsc{BankServer}} The controller simulate an user that interacts with a bank to withdraw money from their accounts, where the balance is stored in another database component.
-% {\small\begin{align*}
-%   &\eff{eInitAccount}: \Code{ac{:}aid} \sarr \Code{ba{:}int} \sarr 
-%   \\&\quad \rg{\neg\finalA\msg{eInitAccount}{\I{accountId} = \Code{ac}}}{\lastA\msg{eInitAccount}{\I{accountId} = \Code{ac} \land \I{balance} = \Code{ba}}}{\allTL}
-%   \\&\eff{eWithDrawReq}: \Code{id{:}rid} \sarr \Code{ac{:}aid} \sarr \Code{am{:}int} \sarr 
-%   \\&\quad \effLR{\allTL}\effLR{\lastA\msg{eWithDrawReq}{\I{rId} = \Code{id}\land\I{accountId} = \Code{ac} \land \I{amount} = \Code{am}}}
-%   \\&\quad \effLR{\finalA\msg{eReadQuery}{\I{rId} = \Code{id}\land\I{accountId} = \Code{ac} \land \I{amount} = \Code{am}}}
-%   \\&\eff{eWithDrawResp}: \Code{id{:}rid} \sarr \Code{ac{:}aid} \sarr \Code{ba{:}int} \sarr \Code{st{:}status} \sarr 
-%   \\&\quad \rg{\allTL}{\lastA\msg{eWithDrawResp}{\I{rId} = \Code{id}\land\I{accountId} = \Code{ac} \land \I{balance} = \Code{ba} \land \I{status} = \Code{st}}}{\allTL}
-%   \\&\eff{eUpdateQuery}: \Code{ac{:}aid} \sarr \Code{ba{:}int} \sarr
-%   \\&\quad \rg{\allTL}{\lastA\msg{eUpdateQuery}{\I{accountId} = \Code{ac} \land \I{balance} = \Code{ba}}}{\allTL}
-%   \\&\eff{eReadQuery}: \Code{ba{:}int} \garr \Code{id{:}rid} \sarr \Code{ac{:}aid} \sarr \Code{am{:}int} \sarr 
-%   \\&\quad \effLR{\finalA \msg{eInitAccount}{}}\effLR{\lastA\msg{eReadQuery}{\I{rId} = \Code{id}\land\I{accountId} = \Code{ac} \land \I{amount} = \Code{am}}}
-%   \\&\quad \effLR{\finalA\msg{eReadQuery}{\I{rId} = \Code{id}\land\I{accountId} = \Code{ac} \land \I{amount} = \Code{am}}}
-% \end{align*}}\noindent
