@@ -331,15 +331,15 @@ specific criticisms posed by the reviewers addressed below:
   linearizability, and deadlock freedom in Closeau?
 
 + A: It is indeed possible to capture these properties: the attached
-  file includes examples of properties involving "multiple traces",
-  like sequential consistency and deadlock freedom, as well as
-  explanations of the PATs in our benchmarks (e.g., 2PC and
-  RingLeaderElection) in the attached file. The key insight is that
-  the same logical operation can trigger multiple events, spawned from
-  different actors with different local views. The global property can
-  then specify whether these events are consistent or not.  Similar
-  reasoning can be used to specify deadlocks; please see the attached
-  file for details.
+  file includes examples of properties involving the need to deal with
+  "multiple traces", like sequential consistency and deadlock freedom,
+  as well as explanations of the PATs in our benchmarks (e.g., 2PC and
+  RingLeaderElection).  The key insight is that the same logical
+  operation can trigger multiple events, spawned from different actors
+  with different local views. The global property can then specify
+  whether these events are consistent or not.  Similar reasoning can
+  be used to specify deadlocks; please see the attached file for
+  details.
 
 - Q: Is a controller DSL anything more than a single trace with some
   constraints?
