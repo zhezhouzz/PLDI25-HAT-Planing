@@ -26,7 +26,7 @@ message via a \(\I{rid}\) field and then constrain it to be unique:
 \end{align*}}
 
 \paragraph{Sequential consistency} We demonstrate how to encode
-Lamport's sequential consistency property with a simple example where
+a sequential consistency property with a simple example where
 multiple nodes (processes) perform read and write operations on a
 database. Each node communicates with the database using
 \(\eff{readReq/Rsp}\) and \(\eff{writeReq/Rsp}\) events, which
@@ -52,10 +52,10 @@ consistency can be stated as: %
         \\\eff{readRsq}&: i{:}\Code{rId} \sarr \Code{x}\hasnty{int} \sarr
         \\&\rg{\finalA (\msg{writeReq}{v = \Code{x}} \land \nextA ((\neg \eff{writeReq}) \untilA \msg{readRsp}{v = \Code{x} \land \I{id} = i })) }{\lastA \msg{readRsp}{\I{id} = i}}{\allTL}
     \end{align*}}\noindent
-  where the \PAT{} of $\eff{readReq}$ requires the value read to be
+  where the type of $\eff{readReq}$ requires the value read to be
   last written value according to the controller's view
   ($\eff{gWriteReq}$), and the \PAT{} of $\eff{readRsp}$ requires it
-  to be the last value of  under actor's view
+  to be the last value written under the actor's view
   ($\eff{writeReq}$).
 
 \end{enumerate}
@@ -64,7 +64,7 @@ consistency can be stated as: %
 
 We demonstrate how to encode deadlock freedom using a set of nodes,
 each of which requires holding some resources before it can make
-progress. A node \( n \) will use the \(\eff{aquire}(n, r)\) and
+progress. A node \( n \) will use \(\eff{aquire}(n, r)\) and
 \(\eff{release}(n, r)\) events to request and release a resource
 \( r \). A controller will use the \(\eff{stuck}(n, r)\) to record
 that node \( n \) is waiting to claim a resource \( r \) (i.e., it
