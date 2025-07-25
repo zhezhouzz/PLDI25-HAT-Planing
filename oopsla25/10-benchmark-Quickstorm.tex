@@ -1,0 +1,80 @@
+\section{Benchmarks}
+
+\subsection{QuickStorm: AudioPlayer}
+
+The original QuickStorm paper~\cite{quickstorm} presents a case study on ``TodoMVC,'' a to-do list application. While this example is comprehensive, its complexity makes it less suitable for concise illustration. Instead, we focus on a simpler application—the ``Audio Player''—which is featured in the QuickStorm tutorial.
+The Audio Player application allows the user to play or pause audio files by clicking a single button. Each user interaction toggles the state between playing and paused. After each operation, the application displays the current state (either playing or paused) and the elapsed playback time.
+
+\paragraph{PAT model} I have abstracted the application into the following APIs:
+\begin{minted}[xleftmargin=5pt, numbersep=4pt, linenos = true, fontsize = \footnotesize, escapeinside=??]{OCaml}
+    type init = unit (* initialize the AudioPlayer *)
+    type click = unit (* click the button *)
+    type displayTime = int (* the elapsed playback time *)
+    type displayText = string (* playing or paised *)
+\end{minted}
+The user can do $\eff{init}$ to initialize the AudioPlayer, and then do $\eff{click}$ to play or pause the audio file. The application will return the current state via $\eff{displayText}$ and the elapsed playback time via $\eff{playTime}$. The property of the AudioPlayer is that the elapsed playback time should be non-decreasing, these we define the following property to test against:
+\begin{align*}
+    \phi \doteq \exists t_1{:}\Int . \finalA (\msg{displayTime}{\vnu = t_1} \land \nextA \finalA \msg{displayTime}{\vnu < t_2})
+\end{align*}\noindent
+We further expect executions to adhere to the following behavioral patterns:
+\begin{itemize}
+    \item \textbf{Paused at initialization}: Upon initialization, the application should be in the paused state.
+    \item \textbf{Elapsed time starts at 0}: The displayed playback time should start from 0.
+    \item \textbf{Eventual pause}: If the application is playing, it should eventually return to the paused state.
+    \item \textbf{Pause preserves display time}: While paused, the displayed playback time should remain unchanged.
+    \item \textbf{Automatic time update while playing}: When the application is playing, the displayed playback time should increase automatically.
+\end{itemize}
+
+Then, one expected trace is:
+\begin{align*}
+    &\eff{init}();\eff{displayText}("paused");\\
+    &\eff{click}();\eff{displayText}("playing");\eff{displayTime}(0);\eff{displayTime}(1);\eff{displayTime}(0);\\
+    &\eff{click}();\eff{displayText}("paused");
+\end{align*}\noindent
+If click the button too fast, the displayed may not even update.
+
+\begin{figure}[h!]
+    \centering
+    {\small\begin{align*}
+        &\eff{init}: \pat{\emptyset}{\msg{init}{\top}}{\untilA (\neg\msg{click}{\top}) \msg{displayText}{\vnu = \Code{paused}}}
+        \\ \\
+        &\eff{click}: \pat{\I{LastPaused}}{\msg{click}{\top}}{\msg{displayText}{\vnu = \Code{playing}} \land \untilA (\neg\msg{click}{\top}) \msg{displayTime}{\top}} \interty\\
+        &\qquad \pat{\I{LastPaused}}{\msg{click}{\top}}{\msg{displayText}{\vnu = \Code{playing}} \land \untilA (\neg\msg{displayTime}{\top}) \msg{click}{\top}} \interty\\
+        &\qquad \pat{\neg\I{LastPaused}}{\msg{click}{\top}}{\msg{displayText}{\vnu = \Code{paused}}}\\
+        \\ \\
+        &\eff{displayTime}: \pat{\neg\finalA\msg{displayTime}{\top}}{\msg{displayTime}{\vnu = 0}}{\untilA (\neg\msg{click}{\top}) \msg{displayTime}{\vnu \geq 0}} \\
+        &\qquad \pat{\neg\finalA\msg{displayTime}{\top}}{\msg{displayTime}{\vnu = 0}}{\untilA (\neg\msg{displayTime}{\top}) \msg{click}{\geq 0}} \interty\\
+        &\qquad \pat{\finalA\msg{displayTime}{\top}}{\msg{displayTime}{\vnu \geq 0}}{\untilA (\neg\msg{click}{\top}) \msg{displayTime}{\vnu \geq 0}} \interty\\
+        &\qquad \pat{\finalA\msg{displayTime}{\top}}{\msg{displayTime}{\vnu \geq 0}}{\untilA (\neg\msg{displayTime}{\top}) \msg{click}{\top}}
+        \\ \\
+        &\eff{displayText}: \pat{\anyA^*}{\msg{displayText}{\top}}{\anyA^*}
+    \end{align*}}
+    \caption{PATs for AudioPlayer}
+    \label{fig:audio-player-pat}
+\end{figure}
+
+The semantics outlined above are precisely captured by the PATs in Figure~\ref{fig:audio-player-pat}. The $\eff{displayTime}$ event is designed to repeatedly trigger subsequent $\eff{displayTime}$ events, but it can also be interrupted by a $\eff{click}$ event. There are four distinct cases for $\eff{displayTime}$, arising from the combination of two binary choices:
+\begin{itemize}
+    \item \textbf{Is this the first display time?} The value returned is either $0$ (if it is the first occurrence) or a natural number, as determined by the history automaton $\finalA\msg{displayTime}{\top}$.
+    \item \textbf{Is the event interpreted by a click?} The prophecy automaton specifies either that ``no click occurs before the next display time'' ($\untilA (\neg\msg{click}{\top}) \msg{displayTime}{\vnu \geq 0}$), or that ``a click must occur before any futher display time happens'' ($\untilA (\neg\msg{displayTime}{\top}) \msg{click}{\top}$).
+\end{itemize}
+
+\begin{figure}[h!]
+    \centering
+    \begin{minted}[xleftmargin=5pt, numbersep=4pt, linenos = true, fontsize = \footnotesize, escapeinside=??]{OCaml}
+    ?$\mykw{gen}$? ?$\eff{init}$? in
+    let (txt1: string) = ?$\mykw{obs}$? ?$\eff{displayText}$? in ?$\mykw{assert}$? (txt1 == "paused") in 
+    ?$\mykw{gen}$? ?$\eff{click}$? in
+    let (txt2: string) = ?$\mykw{obs}$? ?$\eff{displayText}$? in ?$\mykw{assert}$? (txt2 == "playing") in 
+    let (t1: int) = ?$\mykw{obs}$? ?$\eff{displayTime}$? in ?$\mykw{assert}$? (t1 == 0) in
+    loop (let (t2: int) = ?$\mykw{obs}$? ?$\eff{displayTime}$? in ?$\mykw{assert}$? (t2 >= 0)); 
+    let (t3: int) = ?$\mykw{obs}$? ?$\eff{displayTime}$? in ?$\mykw{assert}$? (t3 >= 0) in 
+    loop (let (t4: int) = ?$\mykw{obs}$? ?$\eff{displayTime}$? in ?$\mykw{assert}$? (t4 >= 0));
+    let (t5: int) = ?$\mykw{obs}$? ?$\eff{displayTime}$? in ?$\mykw{assert}$? (t5 < t3) in
+    ?$\mykw{gen}$? ?$\eff{click}$? in
+    let (txt3: string) = ?$\mykw{obs}$? ?$\eff{displayText}$? in ?$\mykw{assert}$? (txt3 == "paused")
+    \end{minted}
+    \caption{A test generator for audio player }\label{fig:audio-player-gen}
+\end{figure}
+    
+Figure~\ref{fig:audio-player-gen} shows a synthesized test generator for the audio player. The generator begins by initializing the application with $\eff{init}$ (line 1). It then simulates playing the audio and observes the displayed time values, ensuring that the sequence of displayed times is non-decreasing up to a certain point: specifically, it checks that there exists a displayed time $t_3$ that is greater than a subsequently displayed time $t_5$, with both $t_3$ and $t_5$ potentially preceded by arbitrarily many displayed times (captured by the two loops). Finally, the generator simulates clicking the button to pause the audio.
