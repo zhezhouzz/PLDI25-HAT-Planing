@@ -1,0 +1,149 @@
+\section{Benchmarks}
+
+\subsection{MonkeyDB: Treiber Stack}
+
+\begin{figure}[h!]
+    \centering
+    \begin{minted}[xleftmargin=5pt, numbersep=4pt, linenos = true, fontsize = \footnotesize, escapeinside=??]{OCaml}
+        type cell = {content: Value.t; next: Key.t}
+        (* database operations *)
+        val read: unit -> Key.t
+        val write: Key.t -> cell -> unit
+        val put: Key.t -> cell -> unit
+        val get: Key.t -> cell
+        val cas: Key.t -> Key.t -> bool
+
+        let init () =
+            ?$\mykw{write}$? (Key.mk_null ())
+
+        let rec push (v: Value.t): unit =
+            let (oldHeadKey: Key.t) = ?$\mykw{read}$? () in (* read the head key *)
+            let (newHead: cell) = {content = v; next = oldHeadKey} in (* create a new head element *)
+            let (newHeadKey: Key.t) = Key.fresh () in
+            if ?$\mykw{CASReg}$? oldHeadKey newHeadKey
+            then ?$\mykw{put}$? newHeadKey newHead
+            else push v (* retry *)
+
+        let rec pop (): Value.t option =
+            let (oldHeadKey: Key.t) = ?$\mykw{read}$? () in (* read the head key *)
+            if Key.is_null oldHeadKey
+            then return None 
+            else
+                let (head: cell) = ?$\mykw{get}$? oldHeadKey in
+                if ?$\mykw{CAS}$? oldHeadKey head.next 
+                then Some head.v else pop () (* retry *)
+    \end{minted}
+    \caption{Treiber stack implementation in key-value store}
+    \label{fig:treiber-stack-imp}
+\end{figure}
+
+As shown in Figure \ref{fig:treiber-stack-imp}, the Treiber stack is a concurrent stack data structure that uses compare-and-swap (CAS) instructions instead of locks for synchronization. In this implementation, the stack contents are stored in a key-value store (kv-store) rather than as an in-memory linked data structure. Each row in the stack is represented by a key-value pair in the kv-store, where the stored value is $\Code{\{content: Value.t; next: Key.t\}}$, a pair consisting of the stack element and the key of the next row down in the stack. The key for the top of the stack is stored under a designated key, which is accessed by the $\eff{read}$ and $\eff{write}$ operations.
+
+When two different clients try to pop from the stack concurrently, under serializability, each pop
+would return a unique value, assuming that each pushed value is unique. However, under Causal
+Consistency, the CAS is not atomic and devided as two operations $\eff{compare}$ and $\eff{write}$; so concurrent pops can return the same value. For example, consider the following sequence of operations:
+\begin{align*}
+    &\cblue{\event{popIvk}{()}{()}};\cred{\event{popIvk}{()}{()}};\\
+    &\cblue{\event{read}{()}{k_1}};\cred{\event{read}{()}{k_1}};\cblue{\event{get}{k_1}{(v_1, k_2)}};\cred{\event{get}{k_1}{(v_1, k_2)}};\\
+    &\cblue{\event{compare}{k_1}{\true}};\cred{\event{compare}{k_1}{\true}};\cblue{\event{write}{k_2}{()}};\cred{\event{write}{k_2}{()}};\\
+    &\cblue{\event{popRet}{()}{v_1}};\cred{\event{popRet}{()}{v_1}};
+\end{align*}\noindent
+As shown in the trace, the two concurrent pops return the same value $v_1$.
+
+\paragraph{PAT model} Now we build a PAT model for the APIs of Treiber stack. We consider the following APIs:
+\begin{minted}[xleftmargin=5pt, numbersep=4pt, linenos = true, fontsize = \footnotesize, escapeinside=??]{OCaml}
+    (* We don't distinguish the agurments and return values of the APIs. *)
+    type read = Value.t
+    type write = Value.t
+    type put = {k: Key.t; v: (Value.t * Key.t)}
+    type get = {k: Key.t; v: (Value.t * Key.t)}
+
+    type compare = {old: Key.t; new: Key.t; res: bool} 
+        (* if provided old is stored value, then return true and eventually write new to old; 
+           otherwise, return false and do nothing *)
+
+    (* Asynchronous APIs are devided as Ink and Ret *)
+    type initIvk = unit
+    type initRet = unit
+    type pushInk = Value.t
+    type pushRet = unit
+    type popInk = unit
+    type popRet = Value.t option
+\end{minted}
+
+The property of the Treiber stack is that the returned value should be unique:
+\begin{align*}
+    \phi \doteq \exists x_1{:}\Value. \exists x_2{:}\Value. \finalA \msg{pushRet}{\vnu = \Some[x_1]} \land \finalA \msg{pushRet}{\vnu = \Some[x_2] \land x_1 \not= x_2}
+\end{align*}\noindent
+To effectively test for bugs, the stack must be initialized, followed by at least one push operation, and then two pop operations. The following semantic constraints are specified to guide the testing process:
+\begin{itemize}
+    \item \textbf{Init}: The \Code{init} procedure must write the null key as the head of the stack, ensuring the stack is initially empty.
+    \item \textbf{Push}: For the \Code{push} procedure, we focus on the case where the CAS operation succeeds (omitting retries). In this case, the $\eff{compare}$ operation will \emph{eventually} update the old head key to a new, fresh, non-null key, and the input value will be stored under this new key in the key-value store.
+    \item \textbf{Pop}: For the \Code{pop} procedure, we again consider only the successful CAS case and omit retries. If a $\eff{read}$ operation observes that the current head key is null, the procedure returns None, indicating the stack is empty. Otherwise, a successful CAS ensures that the $\eff{compare}$ operation will \emph{eventually} update the old head key to the corresponding next key, and the value at the head is returned.
+    \item \textbf{Compare}: When the compare operation succeeds, the subsequent $\eff{write}$ will \emph{eventually} update the old head key to the new head key.
+    \item \textbf{Invariant}: The pushed value should be unique.
+\end{itemize}
+
+\begin{figure}[h!]
+    \centering
+    {\small\begin{align*}
+        &\eff{initIvk}: \pat{\anyA^*}{\msg{initIvk}{\top}}{\finalA (\msg{write}{\I{isNull}(\vnu)} \land \finalA \msg{initRet}{\top})}
+        \\ \\
+        &\eff{pushIvk}: k_\Code{old}{:}\ort{\Key}{\top} \sarr k_\Code{new}{:}\ort{\Key}{\neg \I{isNull}(\vnu)} \sarr x{:}\Value \sarr \\
+        &\effLR{ \neg \finalA \msg{put}{\vnu.\Code{k} = k_\Code{new}} \land \neg \finalA \msg{pushIvk}{\vnu = x} }\effLR{ \msg{pushIvk}{\vnu = x} }\\
+        &\effLR{\finalA (\msg{compare}{\vnu.\Code{old} = k_\Code{old} \land \vnu.\Code{new} = k_\Code{new} \land \vnu.\Code{res}} \land \finalA \msg{put}{\vnu.\Code{k} = k_\Code{new} \land \vnu.\Code{v} = (x, k_\Code{old})} \land \finalA \msg{pushRet}{\top})}
+        \\ \\
+        &\eff{popIvk}: k_\Code{old}{:}\ort{\Key}{\neg \I{isNull}(\vnu)} \garr k_\Code{new}{:}\ort{\Key}{\top} \garr x{:}\Value \garr \\
+        &\pat{ \finalA \msg{write}{\top} }{ \msg{popIvk}{\top} }{\finalA (\msg{read}{\I{isNull}(\vnu)} \land \finalA \msg{popRet}{\vnu = \Code{None}})} \interty\\
+        &\effLR{ \finalA \msg{write}{\top} }\effLR{ \msg{popIvk}{\top} }\\
+        &\effLR{ \finalA (\msg{get}{\vnu.\Code{k} = k_\Code{old} \land \vnu.\Code{v} = (x, k_\Code{new})} \land \finalA \msg{compare}{\vnu.\Code{old} = k_\Code{old} \land \vnu.\Code{new} = k_\Code{new} \land \vnu.\Code{res}} \land \finalA \msg{popRet}{\vnu = \Some[x]})}
+        \\ \\
+        &\eff{compare}: k_\Code{old}{:}\ort{\Key}{\neg \I{isNull}(\vnu)} \garr k_\Code{new}{:}\ort{\Key}{\top} \garr y{:}\Bool \garr \\
+        &\pat{\I{LastWrite}(k_\Code{old})}{ \msg{compare}{\vnu.\Code{old} = k_\Code{old} \land \vnu.\Code{new} = k_\Code{new} \land \vnu.\Code{res} = y \land y}}{\finalA \msg{write}{\vnu = k_\Code{new}}} \interty\\
+        &\pat{\neg\I{LastWrite}(k_\Code{old}) \land \finalA \msg{write}{\top} }{ \msg{compare}{\vnu.\Code{old} = k_\Code{old} \land \vnu.\Code{new} = k_\Code{new} \land \vnu.\Code{res} = y \land \neg y}}{\anyA^*}
+        %  \interty\\
+        % &\effLR{ \finalA \msg{write}{\top} }\effLR{ \msg{compare}{\vnu.\Code{old} = k_\Code{old} \land \vnu.\Code{new} = k_\Code{new} \land \vnu.\Code{res} = y} }
+        % &\effLR{\I{LastWrite}(k_\Code{old}) \impl \finalA \msg{compareRet}{y}}
+    \end{align*}}
+    \caption{PATs for Treiber stack}
+    \label{fig:treiber-stack-pat}
+\end{figure}
+
+The semantics described above are formalized by the PATs in Figure~\ref{fig:treiber-stack-pat}. For clarity, we omit the standard types for \texttt{read}, \texttt{write}, \texttt{put}, and \texttt{get}. The prophecy automata precisely capture the possible future orderings of key operations, reflecting the concurrency inherent in the stack's implementation. Notably, while the PAT for $\eff{initIvk}$ does not explicitly include a write following a $\eff{compare}$, this behavior is enforced by the PAT for $\eff{compare}$ itself.
+
+An expected errouneous trace can be:
+\begin{align*}
+    &\eff{initIvk}();\eff{write}(k_\Code{null});\eff{initRet}();\\
+    &\eff{pushIvk}(v_1);\eff{compare}(k_\Code{null}, k_1, \true);\eff{put}(k_1, (v_1, k_\Code{null}));\eff{pushRet}();\eff{write}(k_1);\\
+    &\cblue{\eff{popIvk}()};\cred{\eff{popIvk}()};\cblue{\eff{get}(k_1, (v_1, k_\Code{null}))};\cred{\eff{get}(k_1, (v_1, k_\Code{null}))};\\
+    &\cblue{\eff{compare}(k_1, k_\Code{null}, \true)};\cred{\eff{compare}(k_1, k_\Code{null}, \true)};\\
+    &\cblue{\eff{popRet}(\Code{Some}\;v_1)};\cred{\eff{popRet}(\Code{Some}\;v_1)};\cblue{\eff{write}(k_\Code{null})};\cred{\eff{write}(k_\Code{null})};
+\end{align*}\noindent
+This trace omits some events from the previous example, but also includes the necessary events at the beginning and end to ensure a valid execution.
+
+\begin{figure}[h!]
+\centering
+\begin{minted}[xleftmargin=5pt, numbersep=4pt, linenos = true, fontsize = \footnotesize, escapeinside=??]{OCaml}
+?$\mykw{gen}$? ?$\eff{initIvk}$? in
+let (kNull: Key.t) = ?$\mykw{obs}$? ?$\eff{write}$? in ?$\mykw{assert}$? (isNull(kNull)) in 
+?$\mykw{obs}$? ?$\eff{initRet}$?;
+loop (
+    let (x: Value.t) = Value.fresh () in
+    ?$\mykw{gen}$? ?$\eff{push}$? x in
+    let (k_old: Key.t) (k_new: Key.t) (cond: bool) = ?$\mykw{obs}$? ?$\eff{compare}$? in ?$\mykw{assert}$? cond in
+    let (k_1: Key.t) (e_1: Value.t * Key.t) = ?$\mykw{obs}$? ?$\eff{put}$? in ?$\mykw{assert}$? (k_1 == k_new && (snd e_1) == k_old) in
+    (?$\mykw{obs}$? ?$\eff{write}$?) ?$\oplus$?
+    (let (k_2: Key.t) = ?$\mykw{obs}$? ?$\eff{write}$? in ?$\mykw{assert}$? (k_2 == k_new)));
+?$\mykw{gen}$? ?$\eff{popInv}$?; ?$\mykw{gen}$? ?$\eff{popInv}$?;
+let (k_3: Key.t) (v_3: Value.t) (k_4: Key.t) = ?$\mykw{obs}$? ?$\eff{get}$? in ?$\mykw{assert}$? not (isNull(k_3)) in
+let (k_5: Key.t) (v_4: Value.t) (k_6: Key.t) = ?$\mykw{obs}$? ?$\eff{get}$? in ?$\mykw{assert}$? not (isNull(k_5)) in
+let (k_old1: Key.t) (k_new1: Key.t) (cond1: bool) = ?$\mykw{obs}$? ?$\eff{compare}$? in ?$\mykw{assert}$? cond1 in
+let (k_old2: Key.t) (k_new2: Key.t) (cond2: bool) = ?$\mykw{obs}$? ?$\eff{compare}$? in ?$\mykw{assert}$? cond2 in
+let (vopt1: Valut.t option)= ?$\mykw{obs}$? ?$\eff{popRet}$? in ?$\mykw{assert}$? (vopt1 != None) in
+let (vopt2: Valut.t option)= ?$\mykw{obs}$? ?$\eff{popRet}$? in ?$\mykw{assert}$? (vopt1 == vopt2) in
+?$\mykw{obs}$? ?$\eff{write}$?; ?$\mykw{obs}$? ?$\eff{write}$?
+\end{minted}
+\caption{A test generator with a loop. }\label{fig:treiber-stack-gen}
+\end{figure}
+
+Figure~\ref{fig:treiber-stack-gen} presents a synthesized test generator. The generator first initializes the stack by invoking $\eff{initIvk}$ (lines 1--3). It then enters a loop (lines 4--10) to push a sequence of freshly generated values onto the stack, with each value obtained from a predefined value generator (line 5) rather than through assumptions ($\mykw{assume}$). To account for non-determinism in the ordering of certain operations, the generator employs the $\oplus$ operator to explore all possible interleavings (line 9). Following the push phase, the generator issues two consecutive pop operations (line 11), specifically designed to expose concurrency bugs that may arise in this scenario (assertion $\Code{vopt1 == vopt2}$ in line 17).

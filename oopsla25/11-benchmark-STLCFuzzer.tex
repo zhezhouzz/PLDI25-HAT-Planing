@@ -1,0 +1,89 @@
+\section{Benchmarks}
+
+\subsection{STLC Fuzz Engine}
+
+A fuzz engine for STLC will mutate the input STLC term to generate new STLC terms and preserve types. The stlc defined as the following:
+\begin{minted}[xleftmargin=5pt, numbersep=4pt, linenos = true, fontsize = \footnotesize, escapeinside=??]{OCaml}
+    type term =
+        | Con of int 
+        | Var of string
+        | App of term * term
+        | Abs of string * term
+    type ty = Int | Arrow of ty * ty
+\end{minted}
+
+The fuzz engine can takes the following operations:
+\begin{minted}[xleftmargin=5pt, numbersep=4pt, linenos = true, fontsize = \footnotesize, escapeinside=??]{OCaml}
+    (* construct term *)
+    type mkCon = int (* drop constructed term and create a new Con term with given int *)
+    (* a Var term cannnot be constructed arbitrarily, it should be provided by the environment *)
+    type mkTerm = term (* drop constructed term and create a new Var term with given name *)
+    type mkAppL = term (* create a new App term with constructed term and given term *)
+    type mkAppR = term (* create a new App term with constructed term and given term *)
+    type mkAbs = ty (* create a new Abs term with a fresh name, given type, and constructed term *)
+    (* navigation *)
+    type init = unit (* initialize the fuzz engine *)
+    type drop = unit (* destruct part of current term *)
+    type inner = unit (* focus on inner term *)
+    (* reaction from environment *)
+    type expectedTy = ty (* the type of current term *)
+    type constructedTy = ty (* the type of constructed term *)
+    type AvailableTm = {tm: term, ty: ty} (* a term that can be used to create a new term *)
+\end{minted}
+
+The fuzz engine navigates the structure of the term using the operations $\eff{init}$, $\eff{drop}$, and $\eff{inner}$. During this navigation, the environment supplies available variable names and terms that can be used to construct new terms, as well as the current type of the focused subterm. This information enables the fuzz engine to synthesize new terms that satisfy specific type constraints. Ultimately, the engine must ensure that the constructed term matches the expected type provided by the environment.
+
+\begin{align*}
+    \phi \doteq \exists \Code{t{:}ty}. \I{LastExpectedTy}(t) \land \I{LastConstructedTy}(t)
+\end{align*}
+
+One possible trace with input term $\lambda x{:}\Int\sarr\Int.\lambda y{:}\Int. y$ is:
+\begin{align*}
+    &\eff{init}();\eff{expectedTy}(\Int\sarr(\Int\sarr\Int)\sarr\Int);\\
+    &\eff{drop}();\eff{expectedTy}((\Int\sarr\Int)\sarr\Int);\\
+    &\eff{inner}();\eff{AvailableTm}(``y'', \Int\sarr\Int);\eff{expectedTy}(\Int);\\
+    &\eff{mkCon}(1);\eff{constructedTy}(\Int);\\
+    &\eff{mkAppL}(``y'');\eff{constructedTy}(\Int);\\
+\end{align*}
+
+\paragraph{PAT model}
+We further expect executions to adhere to the following behavioral patterns:
+\begin{itemize}
+    \item \textbf{Initialization, drop, and inner operation print correct type}: According to the syntax of current term, the printted type should be the same as the expected type.
+    \item \textbf{mkCon, mkTerm, mkAppL, mkAppR, and mkAbs print correct type}: The constructed term should be correct.
+    \item \textbf{drop}: doesn't show available terms.
+\end{itemize}
+
+\begin{figure}[h!]
+    \centering
+    {\small\begin{align*}
+        &\eff{init}: \pat{\emptyset}{\msg{init}{\top}}{\msg{expectedTy}{\top}}\\
+        &\eff{drop}: t{:}\Code{\top}\garr \pat{\I{LastExpectedTy}(t)}{\msg{drop}{\top}}{\msg{expectedTy}{\vnu = \I{keeped}(t)}}
+        &\eff{inner}: t{:}\Code{\top}\garr \pat{\I{LastExpectedTy}(t) \land }{\msg{inner}{\top}}{\msg{availableTm}{\vnu.\Code{ty} = \I{droped}(t)} \land \nextA\msg{expectedTy}{\vnu = \I{keeped}(t)}}
+        \\ \\
+        &\eff{mkCon}: x{:}\Int \sarr \pat{\anyA^*}{\msg{mkCon}{\vnu = x}}{\msg{constructedTy}{\vnu = \Int}}\\
+        &\eff{mkTerm}: a{:}\Code{ty} \garr t{:}\Code{tm} \sarr \pat{\finalA\msg{availableTm}{\vnu.\Code{ty} = a \land \vnu.\Code{tm} = t}}{\msg{mkTerm}{\vnu = t}}{\msg{constructedTy}{\vnu = a}}\\
+        ...
+    \end{align*}}
+    \caption{PATs for STLC Fuzz Engine}
+    \label{fig:stlc-fuzz-engine-pat}
+\end{figure}
+
+\begin{figure}[h!]
+    \centering
+    \begin{minted}[xleftmargin=5pt, numbersep=4pt, linenos = true, fontsize = \footnotesize, escapeinside=??]{OCaml}
+    ?$\mykw{gen}$? ?$\eff{init}$? in
+    let _ = ?$\mykw{obs}$? ?$\eff{expectedTy}$? in
+    loop (
+        ?$\mykw{gen}$? ?$\eff{drop}$? in ?$\mykw{obs}$? ?$\eff{expectedTy}$?
+    )
+    ?$\mykw{gen}$? ?$\eff{drop}$? in
+    let (ty1: ty) = ?$\mykw{obs}$? ?$\eff{expectedTy}$? in ?$\mykw{assert}$? (ty1 == "Int") in
+    let (x: int) = random_int () in
+    ?$\mykw{gen}$? ?$\eff{mkCon}$? x in
+    let (ty2: ty) = ?$\mykw{obs}$? ?$\eff{constructedTy}$? in ?$\mykw{assert}$? (ty2 == "Int")
+    \end{minted}
+    \caption{A mutation for STLC Fuzz Engine }\label{fig:stlc-fuzz-engine-gen}
+\end{figure}
+    
+Figure~\ref{fig:stlc-fuzz-engine-gen} shows a mutation for the STLC Fuzz Engine, which replace a term with integer type with a new constant term.

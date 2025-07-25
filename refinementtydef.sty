@@ -66,11 +66,6 @@
 % \newcommand{\ev}{\epsilon}
 % operators
 \newcommand{\ocamllab}{\textcolor{codeblue}{\boldsymbol{\sim}}}
-\newcommand{\emp}[1]{\I{emp}({#1})}
-\newcommand{\mem}[2]{\I{mem}({#1},{#2})}
-\newcommand{\hd}[2]{\I{hd}({#1},{#2})}
-\newcommand{\ord}[3]{\I{ord}({#1},{#2},{#3})}
-\newcommand{\measure}[1]{\S{measure}({#1})}
 % syntax
 \newcommand{\mykw}[1]{{\boldsymbol{\Code{\textcolor{codeblue}{{#1}}}}}}
 \newcommand{\mykwCmt}[1]{{\boldsymbol{\Code{\textcolor{codegreen}{{#1}}}}}}
@@ -618,3 +613,54 @@
 \newcommand{\mathEnv}[1]{{\small\begin{align*}{#1}
 \end{align*}}\noindet}
 \newcommand{\ptag}[1]{ &\quad& \text{(#1)}}
+
+% JFP
+\newcommand{\tvar}[1]{\text{\textquotesingle}\Code{#1}}
+
+% monad
+% \newcommand{\ot}[3]{\otparenth{ {#1}{:}\;{#2}\, |\, {#3} }}
+\newcommand{\ort}[2]{\ot{\vnu}{#1}{#2}}
+% \newcommand{\ut}[3]{\utparenth{ {#1}{:}\;{#2}\;|\;{#3} }}
+\newcommand{\urt}[2]{\ut{\vnu}{#1}{#2}}
+
+\newcommand{\M}[1]{\mathcal{M}\;{#1}}
+\newcommand{\Murt}[2]{\M{\urt{#1}{#2}}}
+% \newcommand{\TM}{\;\Code{Gen.t}}
+\newcommand{\returnC}{\mathcal{M}\;}
+%\newcommand{\returnC}{\Code{ret^C}}
+\newcommand{\bindC}{\Code{bind^C}}
+\newcommand{\CM}[2]{\mathcal{M}\;{#1}\;{#2}}
+\newcommand{\Int}{\Code{int}}
+\newcommand{\Bool}{\Code{bool}}
+\newcommand{\Unit}{\Code{unit}}
+\newcommand{\Nat}{\Code{nat}}
+\newcommand{\Char}{\Code{char}}
+\newcommand{\String}{\Code{string}}
+\newcommand{\Byte}{\Code{Byte.t}}
+\newcommand{\Tree}[1][]{{#1}\;\Code{tree}}
+\newcommand{\List}[1][]{{#1}\;\Code{list}}
+\newcommand{\Option}[1][]{{#1}\;\Code{option}}
+% \newcommand{\None}{\Code{None}}
+\newcommand{\Some}[1][]{\Code{Some}({#1})}
+\newcommand{\fst}{\I{fst}}
+\newcommand{\snd}{\I{snd}}
+\newcommand{\emp}{\I{emp}}
+\newcommand{\mem}{\I{mem}}
+\newcommand{\len}{\I{len}}
+\newcommand{\hd}{\I{hd}}
+\newcommand{\ord}{\I{ord}}
+\newcommand{\measure}{\I{measure}}
+\newcommand{\uniq}{\I{uniq}}
+\newcommand{\minP}{\I{min}}
+\newcommand{\maxP}{\I{max}}
+
+% New Trace
+\newcommand{\Key}{\Code{Key.t}}
+\newcommand{\Value}{\Code{Value.t}}
+\newcommand{\event}[3]{\evparenth{\eff{#1}({#2}) \eveq {#3}}}
+\newcommand{\mess}[2]{\eff{#1}({#2})}
+\newcommand{\pat}[3]{ \effLR{#1}\effLR{#2}\effLR{#3}}
+\newcommand{\cgreen}[1]{\textcolor{DeepGreen}{#1}}
+\newcommand{\cred}[1]{\textcolor{red}{#1}}
+\newcommand{\cblue}[1]{\textcolor{CobaltBlue}{#1}}
+\newcommand{\sev}[2]{ \evparenth{ \Code{#1}\;{#2} \eveq \vnu \,|\, {#2} }}

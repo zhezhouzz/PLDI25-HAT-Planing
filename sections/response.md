@@ -140,12 +140,12 @@ specific criticisms posed by the reviewers addressed below:
 
 #### Reviewer A
 
-- Q: How does `DeriveTerm` handle $$\globalA A$$?
+- Q: How does `DeriveTerm` handle $$\square A$$?
 
 + A: The reviewer correctly notes that `DeriveTerm` removes any
-  remaining $$\globalA A$$s when building a controller program from an
+  remaining $$\square A$$s when building a controller program from an
   abstract trace. Intuitively, the violation encoded in the abstract
-  trace is independent of any events in $$\globalA A$$; eliding them
+  trace is independent of any events in $$\square A$$; eliding them
   allows Clouseau to safely focus on the events that are core to the
   violation.
 
@@ -166,8 +166,8 @@ specific criticisms posed by the reviewers addressed below:
   contents of the messages in the system; in general, it is not the
   case that "a bug is very sensitive to particular values." In the
   motivating example, for instance, we must see at least two
-  $\eff{write}$ operations on the same key with different data (as in
-  $A'_\Code{violateRYW}$ on line 357) in order to trigger a
+  $\mathbf{write}$ operations on the same key with different data (as in
+  $A'_\mathtt{violateRYW}$ on line 357) in order to trigger a
   violation--- however, manifesting this bug does not depend on a
   specific key or value.
 
@@ -187,11 +187,11 @@ specific criticisms posed by the reviewers addressed below:
   contravariant, per the supplementary material. Thanks for catching
   this!
 
-- Q: How is $A \untilA B$ normalized?
+- Q: How is $A \;\mathcal{U}\; B$ normalized?
 
-+ A: This is a typo: $A \untilA B$ actually normalizes into $\globalA
-  A \seqA B$ (no negation). The meaning of $\globalA
-  \evparenth{\phi}\seqA\Pi$ is exactly as the reviewer states.
++ A: This is a typo: $A \;\mathcal{U}\; B$ actually normalizes into $\square
+  A \;\cdot\; B$ (no negation). The meaning of $\square
+  \langle\phi\rangle\;\cdot\;\Pi$ is exactly as the reviewer states.
 
 #### Reviewer B
 
@@ -237,7 +237,7 @@ specific criticisms posed by the reviewers addressed below:
   restriction satisfied by all of our benchmarks). Under the standard
   minterm-based SFA algorithm [12], the VCs are proof obligations that
   all qualifiers of symbolic events (i.e., $\phi$ in
-  $\msgB{op}{\overline{x}}{\phi}$) are satisfiable under the current
+  $\langle\mathbf{op}\ \overline{x} ~|~ \phi\rangle$) are satisfiable under the current
   typing context. Typing contexts are interpreted as a prefix of
   universally quantified substitutions (lines $565$ and $580$), thus
   guaranteeing that the resulting VCs are in EPR.  We will update the
@@ -305,7 +305,7 @@ specific criticisms posed by the reviewers addressed below:
   compiled into SFAs. Accordingly, our abstract traces can actually be
   thought of as a symbolic regex without a _top-level_ union:
 
-  $\Pi ::=\msgB{op}{\overline{x}}{\phi} ~|~ \Pi \seqA \Pi ~|~ A^*$.
+  $\Pi ::= \langle\mathbf{op}\ \overline{x} ~|~ \phi\rangle ~|~ \Pi \cdot \Pi ~|~ A^*$.
 
   This is actually how we normalize SFAs into a finite set of abstract
   traces, with the normalization process preserving Kleene star
@@ -379,66 +379,3 @@ specific criticisms posed by the reviewers addressed below:
   that would be required to build an effective model-checking
   implementation for a potentially incomplete search through the
   space, driven by a controller.
-
-
-
-----------------------------------------------------------------------
-#### Scratchpad:
-
-The key insight of this work is
-that, in exchange for partial specifications of the actors in the
-sytem under test, in the form of PATs, Closeau is able to produce a
-controller that focuses the testing effort on a space of executions
-that are relevant to the property of interest.
-
-There are two distinguishing features of our framework whose
-combination (we believe) separate it from other proposed PBT-style
-techniques for distributed systems. First, we target open systems, in
-which external clients can inject messages into the SUT. Second, in
-contrast to other PBT-style systems that treat the SUT as a black box,
-the (local) PAT specifications of the actors provide visibility into
-the system in terms of which (global) traces are feasible. This
-information enables us to be significantly more targeted in our search
-for a violating execution, allowing us to synthesize schedules
-_tailored to the property of interest_--- history automata induce
-"precondition" constraints on allowed behaviors that permit the actor
-to generate a new event, while prophecy automata induce
-"postcondition" constraints that regulate future actions by the actor.
-The capability of dividing symbolic traces into a history and a future
-is especially valuable in the concurrent/asynchronous setting we
-target.
-
-
-
-As with any testing
-methodology, our controllers are typically incomplete: our algorithm
-is only guaranteed to produce a set of controllers that capture a
-subset of the feasible executions consistent with provided
-specifications (lines 627-629, 776-778), although our experimental
-evidence supports our contention that this tradeoff works well in
-practice.
-
-
-
-% Say that we are not doing model checking.
-
-There are (at least) three main challenges to applying model checking
-the sorts of open distributed systems we target. First, these systems
-must be completed by providing a model of the unknown components. More
-importantly, our PAT specifications approximate the behavior of the
-underlying actors-- any violations found by model checking these
-specifications would have to be validated on the underlying P
-implementation of the system. Finally, the state space of these
-systems is enormous-- to fully explore the traces would require us to
-engineer state (and path) equivalence checkers, frame rules, and other
-mechanisms to minimize redundant and uninteresting exploration. This
-is precisely why P's existing model checker opts to trade off
-engineering complexity for a potentially incomplete search through the
-space, driven by a controller. The key insight of this work is that we
-can use partial specifications of actors to synthesize controllers
-that explore the space of executions in a targeted, property-directed.
-As the reviewers note, these controllers are typically incomplete: our
-algorithm is only guaranteed to produce a set of controllers that
-capture a subset of the feasible executions consistent with provided
-specifications (lines 627-629, 776-778). Our experimental evidence
-supports our contention that this tradeoff works well in practice.
