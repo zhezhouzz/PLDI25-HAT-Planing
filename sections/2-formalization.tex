@@ -8,17 +8,17 @@
     \\\text{\textbf{Base Types}}& \quad & b  ::= \quad &  \Code{unit} ~|~ \Code{bool} ~|~ \Code{nat} ~|~ \Code{int} ~|~ ...
     \\\text{\textbf{Pure Operations}}& \quad & \primop ::= \quad & {+} ~|~ {-} ~|~ {==} ~|~ {<} ~|~ {\leq} ~|~ ...
     \\ \text{\textbf{Constants }}& \quad &c ::= \quad & () ~|~ \mathbb{B} ~|~ \mathbb{Z} ~|~ ...
-    \\ \text{\textbf{Values }}& \quad  & v ::= \quad & c ~|~ x
+    \\ \text{\textbf{Values }}& \quad  & v ::= \quad & c ~|~ x 
     \\ \text{\textbf{Qualifiers}}& \quad & \phi ::= \quad & v ~|~ \primop\;\overline{v} ~|~ \bot ~|~ \top  ~|~ \neg \phi ~|~ \phi \land \phi ~|~ \phi \lor \phi ~|~ \phi \impl \phi ~|~ \forall x{:}b.\, \phi
     \\\text{\textbf{Effectful Operations}}& \quad & \eff{op} ::= \quad & \eff{readReq} ~|~ \eff{readRsp} ~|~  ...
     \\\text{\textbf{Message Kinds}}& \quad & k ::= \quad & \eff{gen} ~|~ \eff{obs}
-    \\ \text{\textbf{Expressions}}& \quad & e ::=\quad & v ~|~ \zlet{x{:}b}{\primop\ \overline{v}}{e} ~|~ \zgen{op}{\overline{v}}{e} ~|~ \zobs{\overline{x{:}b}}{op}{e}
-    \\ & & \quad & ~|~  \zassert{\phi}{e} ~|~  \zassume{\phi}{e} ~|~ e \oplus e
+    \\ \text{\textbf{Expressions}}& \quad & e ::=\quad & v ~|~ \zlet{x{:}b}{\primop\ \overline{v}}{e} ~|~ \zobs{\overline{x{:}b}}{op}{e} ~|~ \zlet{\overline{x{:}b}}{\sassume{\phi}}{e}
+    \\ & & \quad & |~ \zgen{op}{\overline{v}}{e} ~|~ \zassert{\phi}{e} ~|~ \zloop{e}{e} ~|~ e \oplus e
   \end{alignat*}}
 \vspace*{-.25in}
 \caption{$\DSL$ syntax }
 \label{fig:term-syntax}
-\vspace*{-.2in}
+\vspace*{-.1in}
 \end{figure}
 
 We formalize our approach using a core language, $\DSL$, for
@@ -32,37 +32,27 @@ $\eff{op}$), non-deterministic choice ($\oplus$), and
 assertions. Effectful operations are categorized as either
 \emph{generable} ($\eff{gen}$) or \emph{observable} ($\eff{obs}$).
 
+
 \begin{figure}[t!]
-\vspace*{-.15in}
+\vspace*{-0.1in}
 {\footnotesize
-{\small\begin{align*}
-\text{\textbf{Messages}}& \  & m ::= \   & \zevent{op}{\overline{c}}
-\qquad
-\text{\textbf{Buffers}}& \  &\beta \in \mathcal{P}(m)  &
-\qquad
-\text{\textbf{Traces}}& \  &\alpha ::= \  &
-    \emptr ~|~ m \;{::}\; \alpha ~|~ \alpha
-    \listconcat \alpha
-\end{align*}
+{\small
+\begin{flalign*}
+\text{\textbf{Events}} \ m ::= \  \zevent{op}{\overline{c}} &
+\parbox{7cm}{\centering$\text{\textbf{Obligation}}\  \beta \in \mathcal{P}(m)$}  &
+\text{\textbf{Traces}} \ \alpha ::= \ \emptr ~|~ m \;{::}\; \alpha ~|~ \alpha \listconcat \alpha &
+\end{flalign*}
 \vspace*{-.2in}
-\begin{align*}
-  \text{\textbf{Handler Semantics }} & \fbox{$\alpha \vDash
-                                       \zevent{op}{\overline{c}}
-                                       \Downarrow \beta$} &
-                                                            \quad\quad\quad
-                                                            \text{\textbf{Operational
-                                                            Semantics
-                                                            }} &
-                                                                 \fbox{$\phi
-                                                                 \Downarrow c
-                                                                 \quad
-                                                                 \steptr{\alpha}{(\buf, e)}{\alpha}{(\buf, e)}$}
-\end{align*}}
+\begin{flalign*}
+  &\text{\textbf{Handler Semantics }}\ 
+  \fbox{$\alpha \vDash \zevent{op}{\overline{c}} \Downarrow \beta$} &
+  \text{\textbf{Operational Semantics }}\ 
+  \fbox{$\phi \Downarrow c \quad \steptr{\alpha}{(\buf, e)}{\alpha}{(\buf, e)}$}
+\end{flalign*}}
     \begin{prooftree}
     \mhypo{50mm}
     {$\buf = \{\zevent{op}{\overline{c}}\} \cup \buf_1 $ \quad
       $\alpha \vDash \zevent{op}{\overline{c}} \Downarrow \buf_2$ \quad
-      % $\select{\buf, \zevent{op}{\overline{v}}, \buf'} $ \quad
       $e' = e[\overline{x \mapsto c}]$
     }
       \infer1[\textsc{\small StObs}]{
@@ -79,16 +69,24 @@ assertions. Effectful operations are categorized as either
       }
     \end{prooftree}
 \\ \
-\mprooftr{60mm}{
+\mprooftr{58mm}{
 $\phi\msubst{x}{c}\Downarrow \top$
 }{StAssume}{
-$\steptr{\alpha}{(\buf, \zassume{\phi}{e})}{[]}{(\buf, e\msubst{x}{c})}$
+$\steptr{\alpha}{(\buf, \zlet{\overline{x}}{\sassume{\phi}}{e})}{[]}{(\buf, e\msubst{x}{c})}$
 }
 \quad
-\mprooftr{40mm}{$\phi \Downarrow \top$}{StAssert}{
-$\steptr{\alpha}{(\buf, \zassert{\phi}{e}}{[]}{(\buf, e)}$
+\mprooftr{44mm}{$\phi \Downarrow \top$}{StAssert}{
+$\steptr{\alpha}{(\buf, \zassert{\phi}{e})}{[]}{(\buf, e)}$
 }
-  }
+\\[0.4em]
+\mprooftr{45mm}{}{StLoop1}{
+$\steptr{\alpha}{(\buf, \zloop{e_1}{e_2})}{[]}{(\buf, e_2)}$
+}
+\quad
+\mprooftr{70mm}{}{StLoop2}{
+$\steptr{\alpha}{(\buf, \zloop{e_1}{e_2})}{[]}{(\buf, e_1;\zloop{e_1}{e_2})}$
+}
+}
 \vspace*{-.1in}
   \caption{Selected Operational Semantics}
   \label{fig:selected-semantics}
@@ -163,15 +161,21 @@ assert expression to hold in order for it to make progress.
 \subsection{Types}
 
 \begin{figure}[t!]
-{\footnotesize
 {\small
 \begin{alignat*}{2}
     \text{\textbf{Pure Refinement Types}}& \quad & t  ::= \quad & \rawnuot{b}{\phi} ~|~ x{:}t \sarr t
-    \\\text{\textbf{Symbolic LTL$_f$}}& \quad &H,A,F  ::= \quad & \msgB{op}{\overline{x}}{\phi} ~|~ \evparenth{\phi} ~|~ \negA A ~|~ A \landA A ~|~ A \lorA A ~|~ A \seqA A ~|~ \nextA A ~|~ A \untilA A
+    \\\text{\textbf{Symbolic Event}}& \quad &se  ::= \quad & \msgB{op}{\overline{x}}{\phi}
+    \\\text{\textbf{Symbolic Automata}}& \quad &H,A,F  ::= \quad & \text{\textcolor{gray}{in Symbolic Regex }} \emptyset ~|~ \epsilon ~|~ se ~|~ A \lorA A ~|~ A \seqA A ~|~ A^*
+    \\& \quad &  \quad & \text{\textcolor{gray}{in Symbolic LTL$_f$ }}  se ~|~ \negA A ~|~ A \landA A ~|~ A \lorA A ~|~ A \seqA A ~|~ \nextA A ~|~ A \untilA A
     \\ \text{\textbf{Prophecy Automata Types}}& \quad & \tau  ::= \quad &
     \rg{H}{A}{F} ~|~ x{:}b \garr \tau ~|~ x{:}t\sarr \tau ~|~ \tau \interty \tau
     \\\text{\textbf{Type Contexts}}& \quad &\Gamma ::= \quad  &\emptyset ~|~ x{:}t, \Gamma
-  \end{alignat*}}}
+  \end{alignat*}
+  \vspace*{-.1in}
+  \begin{flalign*}
+    \text{\textbf{Type Alias}}& \quad \msg{op}{\phi} \doteq \msgB{op}{\overline{x}}{\phi} \text{ when the feild name $\overline{x}$ are clear} \quad   \ha{H}{A} \doteq \rg{H}{A}{\epsilon}
+  \end{flalign*}
+}
 \vspace*{-.15in}
 \caption{\langname{} types.}
 \label{fig:type-syntax}
@@ -251,7 +255,7 @@ and $\Code{val}$.
     \footnotesize
     \begin{align*}
       \Code{val}\hasnty{tVal} \garr & \Code{key}\hasoty{tKey}{\top} \sarr  \effLR{\finalA \msg{putReq}{k = \Code{key} \land v = \Code{val}} \land \nextA \neg \finalA \msg{putReq}{k = \Code{key}} } %
-      \\& \quad \effLR{\lastA \msg{getReq}{k = \Code{key}}}%
+      \\& \quad \effLR{\msg{getReq}{k = \Code{key}}}%
       \effLR{(\neg \msg{putReq}{k = \Code{key}}) \untilA \msg{getRsp}{k = \Code{key} \land v = \Code{val}}}
     \end{align*}}
   \noindent The prophecy automata in this \PAT{} requires that no
@@ -275,33 +279,17 @@ records the set of observable messages that are in scope. This context
 is used to ensure that every observation corresponds to a message that
 was triggered by a previous event.
 
-% \paragraph{Observation Capability} The observable message (e.g.,
-% $\eff{readRsp}$) cannot just happens by itself, but need another
-% message happens previously (e.g., $\eff{readReq}$) whose handler sent
-% this observable message. Then, this capability of observing a message
-% is capture by a multi-set message name (effect operators). A
-% expression $\zobs{\overline{x}}{op}{e}$ is type-safe only when message
-% name $\eff{op}$ is contained by \emph{observation capability} $B$,
-% where $\eff{op}$ will be consumed during typing on its body $e$.
-% % To deal with messages that has same name, we assume there is an unique identifier is assigned to these operators (e.g., $\eff{getRsp_1}$, $\eff{getRsp_2}$, ...).
-% % To deal with messages that has same name, we assume there is an unique identifier is assigned to these operators (e.g., $\eff{getRsp_1}$, $\eff{getRsp_2}$, ...), which we can successfully decide the location of symbolic event in $F$ by its name in $\bufLR{B}$. When the context is clear, we omit $\bufLR{B}$.
-
-% \paragraph{Auxiliary Context} Besides the handler specification
-% $\Delta$, we need another auxiliary context $\Sigma$ provides
-% observation capability provided by handlers. Then
-% $(\eff{op}, B) \in \Sigma$ means handling message with name $\eff{op}$
-% will sending new messages with name in $B$, which produce more
-% observation capability. We omit them in the rest of rules.
 
 \begin{example} The handler context $\Delta$ for our running examples
   augments the four specifications from \autoref{fig:spec} as follows:
-  {\small
-    \begin{align*} \Delta \doteq
-      \{ (\eff{readReq}, \langle \ldots, \{\eff{readRsp}\}\rangle),%
+{\small
+\begin{align*} 
+  \Delta \doteq \{ (\eff{readReq}, \langle \ldots, \{\eff{readRsp}\}\rangle),%
       (\eff{readRsp}, \langle \ldots, \emptyset\rangle),%
       (\eff{writeReq}, \langle \ldots,\{\eff{writeRsp}\} \rangle), %
       (\eff{writeRsp}, \langle \ldots, \emptyset\rangle) \}
-\end{align*}}
+\end{align*}
+}
 \end{example}\vspace{-.2cm}
 
 \begin{figure}[!t]
@@ -313,18 +301,17 @@ was triggered by a previous event.
 \end{flalign*}
 }
 \\ \
-\mprooftr{38mm}
-{$\Gamma \wellfoundedvdash H$ \quad
-$\Gamma \wellfoundedvdash A$ \quad
-$\Gamma \wellfoundedvdash F$ \quad
-$\Gamma \vdash H \seqA A \seqA F \not \subseteq \neg\allTL$ }
-{WfHAF}
-{$\Gamma \wellfoundedvdash \rg{H}{A}{F}$}
-\
+% \mprooftr{38mm}
+% {$\Gamma \wellfoundedvdash H$ \quad
+% $\Gamma \wellfoundedvdash A$ \quad
+% $\Gamma \wellfoundedvdash F$ }
+% {WfHAF}
+% {$\Gamma \wellfoundedvdash \rg{H}{A}{F}$}
+% \
 \mprooftr{42mm}
-{$\Gamma \vdash H_2 \subseteq H_1$ \quad
-$\Gamma \vdash A_1 \subseteq A_2$ \quad
-$\Gamma \vdash F_1 \subseteq F_2$ }
+{$\Gamma \vdash H_2 \subseteq H_1$ \quad 
+$\Gamma \vdash F_2 \subseteq F_1$ \quad
+$\Gamma \vdash A_1 \subseteq A_2$  }
 {SubHAF}
 {$\Gamma \vdash \rg{H_1}{A_1}{F_1} <: \rg{H_2}{A_2}{F_2}$}
 \
@@ -343,42 +330,57 @@ $\Gamma; \Delta; \Theta \vdash e_1 : \tau$ \quad $\Gamma; \Delta; \Theta \vdash 
 \quad
 \mprooftr{87mm}
 {
-$\Delta(\eff{op}) =\langle \mykw{gen}\;\tau, \Theta' \rangle$ \quad
-$\Gamma \vdash \tau <: \overline{x_i{:}t_i}\sarr
-\rg{H}{\lastA\msg{op}{\phi}}{A \seqA F}$ \quad
+$(\eff{op}, \Theta', \overline{x_i{:}t_i}\sarr
+\rg{H}{\msg{op}{\phi}}{A}) \in \Delta$ \quad
 $\forall i. \Gamma \vdash v_i : t_i$ \quad
- $\Gamma; \Delta; \Theta \cup \Theta' \vdash e : \rg{H \seqA \lastA\msg{op}{\phi\msubst{x_i}{v_i}}}{A}{F}$
+ $\Gamma; \Delta; \Theta \cup \Theta' \vdash e : \ha{H \seqA \msg{op}{\phi\msubst{x_i}{v_i}}}{A}$
  }
 {TGen}
-{$\Gamma; \Delta; \Theta \vdash \zgen{op}{\overline{v_i}}{e} : \rg{H}{\lastA\msg{op}{\phi\msubst{x_i}{v_i}} \seqA A}{F}$}
+{$\Gamma; \Delta; \Theta \vdash \zgen{op}{\overline{v_i}}{e} : \ha{H}{\msg{op}{\phi\msubst{x_i}{v_i}} \seqA A}$}
 \\[.4em]
-% \mprooftr{15mm}
-% {
-% $\Delta(\eff{op}) \langle \tau, $
-%  }
-% {TEOp}
-% {$\Gamma \vdash \eff{op} : \tau$}
-% \
 \mprooftr{35mm}
 {}
 {TRet}
-{$\Gamma; \Delta; \emptyset \vdash () : \rg{H}{\epsTL}{F}$}
+{$\Gamma; \Delta; \emptyset \vdash () : \ha{\allA}{\epsilon}$}
 \quad
 \mprooftr{81mm}
 {
-  $\Delta(\eff{op}) =\langle \mykw{obs}\;\tau, \Theta'\rangle$ \quad
-$\Gamma \vdash \tau <: \overline{x_i{:}t_i}\sarr
-\rg{H}{\lastA\msgB{op}{\overline{y}}{\phi}}{A \seqA F}$ \quad
- $\Gamma, \overline{x{:}t}; \Delta; \Theta \cup \Theta' \vdash e : \rg{H \seqA \lastA\msgB{op}{\overline{y}}{\phi \land \overline{y = x}}}{A}{F}$
+  $(\eff{op}, \Theta', \overline{x_i{:}t_i}\sarr \rg{H}{\msgB{op}{\overline{y}}{\phi}}{A}) \in \Delta$ \quad
+ $\Gamma, \overline{x{:}t}; \Delta; \Theta \cup \Theta' \vdash e : \ha{H \seqA \lastA\msgB{op}{\overline{y}}{\phi \land \overline{y = x}}}{A}$
  }
 {TObs}
-{$\Gamma; \Delta; \{\eff{op}\} \cup \Theta \vdash \zobs{\overline{x}}{op}{e} : \rg{H}{\lastA\msgB{op}{\overline{y}}{\phi} \seqA A}{F}$}
+{$\Gamma; \Delta; \{\eff{op}\} \cup \Theta \vdash \zobs{\overline{x}}{op}{e} : \ha{H}{\lastA\msgB{op}{\overline{y}}{\phi} \seqA A}$}
+\\[.4em]
+\mprooftr{61mm}{
+ $\Gamma; \Delta; \emptyset \vdash e_1 : \ha{H \seqA A_1^*}{A_1}$ \quad
+ $\Gamma; \Delta; \Theta \vdash e_2 : \ha{H \seqA A_1^*}{A_2}$
+}{\textcolor{red}{TLoop}}{
+ $\Gamma; \Delta; \Theta \vdash \zloop{e_1}{e_2} : \ha{H}{A_1^*\seqA A_2}$}
 }
 % \vspace*{-.1in}
 \caption{Selected typing rules.}
 \label{fig:selected-typing-rules}
 \vspace*{-.15in}
 \end{figure}
+
+\ZZ{Why is the future automaton contravariant? Any future trace is allowed; which one is realized depends on the continuation of the program. The PAT can attempt to predict a \emph{subset} of the allowed future traces. As a result, there may exist valid computations that violate the predicted future automaton -- thus it is unsound to say the future automaton is covariant.}
+
+{\small\begin{align*}
+  &\denot{ \rawnuot{b}{\phi} } &&\doteq \{ c ~|~ \emptyset
+                                       \basicvdash c : b \land
+                                       \phi[\nu\mapsto v] \}
+  \\ &\denot{ x{:}t_x \sarr t } &&\doteq \{ e ~|~ \emptyset \basicvdash e : \eraserf{x{:}t_x \sarr t} \land
+                                           \forall c \in \denot{ t_x }.\, e\ c \in  \denot{ \tau[t \mapsto c ] } \}
+  \\ &\denot{ x{:}t\sarr\tau } &&\doteq \{ e ~|~ \emptyset \basicvdash e : \eraserf{x{:}t\sarr\tau} \land
+                                           \forall c \in \denot{ t }.\, e\ c \in  \denot{ \tau[x\mapsto c ] } \}
+  \\ &\denot{ x{:}t\garr\tau } &&\doteq \{ e ~|~ 
+    \emptyset \basicvdash e : \eraserf{\tau} \land 
+    \forall c \in \denot{t}. e \in  \denot{ \tau[x\mapsto c ] } \}
+  \\ &\denot{\rg{H}{A}{F}} &&\doteq \{e ~|~ \emptyset \basicvdash e : \Code{unit} \land \forall \alpha_h \in\denot{H}.\forall \alpha_f \in\denot{F}. \forall \alpha\; \beta_1\;\beta_2\;e_h\;e_f.
+  \\&&& \quad \msteptr{[]}{(\emptyset, e_h)}{\alpha_h}{(\beta_1, ())}\land \msteptr{\alpha_h}{(\beta_1, e)}{\alpha}{(\beta_2, ())} \land \msteptr{\alpha_h \listconcat \alpha }{(\beta_2, e_f)}{\alpha_f}{(\emptyset, ())} \impl \alpha \in\denot{A} \}
+  \\ &\denot{ \tau_1 \interty \tau_2 } &&\doteq \denot{\tau_1} \cap \denot{\tau_2}
+\end{align*}}
+
 
 \paragraph{Auxiliary typing relations}
 Our system depends on three auxiliary relations: a well-formedness
@@ -431,6 +433,16 @@ performed in:%
     }_\texttt{history}\;\seqA\;\underbrace{ \lastA
     \msg{op}{\phi\msubst{x_i}{v_i}} }_\texttt{current} \;\seqA\;
     \underbrace{ A \seqA F }_\texttt{prophecy}
+  \end{align*}}
+{\footnotesize
+  \begin{align*}
+    \underbrace{ H
+    }_\texttt{history}\;\seqA\;\underbrace{
+    \msg{op}{\phi\msubst{x_i}{v_i}} \seqA A }_\texttt{current}
+    \;\seqA\; \underbrace{ \epsilon }_\texttt{prophecy} \equiv \underbrace{ H
+    }_\texttt{history}\;\seqA\;\underbrace{
+    \msg{op}{\phi\msubst{x_i}{v_i}} }_\texttt{current} \;\seqA\;
+    \underbrace{ A}_\texttt{prophecy}
   \end{align*}}
 \noindent %
 To type the rest of the expression, both rules move the symbolic event
@@ -494,6 +506,12 @@ allows controllers to explore different message orderings.
       &\Gamma;\Delta; \emptyset \vdash P_{C} \text{ (lines $2$ - $7$)}: \rg{\epsTL}{A_1\seqA A_2\seqA A_3\seqA A_4}{\epsTL}
         \tag{\textsc{TGen}}
     \end{align*}
+    \begin{align*}
+      &(\eff{writeReq}, \Code{x}\hasnty{int} \sarr \rg{\epsilon}{\msg{writeReq}{v =\Code{x}}}{A_2\seqA\msg{writeRsp}{v = \Code{x}}\seqA A_4}, \{\eff{writeRsp}\}) \in \Delta \\
+      & \underline{\Gamma;\Delta; \emptyset \vdash P_{C} \text{ (lines $3$ - $7$)}: \ha{A_1}{A_2\seqA A_3\seqA A_4}} \\
+      &\Gamma;\Delta; \emptyset \vdash P_{C} \text{ (lines $2$ - $7$)}: \ha{\epsilon}{A_1\seqA A_2\seqA A_3\seqA A_4}
+        \tag{\textsc{TGen}}
+    \end{align*}
   }\noindent %
 Since the type of $\eff{writeReq}$ aligns with the
   target type $\rg{\epsTL}{A_1\seqA A_2\seqA A_3\seqA A_4}{\epsTL}$,
@@ -509,46 +527,41 @@ of SFAs is the set of traces they can accept. Then,  automata
 inclusion under a type context is defined as $\Gamma \vdash A \subseteq
 A' \doteq \forall \sigma \in \denot{\Gamma}. \denot{\sigma(A)}
 \subseteq \denot{\sigma(B)}$.\footnote{The details of these definition can be found in our \techreport{}.}
-% {\small\begin{align*}
-%     \Gamma \vdash A \subseteq A' \doteq \forall \sigma \in \denot{\Gamma}. \denot{A} \subseteq \denot{B}
-% \end{align*}}\noindent
 
 \paragraph{Well-formed Handler specification} A
 handler specification $\Delta$ should be consistent with the
 auxiliary semantics of handlers introduced in
 \autoref{fig:selected-semantics}, also, $\Delta$ should also guarantee the new sending message assumed by capability context can be eventually received.
 
-% \begin{definition}[Well-formed handler context]
-%   \label{lemma:built-in-typing}
-%   The handler specification $\Delta$ and capability context $\Sigma$ is well-formed iff for all operator $\eff{op}$ and its \PAT $\overline{y{:}b} \garr \overline{x{:}t} \sarr \rg{H}{\lastA\msgB{op}{\overline{y}}{\phi}}{F}$ and capability $\Theta$ in $\Delta$ satisfying
-% {\small\begin{align*}
-%     \forall \overline{y{:}b}.\forall \alpha \in \denot{A}. \forall \overline{c \in \denotation{t}}. \forall \overline{\alpha_i}. \forall \overline{m_i}.\; \alpha_1 \listconcat [m_1] \listconcat ... [m_{n}] \listconcat \alpha_{n+1} \in \denot{F} \impl \alpha \vDash \zevent{op}{\overline{c}} \Downarrow \{m_i\}
-% \end{align*}}\noindent
-% also, $\overline{y{:}\rawnuot{b}{\top}},\overline{x{:}t} \vdash F \subseteq \bigwedge_{\eff{op} \in \Theta} \finalA \msg{op}{\top}$ should hold.
-% \end{definition}
-
 \begin{definition}[Well-formed handler context]
   \label{lemma:built-in-typing}
-  The handler specification $\Delta$ is well-formed iff for all operator $\eff{op}$ and its \PAT $\overline{y{:}b} \garr \overline{x{:}t} \sarr \rg{H}{\lastA\msgB{op}{\overline{y}}{\phi}}{F}$ and capability $\{\overline{\eff{op_i}}\}$ in $\Delta$ satisfying
+  The handler specification $\Delta$ is well-formed iff for all operator $\eff{op}$ and its \PAT $\overline{y{:}b} \garr \overline{x{:}t} \sarr \rg{H}{\msg{op}{\phi}}{F}$ and obligation $\overline{\eff{op_i}}$ in $\Delta$ satisfying
 {\small\begin{align*}
     &\forall \overline{y{:}b}.\forall \alpha_h \in \denot{H}. \forall \overline{c \in \denotation{t}}. \forall \overline{c_{ij}}.\forall \overline{\alpha_i}. \alpha_1 \listconcat [\zevent{op_1}{\overline{c_{1j}}}] \listconcat ... [\zevent{op_n}{\overline{c_{nj}}}] \listconcat \alpha_{n+1} \in \denot{F} \impl
     \\&\qquad \alpha_h \vDash \zevent{op}{\overline{c}} \Downarrow \{\zevent{op_i}{\overline{c_{ij}}}\} \land \phi\msubst{x}{c}
 \end{align*}}
 \end{definition}
 
-
-\begin{theorem}[Fundamental Theorem]\label{theorem:fundamental}A well-typed term, i.e., \(\Gamma; \Delta; \Theta \vdash e : \rg{H}{A}{F}\), generates traces consistent with the \PAT and can also terminate with a message buffer denoted by capability $\Theta$.\footnote{The proofs of all theorems in this paper are provided in the \techreport{}.}
+\begin{definition}[Trace consistent with handler context]
+  \label{lemma:trace-hctx}
+  A trace $\alpha$ is consistent with a handler context $\Delta$ iff for all events $\zevent{op}{\overline{c_i}}$ within $\alpha$ such that $\alpha_h \listconcat [\zevent{op}{\overline{c_i}}] \listconcat \alpha_f = \alpha$, there exists a \PAT $\overline{x{:}t} \sarr \rg{H}{\msg{op}{\phi}}{F}$ and obligation $\Theta$ in $\Delta$ satisfying
 {\small\begin{align*}
-   &\forall \sigma \in
-    \denotation{\Gamma}. \sigma(e) \in
-    \denotation{\sigma(\rg{H}{A}{F})} \land  \forall \alpha_h \in \denot{\sigma(H)}.\forall \beta \in \denot{\Theta}. \exists \alpha.\exists \beta'. \msteptr{\alpha_h}{(\beta, e)}{\alpha}{(\beta', ())}
+    \alpha_h \in \denot{H\msubst{x_i}{c_i}} \land \alpha_f \in \denot{F\msubst{x_i}{c_i}} \land \Theta \in \mathbf{GetOp}(\alpha_f) \land \phi\msubst{x_i}{c_i} \land \forall i. c_i \in \denotation{t_i}
 \end{align*}}
-\end{theorem}
+\end{definition}
 
-\begin{theorem}[Type Soundness]\label{theorem:sound} Given a well-formed handler specification \(\Delta\), with ghost variables \(\overline{x{:}b}\) and a violation property \(A\), a controller \(e\) that satisfies \(\overline{x{:\rawnuot{b}{\top}}};\Delta;\emptyset \vdash e : \rg{\epsTL}{A}{\epsTL}\) will realize at least one trace consistent with \(A\), i.e., 
- {\small\begin{align*} \exists
-    \overline{c{:}b}. \exists \alpha. \msteptr{[]}{(\emptyset,
-      e[\overline{x\mapsto c}])}{\alpha}{(\emptyset, ())} \land \alpha \in
-    \denot{A[\overline{x\mapsto c}]}
-\end{align*}}
+\begin{theorem}[Fundamental Theorem]\label{theorem:fundamental}A well-typed term, i.e., \(\Gamma; \Delta; \Theta \vdash e : \ha{H}{A}{F}\), generates traces consistent with the \PAT.\footnote{The proofs of all theorems in this paper are provided in the \techreport{}.}
+  {\small\begin{align*}
+     &\textcolor{red}{\forall \sigma \in
+      \denotation{\Gamma}. \sigma(e) \in
+      \denotation{\sigma(\rg{H}{A}{F})}}
+  \end{align*}}
+  \end{theorem}
+  
+\begin{theorem}[Type Soundness]\label{theorem:sound} Given a well-formed handler specification \(\Delta\), with ghost variables \(\overline{x{:}b}\) and a violation property \(A\), a controller \(e\) that satisfies \(\overline{x{:\rawnuot{b}{\top}}};\Delta;\emptyset \vdash e : \ha{\epsilon}{A}\) will realize at least one trace consistent with \(A\), i.e., 
+   {\small\begin{align*} \textcolor{red}{\forall
+      \overline{c{:}b}. \forall \alpha. \msteptr{[]}{(\emptyset,
+        e[\overline{x\mapsto c}])}{\alpha}{(\emptyset, ())} \implies \alpha \in
+      \denot{A[\overline{x\mapsto c}]} \land \Delta \sim \alpha } 
+  \end{align*}}
 \end{theorem}

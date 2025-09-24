@@ -56,6 +56,7 @@ an SFA's traces.
   {\small
     \begin{alignat*}{2}
       \text{\textbf{Abstract Trace}}& \quad &\Pi  ::= \quad & \lastA \msgB{op}{\overline{x}}{\phi} ~|~ \globalA A ~|~ \Pi \seqA \Pi
+      \\\text{\textbf{\textcolor{red}{Abstract Trace}}}& \quad &\Pi  ::= \quad & \epsilon ~|~ se ~|~ se^o ~|~ A^* ~|~ \Pi \seqA \Pi \textbf{ no empty, no union} 
     \end{alignat*}} %
   \noindent
   Every symbolic LTL$_f$ formula can be normalized into a finite set
@@ -81,6 +82,56 @@ an SFA's traces.
 \subsection{Synthesis Algorithm}
 
 \setlength{\textfloatsep}{4pt}
+\begin{algorithm}[t!]
+  \Params{Ghost variables $\overline{x{:}b}$, handler context
+    $\Delta$, and abstract unsafe trace $\Pi$}%
+  \Output{Controller $e$, such that
+    $\Gamma; \Delta; \emptyset \vdash e~:~\rg{\epsTL}{\Pi}{\epsTL}$} %
+  $\Gamma \leftarrow \overline{x{:}\rawnuot{b}{\top}}$
+  \tcp*[l]{initialize type context}
+$M : (Map(se,\mathcal{P}(se))) \leftarrow \emptyset$ \tcp*[l]{initialize dependency map.}
+$(\Gamma, \Pi) \leftarrow \S{SynLoop}(\Gamma, M, \Pi)$ \tcp*[l]{synthesize loop}
+$e \leftarrow \S{DeriveTerm}(\Gamma, M, \Pi)$ \tcp*[l]{derive controller program}
+\Return{$e$}\;
+\Procedure{$\mathbf{Refine}(\Gamma, M, \Pi)$}{
+  \tcp{Pick a previously unexamined symbolic event $\msg{op}{\phi}$}
+  \While{exists $se$ s.t. $\Pi = \Pi_h \seqA se \seqA \Pi_f$ and $se \not\in \textbf{Dom}(M) \lor se \not\in \textbf{Codom}(M)$}{
+    \If{$se \not\in \textbf{Dom}(M)$}{
+        $(\Gamma, M, \Pi) \leftarrow \forward(\Delta, \Gamma, M, \Pi_h, se, \Pi_f)$\;
+    }
+    \If{$se \notin \textbf{Dom}(M)$}{
+        \lIf{$\GEN(se.\eff{op})$}{
+            $M[\textbf{dummySe}] \leftarrow \{se\}$
+        }
+        \lElse {
+        $(\Gamma, M, \Pi) \leftarrow \backward(\Delta,\Gamma,M, \Pi_h, se, \Pi_f)$
+        }
+    }
+  }
+  \Return{$(\Gamma, M, \Pi)$}
+}
+\Procedure{$\mathbf{SynLoop}(\Gamma, M, \Pi)$}{
+  \tcp{Pick a previously unexamined symbolic event $\msg{op}{\phi}$}
+  \ForEach{$A^*$ s.t. $\Pi = \Pi_h \seqA A^* \seqA \Pi_f$}{
+    $\Pi' \leftarrow \mathbf{Normalize}(A)$\;
+    \Match{$\mathbf{Refine}(\Gamma, \Pi_h \seqA \Pi')$}{
+        \lCase{$\Code{None}$}{ $(\Pi \leftarrow \Pi_h \seqA \Pi_f)$ }
+        \Case{$\Code{Some}\;(\Gamma', M', \Pi_h \seqA \Pi')$}{
+            \If{$\Gamma \cup \Gamma' ~|~ \emptyset \vdash  $}{
+                \ForEach{$se \in M'$}{
+                    $M[se] \leftarrow M[se] \cup \{se\}$
+                }
+            }
+            $\Gamma \leftarrow \Gamma \cup \Gamma'$; $M \leftarrow M \cup M'$;
+            $\Pi \leftarrow \Pi_h \seqA (\Pi'^*) \seqA \Pi_f$\;}
+        }
+    }
+  \Return{$(\Gamma,\Pi)$}
+}
+\caption{\textcolor{red}{Synthesis}}
+\label{algo:top-syn}
+\end{algorithm}
+
 \begin{algorithm}[t!]
   \Params{Ghost variables $\overline{x{:}b}$, handler context
     $\Delta$, and abstract unsafe trace $\Pi$}%
@@ -118,6 +169,7 @@ $e \leftarrow \S{DeriveTerm}(\Gamma, \Pi)$ \tcp*[l]{derive controller program}
 \caption{Synthesis}
 \label{algo:top-syn}
 \end{algorithm}
+
 
 Our top-level synthesis algorithm is shown in \autoref{algo:top-syn}.
 Given an (unsafe) abstract trace $\Pi$ and corresponding ghost
@@ -227,15 +279,34 @@ future trace.
 
 \setlength{\textfloatsep}{4pt}
 \begin{algorithm}[t!]
-% \Params{A 5-tuple $(\Gamma, \Pi_h, \lastA \msgA{op}{\overline{x}}, \Pi_f, \Gchecked)$ that are type context, history, current, and future automata, as well as checked message set.}
-% \Output{Set of refined 5-tuples }
 \Procedure{$\forward(\Delta, \Gamma, \Mfw, \Mbw,\Pi_h, \lastA \msg{op}{\phi}, \Pi_f)$}{
   \tcp{Select the \PAT of $\eff{op}$ from handler context}
     % \SJ{I don't understand this form - the braces at the end are not part of a PAT}
-    \If{$\Delta(\eff{op}) = \langle \overline{z{:}b}\garr\overline{y{:}t}\sarr\rg{H}{\lastA\msg{op}{\phi'}}{F}, B \rangle $}{
+    \If{$\Delta(\eff{op}) = \overline{z{:}b}\garr\overline{y{:}t}\sarr\rg{H}{\lastA\msg{op}{\phi'}}{F \lorA (\Pi_1 \seqA se_1^o \seqA \Pi_2 ... se_n^o \seqA \Pi_n)}$}{
         $\Gamma \leftarrow \Gamma, \overline{z{:}\rawnuot{b}{\top}}, \overline{y{:}t}$ \tcp*[l]{add ghost variables and parameters types to type context}
       % \tcp{add qualifier of $\eff{op}$ event into type context}
       % \SJ{Didn't we already do this at line 4 in Algorithm 1?}
+        $\msg{op}{\phi} \leftarrow \msg{op}{\phi \land \phi'}$ \tcp*[l]{merge current automata}
+        $\Pi_h \leftarrow \Pi_h \land H$ \tcp*[l]{merge history automata}
+        $\Pi_f \leftarrow \Pi_f \land (\Pi_1 \seqA se_1 \seqA \Pi_2 ... se_n \seqA \Pi_n)$ \tcp*[l]{merge prophecy automata}
+        \tcp{non-emptiness check}
+        \If{$\Gamma \vdash \Pi_h \seqA \msg{op}{\phi} \seqA \Pi_f \not \subseteq \emptyset$}{
+            $M[se] \leftarrow \{se_1, ... se_n\}$
+            \tcp*[l]{update dependency map}
+            \Return{$(\Gamma, M, \Pi_h \seqA \msg{op}{\phi} \seqA \Pi_f)$}
+        }
+    }
+}
+\caption{\textcolor{red}{Forward Synthesis}}
+\label{algo:forward}
+\end{algorithm}
+
+\setlength{\textfloatsep}{4pt}
+\begin{algorithm}[t!]
+\Procedure{$\forward(\Delta, \Gamma, M, \Pi_h, \msg{op}{\phi}, \Pi_f)$}{
+  \tcp{Select the \PAT of $\eff{op}$ from handler context}
+    \If{$\Delta(\eff{op}) = \langle \overline{z{:}b}\garr\overline{y{:}t}\sarr\rg{H}{\lastA\msg{op}{\phi'}}{F}, B \rangle $}{
+        $\Gamma \leftarrow \Gamma, \overline{z{:}\rawnuot{b}{\top}}, \overline{y{:}t}$ \tcp*[l]{add ghost variables and parameters types to type context}
         $\msg{op}{\phi} \leftarrow \msg{op}{\phi \land \phi'}$ \tcp*[l]{merge current automata}
         $\Pi_h \leftarrow \Pi_h \land H$ \tcp*[l]{merge history automata}
         $\Pi_f \leftarrow \Pi_f \land F$ \tcp*[l]{merge prophecy automata}
@@ -250,6 +321,7 @@ future trace.
 \caption{Forward Synthesis}
 \label{algo:forward}
 \end{algorithm}
+
 
 \paragraph{Forward and backward synthesis} The forward synthesis
 subroutine is shown in \autoref{algo:forward}. It first retrieves the
@@ -283,7 +355,28 @@ similar to \textsc{WfHAF} .
 Finally, the algorithm returns the refined type context, property, as
 well as updated forward and backward sets (line $8$).
 
-% \SJ{Stopped here ...}
+\setlength{\textfloatsep}{4pt}
+\begin{algorithm}[t!]
+  \Procedure{$\backward(\Delta, \Gamma, M, \Pi_h, \msg{op}{\phi}, \Pi_f)$}{ 
+    \tcp{Choose an $\eff{op_{parent}}$ that sends $\eff{op}$ and retrieve its \PAT{} from the handler context }
+    \If{$\Delta(\eff{op_{parent}}) =
+      \overline{z{:}b}\garr\overline{y{:}t}\sarr\rg{H}{\msg{op_{parent}}{\phi_\Code{parent}}}{F \lorA (\Pi_1 \seqA se_1^o \seqA ... \Pi_i \seqA \msg{op}{\phi'}^o \seqA \Pi_{i+1} ... \seqA \Pi_n)}$}{
+        $\Gamma \leftarrow \Gamma, \overline{z{:}\rawnuot{b}{\top}}, \overline{y{:}t}$ \tcp*[l]{add ghost variables and parameters types to the type context}
+        $\msg{op}{\phi} \leftarrow \msg{op}{\phi \land \phi'}$ \tcp*[l]{merge current automata}
+        $\Pi_h \leftarrow \Pi_h \land (H \seqA \msg{op_{parent}}{\phi_\Code{parent}} \seqA \Pi_1 \seqA se_1 \seqA ... \Pi_i)$ \tcp*[l]{merge history automata}
+        $\Pi_f \leftarrow \Pi_f \land (\Pi_{i+1} ... \seqA \Pi_n)$ \tcp*[l]{merge prophecy automata}
+        \tcp{non-emptiness check}
+        \If{$\Gamma \vdash (\Pi_h \seqA \msg{op}{\phi} \seqA
+          \Pi_f) \not \subseteq \emptyset$}{
+            $M[\msg{op_{parent}}{\phi_\Code{parent}}] \leftarrow \{se_1, ..., \msg{op}{\phi}, ... se_n\}$
+            \tcp*[l]{update dependency map}
+            \Return{$(\Gamma, M, \Pi_h \seqA \msg{op}{\phi} \seqA \Pi_f)$}
+        }
+    }
+}
+\caption{\textcolor{red}{Backward Synthesis}}
+\label{algo:backward}
+\end{algorithm}
 
 \setlength{\textfloatsep}{4pt}
 \begin{algorithm}[t!]

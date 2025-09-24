@@ -76,20 +76,27 @@
 % Lambda Calculus
 \newcommand{\zlet}[3]{\mykw{let}\ {#1}\ {=}\ {#2} \  \mykw{in}\ {#3}}
 \newcommand{\zrandom}[1]{\mykw{random}\ {#1}}
+\newcommand{\sgen}[2]{\mykw{gen}\ \eff{#1} \ {#2}}
+\newcommand{\sobs}[1]{\mykw{obs}\ \eff{#1}}
+\newcommand{\sassume}[1]{\mykw{assume}\ {#1}}
+\newcommand{\sassert}[1]{\mykw{assert}\ {#1}}
+\newcommand{\sloop}{\mykw{loop}}
+\newcommand{\zassume}[2]{\mykw{assume}\ {#1} \  \mykw{in}\ {#2}}
+\newcommand{\zassert}[2]{\mykw{let}\ \mykw{assert}\ {#1} \  \mykw{in}\ {#2}}
+\newcommand{\zwhile}{\mykw{while(*)}}
+\newcommand{\zloop}[2]{\mykw{let}\ \mykw{loop}\{{#1}\} \ \mykw{in}\ {#2}}
+\newcommand{\zgen}[3]{\mykw{let}\ \mykw{gen}\ \eff{#1} \ {#2} \ \mykw{in}\ {#3}}
 \newcommand{\zobs}[3]{\mykw{let}\ {#1}\ {=}\ \mykw{obs}\ \eff{#2}\ \mykw{in}\ {#3}}
 \newcommand{\zobsPhi}[4]{\mykw{let}\ {#1}\ {=}\ \mykw{obs}\ \eff{#2}\ {#3}\ \mykw{in}\ {#4}}
-\newcommand{\zgen}[3]{\mykw{gen}\ \eff{#1} \ {#2} \ \mykw{in}\ {#3}}
 \newcommand{\zevent}[2]{\eff{#1}({#2})}
 \newcommand{\zrecv}[3]{\mykw{receive}\ {#1}\ {#2} \ \mykw{in}\ {#3}}
-\newcommand{\zassume}[2]{\mykw{assume}\ {#1} \  \mykw{in}\ {#2}}
-\newcommand{\zassert}[2]{\mykw{assert}\ {#1} \  \mykw{in}\ {#2}}
 \newcommand{\perform}[4]{\mykw{let}\ {#1}\ {=}\ \Code{#2}\ {#3}\ \mykw{in}\ {#4}}
 \newcommand{\zlam}[3]{\lambda {#1}{:}{#2}.{#3} }
 \newcommand{\zif}[3]{\mykw{if}\ {#1}\ \mykw{then}\ {#2} \ \mykw{else}\ {#3}}
 \newcommand{\zzlam}[2]{\lambda {#1}.{#2} }
 \newcommand{\zfix}[5]{\Code{\textcolor{codeblue}{fix}}{#1}{:}{#2}.\zlam{#3}{#4}{#5}}
 \newcommand{\zzfix}[3]{\mykw{fix}{#1}.\zzlam{#2}{#3}}
-\newcommand{\zloop}[1]{\mykw{loop}\;{#1}}
+% \newcommand{\zloop}[1]{\mykw{loop}\;{#1}}
 \newcommand{\exnc}{\Code{crash}}
 % Impertive Language
 \newcommand{\ilet}[2]{\mykw{let}\ {#1}\ {=}\ {#2}}
@@ -387,7 +394,7 @@
 %\newcommand{\lastA}{{\mbox{$\mathbf{SINGLE}$}}}
 % \newcommand{\lastA}{{\mathbf{SINGLE}}}
 \newcommand{\lastA}{{\mathcal{S}}}
-\newcommand{\allA}{{\mathbf{All}}}
+\newcommand{\allA}{{\anyA^*}}
 \newcommand{\singletonA}{{\mathbf{Single}}}
 \newcommand{\untilA}{\,\mathcal{U}\,}
 \newcommand{\weakUntilA}{\,\mathcal{W}\,}
@@ -441,6 +448,7 @@
 \newcommand{\atriple}[3]{ {#1}{\times}\bufLR{#2}{\times}\effLR{#3}}
 \newcommand{\relyg}[3]{ \bufLR{#1}{#2}\effLR{#3}}
 \newcommand{\rg}[3]{ \effLR{#1}\effLR{#2}\effLR{#3}}
+\newcommand{\ha}[2]{\effLR{#1}\effLR{#2}}
 \newcommand{\rgB}[4]{ \effLR{#1}\effLR{#2}\effLR{#3}\bufLR{#4}}
 \newcommand{\rgbuf}[3]{ \effLR{#1}\effLR{#2}\bufLR{#3}}
 \newcommand{\hfour}[4]{ \effLR{#1}\,\bufLR{#2}\,{#3}\,\bufLR{#4}}
