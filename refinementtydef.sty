@@ -74,6 +74,8 @@
 \newcommand{\ite}[3]{\mykw{if}\ {#1}\ \mykw{then}\ {#2}\ \mykw{else}\ {#3}}
 \newcommand{\match}[1]{\mykw{match}\ {#1}\ \mykw{with}\ }
 % Lambda Calculus
+\newcommand{\cond}{ret}
+\newcommand{\capTau}[1]{\langle {#1} \rangle}
 \newcommand{\zlet}[3]{\mykw{let}\ {#1}\ {=}\ {#2} \  \mykw{in}\ {#3}}
 \newcommand{\zrandom}[1]{\mykw{random}\ {#1}}
 \newcommand{\sgen}[2]{\mykw{gen}\ \eff{#1} \ {#2}}
@@ -81,9 +83,11 @@
 \newcommand{\sassume}[1]{\mykw{assume}\ {#1}}
 \newcommand{\sassert}[1]{\mykw{assert}\ {#1}}
 \newcommand{\sloop}{\mykw{loop}}
-\newcommand{\zassume}[2]{\mykw{assume}\ {#1} \  \mykw{in}\ {#2}}
+\newcommand{\zassume}[3]{\mykw{let}\ {#1} = \mykw{assume}\ {#2} \  \mykw{in}\ {#3}}
 \newcommand{\zassert}[2]{\mykw{let}\ \mykw{assert}\ {#1} \  \mykw{in}\ {#2}}
-\newcommand{\zwhile}{\mykw{while(*)}}
+\newcommand{\zwhile}[2]{\mykw{let}\ \mykw{while}(*)\{{#1}\}\ \mykw{in}\ {#2}}
+% \newcommand{\zwhile}[3]{\mykw{let}\ \mykw{while}({#1})\{{#2}\}\ \mykw{in}\ {#3}}
+% \newcommand{\zwhile}[3]{\mykw{let}\ \mykw{do}\{{#2}\}\ \mykw{while}({#1})\ \mykw{in}\ {#3}}
 \newcommand{\zloop}[2]{\mykw{let}\ \mykw{loop}\{{#1}\} \ \mykw{in}\ {#2}}
 \newcommand{\zgen}[3]{\mykw{let}\ \mykw{gen}\ \eff{#1} \ {#2} \ \mykw{in}\ {#3}}
 \newcommand{\zobs}[3]{\mykw{let}\ {#1}\ {=}\ \mykw{obs}\ \eff{#2}\ \mykw{in}\ {#3}}
@@ -451,7 +455,7 @@
 \newcommand{\ha}[2]{\effLR{#1}\effLR{#2}}
 \newcommand{\rgB}[4]{ \effLR{#1}\effLR{#2}\effLR{#3}\bufLR{#4}}
 \newcommand{\rgbuf}[3]{ \effLR{#1}\effLR{#2}\bufLR{#3}}
-\newcommand{\traceDelta}[2]{{#1}\sim{#2}}
+\newcommand{\traceDelta}[2]{{#1}\vDash{#2}}
 \newcommand{\hfour}[4]{ \effLR{#1}\,\bufLR{#2}\,{#3}\,\bufLR{#4}}
 \newcommand{\hpair}[2]{ \effLR{#1}\effLR{#2} }
 \newcommand{\uhtriple}[3]{ \ueffLR{#1}\,{#2}\,\effLR{#3} }
@@ -604,7 +608,7 @@
 \newcommand{\negSCA}{A_\Code{violateRYW}}
 \newcommand{\negSCAPi}{\Pi_\Code{violateRYW}}
 
-\newcommand{\PAT}{\mbox{{\sc Pat}}\xspace}
+\newcommand{\PAT}{\mbox{{\sc Pret}}\xspace}
 \newcommand{\DSL}{\boldsymbol{\lambda}^{C}}
 % \newcommand{\Gchecked}{M_\Code{checked}}
 % \newcommand{\Gsender}{M_\Code{hasSender}}
@@ -616,6 +620,7 @@
 \newcommand{\Mfw}{\Theta_\Code{fw}}
 \newcommand{\Mbw}{\Theta_\Code{bw}}
 \newcommand{\GEN}{\Code{Generable}}
+\newcommand{\OBS}{\Code{Obs}}
 
 \newcommand{\msubst}[2]{[\overline{{#1}\mapsto {#2}}]}
 \newcommand{\subst}[2]{[{#1}\mapsto {#2}]}
