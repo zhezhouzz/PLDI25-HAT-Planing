@@ -1,130 +1,135 @@
 \section{Overview}
 \label{sec:overview}
 
-\subsection{Problem Setting}
 
-During Property-based testing on system, test inputs are sequences of operations, and the quality of a test often depends not only on the individual operations but also on the complex, latent dependencies between them. Effectively uncovering interesting behaviors in systems requires techniques that can capture and exploit these latent dependencies to guide the generation and exploration of operation sequences. In order to highlight this problem, we consider the following examples.
-\begin{enumerate}
-  \item Abstract data type libraries provide APIs to manipulate internal states; these APIs must be invoked in specific orders to reach non-trivial internal states.
-  \item Serialized data structures require inputs to conform to particular character formats.
-  \item Databases require transactions to be interleaved in specific ways, depending on the isolation level they guarantee.
-  \item Distributed systems implement complex protocols to guarantee functional correctness under different message orderings.
-\end{enumerate}
-
-Although these examples arise from distinct domains, they share a common underlying challenge: the test generator must be aware of latent dependencies between operations in order to produce meaningful test sequences. Addressing this challenge requires three key components: (1) a new specification language to precisely describe the latent dependencies between operations, (2) a new domain-specific language for expressing generators that are able to generate test sequences that adhere to the specified dependencies, and (3) a program synthesis technique to synthesize such generators from given latent dependencies specifications.
-
-\subsection{Motivating Example}
-
-To illustrate our approach, we consider the problem of testing a Simply Typed Lambda Calculus (STLC) interpreter. The interpreter accepts a serialized lambda term (e.g., as a tokenized string) and evaluates it to a value.
-
-\begin{minted}[xleftmargin=5pt, numbersep=4pt, linenos = true, fontsize = \footnotesize, escapeinside=??]{OCaml}
-type ty = Int | Arr of ty * ty
-type seralized_term =
-  | Con of int
-  | Var of int
-  | Abs of ty | EndAbs
-  | App | AppL | AppR
-  | Anno of ty
-\end{minted}
-
-\paragraph{Serialized STLC Term} \ZZ{Some explanation of the serialized STLC term.} 
-The types of constants, variables, function abstractions, and applications are denoted by their final operation, i.e., $\eff{Con}$, $\eff{Var}$, $\eff{EndAbs}$, and $\eff{appR}$, respectively.
-
-\begin{align*}
-  \text{\textcolor{gray}{term:}} \quad & (\textcolor{blue}{(\lambda \Int}. \textcolor{orange}{[0]} \textcolor{blue}{)}\; \textcolor{DeepGreen}{3}) : \Int \\
-  \text{\textcolor{gray}{seralized term:}} \quad & \eff{app}; \textcolor{blue}{\zevent{Abs}{\Int}}; \textcolor{orange}{\zevent{Var}{0}}; \textcolor{blue}{\eff{EndAbs}}; \eff{appL}; \textcolor{DeepGreen}{\zevent{Con}{3}}; \eff{AppR}; \zevent{Anno}{\Int}
-\end{align*}
-
-\paragraph{Deep Bug} 
-
-De Bruijn indices, which encode variable binding by position rather than name, are prone to subtle implementation errors. A common bug arises when the interpreter fails to increment the index during substitution under a lambda abstraction, leading to incorrect variable capture:
-\begin{align*}
-  \text{\textsc{Reduction rule}:} \quad & (\lambda t. e)\; v \hookrightarrow e [0 \mapsto v]\\
-  \text{\textsc{Substitution rule}:} \quad & (\lambda t. e)[n \mapsto v] = \lambda t. (e[\textcolor{red}{n} \mapsto v]) \quad \textcolor{red}{\xmark} \text{ \textcolor{gray}{should be $n + 1$}}
-\end{align*}
-As illustrated above, correct substitution requires incrementing the index under a lambda. Omitting this step introduces a subtle bug in the interpreter's substitution procedure. 
-
-However, it is rare for STLC terms to trigger this bug, even when we focus only on well-typed terms. To demonstrate this, we consider the following well-typed term examples:
-\begin{align*}
-  \text{\textcolor{gray}{No bound variable:}} \quad & 2 \tag{$\alpha_1$}\\
-  \text{\textcolor{gray}{Already in normal form:}} \quad & \lambda \Int. \lambda (\Int\sarr\Int).  ([0]\;[1]) \tag{$\alpha_2$}\\
-  \text{\textcolor{gray}{Bound variable is not used:}} \quad & (\lambda (\Int\sarr\Int\sarr\Int). 3)\; (\lambda \Int. \lambda \Int. [1]) \tag{$\alpha_3$}\\
-  % \text{\textcolor{gray}{Bound variable has index 0:}} \quad & (\lambda \Int. [0])\; 2 \tag{$\alpha_3$}\\
-  \text{Test sequence triggering the bug:} \quad & (\lambda \Int. (\lambda (\Int\sarr\Int). [0]\;[1])\; (\lambda \Int. [0]))\; 3 \tag{$\alpha_4$}\\
-  &\hookrightarrow (\lambda (\Int\sarr\Int). 3\;[1])\; (\lambda \Int. 3) \\
-  &\hookrightarrow  3\;[1] \quad \text{\textcolor{red}{get stuck!}}
-\end{align*}\noindent
-A test generator restricted to producing well-typed terms is insufficient to expose this bug, as triggering it requires an non-zero indexed bound variable. Modifying the well-typed term generator to bias more on this case need addtional context information to track the usage of varaibles, which is hard to implement and also error prone. However, our tool can synthesize a test generator that generates infinte many test sequences such as $\alpha_4$ that can trigger this bug.
-
-\subsection{Prophecy Regex Types}
-
-To detect the substitution bug shown above, the test generator should avoid generating test sequences like $\alpha_1 - \alpha_3$ but more bais on $\alpha_4$. It can be summarized as the following three constraints:
-\begin{enumerate}
-  \item The term should contain at least one function abstraction. (avoid $\alpha_1$)
-  \item The term should be well-typed with type $\Int$. (avoid $\alpha_2$)
-  \item The body of each function abstraction must reference its bound variable. (avoid $\alpha_3$)
-\end{enumerate}
-Although these constraints doesn't precisely describe the expect latent dependencies within test sequences like $\alpha_4$, it can significantly reduce the search space.
-
-Step closer to these constraints, our observation is that some of them are easiler to discribed from a global view, some of them are easiler to discribed from a local view. For example, the
-
-\begin{figure}[t!]
+\begin{wrapfigure}{l}{.5\textwidth}
   \centering
-  {\footnotesize
-    \begin{align*}
-      \eff{con} ~:~ &  x{:}\Int\sarr \rg{\allA}{\msg{con}{\vnu = x}}{\msg{anno}{\vnu = \Int} \seqA \allA} \\
-      \eff{app} ~:~ &  t_1\hasnty{ty} \garr t_2\hasnty{ty} \garr 
-      \\& \rg{\allA}{\msg{app}{\top}}{\allA \seqA \msg{anno}{\I{isArr}(\vnu, t_1, t_2)} \seqA \msg{appL}{\top} \seqA \allA \seqA \msg{anno}{\vnu = t_1} \seqA \msg{appR}{\top} \seqA \msg{anno}{\vnu = t_2} \seqA \allA} \\
-      \eff{abs} ~:~ &  t_2\hasnty{ty} \garr t_1\hasnty{ty} \sarr 
-      \\& \rg{\allA}{\msg{abs}{\vnu = t_1}}{\allA \seqA \msg{var}{\top} \seqA \allA \seqA \msg{anno}{\vnu = t_2} \seqA \msg{endAbs}{\top} \seqA \msg{anno}{\I{isArr}(\vnu, t_1, t_2)} \seqA \allA} \\
-      \eff{var} ~:~ &  t\hasnty{ty} \garr i{:}\ort{\Int}{0 \leq \vnu} \sarr 
-      \\& \rg{\allA \seqA \msg{abs}{\vnu = t} \seqA ((\allA \setminus \msg{endAbs}{\top})^*\seqA \msg{abs}{\top})^i \seqA (\allA \setminus \msg{endAbs}{\top})^* }{\msg{var}{\vnu = i}}{\msg{anno}{\vnu = t} \seqA \allA}\\
-      \eff{anno} ~:~ &  t{:}\Code{ty}\sarr \rg{\allA\seqA(\msg{con}{\top} \lor \msg{var}{\top} \lor \msg{endAbs}{\top} \lor \msg{appR}{\top} )}{\msg{anno}{\vnu = t}}{\allA}
-    \end{align*}
-  }
-\vspace*{-.2in}
-  \caption{Prophecy Regex Type specifications of STLC tokens, the operation $\eff{endAbs}$, $\eff{appL}$, and $\eff{appR}$ has no constrained thus are omitted. } %
-  \label{fig:spec}
-\vspace*{-.15in}
-\end{figure}
+  \includegraphics[width=0.9\linewidth]{figures/Controller-Database.drawio.png}
+  \caption{A simplified database access workflow.}
+  \label{fig:database}
+  \vspace{-0.5cm}
+\end{wrapfigure}
+\noindent %
+To motivate our approach, consider how we might test a (highly
+simplified) model of a distributed database application depicted in
+\autoref{fig:database}. This system includes two actors: a user and a
+database (the system under test).  The user issues read and write
+messages to the database, while the implementation of the database
+persists user-supplied writes and responds to user requests to read
+its contents.  To further simplify the example, we assume the database
+manages a single integer-valued record that users can read and write.
+As with the earlier key-value store example, messages are asynchronous
+and separated into two categories, one for requests and another for
+the corresponding responses.  To handle a $\eff{writeReq}$ message,
+the database buffers the request, eventually persists its contents,
+and subsequently sends an acknowledgement of this fact via a
+$\eff{writeRsp}$ message to the user.  The response to a
+$\eff{readReq}$ message is a $\eff{readRsp}$ message with two fields,
+$v$ and $st$: when the $st$ field is $\true$, field $v$ contains the
+value of the key at the time when the response was generated; a
+$\false$ status indicates that there is no value for the key in the
+database.
 
+%% Each response carries a status flag indicating if the
+%% request was successful.  A \textsf{true} status value on a
+%% $\eff{writeRsp}$ message indicates that the corresponding request was
+%% successfully persisted to the database, while a \textsf{true} status
+%% flag on a $\eff{readRsp}$ message indicates that the database is not
+%% empty, and the integer in its payload corresponds to a previously
+%% written value.
 
-\newcommand{\ranint}{\underline{\Code{randomInt ()}}}
+Our goal is to derive a controller that schedules messages to/from the
+database and determines the contents of messages generated by the user
+to the database.  This process is independent of the precise
+logic defined by the actors in the SUT--- rather, we rely on
+specifications of the relationships between the messages the actors
+send and receive. We group messages into two categories: in our
+example, messages sent by the user (e.g., $\eff{readReq}$ and
+$\eff{writeReq}$) are independent of any prior messages and any
+actions taken by other actors, and can then thus be freely created and
+sent by a controller in some arbitrary order. We refer to such
+messages as \emph{generable}. In contrast, messages sent from the
+database back to the user can only be produced in response to having
+received other messages. As the controller can only indirectly trigger
+such messages (and their contents), we refer to them as
+\emph{observable}.
+% Thus, our goal is to synthesize a controller that generates user
+% requests and orders messages such that executing the model is likely
+% to yield a violation of a desired safety property.
+
+\paragraph{Traces and safety}
+An executable model generates a sequence of concrete messages, which
+we refer to as a \emph{trace}.  For our running example, we expect the
+database to satisfy a \emph{read-your-writes} (RYW)
+policy~\cite{Session} in which reads must see the most recent write
+successfully persisted.  Under a database that provides EC semantics,
+however, users might witness the following trace: {\small
+  \begin{align}
+    &\zevent{writeReq}{3};\zevent{writeReq}{4};\zevent{writeRsp}{4};\eff{readReq};\zevent{writeRsp}{3};\zevent{readRsp}{4,\true}
+      \label{eqn:traceEx}\tag{$tr_1$}
+  \end{align}}\noindent
+The trace reflects the order in which requests sent by
+the user are handled by the database, and responses generated by
+the database are received by the user.
+
+In this trace, the $\eff{readRsp}$ message is received by the user
+from the database in response to a previously issued $\eff{readReq}$
+message, but notably its contents contains a value other than the most
+recently persisted write.  This can happen, for example, if messages
+on $\eff{writeReq}$ events are not guaranteed to be serviced in-order,
+or when the database state is replicated and the effect of the
+$\zevent{writeRsp}{3}$ event has not been propagated to the replica
+that responds to the $\eff{readReq}$ message.
+
+The following symbolic LTL$_f$ formula~\cite{LTLf} formally captures a
+violation of RYW: %
+{\footnotesize
+  \begin{align} \finalA (\msg{writeRsp}{v = \Code{x} }
+    \land \nextA (\neg \msg{writeRsp}{\top} \untilA
+    \msg{readRsp}{v = \Code{y} \land st = \true{} \land \Code{y} \not =
+    \Code{x}})
+    )
+    \label{eqn:autoEx}\tag{$\negSCA$}
+  \end{align} } %
+\noindent
+Here, $\msg{writeRsp}{v = \Code{x}}$ describes a set of messages, one
+for each possible concrete instantiation of $\Code{x}$; we refer to
+this set as a \emph{symbolic event}. This event stipulates that the
+value $\Code{x}$ was successfully written to the
+database. \ref{eqn:autoEx} reads as: "this trace \emph{eventually}
+includes a $\eff{writeRsp}$ message reporting $\Code{x}$ was
+successfully written; moreover, \emph{after} this message occurs,
+there are no further successful writes \emph{until} a $\eff{readRsp}$
+message with contents $\Code{y}$ different from $\Code{x}$ appears."
+This formula can be translated into a Symbolic Finite Automata
+(SFA)~\cite{SFA-minimization,SFA-Transducers}, on which inclusion and
+emptiness checks are decidable. Importantly, note that this
+specification is an \emph{overapproximation} of erroneous traces:
+not all traces that satisfy this property will be produced by our
+database model. For example, although the trace
+$\zevent{writeRsp}{3};\zevent{readRsp}{-1,\true}$ satisfies
+\ref{eqn:autoEx}, it does not correspond to a valid execution since it
+does not contain request the messages that must precede them; these
+constraints on the expected shape of traces are provided by handler
+specifications, described below.
 
 \begin{figure}
-\centering
+    \centering
 \begin{minted}[xleftmargin=5pt, numbersep=4pt, linenos = true, fontsize = \footnotesize, escapeinside=??]{OCaml}
-let rec f (n: int) =
-  (?$\mykw{gen}\;\eff{var}$? n; ?$\mykw{gen}\;\eff{anno}\;\Int$?) ?$\oplus$? // ?$\textcolor{DeepGreen}{[n]}$?
-  (?$\mykw{gen}\;\eff{app}$?;
-     ?$\mykw{gen}\;\eff{abs}$?;
-       ?$\mykw{gen}\;\eff{app}$?; ?$\mykw{gen}\;\eff{var}$? 0; ?$\mykw{gen}\;\eff{anno}\;\Int\sarr\Int$?; ?$\mykw{obs}\;\eff{appL}$?; f (n+1); ?$\mykw{obs}\;\eff{appR}$?; ?$\mykw{gen}\;\eff{anno}\;\Int\sarr\Int$?; 
-     ?$\mykw{obs}\;\eff{endAbs}$?; ?$\mykw{gen}\;\eff{anno}\;(\Int\sarr\Int)\sarr\Int$?; // ?$\textcolor{DeepGreen}{\lambda (\Int\sarr\Int). ([0]\;(\underline{f\;(n + 1)}))}$?
-   ?$\mykw{obs}\;\eff{appL}$?;
-     ?$\mykw{gen}\;\eff{abs}$? int; ?$\mykw{gen}\;\eff{var}$? 0; ?$\mykw{gen}\;\eff{anno}\;\Int$?; ?$\mykw{obs}\;\eff{endAbs}$?; ?$\mykw{gen}\;\eff{anno}\;\Int\sarr\Int$?; // ?$\textcolor{DeepGreen}{\lambda \Int. [0]}$?
-   ?$\mykw{obs}\;\eff{appR}$?; ?$\mykw{gen}\;\eff{anno}\;\Int$?; // ?$\textcolor{DeepGreen}{\lambda (\Int\sarr\Int). ([0]\;(\underline{f\;(n + 1)}))\;\lambda \Int. [0]}$?
-in
-?$\mykw{gen}\;\eff{app}$?;
-  ?$\mykw{gen}\;\eff{abs}$? int;f 0; ?$\mykw{obs}\;\eff{endAbs}$?; ?$\mykw{gen}\;\eff{anno}\;\Int\sarr\Int$?; // ?$\textcolor{DeepGreen}{\lambda \Int. (\underline{f\;0})}$?
-?$\mykw{obs}\;\eff{appL}$?; 
-  let x = assume true in ?$\mykw{gen}\;\eff{con}$? x; ?$\mykw{gen}\;\eff{anno}\;\Int$?; // ?$\textcolor{DeepGreen}{\ranint}$?
-?$\mykw{obs}\;\eff{appR}$?; ?$\mykw{gen}\;\eff{anno}\;\Int$? // ?$\textcolor{DeepGreen}{\lambda \Int. (\underline{f\;0})\;(\ranint)}$?
+?$\mykw{assume}$? (x != y) in
+?$\mykw{gen}$? ?$\eff{writeReq}$? x in
+?$\mykw{gen}$? ?$\eff{writeReq}$? y in
+let (y1: int) = ?$\mykw{obs}$? ?$\eff{writeRsp}$? in ?$\mykw{assert}$? (y1 == y) in
+?$\mykw{gen}$? ?$\eff{readReq}$? in
+let (x1: int) = ?$\mykw{obs}$? ?$\eff{writeRsp}$? in ?$\mykw{assert}$? (x1 == x) in
+let (y2: int) (s : bool) = ?$\mykw{obs}$? ?$\eff{readRsp}$? in ?$\mykw{assert}$? (y2 == y && s == true)
 \end{minted}
 \vspace*{-.1in}
-\caption{STLC generator. }\label{fig:stlc-gen}
+\caption{A controller $P_{C}$ that is consistent with \ref{eqn:autoEx}. }\label{fig:2pc-term}
 \vspace*{-.2in}
 \end{figure}
 
-\begin{align*}
-  \text{1 recursive call:} \quad & (\lambda \Int.\textcolor{blue}{[0]})\;3 \\
-  \text{2 recursive calls:} \quad & (\lambda \Int. \textcolor{purple}{(\lambda (\Int\sarr\Int). [0]\;\textcolor{blue}{[1]})\; (\lambda \Int. [0])})\; 3
-  \\
-  \text{3 recursive calls:} \quad & (\lambda \Int.\textcolor{pink}{(\lambda (\Int\sarr\Int). [0]\;\textcolor{purple}{(\lambda (\Int\sarr\Int). [0]\;\textcolor{blue}{[2]})\; (\lambda \Int. [0])})\; (\lambda \Int. [0])})\; 3
-\end{align*}\noindent
-
-\paragraph{Test Generator in Our DSL}
-With these specifications, our tool can synthesize test generators shown in \autoref{fig:stlc-gen} that can effectively test the interpreter's handling of variable binding. \ZZ{Explaination}
-
+\paragraph{Controllers}
 We introduce a new DSL for expressing controllers that is amenable to
 automated synthesis. Generating a message in this DSL is analogous to
 performing an effect in a functional language, with actors playing a
@@ -175,8 +180,21 @@ as well as the order and structure of $\eff{gen}$ and $\eff{obs}$
 statements.  We introduce the specification language for handlers
 below.
 
+% BD: we may want to say what happens when an assert fails.
 
-\subsection{Prophecy Regex Types}
+% {\footnotesize\begin{align*}
+%     &\Code{readReq}: \Code{unit} \quad& \Code{readRsp}: va\hasnty{int} \sarr \Code{unit}
+%     \\&\Code{getReq}: \Code{unit} \quad&
+%     \Code{getRsp}: va\hasnty{int} \sarr \Code{unit}
+%     \\&\Code{writeReq}: va\hasnty{int} \sarr \Code{unit} \quad&
+%     \Code{writeRsp}: va\hasnty{int} \sarr st\hasnty{bool} \sarr \Code{unit}
+%     \\&\Code{putReq}: va\hasnty{int} \sarr \Code{unit} \quad&
+%     \Code{putRsp}: va\hasnty{int} \sarr st\hasnty{bool} \sarr \Code{unit}
+%     \\&\Code{commit}: va\hasnty{int} \sarr \Code{unit} \quad&
+%     \Code{Abort}: \Code{unit}
+% \end{align*}}
+
+\subsection{Prophecy Automata Types}
 In our approach, an actor's behavior is modeled as a set of handler
 signatures, where a handler's name corresponds to the operation it
 handles, its parameter types define constraints on message contents,
