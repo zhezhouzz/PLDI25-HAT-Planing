@@ -6,15 +6,21 @@
   \begin{alignat*}{2}
     \text{\textbf{Variables }}& \quad &\quad& x, y, z, \vnu, ...
     \\\text{\textbf{Base Types}}& \quad & b  ::= \quad &  \Code{unit} ~|~ \Code{bool} ~|~ \Code{nat} ~|~ \Code{int} ~|~ ...
-    \\\text{\textbf{Pure Operations}}& \quad & \primop ::= \quad & {+} ~|~ {-} ~|~ {==} ~|~ {<} ~|~ {\leq} ~|~ \I{isArr} ~|~ ...
+    \\\text{\textbf{Basic Types}}& \quad & s  ::= \quad &  b ~|~ s\sarr s 
+    \\\text{\textbf{Pure Operations}}& \quad & \primop ::= \quad & {+} ~|~ {-} ~|~ {==} ~|~ {<} ~|~ {\leq} ~|~ ...
     \\ \text{\textbf{Constants }}& \quad &c ::= \quad & () ~|~ \mathbb{B} ~|~ \mathbb{Z} ~|~ ... 
     \\ \text{\textbf{Qualifiers}}& \quad & \phi ::= \quad & c ~|~ x ~|~ \primop\;\overline{v} ~|~ \bot ~|~ \top  ~|~ \neg \phi ~|~ \phi \land \phi ~|~ \phi \lor \phi ~|~ \phi \impl \phi ~|~ \forall x{:}b.\, \phi
     \\\text{\textbf{Effectful Operations}}& \quad & \eff{op} ::= \quad & \eff{readReq} ~|~ \eff{readRsp} ~|~  ...
     \\\text{\textbf{Event Kinds}}& \quad & k ::= \quad & \eff{gen} ~|~ \eff{obs}
-    \\ \text{\textbf{Values }}& \quad  & v ::= \quad & c ~|~ x ~|~
-    \\ \text{\textbf{Expressions}}& \quad & e ::=\quad & v ~|~ \zlet{x{:}b}{\primop\ \overline{v}}{e} ~|~ \zobs{\overline{x{:}b}}{op}{e} ~|~ \zassume{\overline{x{:}b}}{\phi}{e}
-    \\ & & \quad & |~ \zgen{op}{\overline{v}}{e} ~|~ \zassert{\phi}{e} ~|~ \zwhile{e}{e} ~|~ e \oplus e
+    \\ \text{\textbf{Values }}& \quad  & v ::= \quad & c ~|~ x ~|~ \zlam{x}{s}{e} ~|~ \zfix{f}{s}{x}{s}{e}
+    \\ \text{\textbf{Expressions}}& \quad & e ::=\quad & v ~|~ \zlet{x{:}b}{e}{e} ~|~ \zlet{x{:}b}{\primop\ \overline{v}}{e} ~|~ \zgen{op}{\overline{v}}{e} ~|~ \zobs{\overline{x{:}b}}{op}{e} 
+    \\ & & \quad & |~  \zassume{\overline{x{:}b}}{\phi}{e} ~|~ \zassert{\phi}{e} ~|~ \zlet{x{:}b}{v\;v}{e}  ~|~ e \oplus e
   \end{alignat*}}
+% \vspace*{-.15in}
+%   {\footnotesize\begin{flalign*}
+%     {\small\text{\textbf{Syntax Sugar}}}& \quad e_1;e_2 \doteq \zlet{\_}{e_1}{e_2} \quad \eff{op}\;\overline{v};e \doteq \zgen{op}{\overline{v}}{e} \quad \mykw{obs}\;\eff{op};e \doteq \zobs{\_}{op}{e} \\
+%     &\quad \mykw{assume}\;\phi;e \doteq \zassume{\_}{\phi}{e} \quad \mykw{assert}\;\phi;e \doteq \zassert{\phi}{e} \quad v_1\;v_2;e \doteq \zlet{\_}{v_1}{v_2;e}
+%   \end{flalign*}}
 \vspace*{-.25in}
 \caption{$\DSL$ syntax }
 \label{fig:term-syntax}
@@ -83,7 +89,6 @@ $\steptr{\alpha}{(\buf, \zassert{\phi}{e})}{[]}{(\buf, e)}$
 \vspace*{-.2in}
 \end{figure}
 
-\ZZ{context trace --> history trace?}
 \paragraph{Operational Semantics} Events in $\DSL$ are operations
 applied to concrete values $(\zevent{op}{\overline{c}})$. Evaluating a
 $\DSL$ program depends on an context \emph{trace}, i.e., a sequence of
@@ -93,9 +98,9 @@ capability. Traces are equipped with the standard list operations (i.e.,
 cons ${::}$ and concatenation $\listconcat{}$).  The operational
 semantics of $\DSL$ are defined by the small-step reduction relation:
 $\steptr{\alpha}{(\beta, e)}{~\alpha'}{(\beta', e')}$.  This judgment
-is read as: ``under the context trace $\alpha$ and observation capability
+is read as: ``under the history trace $\alpha$ and observation capability
 $\beta$, $e$ steps to $e'$, emitting the trace $\alpha'$ and remaining
-the capability $\beta'$.'' Intuitively, the context trace $\alpha$
+the capability $\beta'$.'' Intuitively, the history trace $\alpha$
 represents the sequence of events visible to a handler, thereby
 determining its response; the capability $\beta$ contains events that
 are able to be observed in the future. The semantics uses an auxiliary judgement,
@@ -154,18 +159,18 @@ assert expression to hold in order for it to make progress.
 \begin{figure}[t!]
 {\small
 \begin{alignat*}{2}
-    \text{\textbf{Pure Refinement Types}}& \quad & t  ::= \quad & \rawnuot{b}{\phi} ~|~ x{:}t \sarr t
     % \\\text{\textbf{Symbolic Event}}& \quad &se  ::= \quad & \msgB{op}{\overline{x}}{\phi}
-    \\\text{\textbf{Symbolic Regex}}& \quad &H,A,F  ::= \quad & \emptyset ~|~ \epsilon ~|~ \msgB{op}{\overline{x}}{\phi} ~|~ A \lorA A ~|~ A \seqA A ~|~ A^* ~|~ \negA A ~|~ A \landA A ~|~ \anyA
+    \text{\textbf{Symbolic Regex}}& \quad &H,A,F  ::= \quad & \emptyset ~|~ \epsilon ~|~ \msgB{op}{\overline{x}}{\phi} ~|~ A \lorA A ~|~ A \seqA A ~|~ A^* ~|~ A \setminus A ~|~ A \landA A ~|~ \anyA
     % \\& \quad &  \quad & \text{\textcolor{gray}{in Symbolic LTL$_f$ }}  se ~|~ A \lorA A ~|~ \nextA A ~|~ A \untilA A ~|~ \negA A ~|~ A \landA A 
-    \\ \text{\textbf{Prophecy Regex Types}}& \quad & \tau  ::= \quad &
-    \rg{H}{A}{F} ~|~ x{:}b \garr \tau ~|~ x{:}t\sarr \tau ~|~ \tau \interty \tau
+    \\\text{\textbf{Pure Refinement Types}}& \quad & t  ::= \quad & \rawnuot{b}{\phi} ~|~ x{:}\rawnuot{b}{\phi}\sarr t ~|~ x{:}\rawnuot{b}{\phi}\sarr \tau
+    \\ \text{\textbf{Prophecy Regex Types}}& \quad & \tau  ::= \quad & \rg{H}{A}{F} ~|~ x{:}b \garr \tau ~|~ \tau \interty \tau
     \\\text{\textbf{Type Contexts}}& \quad &\Gamma ::= \quad  &\emptyset ~|~ x{:}t, \Gamma
   \end{alignat*}
-  % \vspace*{-.1in}
-  % \begin{flalign*}
-  %   \text{\textbf{Type Alias}}& \quad \msg{op}{\phi} \doteq \msgB{op}{\overline{x}}{\phi} \text{ when the feild name $\overline{x}$ are clear} \quad  \ha{H}{A} \doteq \rg{H}{A}{\allA}
-  % \end{flalign*}
+  \vspace*{-.15in}
+  {\footnotesize\begin{flalign*}
+    {\small\text{\textbf{Type Alias}}}& \quad \msg{op}{\phi} \doteq \msgB{op}{\overline{x}}{\phi} \quad \msgA{op}{\overline{v}} \doteq \msgB{op}{\overline{x}}{\overline{x = v}} \quad \msgC{op} \doteq \msgB{op}{\overline{x}}{\top} \quad \msgBT{\neg}{black}{op}{\overline{x}}{\phi} \doteq (\anyA \setminus \msgB{op}{\overline{x}}{\phi})\\
+    & \quad A_1 A_2 \doteq A_1 \seqA A_2 \quad  b \doteq \rawnuot{b}{\top} \quad \tau \doteq x{:}b\garr\tau
+  \end{flalign*}}
 }
 \vspace*{-.15in}
 \caption{$\DSL{}$ types.}
@@ -217,7 +222,7 @@ $\overline{x}$ must satisfy the qualifier $\phi$.
 
 \paragraph{Prophecy Regex Types} A \PAT{} $\rg{H}{A}{F}$ is
 comprised of three SREs: a \emph{history} SRE $H$ that captures the
-context traces (i.e., a sequence of visible, already handled events) in which a term can be executed, a \emph{current} SRE $A$ that
+history traces (i.e., a sequence of visible, already handled events) in which a term can be executed, a \emph{current} SRE $A$ that
 describes newly handled  events that arise from executing a term, and
 a \emph{prophecy} SRE $F$ that characterizes events that have to be performed in the future. 
 % When a \PAT has no contraint on future computation, we omit its prophecy regex as $\ha{H}{A}$. 
@@ -278,54 +283,51 @@ The typing judgment for the effectful operator ($\Gamma; \Delta \vdash \eff{op}:
 
 \begin{figure}[!t]
 {\footnotesize
-{\small
+{\footnotesize
 \begin{flalign*}
- &\text{\textbf{Auxiliary Typing}} & \fbox{$\Gamma \vdash A \subseteq A \quad \Gamma \vdash \tau <: \tau$} &
-  &\text{\textbf{Typing}} &  &\fbox{$\Gamma \vdash v : t \quad \Gamma;~ \Delta\vdash \eff{op}: \capTau{\Theta, \tau} \quad \Gamma;~ \Delta;~ \Theta \vdash e: \capTau{\Theta, \tau}$}
+ &\text{\textbf{Auxiliary Typing}} & & \fbox{$\Gamma \vdash A \subseteq A \quad \Gamma \vdash \tau <: \tau$} &\text{\textbf{Typing}} &  & \fbox{$\Gamma;\Delta\vdash \eff{op}: \capTau{\Theta, t} \quad \Gamma;\Delta;\Theta\vdash v : \capTau{\Theta, t} \quad \Gamma;\Delta;\Theta \vdash e: \capTau{\Theta, \tau}$}
 \end{flalign*}
 }
 \\ \
-% \mprooftr{38mm}
-% {$\Gamma \wellfoundedvdash H$ \quad
-% $\Gamma \wellfoundedvdash A$ \quad
-% $\Gamma \wellfoundedvdash F$ }
-% {WfHAF}
-% {$\Gamma \wellfoundedvdash \rg{H}{A}{F}$}
-% \
-\mprooftr{62mm}
+\mprooftr{43mm}
 {$\Gamma \vdash H_2 \subseteq H_1$ \quad 
 $\Gamma \vdash F_2 \subseteq F_1$ \quad
 $\Gamma \vdash A_1 \subseteq A_2$  }
 {SubHAF}
 {$\Gamma \vdash \rg{H_1}{A_1}{F_1} <: \rg{H_2}{A_2}{F_2}$}
-\
-\mprooftr{45mm}
+\quad
+\mprooftr{22mm}
 {$\Gamma; \Delta; \Theta \vdash e: \tau$ \quad
 $\Gamma; \vdash \tau <: \tau'$}
 {TSub}
 {$\Gamma; \Delta; \Theta \vdash e: \tau'$}
-\\[.8em]
+\ 
 \mprooftr{30mm}
 {
-$\Gamma; \Delta; \Theta \vdash e_1 : \capTau{\Theta, \tau}$ \quad $\Gamma; \Delta; \Theta \vdash e_2 : \capTau{\Theta, \tau}$}
+$\Gamma; \Delta; \Theta \vdash e_1 : \capTau{\Theta', \tau}$ \quad $\Gamma; \Delta; \Theta \vdash e_2 : \capTau{\Theta', \tau}$}
 {TChoice}
-{$\Gamma; \Delta; \Theta \vdash e_1 \oplus e_2 : \capTau{\Theta, \tau}$}
-\quad
-\mprooftr{77mm}
-{
-$\Gamma; \Delta \vdash \eff{op} : \capTau{\Theta_{\eff{op}}, \overline{x_i{:}t_i}\sarr
-\rg{H}{\msg{op}{\phi}}{A\seqA F}}$ \quad
-$\forall i. \Gamma \vdash v_i : t_i$ \quad
-$\Gamma; \Delta; \Theta \cup \Theta_{\eff{op}} \vdash e : \capTau{\Theta', \rg{H \seqA \msg{op}{\phi\msubst{x_i}{v_i}}}{A}{F}}$}
-{TGen}
-{$\Gamma; \Delta; \Theta \vdash \zgen{op}{\overline{v_i}}{e_1} : \capTau{\Theta', \rg{H}{\msg{op}{\phi\msubst{x_i}{v_i}} \seqA A}{F}}$}
+{$\Gamma; \Delta; \Theta \vdash e_1 \oplus e_2 : \capTau{\Theta', \tau}$}
 \\[.8em]
 \mprooftr{35mm}
 {}
 {TRet}
 {$\Gamma; \Delta; \Theta \vdash () : \capTau{\Theta, \rg{\allA}{\epsilon}{\allA}}$}
 \quad
-\mprooftr{81mm}{
+\mprooftr{82mm}
+{
+$\Gamma; \Delta \vdash \eff{op} : \capTau{\Theta_{\eff{op}}, \overline{x_i{:}t_i}\sarr
+\rg{H}{\msg{op}{\phi}}{A\seqA F}}$ \quad
+$\forall i. \;\Gamma;\Delta;\emptyset \vdash v_i : \capTau{\emptyset, t_i}$ \quad
+$\Gamma; \Delta; \Theta \cup \Theta_{\eff{op}} \vdash e : \capTau{\Theta', \rg{H \seqA \msg{op}{\phi\msubst{x_i}{v_i}}}{A}{F}}$}
+{TGen}
+{$\Gamma; \Delta; \Theta \vdash \zgen{op}{\overline{v_i}}{e_1} : \capTau{\Theta', \rg{H}{\msg{op}{\phi\msubst{x_i}{v_i}} \seqA A}{F}}$}
+\\[.8em]
+\mprooftr{42mm}{
+ $\Gamma, x{:}t_x; \Delta; \Theta \vdash e : \capTau{\Theta', \tau}$
+}{TFun}{
+ $\Gamma; \Delta; \Theta \vdash \zlam{x}{\eraserf{t_x}}{e} : \capTau{\Theta', x{:}t_x\sarr \tau}$}
+\ 
+\mprooftr{77mm}{
   $\Gamma; \Delta \vdash \eff{op} : \capTau{\Theta_{\eff{op}}, \overline{x_i{:}t_i}\sarr \rg{H}{\msgB{op}{\overline{y}}{\phi}}{A \seqA F}}$ \quad
   $\Gamma, \overline{x{:}t}; \Delta; \Theta \cup \Theta_{\eff{op}} \vdash e : \capTau{\Theta', \rg{H \seqA \msgB{op}{\overline{y}}{\phi \land \overline{y = x}}}{A}{F}}$}
 {TObs}
@@ -333,11 +335,18 @@ $\Gamma; \Delta; \Theta \cup \Theta_{\eff{op}} \vdash e : \capTau{\Theta', \rg{H
   $\Gamma; \Delta; \{\eff{op}\} \cup \Theta \vdash \zobs{\overline{x}}{op}{e} : \capTau{\Theta', \rg{H}{\msgB{op}{\overline{y}}{\phi} \seqA A}{F}}$
 }
 \\[.8em]
-\mprooftr{100mm}{
- $\Gamma; \Delta; \Theta \vdash e : \capTau{\Theta, \rg{H \seqA A^*}{A}{A^* \seqA A' \seqA F}}$ \quad
- $\Gamma; \Delta; \Theta' \vdash e' : \capTau{\Theta'', \rg{H \seqA A^*}{A'}{F}}$
-}{TWhile}{
- $\Gamma; \Delta; \Theta \vdash \zwhile{e}{e'} : \capTau{\Theta'', \rg{H}{A^* \seqA A'}{F}}$}
+\mprooftr{40mm}{
+ $\Gamma, f{:}t; \Delta; \Theta \vdash \zlam{x}{b}{e} : \capTau{\Theta, t}$
+}{TFix}{
+ $\Gamma; \Delta; \Theta \vdash \zfix{f}{\eraserf{t}}{x}{b}{e} : \capTau{\Theta, t}$}
+\quad
+\mprooftr{60mm}{
+ $\Gamma; \Delta; \Theta \vdash v_1 : \capTau{\Theta', y{:}t_y\sarr\tau}$ \quad
+ $\Gamma; \Delta; \emptyset \vdash v_2 : \capTau{\emptyset, t_y}$ \quad
+ $\mykw{let}\; \rg{H}{A}{A' \seqA F} = \tau[y\mapsto v_2]$\quad
+ $\Gamma; \Delta; \Theta' \vdash e' : \capTau{\Theta'', \rg{H \seqA A}{A'}{F}}$
+}{TApp}{
+ $\Gamma; \Delta; \Theta \vdash \zlet{x}{v_1\;v_2}{e} : \capTau{\Theta'', \rg{H}{A \seqA A'}{F}}$}
 }
 % \vspace*{-.1in}
 \caption{Selected typing rules.}
@@ -353,7 +362,7 @@ typing context $\Gamma$; an inclusion relation on SREs
 $\Gamma \vdash A \subseteq A$; and a mostly-standard semantic
 subtyping relation.  
 \autoref{fig:selected-typing-rules} presents the key subtyping rule for \PAT{}s (\textsc{SubHAF}), which establishes subtyping by checking inclusion between their constituent regex under the current type context $\Gamma$.
-Note that prophecy regex constrain possible future event interleavings, just as history regex constrain the context trace. Current regex, in contrast, overapproximate all traces that the term may produce. Thus, inclusion on the history and prophecy regex is
+Note that prophecy regex constrain possible future event interleavings, just as history regex constrain the history trace. Current regex, in contrast, overapproximate all traces that the term may produce. Thus, inclusion on the history and prophecy regex is
 contravariant, while inclusion on current regex is covariant. 
 
 
@@ -470,6 +479,19 @@ Since the type of $\eff{writeReq}$ aligns with the
   we continue typing the rest of $P_C$ (lines $3$ - $7$) against the
   \PAT{} $\rg{A_1}{A_2\seqA A_3\seqA A_4}{\epsilon}$.
 \end{example}
+
+\begin{figure}[t!]
+  \centering
+  {\footnotesize
+    \begin{align*}
+      f :~ &  i{:}\ort{\Int}{\vnu \geq 0} \sarr \rg{\underbrace{(\allA\msgA{abs}{\Int}\msgAGray{depth}{d}\msgCT{\neg}{black}{endAbs}^*) \land (\allA\msgAGray{depth}{d + i}\msgCT{\neg}{gray}{depth}^*)}_\text{$\eff{var}$'s history regex} }{\allA \msgA{var}{i} \allA \msgAGray{ascribe}{\Int}  }{\allA}
+    \end{align*}
+  }
+\vspace*{-.2in}
+  \caption{Type of recursive function $f$. } %
+  \label{fig:spec}
+\vspace*{-.15in}
+\end{figure}
 
 \subsection{Type Soundness}
 

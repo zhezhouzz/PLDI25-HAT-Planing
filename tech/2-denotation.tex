@@ -68,18 +68,18 @@
 \end{flalign*}}
 \vspace{-1.5em}
 \begin{align*}
-  &\denot{ \rawnuot{b}{\phi} } &&\doteq \{ c ~|~ \emptyset
+  &\denot{ \ort{b}{\phi} } &&\doteq \{ c ~|~ \emptyset
                                        \basicvdash c : b \land
                                        \phi[\nu\mapsto v] \}
-  \\ &\denot{ x{:}t_x \sarr t } &&\doteq \{ e ~|~ \emptyset \basicvdash e : \eraserf{x{:}t_x \sarr t} \land
-                                           \forall c \in \denot{ t_x }.\, e\ c \in  \denot{ \tau[t \mapsto c ] } \}
-  \\ &\denot{ x{:}t\sarr\tau } &&\doteq \{ e ~|~ \emptyset \basicvdash e : \eraserf{x{:}t\sarr\tau} \land
-                                           \forall c \in \denot{ t }.\, e\ c \in  \denot{ \tau[x\mapsto c ] } \}
-  \\ &\denot{ x{:}t\garr\tau } &&\doteq \{ e ~|~ 
+  \\ &\denot{ x{:}\ort{b}{\phi} \sarr t } &&\doteq \{ e ~|~ \emptyset \basicvdash e : b\sarr\eraserf{t} \land
+                                           \forall c \in \denot{ \ort{b}{\phi} }.\, e\ c \in  \denot{ t[x \mapsto c ] } \}
+  \\ &\denot{ x{:}\ort{b}{\phi}\sarr\tau } &&\doteq \{ e ~|~ \emptyset \basicvdash e : b\sarr\eraserf{\tau} \land
+                                           \forall c \in \denot{ \ort{b}{\phi} }.\, e\ c \in  \denot{ \tau[x\mapsto c ] } \}
+  \\ &\denot{ x{:}b\garr\tau } &&\doteq \{ e ~|~ 
     \emptyset \basicvdash e : \eraserf{\tau} \land 
-    \forall c \in \denot{t}. e \in  \denot{ \tau[x\mapsto c ] } \}
+    \forall c \in \denot{\ort{b}{\top}}. e \in  \denot{ \tau[x\mapsto c ] } \}
   \\ &\denot{\rg{H}{A}{F}} &&\doteq \{e ~|~ \emptyset \basicvdash e : \Code{unit} \land \forall \alpha_h \in\denot{H}.\forall \alpha_f \in\denot{F}. \forall \alpha\; \beta\;\beta'\;e_h\;e_f.
-  \\&&& \qquad\qquad \msteptr{[]}{(\emptyset, e_h)}{\alpha_h}{(\beta, ())}\land \msteptr{\alpha_h}{(\beta, e)}{\alpha}{(\beta', ())} \land \msteptr{\alpha_h \listconcat \alpha }{(\beta', e_f)}{\alpha_f}{(\emptyset, ())} \impl \alpha \in\denot{A} \}
+  \\&&& \qquad \msteptr{[]}{(\emptyset, e_h)}{\alpha_h}{(\beta, ())}\land \msteptr{\alpha_h}{(\beta, e)}{\alpha}{(\beta', ())} \land \msteptr{\alpha_h \listconcat \alpha }{(\beta', e_f)}{\alpha_f}{(\emptyset, ())} \impl \alpha \in\denot{A} \}
   \\ &\denot{ \tau_1 \interty \tau_2 } &&\doteq \denot{\tau_1} \cap \denot{\tau_2}
 \end{align*}
 \vspace{-1.5em}

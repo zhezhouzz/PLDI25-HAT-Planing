@@ -98,8 +98,10 @@
 \newcommand{\zlam}[3]{\lambda {#1}{:}{#2}.{#3} }
 \newcommand{\zif}[3]{\mykw{if}\ {#1}\ \mykw{then}\ {#2} \ \mykw{else}\ {#3}}
 \newcommand{\zzlam}[2]{\lambda {#1}.{#2} }
-\newcommand{\zfix}[5]{\Code{\textcolor{codeblue}{fix}}{#1}{:}{#2}.\zlam{#3}{#4}{#5}}
+\newcommand{\zfix}[5]{\mykw{fix}{#1}{:}{#2}.\zlam{#3}{#4}{#5}}
 \newcommand{\zzfix}[3]{\mykw{fix}{#1}.\zzlam{#2}{#3}}
+\newcommand{\zrec}[3]{\mykw{fix}\;{#1}{:}{#2}.{#3}}
+\newcommand{\zletappU}[2]{\mykw{let}\;{#1}\;\mykw{in}\;{#2}}
 % \newcommand{\zloop}[1]{\mykw{loop}\;{#1}}
 \newcommand{\exnc}{\Code{crash}}
 % Impertive Language
@@ -172,8 +174,8 @@
 \newcommand{\et}[3]{\etparenth{ {#1}{:}{#2}\, |\, {#3} }}
 \newcommand{\nuet}[2]{\et{\vnu}{\Code{#1}}{#2}}
 \newcommand{\rawnuet}[2]{\et{\vnu}{#1}{#2}}
-\newcommand{\ot}[3]{\otparenth{ {#1}{:}{\Code{#2}}\, |\, {#3} }}
-\newcommand{\nuot}[2]{\ot{\vnu}{#1}{#2}}
+\newcommand{\ot}[3]{\otparenth{ {#1}{:}{#2}\, |\, {#3} }}
+\newcommand{\nuot}[2]{\ot{\vnu}{\Code{#1}}{#2}}
 \newcommand{\rawnuot}[2]{\otparenth{ \vnu{:}{#1}\, |\, {#2} }}
 \newcommand{\varnuot}[3]{{#1}{:}\nuot{#2}{#3}}
 \newcommand{\ic}[4]{\otparenth{ {#1}{:}{#2}\, |\, {#3}\rhd {#4} }}
@@ -324,14 +326,22 @@
 \newcommand{\evpc}[3]{ \evparenth{ \mathbf{#1}^\Code{#2}\;\I{\Code{#3}} }}
 \newcommand{\evop}[3]{ \ev{\S{#1}\,{#2}}{#3} }
 
-\newcommand{\msgB}[3]{ \evparenth{\eff{#1}\;{#2}~|~{#3}} }
-\newcommand{\msgA}[2]{ \evparenth{\eff{#1}({#2})}}
-\newcommand{\msgAGreen}[2]{\textcolor{DeepGreen}{\msgA{#1}{#2}}}
-\newcommand{\msgABlue}[2]{\textcolor{CobaltBlue}{\msgA{#1}{#2}}}
-\newcommand{\msgAAmber}[2]{\textcolor{Amber}{\msgA{#1}{#2}}}
-\newcommand{\msgAGolden}[2]{\textcolor{DarkGolden}{\msgA{#1}{#2}}}
+\newcommand{\msgAT}[4]{ \evparenth{{#1}\textcolor{#2}{\eff{#3}}\;{#4}}}
+\newcommand{\msgAColor}[3]{\evparenth{\textcolor{#1}{\eff{#2}}\;{#3}}}
+\newcommand{\msgA}[2]{\evparenth{\eff{#1}\;{#2}}}
+\newcommand{\msgAGray}[2]{ \msgAColor{gray}{#1}{#2} }
+\newcommand{\msgAGreen}[2]{\msgAColor{DeepGreen}{#1}{#2}}
+\newcommand{\msgABlue}[2]{\msgAColor{CobaltBlue}{#1}{#2}}
+\newcommand{\msgAAmber}[2]{\msgAColor{Amber}{#1}{#2}}
+\newcommand{\msgAGolden}[2]{\msgAColor{DarkGolden}{#1}{#2}}
+
+\newcommand{\msgB}[3]{\evparenth{\eff{#1}\;{#2}~|~{#3}} }
+\newcommand{\msgBT}[5]{\evparenth{{#1}\textcolor{#2}{\eff{#3}}\;{#4}~|~{#5}} }
+
+\newcommand{\msgCT}[3]{\evparenth{{#1}\textcolor{#2}{\eff{#3}}} }
+\newcommand{\msgC}[1]{\evparenth{\eff{#1}}}
+
 \newcommand{\msg}[2]{ \evparenth{\eff{#1}~|~{#2}} }
-\newcommand{\msgC}[1]{ \evparenth{#1}}
 % \newcommand{\acSe}[2]{ \evparenth{\mykw{app}\;\eff{#1}({#2})} }
 \newcommand{\acSe}[2]{\eff{#1}({#2}) }
 % \newcommand{\acGen}[2]{ \evparenth{\mykw{gen}\;\eff{#1}({#2})} }

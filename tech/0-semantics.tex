@@ -13,28 +13,29 @@ small-step operational semantics of our core language are shown in
     \parbox{7cm}{\centering$\text{\textbf{capability}}\  \beta \in \mathcal{P}(m)$}  &
     \text{\textbf{Traces}} \ \alpha ::= \ \emptr ~|~ m \;{::}\; \alpha ~|~ \alpha \listconcat \alpha &
     \end{flalign*}
-    \vspace*{-.2in}
-    \begin{flalign*}
-      \text{\textbf{Term Concatenation }}\ \fbox{$e;e$} & \ 
-      \end{flalign*}}
+    % \vspace*{-.2in}
+    % \begin{flalign*}
+    %   \text{\textbf{Term Concatenation }}\ \fbox{$e;e$} & \ 
+    %   \end{flalign*}
+    }
     \vspace*{-.15in}
-    \begin{align*}
-      &(\zobs{\overline{x}}{op}{e}) ; e' \doteq \zobs{\overline{x}}{op}{(e;e')}
-      \quad
-      &(\zgen{op}{\overline{c}}{e}) ; e' \doteq \zgen{op}{\overline{c}}{(e;e')}
-      \\
-      &(\zassume{\overline{x}}{\phi}{e}) ; e' \doteq \zassume{\overline{x}}{\phi}{(e;e')}
-      \quad
-      &(\zassert{\phi}{e}) ; e' \doteq \zassert{\phi}{(e;e')}
-      \\
-      &(\zlet{x}{\primop\ \overline{v}}{e}) ; e' \doteq \zlet{x}{\primop\ \overline{v}}{(e;e')}
-      \quad
-      &(e_1 \oplus e_2) ; e' \doteq (e_1 ; e') \oplus (e_2 ; e')
-      \\
-      &(\zwhile{e_1}{e_2}) ; e' \doteq \zwhile{e_1}{(e_2;e')} \quad
-      &() ; e' \doteq e'
-      \end{align*}
-      \vspace*{-.15in}
+    % \begin{align*}
+    %   &(\zobs{\overline{x}}{op}{e}) ; e' \doteq \zobs{\overline{x}}{op}{(e;e')}
+    %   \quad
+    %   &(\zgen{op}{\overline{c}}{e}) ; e' \doteq \zgen{op}{\overline{c}}{(e;e')}
+    %   \\
+    %   &(\zassume{\overline{x}}{\phi}{e}) ; e' \doteq \zassume{\overline{x}}{\phi}{(e;e')}
+    %   \quad
+    %   &(\zassert{\phi}{e}) ; e' \doteq \zassert{\phi}{(e;e')}
+    %   \\
+    %   &(\zlet{x}{\primop\ \overline{v}}{e}) ; e' \doteq \zlet{x}{\primop\ \overline{v}}{(e;e')}
+    %   \quad
+    %   &(e_1 \oplus e_2) ; e' \doteq (e_1 ; e') \oplus (e_2 ; e')
+    %   \\
+    %   &(\zwhile{e_1}{e_2}) ; e' \doteq \zwhile{e_1}{(e_2;e')} \quad
+    %   &() ; e' \doteq e'
+    %   \end{align*}
+    %   \vspace*{-.15in}
     {\small\begin{flalign*}
       &\text{\textbf{Handler Semantics }}\ 
       \fbox{$\alpha \vDash \zevent{op}{\overline{c}} \Downarrow \beta$} &
@@ -70,26 +71,36 @@ small-step operational semantics of our core language are shown in
     \mprooftr{44mm}{$\phi \Downarrow \top$}{StAssert}{
     $\steptr{\alpha}{(\buf, \zassert{\phi}{e})}{[]}{(\buf, e)}$
     }
-    \\[0.4em]
+    \\[.8em]
     \mprooftr{55mm}{
     $\primop\ \overline{c} \Downarrow c_x$
     }{StOp}
     {$\steptr{\alpha}{(\buf, \zlet{x}{\primop\ \overline{c}}{e})}{[]}{(\buf, e\subst{x}{c_x})}$}
     \quad
-    \\[0.4em]
+    \\[0.8em]
+    \mprooftr{65mm}{
+      $\steptr{\alpha}{(\buf, e_1)}{\alpha'}{(\buf', e_1')}$
+    }{StLetE1}{
+    $\steptr{\alpha}{(\buf, \zlet{y}{e_1}{e_2})}{\alpha'}{(\buf', \zlet{y}{e_1'}{e_2})}$
+    }\quad
     \mprooftr{35mm}{}{StChoice1}{
     $\steptr{\alpha}{(\buf, e_1 \oplus e_2)}{[]}{(\buf, e_1)}$
-    }\quad
+    }
+    \\[0.8em]
+    \mprooftr{55mm}{}{StLetE2}{
+    $\steptr{\alpha}{(\buf, \zlet{y}{v}{e_2})}{[]}{(\buf', e_2[y\mapsto v])}$
+    }
+    \quad
     \mprooftr{35mm}{}{StChoice2}{
     $\steptr{\alpha}{(\buf, e_1 \oplus e_2)}{[]}{(\buf, e_2)}$
     }
-    \\[0.4em]
-    \mprooftr{90mm}{}{StWhile1}{
-    $\steptr{\alpha}{(\buf, \zwhile{e_1}{e_2})}{[]}{(\buf, e_2)}$
+    \\[0.8em]
+    \mprooftr{90mm}{}{StAppLam}{
+    $\steptr{\alpha}{(\buf, \zlet{y}{\zlam{x}{s}{e_1}\ v_x}{e_2})}{[]}{(\buf, \zlet{y}{e_1[x\mapsto v_x]}{e_2})}$
     }
-    \\[0.4em]
-    \mprooftr{100mm}{}{StWhile2}{
-    $\steptr{\alpha}{(\buf, \zwhile{e_1}{e_2})}{[]}{(\buf, e_1;\zwhile{e_1}{e_2})}$
+    \\[0.8em]
+    \mprooftr{120mm}{}{StAppFix}{
+    $\steptr{\alpha}{(\buf, \zlet{y}{\zfix{f}{s}{x}{s_x}{e_1}\ v_x}{e_2})}{[]}{(\buf,  \zlet{y}{(\zlam{f}{s}{e_1[x\mapsto v_x]}) \ (\zfix{f}{s}{x}{s_x}{e_1})}{e_2})}$
     }
 }
 \caption{Full Operational Semantics}
@@ -106,10 +117,6 @@ in \autoref{fig:basic-type-rules} and
 \autoref{fig:basic-qualifier-type-rules}. We use an auxiliary function
 $\Code{Ty}$ to provide a basic type for the primitives of our language,
 e.g., constants, built-in operators, and data constructors.
-
-\begin{alignat*}{2}
-    \text{\textbf{Basic Types}}& \quad & s  ::= \quad & b ~|~ s \sarr s
-\end{alignat*}
 
 \begin{figure}[h!]
  {\footnotesize
@@ -133,13 +140,19 @@ e.g., constants, built-in operators, and data constructors.
 \end{prooftree}
 \quad
 \begin{prooftree}
-\hypo{\Gamma \basicvdash e_1 : s
-\quad \Gamma \basicvdash e_2 : s}
-\infer1[\textsc{BtChoice}]{
-\Gamma \basicvdash e_1 \oplus e_2 : s
+\hypo{ \Gamma, x{:}b \basicvdash e : s }
+\infer1[\textsc{BtFun}]{
+\Gamma \basicvdash \zlam{x}{b}{e} : b\sarr s
 }
 \end{prooftree}
-\\ \ \\ \ \\
+\quad
+\begin{prooftree}
+  \hypo{ \Gamma, f{:}b\sarr s, x{:}b \basicvdash e : s }
+  \infer1[\textsc{BtFix}]{
+  \Gamma \basicvdash \zfix{f}{b\sarr s}{x}{b}{e} : b\sarr s
+  }
+\end{prooftree}
+\\[0.8em]
 \begin{prooftree}
   \hypo{\Code{Ty}(\eff{op}) = \overline{s_i}{\sarr}s_x \quad \Gamma, \overline{x_i{:}s_x} \basicvdash e : \Unit}
   \infer1[\textsc{BtObs}]{
@@ -153,7 +166,7 @@ e.g., constants, built-in operators, and data constructors.
 \Gamma \basicvdash \zgen{op}{\overline{v}}{e} : \Unit
 }
 \end{prooftree}
-\\ \ \\ \ \\
+\\[0.8em]
 \begin{prooftree}
   \hypo{\Code{Ty}(\primop) = \overline{s_i}{\sarr}s_x \quad \forall i. \Gamma \basicvdash v_i : s_i \quad \Gamma, x{:}s_x \basicvdash e : \Unit}
   \infer1[\textsc{BtPureOp}]{
@@ -162,13 +175,13 @@ e.g., constants, built-in operators, and data constructors.
 \end{prooftree}
 \quad
 \begin{prooftree}
-\hypo{\Gamma \basicvdash e_1 : \Unit
-\quad \Gamma \basicvdash e_2 : \Unit}
-\infer1[\textsc{BtChoice}]{
-\Gamma \basicvdash \zwhile{e_1}{e_2} : \Unit
-}
+  \hypo{\Gamma \basicvdash e_1 : s
+  \quad \Gamma \basicvdash e_2 : s}
+  \infer1[\textsc{BtChoice}]{
+  \Gamma \basicvdash e_1 \oplus e_2 : s
+  }
 \end{prooftree}
-\\ \ \\ \ \\
+\\[0.8em]
 \begin{prooftree}
 \hypo{\Gamma, \overline{x{:}b} \basicvdash \phi : \Code{bool} \quad \Gamma, \overline{x{:}b} \basicvdash e : \Unit}
 \infer1[\textsc{BtAssume}]{
@@ -181,6 +194,20 @@ e.g., constants, built-in operators, and data constructors.
 \infer1[\textsc{BtAssert}]{
 \Gamma \basicvdash \zassert{\phi}{e} : \Unit
 }
+\end{prooftree}
+\\[0.8em]
+\begin{prooftree}
+  \hypo{\Gamma\basicvdash e : \Unit \quad \Gamma \basicvdash e' : \Unit}
+  \infer1[\textsc{BtLetE}]{
+  \Gamma \basicvdash \zlet{x{:}\Unit}{e}{e'} : \Unit
+  }
+\end{prooftree}
+  \quad
+\begin{prooftree}
+  \hypo{\Gamma \basicvdash v_1 : s\sarr s' \quad \Gamma \basicvdash v_2 : s \quad \Gamma, x{:}s' \basicvdash e : \Unit}
+  \infer1[\textsc{BtApp}]{
+  \Gamma \basicvdash \zlet{x{:}s}{v_1\;v_2}{e} : \Unit
+  }
 \end{prooftree}
 }
 \caption{Basic Typing Rules}

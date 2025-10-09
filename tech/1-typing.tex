@@ -282,30 +282,44 @@ $\Gamma, x{:}t_{x_2} \vdash t_1 <: t_2$
 {\footnotesize
 {\small
 \begin{flalign*}
-  &\text{\textbf{Typing}} &  &\fbox{$\Gamma \vdash v : t \quad \Gamma;~ \Delta\vdash \eff{op}: \capTau{\Theta, \tau} \quad \Gamma;~ \Delta;~ \Theta \vdash e: \capTau{\Theta, \tau}$}
+  &\text{\textbf{Typing}} &  &\fbox{$\Gamma;\Delta\vdash \primop: t \quad \Gamma;\Delta\vdash \eff{op}: \capTau{\Theta, t} \quad \Gamma;\Delta;\Theta\vdash v : \capTau{\Theta, t} \quad \Gamma;\Delta;\Theta \vdash e: \capTau{\Theta, \tau}$}
 \end{flalign*}
 }
+\mprooftr{23mm}
+{$\eraserf{\Gamma} \basicvdash c : b$}
+{TConst}
+{$\Gamma \vdash c : \rawnuot{b}{\vnu = c}$}
+\quad
+\mprooftr{23mm}
+{$\eraserf{\Gamma} \basicvdash x : b$}
+{TVar}
+{$\Gamma \vdash x : \rawnuot{b}{\vnu = x}$}
+\quad
 \mprooftr{30mm}
-  {
-  $\Gamma; \Delta; \Theta \vdash e_1 : \capTau{\Theta, \tau}$ \quad $\Gamma; \Delta; \Theta \vdash e_2 : \capTau{\Theta, \tau}$}
-  {TChoice}
-  {$\Gamma; \Delta; \Theta \vdash e_1 \oplus e_2 : \capTau{\Theta, \tau}$}
-  \quad
-  \mprooftr{77mm}
-  {
-  $\Gamma; \Delta \vdash \eff{op} : \capTau{\Theta_{\eff{op}}, \overline{x_i{:}t_i}\sarr
-  \rg{H}{\msg{op}{\phi}}{A\seqA F}}$ \quad
-  $\forall i. \Gamma \vdash v_i : t_i$ \quad
-  $\Gamma; \Delta; \Theta \cup \Theta_{\eff{op}} \vdash e : \capTau{\Theta', \rg{H \seqA \msg{op}{\phi\msubst{x_i}{v_i}}}{A}{F}}$}
-  {TGen}
-  {$\Gamma; \Delta; \Theta \vdash \zgen{op}{\overline{v_i}}{e_1} : \capTau{\Theta', \rg{H}{\msg{op}{\phi\msubst{x_i}{v_i}} \seqA A}{F}}$}
+{$\Gamma; \Delta; \Theta \vdash e_1 : \capTau{\Theta, \tau}$ \quad $\Gamma; \Delta; \Theta \vdash e_2 : \capTau{\Theta, \tau}$}
+{TChoice}
+{$\Gamma; \Delta; \Theta \vdash e_1 \oplus e_2 : \capTau{\Theta, \tau}$}
   \\[.8em]
   \mprooftr{35mm}
   {}
   {TRet}
   {$\Gamma; \Delta; \Theta \vdash () : \capTau{\Theta, \rg{\allA}{\epsilon}{\allA}}$}
   \quad
-  \mprooftr{81mm}{
+  \mprooftr{82mm}
+  {
+  $\Gamma; \Delta \vdash \eff{op} : \capTau{\Theta_{\eff{op}}, \overline{x_i{:}t_i}\sarr
+  \rg{H}{\msg{op}{\phi}}{A\seqA F}}$ \quad
+  $\forall i. \;\Gamma;\Delta;\emptyset \vdash v_i : \capTau{\emptyset, t_i}$ \quad
+  $\Gamma; \Delta; \Theta \cup \Theta_{\eff{op}} \vdash e : \capTau{\Theta', \rg{H \seqA \msg{op}{\phi\msubst{x_i}{v_i}}}{A}{F}}$}
+  {TGen}
+  {$\Gamma; \Delta; \Theta \vdash \zgen{op}{\overline{v_i}}{e_1} : \capTau{\Theta', \rg{H}{\msg{op}{\phi\msubst{x_i}{v_i}} \seqA A}{F}}$}
+  \\[.8em]
+  \mprooftr{42mm}{
+   $\Gamma, x{:}t_x; \Delta; \Theta \vdash e : \capTau{\Theta', \tau}$
+  }{TFun}{
+   $\Gamma; \Delta; \Theta \vdash \zlam{x}{\eraserf{t_x}}{e} : \capTau{\Theta', x{:}t_x\sarr \tau}$}
+  \ 
+  \mprooftr{77mm}{
     $\Gamma; \Delta \vdash \eff{op} : \capTau{\Theta_{\eff{op}}, \overline{x_i{:}t_i}\sarr \rg{H}{\msgB{op}{\overline{y}}{\phi}}{A \seqA F}}$ \quad
     $\Gamma, \overline{x{:}t}; \Delta; \Theta \cup \Theta_{\eff{op}} \vdash e : \capTau{\Theta', \rg{H \seqA \msgB{op}{\overline{y}}{\phi \land \overline{y = x}}}{A}{F}}$}
   {TObs}
@@ -313,39 +327,46 @@ $\Gamma, x{:}t_{x_2} \vdash t_1 <: t_2$
     $\Gamma; \Delta; \{\eff{op}\} \cup \Theta \vdash \zobs{\overline{x}}{op}{e} : \capTau{\Theta', \rg{H}{\msgB{op}{\overline{y}}{\phi} \seqA A}{F}}$
   }
   \\[.8em]
-  \mprooftr{100mm}{
-   $\Gamma; \Delta; \Theta \vdash e : \capTau{\Theta, \rg{H \seqA A^*}{A}{A^* \seqA A' \seqA F}}$ \quad
-   $\Gamma; \Delta; \Theta' \vdash e' : \capTau{\Theta'', \rg{H \seqA A^*}{A'}{F}}$
-  }{TWhile}{
-   $\Gamma; \Delta; \Theta \vdash \zwhile{e}{e'} : \capTau{\Theta'', \rg{H}{A^* \seqA A'}{F}}$}
-   \\[.8em]
+  \mprooftr{40mm}{
+   $\Gamma, f{:}t; \Delta; \Theta \vdash \zlam{x}{b}{e} : \capTau{\Theta, t}$
+  }{TFix}{
+   $\Gamma; \Delta; \Theta \vdash \zfix{f}{\eraserf{t}}{x}{b}{e} : \capTau{\Theta, t}$}
+  \quad
+  \mprooftr{60mm}{
+   $\Gamma; \Delta; \Theta \vdash v_1 : \capTau{\Theta', y{:}t_y\sarr\tau}$ \quad
+   $\Gamma; \Delta; \emptyset \vdash v_2 : \capTau{\emptyset, t_y}$ \quad
+   $\mykw{let}\; \rg{H}{A}{A' \seqA F} = \tau[y\mapsto v_2]$\quad
+   $\Gamma; \Delta; \Theta' \vdash e' : \capTau{\Theta'', \rg{H \seqA A}{A'}{F}}$
+  }{TApp}{
+   $\Gamma; \Delta; \Theta \vdash \zlet{x}{v_1\;v_2}{e} : \capTau{\Theta'', \rg{H}{A \seqA A'}{F}}$}
+\\[.8em]
 \mprooftr{55mm}
 {
-$\Gamma \vdash \primop : t$ \quad $\Gamma \vdash t <: \overline{y{:}t}\sarr t_x$
+$\Gamma;\Delta \vdash \primop : t$ \quad $\Gamma \vdash t <: \overline{y{:}t}\sarr t_x$
 $\forall i. \Gamma \vdash v_i : t_i$ \quad
 $\Gamma, x{:}t_x\msubst{y}{v};\Delta;\Theta \vdash e : \capTau{\Theta, \tau}$
 }
 {TOpApp}
 {$\Gamma;\Delta;\Theta \vdash \zlet{x}{\primop\ \overline{v}}{e} : \capTau{\Theta, \tau}$}
 \quad
-\mprooftr{23mm}
-{$\eraserf{\Gamma} \basicvdash v : b$}
-{TVal}
-{$\Gamma \vdash v : \rawnuot{b}{\vnu = v}$}
-\\[.8em]
-\mprooftr{32mm}
-{$\Gamma;\Delta;\Theta \vdash e : \tau$ \quad
+\mprooftr{25mm}
+{$\Gamma;\Delta;\Theta \vdash e : \capTau{\Theta', \tau}$ \quad
 $\Gamma \vdash \tau <: \tau'$}
 {TSub}
-{$\Gamma;\Delta;\Theta \vdash e : \tau'$}
-\quad
-\mprooftr{28mm}
-{$\Gamma \vdash v : t$ \quad
+{$\Gamma;\Delta;\Theta \vdash e : \capTau{\Theta', \tau'}$}
+\\[.8em]
+\mprooftr{23mm}
+{$\Gamma;\Delta;\Theta \vdash v : \capTau{\Theta, t}$ \quad
 $\Gamma \vdash t <: t'$}
 {TPureSub}
-{$\Gamma \vdash v : t'$}
+{$\Gamma;\Delta;\Theta \vdash v : \capTau{\Theta, t'}$}
 \quad
-\mprooftr{36mm}
+\mprooftr{17mm}
+{$t \in \Delta(\primop)$ \quad $\Gamma \vdash t <: t'$}
+{TPureOp}
+{$\Gamma;\Delta \vdash \primop : t'$}
+\quad
+\mprooftr{22mm}
 {$(\Theta, \tau) \in \Delta(\eff{op})$ \quad $\Gamma \vdash \tau <: \tau'$}
 {TOp}
 {$\Gamma;\Delta \vdash \eff{op} : \capTau{\Theta, \tau'}$}
