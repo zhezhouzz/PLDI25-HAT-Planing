@@ -1,30 +1,20 @@
 \newpage
 \section{Declarative Typing Rules}\label{sec:tech:typing}
 
-The full set of rules for our auxiliary typing relations are shown in
-\autoref{fig:full-wf-rules} and \autoref{fig:full-sub-rules}. The full
-set of declarative typing rules are shown in
-\autoref{fig:full-typing-rules}. We elide the basic typing relation
-({\small$\emptyset \basicvdash e : s$}) in the premises of the rules
-in \autoref{fig:full-typing-rules}; all of these rules assume any
-terms they reference have a basic type.
-
 \begin{figure}[!t]
 {\footnotesize
 {\small\begin{flalign*}
  &\text{\textbf{Type Erasure}} & \fbox{$\eraserf{t} \quad \eraserf{\tau} \quad \eraserf{\Gamma}$}
 \end{flalign*}}
 \vspace{-1em}
-\begin{alignat*}{3}
+\begin{alignat*}{4}
     \eraserf{\rawnuot{b}{\phi}} &\doteq b \quad&
     \eraserf{x{:}t \sarr \tau} &\doteq \eraserf{t}\sarr\eraserf{\tau} \quad&
-    \eraserf{x{:}b \garr t} &\doteq \eraserf{t}
-    \\ \eraserf{\rg{H}{A}{F}} &\doteq \Code{unit} \quad&
-    \eraserf{\rgB{H}{A}{F}{B}} &\doteq \Code{unit} \quad&
-    \eraserf{ \tau_1 \interty \tau_2 } &\doteq \eraserf{\tau_1}
-    \\
+    \eraserf{x{:}b \garr t} &\doteq \eraserf{t} \quad&
+    \eraserf{\rg{H}{A}{F}} &\doteq \Code{unit}
+    \\\eraserf{ \tau_1 \interty \tau_2 } &\doteq \eraserf{\tau_1} \quad&
     \eraserf{\emptyset} &\doteq \emptyset \quad&
-    \eraserf{x{:}t, \Gamma} &\doteq x{:}\eraserf{t}, \eraserf{\Gamma}
+    \eraserf{x{:}t, \Gamma} &\doteq x{:}\eraserf{t}, \eraserf{\Gamma} \quad& \quad&
 \end{alignat*}
 {\small
 \begin{flalign*}
@@ -43,38 +33,13 @@ terms they reference have a basic type.
 \quad
 \begin{prooftree}
 \hypo{
-\eraserf{\Gamma} \basicvdash \phi : \Code{bool}
-}
-\infer1[\textsc{WfTest}]{
-\Gamma \wellfoundedvdash \evparenth{\phi}
-}
-\end{prooftree}
- \\ \ \\ \ \\
-\begin{prooftree}
-\hypo{\Gamma \wellfoundedvdash A}
-\infer1[\textsc{WfNeg}]{
-\Gamma \wellfoundedvdash \neg A
-}
-\end{prooftree}
-\quad
-\begin{prooftree}
-\hypo{
-\Gamma \wellfoundedvdash A_1 \quad \Gamma \wellfoundedvdash A_2
-}
-\infer1[\textsc{WfAnd}]{
-\Gamma \wellfoundedvdash A_1 \land A_2
-}
-\end{prooftree}
-\quad
-\begin{prooftree}
-\hypo{
 \Gamma \wellfoundedvdash A_1 \quad \Gamma \wellfoundedvdash A_2
 }
 \infer1[\textsc{WfOr}]{
 \Gamma \wellfoundedvdash A_1 \lor A_2
 }
 \end{prooftree}
- \\ \ \\ \ \\
+\\[.8em]
  \begin{prooftree}
 \hypo{
 \Gamma \wellfoundedvdash A_1 \quad \Gamma \wellfoundedvdash A_2
@@ -85,23 +50,26 @@ terms they reference have a basic type.
 \end{prooftree}
 \quad
 \begin{prooftree}
-\hypo{
-\Gamma \wellfoundedvdash A
-}
-\infer1[\textsc{WfNext}]{
-\Gamma \wellfoundedvdash \nextA A
+\hypo{}
+\infer1[\textsc{WfEmpty}]{
+\Gamma \wellfoundedvdash \emptyset
 }
 \end{prooftree}
 \quad
 \begin{prooftree}
-\hypo{
-\Gamma \wellfoundedvdash A_1 \quad \Gamma \wellfoundedvdash A_2
-}
-\infer1[\textsc{WfUntil}]{
-\Gamma \wellfoundedvdash A_1 \untilA A_2
+\hypo{}
+\infer1[\textsc{WfEpsilon}]{
+\Gamma \wellfoundedvdash \epsilon
 }
 \end{prooftree}
-\\ \ \\ \ \\ \
+\quad
+\begin{prooftree}
+\hypo{\Gamma \wellfoundedvdash A}
+\infer1[\textsc{WfStar}]{
+\Gamma \wellfoundedvdash A^*
+}
+\end{prooftree}
+\\[.8em]
 \begin{prooftree}
 \hypo{
 \eraserf{\Gamma}, \vnu{:}b \basicvdash \phi : \Code{bool}
@@ -122,21 +90,20 @@ terms they reference have a basic type.
 \Gamma \wellfoundedvdash x{:}t_x \sarr t
 }
 \end{prooftree}
-\\ \ \\ \ \\ \
+\\[.8em]
 \begin{prooftree}
 \hypo{
 \parbox{50mm}{\center
 $\Gamma \wellfoundedvdash H$ \quad
 $\Gamma \wellfoundedvdash A$ \quad
-$\Gamma \wellfoundedvdash F$ \quad
-$\Gamma \vdash H \seqA A \seqA F \not \subseteq \neg\allTL$
+$\Gamma \wellfoundedvdash F$
 }
 }
 \infer1[\textsc{WfHAF}]{
 \Gamma \wellfoundedvdash \rg{H}{A}{F}
 }
 \end{prooftree}
-\\ \ \\ \ \\ \
+\\[.8em]
 \begin{prooftree}
 \hypo{
 \Gamma \wellfoundedvdash \tau
@@ -176,8 +143,25 @@ $\Gamma \vdash H \seqA A \seqA F \not \subseteq \neg\allTL$
 }
 \caption{Full set of well-formedness typing rules.}
 \label{fig:full-wf-rules}
-\vspace*{-.2in}
 \end{figure}
+
+The full set of rules for our auxiliary typing relations are shown in
+\autoref{fig:full-wf-rules} and \autoref{fig:full-sub-rules}. The full
+set of declarative typing rules are shown in
+\autoref{fig:full-typing-rules}. We elide the basic typing relation
+({\small$\emptyset \basicvdash e : s$}) in the premises of the rules
+in \autoref{fig:full-typing-rules}; all of these rules assume any
+terms they reference have a basic type.
+We also required the handler context to be well-formed, that is the specifications in handler context are consistent with the auxiliary operational semantics.
+
+\begin{definition}[Well-formed handler context]
+  \label{lemma:built-in-typing}
+  The handler context $\Delta$ is well-formed iff for every $(\Theta, \tau) \in \Delta(\eff{op})$, the type $\tau$ is of the form $\overline{y{:}b} \garr \overline{x{:}t} \sarr \rg{H}{\msg{op}{\phi}}{F}$ and the following holds:
+{\small\begin{align*}
+    &\forall \overline{y{:}b}.\forall \overline{c \in \denotation{t}}.\forall \alpha_h \in \denot{H}. \forall \overline{m_i}. \alpha_h \vDash \zevent{op}{\overline{c}} \Downarrow \{\overline{m_i}\} \impl 
+    \\&\quad (\forall \alpha_f \in \denot{F}. \alpha_f = \alpha_1 \listconcat [m_1] \listconcat ... [m_n] \listconcat \alpha_{n+1}) \land \phi\msubst{x}{c} \land \Theta = \{\overline{m_i.\eff{op}}\}
+\end{align*}}
+\end{definition}
 
 \begin{figure}[!t]
 {\footnotesize
@@ -201,30 +185,15 @@ $\Gamma \vdash H \seqA A \seqA F \not \subseteq \neg\allTL$
 \hypo{
 \parbox{50mm}{\center
   $\Gamma \vdash H_2 \subseteq H_1$ \quad
-  $\Gamma \vdash A_1 \subseteq A_2$ \quad
-  $\Gamma \vdash F_2 \subseteq F_1$
+  $\Gamma \vdash F_2 \subseteq F_1$ \quad
+  $\Gamma \vdash A_1 \subseteq A_2$
 }
 }
 \infer1[\textsc{SubHAF}]{
 \Gamma \vdash \rg{H_1}{A_1}{F_1} <: \rg{H_2}{A_2}{F_2}
 }
 \end{prooftree}
-\quad
-\ \\ \ \\ \ \\
-\begin{prooftree}
-\hypo{
-\parbox{50mm}{\center
-  $\Gamma \vdash H_2 \subseteq H_1$ \quad
-  $\Gamma \vdash A_1 \subseteq A_2$ \quad
-  $\Gamma \vdash F_2 \subseteq F_1$
-}
-}
-\infer1[\textsc{SubHAFB}]{
-\Gamma \vdash \rgB{H_1}{A_1}{F_1}{B} <: \rgB{H_2}{A_2}{F_2}{B}
-}
-\end{prooftree}
-\quad
-\ \\ \ \\ \ \\
+\\[.8em]
 \begin{prooftree}
 \hypo{}
 \infer1[\textsc{SubIntLL}]{
@@ -250,7 +219,7 @@ $\Gamma \vdash H \seqA A \seqA F \not \subseteq \neg\allTL$
 \Gamma \vdash \tau <: \tau_1 \interty \tau_2
 }
 \end{prooftree}
-\ \\ \ \\ \ \\
+\\[.8em]
 \begin{prooftree}
 \hypo{
 \parbox{33mm}{\center
@@ -283,7 +252,7 @@ $\Gamma, x{:}t_2 \vdash \tau_1 <: \tau_2$
 \Gamma \vdash x{:}b\garr t_1 <: t_2
 }
 \end{prooftree}
-\ \\ \ \\ \ \\
+\\[.8em]
 \begin{prooftree}
 \hypo{
 \forall \sigma. \sigma \in\denot{\Gamma}. \sigma(\phi_1 \implies \phi_2)
@@ -307,87 +276,101 @@ $\Gamma, x{:}t_{x_2} \vdash t_1 <: t_2$
 }
 \caption{Full set of subtyping rules.}
 \label{fig:full-sub-rules}
-\vspace*{-.2in}
 \end{figure}
 
 \begin{figure}[!t]
 {\footnotesize
 {\small
 \begin{flalign*}
-  &\text{\textbf{Typing}} &  &\fbox{$\Gamma \vdash v : t \quad \Gamma; \Delta; \Theta \vdash e : \tau$}
+  &\text{\textbf{Typing}} &  &\fbox{$\Gamma;\Delta\vdash \primop: t \quad \Gamma;\Delta\vdash \eff{op}: \capTau{\Theta, t} \quad \Gamma;\Delta;\Theta\vdash v : \capTau{\Theta, t} \quad \Gamma;\Delta;\Theta \vdash e: \capTau{\Theta, \tau}$}
 \end{flalign*}
 }
-\mprooftr{21mm}
-{
-$\Gamma; \Delta; \Theta \vdash e_1 : \tau$ \quad $\Gamma; \Delta; \Theta \vdash e_2 : \tau$
- }
-{TChoice}
-{$\Gamma; \Delta; \Theta \vdash e_1 \oplus e_2 : \tau$}
-\quad
-\mprooftr{87mm}
-{
-$\Delta(\eff{op}) =\langle \mykw{gen}\;\tau, \Theta' \rangle$ \quad
-$\Gamma \vdash \tau <: \overline{x_i{:}t_i}\sarr
-\rg{H}{\lastA\msg{op}{\phi}}{A \seqA F}$ \quad
-$\forall i. \Gamma \vdash v_i : t_i$  \quad
- $\Gamma; \Delta; \Theta \cup \Theta' \vdash e : \rg{H \seqA \lastA\msg{op}{\phi\msubst{x_i}{v_i}}}{A}{F}$
- }
-{TGen}
-{$\Gamma; \Delta; \Theta \vdash \zgen{op}{\overline{v_i}}{e} : \rg{H}{\lastA\msg{op}{\phi\msubst{x_i}{v_i}} \seqA A}{F}$}
-\\ \ \\ \ \\ \
-\mprooftr{35mm}
-{}
-{TRet}
-{$\Gamma; \Delta; \emptyset \vdash () : \rg{H}{\epsTL}{F}$}
-\quad
-\mprooftr{77mm}
-{
-  $\Delta(\eff{op}) =\langle \mykw{obs}\;\tau, \Theta'\rangle$ \quad
-$\Gamma \vdash \tau <: \overline{x_i{:}t_i}\sarr
-\rg{H}{\lastA\msgB{op}{\overline{y}}{\phi}}{A \seqA F}$ \quad
- $\Gamma, \overline{x{:}t}; \Delta; \Theta \cup \Theta' \vdash e : \rg{H \seqA \lastA\msgB{op}{\overline{y}}{\phi \land \overline{y = x}}}{A}{F}$
- }
-{TObs}
-{$\Gamma; \Delta; \{\eff{op}\} \cup \Theta \vdash \zobs{\overline{x}}{op}{e} : \rg{H}{\lastA\msgB{op}{\overline{y}}{\phi} \seqA A}{F}$}
-\\ \ \\ \ \\ \
-\mprooftr{50mm}
-{$\Gamma, z\hasoty{unit}{\phi};\Delta;\Theta \vdash e : \tau$ \quad $z$ is fresh}
-{TAssume}
-{$\Gamma;\Delta;\Theta  \vdash \zassume{\phi}{e} : \tau  $}
-\quad
-\mprooftr{45mm}
-{$\Gamma;\Delta;\Theta \vdash e : \tau$ \quad
-$\Gamma \vdash () : \nuot{unit}{\phi}$}
-{TAssert}
-{$\Gamma;\Delta;\Theta \vdash \zassert{\phi}{e} : \tau  $}
-\\ \ \\ \ \\ \
-\mprooftr{58mm}
-{
-$\Gamma \vdash \primop : t$ \quad $\Gamma \vdash t <: \overline{y{:}t}\sarr t_x$
-$\forall i. \Gamma \vdash v_i : t_i$ \quad
-$\Gamma, x{:}t_x\msubst{y}{v};\Delta;\Theta \vdash e : \tau$
-}
-{TOpApp}
-{$\Gamma;\Delta;\Theta \vdash \zlet{x{:}b}{\primop\ \overline{v}}{e} : \tau$}
+\mprooftr{23mm}
+{$\eraserf{\Gamma} \basicvdash c : b$}
+{TConst}
+{$\Gamma \vdash c : \rawnuot{b}{\vnu = c}$}
 \quad
 \mprooftr{23mm}
-{$\eraserf{\Gamma} \basicvdash v : b$}
-{TVal}
-{$\Gamma \vdash v : \rawnuot{b}{\vnu = v}$}
-\\ \ \\ \ \\ \
-\mprooftr{38mm}
-{$\Gamma;\Delta;\Theta \vdash e : \tau$ \quad
+{$\eraserf{\Gamma} \basicvdash x : b$}
+{TVar}
+{$\Gamma \vdash x : \rawnuot{b}{\vnu = x}$}
+\quad
+\mprooftr{30mm}
+{$\Gamma; \Delta; \Theta \vdash e_1 : \capTau{\Theta, \tau}$ \quad $\Gamma; \Delta; \Theta \vdash e_2 : \capTau{\Theta, \tau}$}
+{TChoice}
+{$\Gamma; \Delta; \Theta \vdash e_1 \oplus e_2 : \capTau{\Theta, \tau}$}
+  \\[.8em]
+  \mprooftr{35mm}
+  {}
+  {TRet}
+  {$\Gamma; \Delta; \Theta \vdash () : \capTau{\Theta, \rg{\allA}{\epsilon}{\allA}}$}
+  \quad
+  \mprooftr{82mm}
+  {
+  $\Gamma; \Delta \vdash \eff{op} : \capTau{\Theta_{\eff{op}}, \overline{x_i{:}t_i}\sarr
+  \rg{H}{\msg{op}{\phi}}{A\seqA F}}$ \quad
+  $\forall i. \;\Gamma;\Delta;\emptyset \vdash v_i : \capTau{\emptyset, t_i}$ \quad
+  $\Gamma; \Delta; \Theta \cup \Theta_{\eff{op}} \vdash e : \capTau{\Theta', \rg{H \seqA \msg{op}{\phi\msubst{x_i}{v_i}}}{A}{F}}$}
+  {TGen}
+  {$\Gamma; \Delta; \Theta \vdash \zgen{op}{\overline{v_i}}{e_1} : \capTau{\Theta', \rg{H}{\msg{op}{\phi\msubst{x_i}{v_i}} \seqA A}{F}}$}
+  \\[.8em]
+  \mprooftr{42mm}{
+   $\Gamma, x{:}t_x; \Delta; \Theta \vdash e : \capTau{\Theta', \tau}$
+  }{TFun}{
+   $\Gamma; \Delta; \Theta \vdash \zlam{x}{\eraserf{t_x}}{e} : \capTau{\Theta', x{:}t_x\sarr \tau}$}
+  \ 
+  \mprooftr{77mm}{
+    $\Gamma; \Delta \vdash \eff{op} : \capTau{\Theta_{\eff{op}}, \overline{x_i{:}t_i}\sarr \rg{H}{\msgB{op}{\overline{y}}{\phi}}{A \seqA F}}$ \quad
+    $\Gamma, \overline{x{:}t}; \Delta; \Theta \cup \Theta_{\eff{op}} \vdash e : \capTau{\Theta', \rg{H \seqA \msgB{op}{\overline{y}}{\phi \land \overline{y = x}}}{A}{F}}$}
+  {TObs}
+  {
+    $\Gamma; \Delta; \{\eff{op}\} \cup \Theta \vdash \zobs{\overline{x}}{op}{e} : \capTau{\Theta', \rg{H}{\msgB{op}{\overline{y}}{\phi} \seqA A}{F}}$
+  }
+  \\[.8em]
+  \mprooftr{40mm}{
+   $\Gamma, f{:}t; \Delta; \Theta \vdash \zlam{x}{b}{e} : \capTau{\Theta, t}$
+  }{TFix}{
+   $\Gamma; \Delta; \Theta \vdash \zfix{f}{\eraserf{t}}{x}{b}{e} : \capTau{\Theta, t}$}
+  \quad
+  \mprooftr{60mm}{
+   $\Gamma; \Delta; \Theta \vdash v_1 : \capTau{\Theta', y{:}t_y\sarr\tau}$ \quad
+   $\Gamma; \Delta; \emptyset \vdash v_2 : \capTau{\emptyset, t_y}$ \quad
+   $\mykw{let}\; \rg{H}{A}{A' \seqA F} = \tau[y\mapsto v_2]$\quad
+   $\Gamma; \Delta; \Theta' \vdash e' : \capTau{\Theta'', \rg{H \seqA A}{A'}{F}}$
+  }{TApp}{
+   $\Gamma; \Delta; \Theta \vdash \zlet{x}{v_1\;v_2}{e} : \capTau{\Theta'', \rg{H}{A \seqA A'}{F}}$}
+\\[.8em]
+\mprooftr{55mm}
+{
+$\Gamma;\Delta \vdash \primop : t$ \quad $\Gamma \vdash t <: \overline{y{:}t}\sarr t_x$
+$\forall i. \Gamma \vdash v_i : t_i$ \quad
+$\Gamma, x{:}t_x\msubst{y}{v};\Delta;\Theta \vdash e : \capTau{\Theta, \tau}$
+}
+{TOpApp}
+{$\Gamma;\Delta;\Theta \vdash \zlet{x}{\primop\ \overline{v}}{e} : \capTau{\Theta, \tau}$}
+\quad
+\mprooftr{25mm}
+{$\Gamma;\Delta;\Theta \vdash e : \capTau{\Theta', \tau}$ \quad
 $\Gamma \vdash \tau <: \tau'$}
 {TSub}
-{$\Gamma;\Delta;\Theta \vdash e : \tau'$}
-\quad
-\mprooftr{38mm}
-{$\Gamma \vdash v : t$ \quad
+{$\Gamma;\Delta;\Theta \vdash e : \capTau{\Theta', \tau'}$}
+\\[.8em]
+\mprooftr{23mm}
+{$\Gamma;\Delta;\Theta \vdash v : \capTau{\Theta, t}$ \quad
 $\Gamma \vdash t <: t'$}
 {TPureSub}
-{$\Gamma \vdash v : t'$}
+{$\Gamma;\Delta;\Theta \vdash v : \capTau{\Theta, t'}$}
+\quad
+\mprooftr{17mm}
+{$t \in \Delta(\primop)$ \quad $\Gamma \vdash t <: t'$}
+{TPureOp}
+{$\Gamma;\Delta \vdash \primop : t'$}
+\quad
+\mprooftr{22mm}
+{$(\Theta, \tau) \in \Delta(\eff{op})$ \quad $\Gamma \vdash \tau <: \tau'$}
+{TOp}
+{$\Gamma;\Delta \vdash \eff{op} : \capTau{\Theta, \tau'}$}
 }
 \caption{Full set of typing rules.}
 \label{fig:full-typing-rules}
-\vspace*{-.2in}
 \end{figure}

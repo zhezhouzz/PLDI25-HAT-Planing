@@ -74,22 +74,35 @@
 \newcommand{\ite}[3]{\mykw{if}\ {#1}\ \mykw{then}\ {#2}\ \mykw{else}\ {#3}}
 \newcommand{\match}[1]{\mykw{match}\ {#1}\ \mykw{with}\ }
 % Lambda Calculus
+\newcommand{\cond}{ret}
+\newcommand{\capTau}[1]{\langle {#1} \rangle}
 \newcommand{\zlet}[3]{\mykw{let}\ {#1}\ {=}\ {#2} \  \mykw{in}\ {#3}}
 \newcommand{\zrandom}[1]{\mykw{random}\ {#1}}
+\newcommand{\sgen}[2]{\mykw{gen}\ \eff{#1} \ {#2}}
+\newcommand{\sobs}[1]{\mykw{obs}\ \eff{#1}}
+\newcommand{\sassume}[1]{\mykw{assume}\ {#1}}
+\newcommand{\sassert}[1]{\mykw{assert}\ {#1}}
+\newcommand{\sloop}{\mykw{loop}}
+\newcommand{\zassume}[3]{\mykw{let}\ {#1} = \mykw{assume}\ {#2} \  \mykw{in}\ {#3}}
+\newcommand{\zassert}[2]{\mykw{let}\ \mykw{assert}\ {#1} \  \mykw{in}\ {#2}}
+\newcommand{\zwhile}[2]{\mykw{let}\ \mykw{while}(*)\{{#1}\}\ \mykw{in}\ {#2}}
+% \newcommand{\zwhile}[3]{\mykw{let}\ \mykw{while}({#1})\{{#2}\}\ \mykw{in}\ {#3}}
+% \newcommand{\zwhile}[3]{\mykw{let}\ \mykw{do}\{{#2}\}\ \mykw{while}({#1})\ \mykw{in}\ {#3}}
+\newcommand{\zloop}[2]{\mykw{let}\ \mykw{loop}\{{#1}\} \ \mykw{in}\ {#2}}
+\newcommand{\zgen}[3]{\mykw{let}\ \mykw{gen}\ \eff{#1} \ {#2} \ \mykw{in}\ {#3}}
 \newcommand{\zobs}[3]{\mykw{let}\ {#1}\ {=}\ \mykw{obs}\ \eff{#2}\ \mykw{in}\ {#3}}
 \newcommand{\zobsPhi}[4]{\mykw{let}\ {#1}\ {=}\ \mykw{obs}\ \eff{#2}\ {#3}\ \mykw{in}\ {#4}}
-\newcommand{\zgen}[3]{\mykw{gen}\ \eff{#1} \ {#2} \ \mykw{in}\ {#3}}
 \newcommand{\zevent}[2]{\eff{#1}({#2})}
 \newcommand{\zrecv}[3]{\mykw{receive}\ {#1}\ {#2} \ \mykw{in}\ {#3}}
-\newcommand{\zassume}[2]{\mykw{assume}\ {#1} \  \mykw{in}\ {#2}}
-\newcommand{\zassert}[2]{\mykw{assert}\ {#1} \  \mykw{in}\ {#2}}
 \newcommand{\perform}[4]{\mykw{let}\ {#1}\ {=}\ \Code{#2}\ {#3}\ \mykw{in}\ {#4}}
 \newcommand{\zlam}[3]{\lambda {#1}{:}{#2}.{#3} }
 \newcommand{\zif}[3]{\mykw{if}\ {#1}\ \mykw{then}\ {#2} \ \mykw{else}\ {#3}}
 \newcommand{\zzlam}[2]{\lambda {#1}.{#2} }
-\newcommand{\zfix}[5]{\Code{\textcolor{codeblue}{fix}}{#1}{:}{#2}.\zlam{#3}{#4}{#5}}
+\newcommand{\zfix}[5]{\mykw{fix}{#1}{:}{#2}.\zlam{#3}{#4}{#5}}
 \newcommand{\zzfix}[3]{\mykw{fix}{#1}.\zzlam{#2}{#3}}
-\newcommand{\zloop}[1]{\mykw{loop}\;{#1}}
+\newcommand{\zrec}[3]{\mykw{fix}\;{#1}{:}{#2}.{#3}}
+\newcommand{\zletappU}[2]{\mykw{let}\;{#1}\;\mykw{in}\;{#2}}
+% \newcommand{\zloop}[1]{\mykw{loop}\;{#1}}
 \newcommand{\exnc}{\Code{crash}}
 % Impertive Language
 \newcommand{\ilet}[2]{\mykw{let}\ {#1}\ {=}\ {#2}}
@@ -161,8 +174,8 @@
 \newcommand{\et}[3]{\etparenth{ {#1}{:}{#2}\, |\, {#3} }}
 \newcommand{\nuet}[2]{\et{\vnu}{\Code{#1}}{#2}}
 \newcommand{\rawnuet}[2]{\et{\vnu}{#1}{#2}}
-\newcommand{\ot}[3]{\otparenth{ {#1}{:}{\Code{#2}}\, |\, {#3} }}
-\newcommand{\nuot}[2]{\ot{\vnu}{#1}{#2}}
+\newcommand{\ot}[3]{\otparenth{ {#1}{:}{#2}\, |\, {#3} }}
+\newcommand{\nuot}[2]{\ot{\vnu}{\Code{#1}}{#2}}
 \newcommand{\rawnuot}[2]{\otparenth{ \vnu{:}{#1}\, |\, {#2} }}
 \newcommand{\varnuot}[3]{{#1}{:}\nuot{#2}{#3}}
 \newcommand{\ic}[4]{\otparenth{ {#1}{:}{#2}\, |\, {#3}\rhd {#4} }}
@@ -313,14 +326,22 @@
 \newcommand{\evpc}[3]{ \evparenth{ \mathbf{#1}^\Code{#2}\;\I{\Code{#3}} }}
 \newcommand{\evop}[3]{ \ev{\S{#1}\,{#2}}{#3} }
 
-\newcommand{\msgB}[3]{ \evparenth{\eff{#1}\;{#2}~|~{#3}} }
-\newcommand{\msgA}[2]{ \evparenth{\eff{#1}({#2})}}
-\newcommand{\msgAGreen}[2]{\textcolor{DeepGreen}{\msgA{#1}{#2}}}
-\newcommand{\msgABlue}[2]{\textcolor{CobaltBlue}{\msgA{#1}{#2}}}
-\newcommand{\msgAAmber}[2]{\textcolor{Amber}{\msgA{#1}{#2}}}
-\newcommand{\msgAGolden}[2]{\textcolor{DarkGolden}{\msgA{#1}{#2}}}
+\newcommand{\msgAT}[4]{ \evparenth{{#1}\textcolor{#2}{\eff{#3}}\;{#4}}}
+\newcommand{\msgAColor}[3]{\evparenth{\textcolor{#1}{\eff{#2}}\;{#3}}}
+\newcommand{\msgA}[2]{\evparenth{\eff{#1}\;{#2}}}
+\newcommand{\msgAGray}[2]{ \msgAColor{gray}{#1}{#2} }
+\newcommand{\msgAGreen}[2]{\msgAColor{DeepGreen}{#1}{#2}}
+\newcommand{\msgABlue}[2]{\msgAColor{CobaltBlue}{#1}{#2}}
+\newcommand{\msgAAmber}[2]{\msgAColor{Amber}{#1}{#2}}
+\newcommand{\msgAGolden}[2]{\msgAColor{DarkGolden}{#1}{#2}}
+
+\newcommand{\msgB}[3]{\evparenth{\eff{#1}\;{#2}~|~{#3}} }
+\newcommand{\msgBT}[5]{\evparenth{{#1}\textcolor{#2}{\eff{#3}}\;{#4}~|~{#5}} }
+
+\newcommand{\msgCT}[3]{\evparenth{{#1}\textcolor{#2}{\eff{#3}}} }
+\newcommand{\msgC}[1]{\evparenth{\eff{#1}}}
+
 \newcommand{\msg}[2]{ \evparenth{\eff{#1}~|~{#2}} }
-\newcommand{\msgC}[1]{ \evparenth{#1}}
 % \newcommand{\acSe}[2]{ \evparenth{\mykw{app}\;\eff{#1}({#2})} }
 \newcommand{\acSe}[2]{\eff{#1}({#2}) }
 % \newcommand{\acGen}[2]{ \evparenth{\mykw{gen}\;\eff{#1}({#2})} }
@@ -387,7 +408,7 @@
 %\newcommand{\lastA}{{\mbox{$\mathbf{SINGLE}$}}}
 % \newcommand{\lastA}{{\mathbf{SINGLE}}}
 \newcommand{\lastA}{{\mathcal{S}}}
-\newcommand{\allA}{{\mathbf{All}}}
+\newcommand{\allA}{{\anyA^*}}
 \newcommand{\singletonA}{{\mathbf{Single}}}
 \newcommand{\untilA}{\,\mathcal{U}\,}
 \newcommand{\weakUntilA}{\,\mathcal{W}\,}
@@ -441,8 +462,10 @@
 \newcommand{\atriple}[3]{ {#1}{\times}\bufLR{#2}{\times}\effLR{#3}}
 \newcommand{\relyg}[3]{ \bufLR{#1}{#2}\effLR{#3}}
 \newcommand{\rg}[3]{ \effLR{#1}\effLR{#2}\effLR{#3}}
+\newcommand{\ha}[2]{\effLR{#1}\effLR{#2}}
 \newcommand{\rgB}[4]{ \effLR{#1}\effLR{#2}\effLR{#3}\bufLR{#4}}
 \newcommand{\rgbuf}[3]{ \effLR{#1}\effLR{#2}\bufLR{#3}}
+\newcommand{\traceDelta}[2]{{#1}\vDash{#2}}
 \newcommand{\hfour}[4]{ \effLR{#1}\,\bufLR{#2}\,{#3}\,\bufLR{#4}}
 \newcommand{\hpair}[2]{ \effLR{#1}\effLR{#2} }
 \newcommand{\uhtriple}[3]{ \ueffLR{#1}\,{#2}\,\effLR{#3} }
@@ -595,7 +618,7 @@
 \newcommand{\negSCA}{A_\Code{violateRYW}}
 \newcommand{\negSCAPi}{\Pi_\Code{violateRYW}}
 
-\newcommand{\PAT}{\mbox{{\sc Pat}}\xspace}
+\newcommand{\PAT}{\mbox{{\sc Pret}}\xspace}
 \newcommand{\DSL}{\boldsymbol{\lambda}^{C}}
 % \newcommand{\Gchecked}{M_\Code{checked}}
 % \newcommand{\Gsender}{M_\Code{hasSender}}
@@ -607,6 +630,7 @@
 \newcommand{\Mfw}{\Theta_\Code{fw}}
 \newcommand{\Mbw}{\Theta_\Code{bw}}
 \newcommand{\GEN}{\Code{Generable}}
+\newcommand{\OBS}{\Code{Obs}}
 
 \newcommand{\msubst}[2]{[\overline{{#1}\mapsto {#2}}]}
 \newcommand{\subst}[2]{[{#1}\mapsto {#2}]}

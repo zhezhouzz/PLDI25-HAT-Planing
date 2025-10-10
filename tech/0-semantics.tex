@@ -4,69 +4,110 @@ The auxiliary big-step reduction rules for effect operators and the
 small-step operational semantics of our core language are shown in
 \autoref{fig:semantics}.
 
-\begin{figure}[ht!]
-{\footnotesize
-{\small\begin{align*}
-\text{\textbf{Messages}}& \  & m ::= \   & \zevent{op}{\overline{c}}
-\qquad
-\text{\textbf{Buffers}}& \  &\beta \in \mathcal{P}(m)  &
-\qquad
-\text{\textbf{Traces}}& \  &\alpha ::= \  &
-    \emptr ~|~ m \;{::}\; \alpha ~|~ \alpha
-    \listconcat \alpha
-\end{align*}
-\begin{align*}
-  \text{\textbf{Handler Semantics }} & \fbox{$\alpha \vDash
-                                       \zevent{op}{\overline{c}}
-                                       \Downarrow \beta$} &
-                                                            \quad\quad\quad
-                                                            \text{\textbf{Operational
-                                                            Semantics
-                                                            }} &
-                                                                 \fbox{$\phi
-                                                                 \Downarrow c
-                                                                 \quad
-                                                                 \steptr{\alpha}{(\buf, e)}{\alpha}{(\buf, e)}$}
-\end{align*}}
-\mprooftr{65mm}{
-$\buf = \{\zevent{op}{\overline{c}}\} \cup \buf_1 $ \quad
-$\alpha \vDash \zevent{op}{\overline{c}} \Downarrow \buf_2$ \quad
-$e' = e[\overline{x \mapsto c}]$
-}{StObs}
-{$\steptr{\alpha}{(\buf,
-    \zobs{\overline{x}}{op}{e})}{[\zevent{op}{\overline{c}}]}{(\buf_1 \cup \buf_2, e')}$}
-\quad
-\mprooftr{48mm}{
-$\alpha \vDash \zevent{op}{\overline{c}} \Downarrow \beta'$
-}{StGen}
-{$\steptr{\alpha}{(\buf, \zgen{op}{\overline{c}}{e})}{[\zevent{op}{\overline{c}}]}{(\buf \cup \beta', e)}$}
-\\ \ \\ \ \\
-\mprooftr{55mm}{
-$\primop\ \overline{c} \Downarrow c_x$
-}{StOp}
-{$\steptr{\alpha}{(\buf, \zlet{x}{\primop\ \overline{c}}{e})}{[]}{(\buf, e\subst{x}{c_x})}$}
-\quad
-\\ \ \\ \ \\
-\mprooftr{35mm}{}{StChoice1}{
-$\steptr{\alpha}{(\buf, e_1 \oplus e_2)}{[]}{(\buf, e_1)}$
-}\quad
-\mprooftr{35mm}{}{StChoice2}{
-$\steptr{\alpha}{(\buf, e_1 \oplus e_2)}{[]}{(\buf, e_2)}$
+\begin{figure}[t!]
+    \vspace*{-0.1in}
+    {\footnotesize
+    {\small
+    \begin{flalign*}
+    \text{\textbf{Events}} \ m ::= \  \zevent{op}{\overline{c}} &
+    \parbox{7cm}{\centering$\text{\textbf{capability}}\  \beta \in \mathcal{P}(m)$}  &
+    \text{\textbf{Traces}} \ \alpha ::= \ \emptr ~|~ m \;{::}\; \alpha ~|~ \alpha \listconcat \alpha &
+    \end{flalign*}
+    % \vspace*{-.2in}
+    % \begin{flalign*}
+    %   \text{\textbf{Term Concatenation }}\ \fbox{$e;e$} & \ 
+    %   \end{flalign*}
+    }
+    \vspace*{-.15in}
+    % \begin{align*}
+    %   &(\zobs{\overline{x}}{op}{e}) ; e' \doteq \zobs{\overline{x}}{op}{(e;e')}
+    %   \quad
+    %   &(\zgen{op}{\overline{c}}{e}) ; e' \doteq \zgen{op}{\overline{c}}{(e;e')}
+    %   \\
+    %   &(\zassume{\overline{x}}{\phi}{e}) ; e' \doteq \zassume{\overline{x}}{\phi}{(e;e')}
+    %   \quad
+    %   &(\zassert{\phi}{e}) ; e' \doteq \zassert{\phi}{(e;e')}
+    %   \\
+    %   &(\zlet{x}{\primop\ \overline{v}}{e}) ; e' \doteq \zlet{x}{\primop\ \overline{v}}{(e;e')}
+    %   \quad
+    %   &(e_1 \oplus e_2) ; e' \doteq (e_1 ; e') \oplus (e_2 ; e')
+    %   \\
+    %   &(\zwhile{e_1}{e_2}) ; e' \doteq \zwhile{e_1}{(e_2;e')} \quad
+    %   &() ; e' \doteq e'
+    %   \end{align*}
+    %   \vspace*{-.15in}
+    {\small\begin{flalign*}
+      &\text{\textbf{Handler Semantics }}\ 
+      \fbox{$\alpha \vDash \zevent{op}{\overline{c}} \Downarrow \beta$} &
+      \text{\textbf{Operational Semantics }}\ 
+      \fbox{$\phi \Downarrow c \quad \steptr{\alpha}{(\buf, e)}{\alpha}{(\buf, e)}$}
+    \end{flalign*}}
+        \begin{prooftree}
+        \mhypo{50mm}
+        {$\buf = \{\zevent{op}{\overline{c}}\} \cup \buf_1 $ \quad
+          $\alpha \vDash \zevent{op}{\overline{c}} \Downarrow \buf_2$ \quad
+          $e' = e[\overline{x \mapsto c}]$
+        }
+          \infer1[\textsc{\small StObs}]{
+            \steptr{\alpha}{(\buf,
+              \zobs{\overline{x}}{op}{e})}{[\zevent{op}{\overline{c}}]}{(\buf_1
+              \cup \buf_2, e')}
+          }
+        \end{prooftree}
+          \quad
+        \begin{prooftree}
+          \hypo{\alpha \vDash \zevent{op}{\overline{c}} \Downarrow \beta' }
+          \infer1[\textsc{\small StGen}]{
+            \steptr{\alpha}{(\buf, \zgen{op}{\overline{c}}{e})}{[\zevent{op}{\overline{c}}]}{(\buf \cup \beta', e)}
+          }
+        \end{prooftree}
+    \\[0.8em]
+    \mprooftr{58mm}{
+    $\phi\msubst{x}{c}\Downarrow \top$
+    }{StAssume}{
+    $\steptr{\alpha}{(\buf, \zassume{\overline{x}}{\phi}{e})}{[]}{(\buf, e\msubst{x}{c})}$
+    }
+    \quad
+    \mprooftr{44mm}{$\phi \Downarrow \top$}{StAssert}{
+    $\steptr{\alpha}{(\buf, \zassert{\phi}{e})}{[]}{(\buf, e)}$
+    }
+    \\[.8em]
+    \mprooftr{55mm}{
+    $\primop\ \overline{c} \Downarrow c_x$
+    }{StOp}
+    {$\steptr{\alpha}{(\buf, \zlet{x}{\primop\ \overline{c}}{e})}{[]}{(\buf, e\subst{x}{c_x})}$}
+    \quad
+    \\[0.8em]
+    \mprooftr{65mm}{
+      $\steptr{\alpha}{(\buf, e_1)}{\alpha'}{(\buf', e_1')}$
+    }{StLetE1}{
+    $\steptr{\alpha}{(\buf, \zlet{y}{e_1}{e_2})}{\alpha'}{(\buf', \zlet{y}{e_1'}{e_2})}$
+    }\quad
+    \mprooftr{35mm}{}{StChoice1}{
+    $\steptr{\alpha}{(\buf, e_1 \oplus e_2)}{[]}{(\buf, e_1)}$
+    }
+    \\[0.8em]
+    \mprooftr{55mm}{}{StLetE2}{
+    $\steptr{\alpha}{(\buf, \zlet{y}{v}{e_2})}{[]}{(\buf', e_2[y\mapsto v])}$
+    }
+    \quad
+    \mprooftr{35mm}{}{StChoice2}{
+    $\steptr{\alpha}{(\buf, e_1 \oplus e_2)}{[]}{(\buf, e_2)}$
+    }
+    \\[0.8em]
+    \mprooftr{90mm}{}{StAppLam}{
+    $\steptr{\alpha}{(\buf, \zlet{y}{\zlam{x}{s}{e_1}\ v_x}{e_2})}{[]}{(\buf, \zlet{y}{e_1[x\mapsto v_x]}{e_2})}$
+    }
+    \\[0.8em]
+    \mprooftr{120mm}{}{StAppFix}{
+    $\steptr{\alpha}{(\buf, \zlet{y}{\zfix{f}{s}{x}{s_x}{e_1}\ v_x}{e_2})}{[]}{(\buf,  \zlet{y}{(\zlam{f}{s}{e_1[x\mapsto v_x]}) \ (\zfix{f}{s}{x}{s_x}{e_1})}{e_2})}$
+    }
 }
-\\ \ \\ \ \\
-\mprooftr{60mm}{
-$\phi\msubst{x}{c} \Downarrow \top$
-}{StAssume}{
-$\steptr{\alpha}{(\buf, \zassume{\phi}{e})}{[]}{(\buf, e\msubst{x}{c})}$
-}
-\quad
-\mprooftr{40mm}{$\phi \Downarrow \top$}{StAssert}{
-$\steptr{\alpha}{(\buf, \zassert{\phi}{e}}{[]}{(\buf, e)}$
-}
-}
-  \caption{Full Operational Semantics}
-  \label{fig:semantics}
+\caption{Full Operational Semantics}
+\label{fig:semantics}
 \end{figure}
+
+The full operational semantics is shown in \autoref{fig:semantics}, where the semantics of while loop is defined in terms of term concatenation $e ; e'$.
 
 \newpage
 \section{Basic Typing Rules}\label{sec:tech:basic-typing}
@@ -76,10 +117,6 @@ in \autoref{fig:basic-type-rules} and
 \autoref{fig:basic-qualifier-type-rules}. We use an auxiliary function
 $\Code{Ty}$ to provide a basic type for the primitives of our language,
 e.g., constants, built-in operators, and data constructors.
-
-\begin{alignat*}{2}
-    \text{\textbf{Basic Types}}& \quad & s  ::= \quad & b ~|~ s \sarr s
-\end{alignat*}
 
 \begin{figure}[h!]
  {\footnotesize
@@ -101,48 +138,76 @@ e.g., constants, built-in operators, and data constructors.
 \Gamma \basicvdash x : s
 }
 \end{prooftree}
-\\ \ \\ \ \\
+\quad
 \begin{prooftree}
-\hypo{\Code{Ty}(\primop) = \overline{s_i}{\sarr}s_x \quad \forall i. \Gamma \basicvdash v_i : s_i \quad \Gamma, x{:}s_x \basicvdash e : s}
-\infer1[\textsc{BtPureOp}]{
-\Gamma \basicvdash \zlet{x}{\primop\, \overline{v_i}}{e} : s
+\hypo{ \Gamma, x{:}b \basicvdash e : s }
+\infer1[\textsc{BtFun}]{
+\Gamma \basicvdash \zlam{x}{b}{e} : b\sarr s
 }
 \end{prooftree}
 \quad
 \begin{prooftree}
-\hypo{\Code{Ty}(\eff{op}) = \overline{s_i}{\sarr}s_x \quad \forall i. \Gamma \basicvdash v_i : s_i \quad \Gamma \basicvdash e : s}
+  \hypo{ \Gamma, f{:}b\sarr s, x{:}b \basicvdash e : s }
+  \infer1[\textsc{BtFix}]{
+  \Gamma \basicvdash \zfix{f}{b\sarr s}{x}{b}{e} : b\sarr s
+  }
+\end{prooftree}
+\\[0.8em]
+\begin{prooftree}
+  \hypo{\Code{Ty}(\eff{op}) = \overline{s_i}{\sarr}s_x \quad \Gamma, \overline{x_i{:}s_x} \basicvdash e : \Unit}
+  \infer1[\textsc{BtObs}]{
+  \Gamma \basicvdash \zobs{\overline{x_i}}{op}{e} : \Unit
+  }
+  \end{prooftree}
+\quad
+\begin{prooftree}
+\hypo{\Code{Ty}(\eff{op}) = \overline{s_i}{\sarr}s_x \quad \forall i. \Gamma \basicvdash v_i : s_i \quad \Gamma \basicvdash e : \Unit}
 \infer1[\textsc{BtGen}]{
-\Gamma \basicvdash \zgen{op}{\overline{v}}{e} : s
+\Gamma \basicvdash \zgen{op}{\overline{v}}{e} : \Unit
 }
 \end{prooftree}
-\\ \ \\ \ \\
+\\[0.8em]
 \begin{prooftree}
-\hypo{\Code{Ty}(\eff{op}) = \overline{s_i}{\sarr}s_x \quad \Gamma, \overline{x_i{:}s_x} \basicvdash e : s}
-\infer1[\textsc{BtGen}]{
-\Gamma \basicvdash \zobs{\overline{x_i}}{op}{e} : s
-}
+  \hypo{\Code{Ty}(\primop) = \overline{s_i}{\sarr}s_x \quad \forall i. \Gamma \basicvdash v_i : s_i \quad \Gamma, x{:}s_x \basicvdash e : \Unit}
+  \infer1[\textsc{BtPureOp}]{
+  \Gamma \basicvdash \zlet{x}{\primop\, \overline{v_i}}{e} : \Unit
+  }
 \end{prooftree}
 \quad
 \begin{prooftree}
-\hypo{\Gamma \basicvdash e_1 : s
-\quad \Gamma \basicvdash e_2 : s}
-\infer1[\textsc{BtChoice}]{
-\Gamma \basicvdash e_1 \oplus e_2 : s
-}
+  \hypo{\Gamma \basicvdash e_1 : s
+  \quad \Gamma \basicvdash e_2 : s}
+  \infer1[\textsc{BtChoice}]{
+  \Gamma \basicvdash e_1 \oplus e_2 : s
+  }
 \end{prooftree}
-\\ \ \\ \ \\
+\\[0.8em]
 \begin{prooftree}
-\hypo{\Gamma \basicvdash \phi : \Code{bool} \quad \Gamma \basicvdash e : s}
+\hypo{\Gamma, \overline{x{:}b} \basicvdash \phi : \Code{bool} \quad \Gamma, \overline{x{:}b} \basicvdash e : \Unit}
 \infer1[\textsc{BtAssume}]{
-\Gamma \basicvdash \zassume{\phi}{e} : s
+\Gamma \basicvdash \zassume{\overline{x{:}b}}{\phi}{e} : \Unit
 }
 \end{prooftree}
 \quad
 \begin{prooftree}
-\hypo{\Gamma \basicvdash \phi : \Code{bool} \quad \Gamma \basicvdash e : s}
+\hypo{\Gamma \basicvdash \phi : \Code{bool} \quad \Gamma \basicvdash e : \Unit}
 \infer1[\textsc{BtAssert}]{
-\Gamma \basicvdash \zassert{\phi}{e} : s
+\Gamma \basicvdash \zassert{\phi}{e} : \Unit
 }
+\end{prooftree}
+\\[0.8em]
+\begin{prooftree}
+  \hypo{\Gamma\basicvdash e : \Unit \quad \Gamma \basicvdash e' : \Unit}
+  \infer1[\textsc{BtLetE}]{
+  \Gamma \basicvdash \zlet{x{:}\Unit}{e}{e'} : \Unit
+  }
+\end{prooftree}
+  \quad
+\begin{prooftree}
+  \hypo{\Gamma \basicvdash v_1 : s\sarr s' \quad \Gamma \basicvdash v_2 : s \quad \Gamma, x{:}s' \basicvdash e : \Unit}
+  \infer1[\textsc{BtApp}]{
+  \Gamma \basicvdash \zlet{x{:}s}{v_1\;v_2}{e} : \Unit
+  }
 \end{prooftree}
 }
 \caption{Basic Typing Rules}

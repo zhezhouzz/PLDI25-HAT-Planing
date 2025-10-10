@@ -1,3 +1,8 @@
+*.pdf
+*.fdb_latexmk
+*.fls
+*synctex.gz
+.vscode/*
 _minted/*
 *.aux
 *.bbl
