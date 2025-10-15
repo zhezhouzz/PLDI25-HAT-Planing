@@ -93,6 +93,7 @@
 \newcommand{\zobs}[3]{\mykw{let}\ {#1}\ {=}\ \mykw{obs}\ \eff{#2}\ \mykw{in}\ {#3}}
 \newcommand{\zobsPhi}[4]{\mykw{let}\ {#1}\ {=}\ \mykw{obs}\ \eff{#2}\ {#3}\ \mykw{in}\ {#4}}
 \newcommand{\zevent}[2]{\eff{#1}({#2})}
+\newcommand{\zeventGray}[2]{\eff{\textcolor{gray}{#1}}({#2})}
 \newcommand{\zrecv}[3]{\mykw{receive}\ {#1}\ {#2} \ \mykw{in}\ {#3}}
 \newcommand{\perform}[4]{\mykw{let}\ {#1}\ {=}\ \Code{#2}\ {#3}\ \mykw{in}\ {#4}}
 \newcommand{\zlam}[3]{\lambda {#1}{:}{#2}.{#3} }
@@ -326,6 +327,8 @@
 \newcommand{\evpc}[3]{ \evparenth{ \mathbf{#1}^\Code{#2}\;\I{\Code{#3}} }}
 \newcommand{\evop}[3]{ \ev{\S{#1}\,{#2}}{#3} }
 
+\newcommand{\effGray}[1]{ \eff{\textcolor{gray}{#1}} }
+
 \newcommand{\msgAT}[4]{ \evparenth{{#1}\textcolor{#2}{\eff{#3}}\;{#4}}}
 \newcommand{\msgAColor}[3]{\evparenth{\textcolor{#1}{\eff{#2}}\;{#3}}}
 \newcommand{\msgA}[2]{\evparenth{\eff{#1}\;{#2}}}
@@ -340,6 +343,7 @@
 
 \newcommand{\msgCT}[3]{\evparenth{{#1}\textcolor{#2}{\eff{#3}}} }
 \newcommand{\msgC}[1]{\evparenth{\eff{#1}}}
+\newcommand{\msgCGray}[1]{\evparenth{\effGray{#1}}}
 
 \newcommand{\msg}[2]{ \evparenth{\eff{#1}~|~{#2}} }
 % \newcommand{\acSe}[2]{ \evparenth{\mykw{app}\;\eff{#1}({#2})} }
@@ -627,6 +631,10 @@
 \newcommand{\biSyn}{\S{BidirectionalSyn}}
 \newcommand{\forward}{\textcolor{CobaltBlue}{\Code{Forward}}}
 \newcommand{\backward}{\textcolor{CobaltBlue}{\Code{Backward}}}
+\newcommand{\refine}{\textcolor{CobaltBlue}{\Code{Refine}}}
+\newcommand{\synRec}{\textcolor{CobaltBlue}{\Code{SynRecursion}}}
+\newcommand{\derive}{\textcolor{CobaltBlue}{\Code{DeriveTerm}}}
+\newcommand{\compile}{\textcolor{CobaltBlue}{\Code{Compile}}}
 \newcommand{\Mfw}{\Theta_\Code{fw}}
 \newcommand{\Mbw}{\Theta_\Code{bw}}
 \newcommand{\GEN}{\Code{Generable}}
