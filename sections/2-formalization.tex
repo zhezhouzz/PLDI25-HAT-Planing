@@ -165,9 +165,8 @@ We show a program that generates STLC term $\lambda.[0]$.
       (\emptyset, \zassume{x}{\top}{\eff{abs}\;x;\eff{var}\;0;\mykw{obs}\;\eff{endAbs}})
       \xhookrightarrow{[]} (\emptyset, \eff{abs}\;\Int;\eff{var}\;0;\mykw{obs}\;\eff{endAbs}) \tag{\textsc{StAssume}} &&
       \\[-0.4em]
-      &\xhookrightarrow{[\zevent{abs}{\Int}]} (\{\eff{endAbs}\}, \eff{var}\;0;\mykw{obs}\;\eff{endAbs})  \xhookrightarrow{[\zevent{var}{0}]} (\{\eff{endAbs}\}, \mykw{obs}\;\eff{endAbs})  \tag{\textsc{StGen}} &&
-      \\[-0.4em]
-      &\xhookrightarrow{[\eff{endAbs}]} (\emptyset, ()) \tag{\textsc{StObs}} &&
+      &\xhookrightarrow{[\zevent{abs}{\Int}]} (\{\eff{endAbs}\}, \eff{var}\;0;\mykw{obs}\;\eff{endAbs})  \xhookrightarrow{[\zevent{var}{0}]} (\{\eff{endAbs}\}, \mykw{obs}\;\eff{endAbs})
+      \xhookrightarrow{[\eff{endAbs}]} (\emptyset, ()) \tag{\textsc{StGen, StObs}} &&
     \end{flalign*}
   }\noindent
     The program first instantiates $x$ with an arbitrary STLC type (e.g., $\Int$), applies $\eff{abs}$ to produce capability $\eff{endAbs}$, executes $\eff{var}$ which generates no new capability, and finally consumes $\eff{endAbs}$.
@@ -314,12 +313,12 @@ The typing judgment for the effectful operator ($\Gamma; \Delta \vdash \eff{op}:
 \begin{example} The operator context $\Delta$ for our running examples
   augments the specifications from \autoref{fig:spec} as follows:
 {\small
-\begin{align*} 
+$
   \Delta \doteq \{ (\eff{abs},  \{\eff{endAbs}\}, \ldots),%
       (\eff{endAbs}, \emptyset, \ldots),%
       (\eff{app}, \{\eff{appL}, \eff{appR}\},\ldots), %
       (\eff{appL}, \emptyset, \ldots), \ldots \}
-\end{align*}
+$
 }
 \end{example}\vspace{-.2cm}
 
