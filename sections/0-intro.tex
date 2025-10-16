@@ -139,7 +139,7 @@ associated with $\mathit{k}$. In any reasonable implementation,
 $\mathit{v}$ should be the same as \emph{some} value the actor stored
 in response to an earlier message. We can encode the dependencies
 between these three messages via the following \PAT{}:%
-{ \footnotesize
+\vspace{-.4cm} \par\nobreak { \footnotesize
   \begin{align*}
     % \Code{y{:}int} \garr
     \rg{\underbrace{\finalA \msg{putReq}{k = \Code{key}\land v=\Code{val}}}_\texttt{history automaton}} %
@@ -167,17 +167,19 @@ returns some written value.  % These constraints enforce an
 % asynchronous semantics, the desired behavior specified by this type
 % requires all correct executions to be strongly consistent.
 
-Intuitively, this type guides the controller to produce tests  that exhibit eventually consistent (EC)~\cite{Burckhardt2014,Session} behavior, since the store is free to
-buffer and respond to read and write requests arbitrarily.  While
-performant, this policy can be too permissive for users, who may
-expect the store to be strongly consistent (SC), i.e., one that always
-returns the value of a key at the point a request message is
-handled.  We can specify this safety property as the following LTL$_f$
-formula:\footnote{This specification uses two additional standard
-  temporal logic modalities: $\nextA\ \phi$ requires that $\phi$ holds
-  at the next step in a trace, and $\phi_1 \untilA \phi_2$ requires
-  that $\phi_1$ holds at every following point in a trace until
-  $\phi_2$ becomes true.  } { \footnotesize
+Intuitively, this type guides the controller to produce tests that
+exhibit eventually consistent (EC)~\cite{Burckhardt2014,Session}
+behavior, since the store is free to buffer and respond to read and
+write requests arbitrarily.  While performant, this policy can be too
+permissive for users, who may expect the store to be strongly
+consistent (SC), i.e., one that always returns the value of a key at
+the point a request message is handled.  We can specify this safety
+property as the following LTL$_f$ formula:\footnote{This specification
+  uses two additional standard temporal logic modalities:
+  $\nextA\ \phi$ requires that $\phi$ holds at the next step in a
+  trace, and $\phi_1 \untilA \phi_2$ requires that $\phi_1$ holds at
+  every following point in a trace until $\phi_2$ becomes true.  } %
+\vspace{-.4cm} \par\nobreak { \footnotesize
   \begin{align*}
     \neg (\msg{putReq}{k = \Code{key} \land v = \Code{val}} \land \nextA (\neg \msg{putReq}{k = \Code{key}} \untilA \msg{getRsp}{k = \Code{key} \land v \not= \Code{val}}))
   \end{align*}
@@ -238,7 +240,7 @@ This paper makes the following contributions:
 \item We formalize a type system based on \PAT{}s and use it to relate
   the set of executions admitted by the synthesized controller with
   the actors under SUT and the target property.
-  
+
 \item We describe \name{}, a tool that realizes these ideas, and
   present a detailed evaluation that uses a diverse set of
   non-trivial, realistic benchmarks, including a case study drawn from

@@ -31,7 +31,7 @@ an SRE.
 \begin{definition}[Abstract Trace] An abstract trace $\Pi$ is a SRE without union and top-level Kleene star, defined by the following grammar: %
   {\small
     \begin{alignat*}{2}
-      \text{\textbf{Abstract Trace}}& \quad &\Pi  ::= \quad & \epsilon ~|~ se ~|~ \Pi \seqA \Pi ~|~  A^* 
+      \text{\textbf{Abstract Trace}}& \quad &\Pi  ::= \quad & \epsilon ~|~ se ~|~ \Pi \seqA \Pi ~|~  A^*
     \end{alignat*}} \noindent
 \end{definition}
 
@@ -78,7 +78,7 @@ resolves this nondeterminism in the algorithm via an efficient
 backtracking search procedure that takes the union of all successful
 runs in order to capture different orderings.
 
-\paragraph{Event dependencies} 
+\paragraph{Event dependencies}
 The refined abstract trace produced by our loop must be consistent with the operator context, as defined in Definition~\ref{lemma:trace-conistency}.
 The events that will
 precede and follow each event are not known until the loop is finished,
@@ -93,15 +93,15 @@ The algorithm maintains a dependency map $M$ that records the associated child e
 abstract trace into one that satisfies this dependency map.\footnote{ To enable $M$ to distinguish distinct
 occurrences of events with the same effect operator in the abstract
 trace, we tag each occurence of an operator with a unique
-identifier. 
+identifier.
 % For example, $A_\Code{STLC}'$ with identifiers can
-% be$ \msg{writeReq_1}{v = \Code{x}} \seqA \msg{writeReq_2}{v =\Code{y}}...$. 
+% be$ \msg{writeReq_1}{v = \Code{x}} \seqA \msg{writeReq_2}{v =\Code{y}}...$.
 }
 
-% The refinement loop 
-% reconstructs these trees from the target node, 
+% The refinement loop
+% reconstructs these trees from the target node,
 % forming a tree-like dependency structure.
-% similar to that described by \citet{MessageChain}. 
+% similar to that described by \citet{MessageChain}.
 
 % reconstructs these trees from the target node, refining the candidate
 % abstract trace into one that satisfies these dependencies.
@@ -112,9 +112,9 @@ identifier.
 %   {\footnotesize
 %     \begin{align*}
 %       & \msg{writeReq}{v = \Code{x}} \seqA
-%          \msg{writeReq}{v =\Code{y} \land v \not=\Code{x}} 
+%          \msg{writeReq}{v =\Code{y} \land v \not=\Code{x}}
 %          \msg{writeRsp}{v = \Code{y}} \seqA \\
-%       &\seqA  \msg{readReq}{\top} \seqA 
+%       &\seqA  \msg{readReq}{\top} \seqA
 %          \msg{writeRsp}{v = \Code{x}} \seqA
 %          \msg{readRsp}{v = \Code{y} \land st = \true \land v \not=
 %         \Code{x}}
@@ -124,19 +124,19 @@ identifier.
 % \end{example}
 
 \paragraph{Trace refinement loop} Depdenecy map $M$ is empty (line $1$) when synthesis starts, and the type context consists
-of ghost variables whose qualifiers are $\top$ (line $1$). 
+of ghost variables whose qualifiers are $\top$ (line $1$).
 At each iteration of $\refine$, the algorithm selects a symbolic event $\msg{op}{\phi}$ from the current abstract trace $\Pi$ for refinement. The trace $\Pi$ is partitioned into history ($\Pi_h$) and future ($\Pi_f$) traces surrounding the target event.
 Resolving the dependencies of $\msg{op}{\phi}$ requires us to insert events that must precede it and
 events that must follow it; the former treats it as a child operation and constitutes the \emph{backward}
 synthesis phase, while the latter treats it as a parent and is subsumed by a
-\emph{forward} synthesis pass. 
+\emph{forward} synthesis pass.
 Concretely, if the event is not in the domain of $M$, forward synthesis is invoked to introduce necessary child events following it (line $6$). Conversely, if an observable event is not in the codomain of $M$, backward synthesis is applied to introduce its parent event preceding it (line $8$). Both synthesis procedures return an updated triple $(\Gamma, M, \Pi)$, reflecting the revised type context, dependency map, and abstract trace. The refinement loop terminates when all events are refined.
 
 % The two phases are symmetric: if the
 % prophecy regex of the event operator for the operation
 % $\eff{op_{parent}}$ includes the operation $\eff{op_{child}}$,
 % performing forward synthesis on $\eff{op_{parent}}$ is the same as
-% performing backward synthesis on $\eff{op_{child}}$. 
+% performing backward synthesis on $\eff{op_{child}}$.
 % To avoid repeatedly targeting the same event, the algorithm maintains a dependency map $M$ that records the associated child events for each resolved parent event; i.e., $M[\eff{op_{parent}}] = \{\overline{\eff{op_{child}}}\}$.
 
 % The abstract trace corresponds to a well-typed generator program requires all its events are in the domain of $M$, and all \emph{observable} events are in $M$'s codomain, ensuring that no observable event lacks a parent.
@@ -145,7 +145,7 @@ Concretely, if the event is not in the domain of $M$, forward synthesis is invok
 
 
 
-% ; the algorithm terminates once the dependencies of all symbolic events in $\Pi$ are resolved. 
+% ; the algorithm terminates once the dependencies of all symbolic events in $\Pi$ are resolved.
 % $\Pi$ is partitioned into the history and future
 % traces, $\Pi_f$ and $\Pi_f$, that surround the target event. The
 % algorithm tries to perform forward (resp., backward) synthesis on
@@ -188,14 +188,14 @@ Concretely, if the event is not in the domain of $M$, forward synthesis is invok
 
 \paragraph{Forward and backward synthesis} The forward synthesis
 subroutine is shown in \autoref{algo:forward-backward}. It first retrieves the
-capability and \PAT{} of the target operation $\eff{op}$ from $\Delta$ (line $2$). 
+capability and \PAT{} of the target operation $\eff{op}$ from $\Delta$ (line $2$).
 The algorithm then merges the selected \PAT
-into the global property piecewise by aligning the target operation (line $4$) and merging the corresponding history and prophecy regex (line $5$). 
+into the global property piecewise by aligning the target operation (line $4$) and merging the corresponding history and prophecy regex (line $5$).
 % First, the occurence of the
 % target operation in the current abstract trace $\eff{op}$ is aligned
 % with its \PAT{} in $\Delta$ (line $4$). Next, the algorithm
 % merges the history and future traces with the \PAT{}'s history and
-% prophecy regex (lines $5$). 
+% prophecy regex (lines $5$).
 Before returned the refined result (line $7$), the algorithm checks for non-emptiness to ensure that the refined abstract trace can derive a generator program (line $6$).
 
 
@@ -204,23 +204,23 @@ The backward synthesis subroutine, shown in \autoref{algo:forward-backward},
 is similar to the forward synthesis procedure but works backward from a
 target event.
 %  insert preceding events into $\Pi_h$ to resolve parent
-% dependencies. 
+% dependencies.
 The change in direction results in several differences
 with its forward counterpart. The procedure now selects a parent
 operator $\eff{op_{parent}}$ whose capability includes the target operator $\eff{op}$, so does its prophecy regex (line $9$). The abstract trace needs to align the target operator $\eff{op}$
 with its counterpart in the prophecy regex of $\eff{op_{parent}}$:
-{\footnotesize
+\vspace{-.4cm} \par\nobreak {\footnotesize %
   \begin{align*} \underbrace{ \effL \Pi_h \effR \effL
     \msg{op_{parent}}{\phi_\Code{parent}} \effR \effL \Pi_{f_1}'
-    }_\texttt{actual history} \seqA \underbrace{ 
+    }_\texttt{actual history} \seqA \underbrace{
     \msg{op}{\phi'} }_\texttt{actual current } \seqA \underbrace{
     \Pi_{f_2}' \effR }_\texttt{actual prophecy}
-  \end{align*}}\noindent 
+  \end{align*}}\noindent
 This is reflected in how the two are merged (line $11$ - $12$). Finally, $\eff{op_{parent}} \mapsto \Theta$ is added to the dependency map (line $14$).
 
 \begin{example}
 We illustrate the refinement process for \ref{prop:stlc}. The refinement loop begins with the following initial state:
-{\footnotesize
+\vspace{-.4cm} \par\nobreak {\footnotesize %
 \begin{align*}
   \Gamma \equiv\; \emptyset \quad M \equiv \emptyset \quad
   \Pi \equiv\; \msgAGray{putDepth}{0}\allA \msgC{abs} \allA \msgAGray{getTy}{\Int}
@@ -231,7 +231,8 @@ The first iteration targets the $\msgC{abs}$ event. As $M$ is initially empty, t
 %   &\Gamma \equiv\; t_1{:}\Code{ty},\ t_2{:}\Code{ty} \quad M \equiv \{ \eff{abs} \mapsto \{\eff{endAbs}\} \} \quad \tag{after iteration $1$}\\
 %   &\Pi \equiv\; \underbrace{\msgAGray{putDepth}{0}\allA\msgAGray{getDepth}{0}}_\texttt{merged with history regex}\;\; \msgA{abs}{t_2}\;\; \underbrace{... \msgC{var} ... \msgC{endAbs}\msgAGray{putDepth}{d} \msgAGray{putTy}{t_1\sarr t_2}  \allA \msgAGray{getTy}{\Int}}_\texttt{merged with prophecy regex}
 % \end{align*}}\noindent
-{\footnotesize\begin{align*}
+\vspace{-.4cm} \par\nobreak{\footnotesize %
+  \begin{align*}
   &\Gamma \equiv\; t_1{:}\Code{ty},\ t_2{:}\Code{ty} \quad M \equiv \{ \eff{abs} \mapsto \{\eff{endAbs}\} \} \quad \tag{after iteration $1$}\\
   &\Pi \equiv\; \msgAGray{putDepth}{0}\allA\msgAGray{getDepth}{0}\;\; \msgA{abs}{t_2}\;\; ... \msgC{var} ... \msgC{endAbs}\msgAGray{putDepth}{d} \msgAGray{putTy}{t_1\sarr t_2}  \allA \msgAGray{getTy}{\Int}
 \end{align*}}\noindent
@@ -240,7 +241,8 @@ As $\eff{abs}$ is generable, no backward synthesis is required. The loop proceed
 %   &\Gamma \equiv\; t_1{:}\Code{ty},\ t_2{:}\Code{ty} \quad M \equiv \{ \eff{abs} \mapsto \{\eff{endAbs}\},\ \effGray{ayncGetTy} \mapsto \{\effGray{getTy}\} \} \quad \tag{after iteration $2$}\\
 %   &\Pi \equiv\; ... \msgC{endAbs}\msgAGray{putDepth}{d} \msgAGray{putTy}{t_1\sarr t_2}  \allA \msgAGray{putTy}{\Int} (\anyA\setminus\msgCGray{putTy})^* \underbrace{\msgAGray{ayncGetTy}{\Int}}_\texttt{parent operator} \underbrace{\msgAGray{getTy}{\Int}}_\texttt{child operator}
 % \end{align*}}\noindent
-{\footnotesize\begin{align*}
+\vspace{-.4cm} \par\nobreak {\footnotesize %
+  \begin{align*}
   &\Gamma \equiv\; t_1{:}\Code{ty},\ t_2{:}\Code{ty} \quad M \equiv \{ \eff{abs} \mapsto \{\eff{endAbs}\},\ \effGray{ayncGetTy} \mapsto \{\effGray{getTy}\} \} \quad \tag{after iteration $2$}\\
   &\Pi \equiv\; ... \msgC{endAbs}\msgAGray{putDepth}{d} \msgAGray{putTy}{t_1\sarr t_2}  \allA \msgAGray{putTy}{\Int} (\anyA\setminus\msgCGray{putTy})^* \msgAGray{ayncGetTy}{\Int} \msgAGray{getTy}{\Int}
 \end{align*}}\noindent
