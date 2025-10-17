@@ -44,7 +44,19 @@ fashion include:
 %% and (3) a program synthesis technique for automatically constructing
 %% such generators from dependency specifications.
 
+<<<<<<< HEAD
 \subsection{Problem Setting}
+=======
+To illustrate our approach, we consider the problem of testing a Simply Typed Lambda Calculus (STLC) interpreter. The STLC terms follow the definition in prior PBT work \cite{BeginnerLuck,CoverageType}, but are represented in a serialized form as shown in \autoref{fig:stlc-syntax}. The definitions of constants and variables are standard, and bound variables are in De Bruijn Index form\cite{DeBruijn} which encode variable binding by position rather than name. The function abstraction constructor ``$\Code{Abs\;\mykw{of}\;ty * term}$'' is flattened into two operations, ``$\Code{Abs\;\mykw{of}\;ty}$'' and ``$\Code{EndAbs}$'', where the sequence appearing between them forms the function body. Similarly, the application constructor ``$\Code{App\;\mykw{of}\;term * term}$'' is flattened into three operations: ``$\Code{App}$'', ``$\Code{AppL}$'', and ``$\Code{AppR}$''.
+An example of a serialized STLC term is shown below, where we color the corresponding parts of the term and the serialized term for better readability.
+\begin{align*}
+  \text{\textcolor{gray}{STLC term:}} \quad & \textcolor{blue}{(\lambda \Int}. \textcolor{orange}{[0]} \textcolor{blue}{)}\; \textcolor{DeepGreen}{3} \\
+  \text{\textcolor{gray}{seralized STLC term:}} \quad & \eff{app}; \textcolor{blue}{\zevent{abs}{\Int}}; \textcolor{orange}{\zevent{Var}{0}}; \textcolor{blue}{\eff{endAbs}}; \eff{appL}; \textcolor{DeepGreen}{\zevent{const}{3}}; \eff{appR}
+\end{align*}\noindent
+In STLC terms, De Bruijn indices are written as ``$[...]$'' to distinguish them from constants.
+In this paper, we use the notation ``$\eff{op}$'' to represent operations in test sequences for clarity.
+The interpreter accepts a serialized lambda term and evaluates it to a value. In the example above, the input sequence should be reduced as $(\lambda \Int. [0])\;3 \hookrightarrow 3$.
+>>>>>>> 48927720cb427ee28d2913c3ef18e2b6a3c1e834
 
 More concretely, we consider how to apply our approach to the
 well-studied~\cite{BeginnerLuck,CoverageType,FQL24} problem of testing
@@ -58,6 +70,10 @@ leading to incorrect variable capture.
   \text{\textsc{Reduction rule}:} \quad & (\lambda t. e)\; v \hookrightarrow e [0 \mapsto v]\\
   \text{\textsc{Incorrect substitution}:} \quad & (\lambda t. e)[n \mapsto v] = \lambda t. (e[\textcolor{red}{n} \mapsto v]) \quad \textcolor{red}{\xmark} \text{ \textcolor{gray}{should be $n + 1$}}
 \end{align*}\noindent
+<<<<<<< HEAD
+=======
+As illustrated above, correct substitution requires incrementing the index under a lambda. Omitting this step introduces a subtle bug in the interpreter's substitution procedure.
+>>>>>>> 48927720cb427ee28d2913c3ef18e2b6a3c1e834
 
 Clearly, not all STLC terms have a structure whose reduction would
 manifest this error.  In the following well-typed examples:
@@ -70,6 +86,7 @@ manifest this error.  In the following well-typed examples:
   &\hookrightarrow (\lambda (\Int\sarr\Int). 3\;[1])\; (\lambda \Int. 3)  \quad \text{\textcolor{red}{wrong substitution}} \\
   &\hookrightarrow  3\;[1] \quad \text{\textcolor{red}{stuck!}}
 \end{align*}\noindent
+<<<<<<< HEAD
 only \ref{ex:e4}'s evaluation involves an interesting use of
 substitution and index manipulation.  Here, a buggy implementation
 results in the argument value $3$ being mistakenly substituted for the
@@ -83,6 +100,17 @@ To expose this substitution bug, the generator should prioritize the
 generation of terms similar to $e_4$ while avoiding those like
 $e_1$--$e_3$.  To do this, it needs to at least adhere to
 the following constraints:
+=======
+As shown above, all the STLC terms are well-typed, but only \ref{ex:e4} can trigger the bug, where the argument value $3$ is mistakenly substituted for the bound variable ``$[0]$'' instead of ``$[1]$''. In contrast, \ref{ex:e1}, \ref{ex:e2}, and \ref{ex:e3} do not trigger the bug, as the bound variable is either not used or the term is already in normal form.
+
+Our experiment shows that a well-typed STLC generator from prior PBT work \cite{BeginnerLuck,CoverageType} combine with a standard searialization procedure requires 45 minutes and 275,915 attempts to find this bug. Most of the STLC terms generated are similar to \ref{ex:e1}--\ref{ex:e3}, which do not use the bound variable in an interesting way. Adapting a well-typed term generator to increase the likelihood of such cases requires additional context-sensitive tracking of variable usage, which is non-trivial and error-prone to implement. In contrast, our approach can automatically synthesize a test generator that produces test sequences directly, which are capable of exposing this subtle substitution error for infinitely many times.
+
+\subsection{Prophecy Regex Types}
+
+
+To expose the substitution bug described above, the generator should prioritize test sequences representing serlized STLC terms similar to \ref{ex:e4} while avoiding those like \ref{ex:e1}--\ref{ex:e3}.
+This goal can be formalized by the following constraints:
+>>>>>>> 48927720cb427ee28d2913c3ef18e2b6a3c1e834
 \begin{enumerate}
   \item The test must contain at least one function abstraction (to rule out $e_1$).
   \item The test must be reducible, and not already in normal form (to rule out $e_2$).
@@ -162,6 +190,7 @@ synthesize such generators automatically.
 
 \subsection{Temporal Trace Types, \tyName}
 
+<<<<<<< HEAD
 \paragraph{Traces and Trace-Based Specifications}
 We refer to the sequence of events that comprise a test sequence as a
 \emph{trace}. In our running example, traces consist of tokens drawn
@@ -202,6 +231,14 @@ including those that may occur in the future.
 %% assumptions about prior events (the history regex) that allow this
 %% type to be manifested, and a ``guarantee'' component (the prophecy
 %% regex) that constrains future events.
+=======
+The key insight underlying our approach is to decompose global trace properties into local specifications assigned as types to individual operations—that is, each event in a trace is governed by its own type-level specification.
+Our compositional type system enables users to specify complex constraints in a modular fashion, transferring the burden of event quantification and data dependency management from the trace-level specification language to the type system itself.
+Concretely, we model these local specifications as a collection of operation signatures: parameter types constrain the payloads of events, while the return type—expressed as a \PAT{}—captures relationships between events. We employ Symbolic Regular Expressions (SREs) to represent trace-based properties, following prior work on trace-based type systems~\cite{KT+14,ZYDJ24,NUKT+18}. However, our formulation generalizes beyond history-sensitive specifications of effects or state, allowing types to express latent dependencies among all events, including those that may occur in the future. Thus, the return type of an operation can include both a ``rely'' component, specifying assumptions
+about prior events (the history regex) that allow this type to be
+manifested, and a ``guarantee'' component (the prophecy regex) that
+constrains future events.
+>>>>>>> 48927720cb427ee28d2913c3ef18e2b6a3c1e834
 
 \begin{figure}[t!]
   {\footnotesize
@@ -272,18 +309,11 @@ types can include two additional events, $\eff{\textcolor{gray}{put}}$
 and $\eff{\textcolor{gray}{get}}$ used to manage stateful properties
 of a trace.
 
-
-
-
-
-
 the postfix should contain two sub-terms separated by
 $\eff{appL}$ and $\eff{appR}$ events, where the first and second
 sub-terms are required to have type $t_1\sarr t_2$ and $t_1$ via
 $\eff{\textcolor{gray}{getTy}}$ respectively, and then updated the
 type of constructed term as $t_2$.
-
-
 
 The type
 of $\eff{app}$ captures
@@ -295,15 +325,9 @@ $\eff{appL}$ and $\eff{appR}$ events.   The value of
 $\Code{ttype}$ in the first subterm is $\Code{Arr(t_1,t_2)}$,
 where $\Code{t_1}$ and $\Code{t_2}$ are elements of $\Code{ty}$,
 
-
-
 sub-terms are required to have type $t_1\sarr t_2$ and $t_1$ via
 $\eff{\textcolor{gray}{getTy}}$ respectively, and then updated the
 type of constructed term as $t_2$.
-
-
-
-
 
 
 In
@@ -394,7 +418,7 @@ where we first specify the initial depth as 0 and required the final constructed
 let rec lam_body_gen (n: int) =
   (?$\eff{var}$? n) ?$\oplus$? // ?$\textcolor{DeepGreen}{[n]}$?
   (?$\eff{app}$?;
-     ?$\eff{abs}\;\Int\sarr\Int$?; ?$\eff{app}$?; ?$\eff{var}$? 0; ?$\mykw{obs}\;\eff{appL}$?; lam_body_gen (n+1); ?$\mykw{obs}\;\eff{appR}$?; ?$\mykw{obs}\;\eff{endAbs}$?; 
+     ?$\eff{abs}\;\Int\sarr\Int$?; ?$\eff{app}$?; ?$\eff{var}$? 0; ?$\mykw{obs}\;\eff{appL}$?; lam_body_gen (n+1); ?$\mykw{obs}\;\eff{appR}$?; ?$\mykw{obs}\;\eff{endAbs}$?;
      // ?$\textcolor{DeepGreen}{\lambda (\Int\sarr\Int). ([0]\;(\underline{\Code{lam\_body\_gen}\;(n + 1)}))}$?
    ?$\mykw{obs}\;\eff{appL}$?; ?$\eff{abs}$? int; ?$\eff{var}$? 0; ?$\mykw{obs}\;\eff{endAbs}$?; // ?$\textcolor{DeepGreen}{\lambda \Int. [0]}$?
    ?$\mykw{obs}\;\eff{appR}$?) // ?$\textcolor{DeepGreen}{\lambda (\Int\sarr\Int). ([0]\;(\underline{\Code{lam\_body\_gen}\;(n + 1)}))\;\lambda \Int. [0]}$?
@@ -464,6 +488,7 @@ property on traces, i.e., $A' \subseteq A$, ensuring that each
 operation in the test sequence is consistent with its specification. In the second phase, we
 use $A'$ to derive a test generator program. For example, the set of
 traces captured by $P_\Code{STLC}$ can be refined from \ref{prop:stlc} to: %
+\vspace{-.4cm} \par\nobreak
 {\footnotesize
   \begin{align*}
   \msgAGray{putDepth}{0}\underbrace{\msgC{app}}_{\allA}&\msgA{abs}{\Int}\underbrace{...\msgC{endAbs}...\msgC{appL}\msgA{const}{\top}\msgAGray{putTy}{\Int}\msgAGray{getTy}{\Int}\msgC{appR}\msgAGray{putTy}{\Int}}_{\allA}\msgAGray{getTy}{\Int}
@@ -472,7 +497,7 @@ traces captured by $P_\Code{STLC}$ can be refined from \ref{prop:stlc} to: %
 This regex specializes the two Kleene stars in \ref{prop:stlc} as two sub-regexes as shown above. Note that from the view of each event, the corresponding prefix trace and postfix trace are aligned with its \PAT{}.
 Observe that the structure of \ref{prop:refinedSTLC} closely resembles the
 test generator program $P_\Code{STLC}$, with the main difference being that
-$P_\Code{STLC}$ is more operational, dividing operations into generative and derived operations. 
+$P_\Code{STLC}$ is more operational, dividing operations into generative and derived operations.
 
 % The test generator also provides the contents for generative operations, while the contents of
 % derived operations are constrained only by local variables.
@@ -495,7 +520,8 @@ As an example, when working on an top-level event (i.e., not under Kleene star) 
   \underbrace{\msgAGray{putDepth}{0}\allA\msgAGray{getDepth}{0}}_\texttt{merged with history regex}\;\; \msgA{abs}{t_2}\;\; \underbrace{... \msgC{var} ... \msgC{endAbs}\msgAGray{putDepth}{d} \msgAGray{putTy}{t_1\sarr t_2}  \allA \msgAGray{getTy}{\Int}}_\texttt{merged with prophecy regex}
 \end{align*}}\noindent
 The updated formula clearly shows that the $\eff{abs}$ event imposes a requirement that multiple events happen before and after it, which will be marked as \PAT{}s that still need to be satisfied. Most interestingly, this procedure can be preformed backwardly, which allows our algorithm to discover the previous event who triggers the unsolving event. For example, when working on the last $\eff{getTy}$ event, the algorithm identifies that it requires a previous $\eff{putTy}$ event to update the type of current constructed term as $\Int$, since the type of the lambda abstraction is a function type ($\msgAGray{putTy}{t_1\sarr t_2}$). Thus, the algorithm refines the current formula as the following:
-{\small\begin{align*}
+\vspace{-.4cm} \par\nobreak {\small %
+  \begin{align*}
    ... \msgC{endAbs}\msgAGray{putDepth}{d} \msgAGray{putTy}{t_1\sarr t_2}  \allA \underbrace{\msgAGray{putTy}{\Int}}_\texttt{new event discovered backwardly}  \allA \msgAGray{getTy}{\Int}
 \end{align*}}\noindent
 which guides the algorithm to discover other STLC constructor (e.g., $\eff{app}$) that can generate $\msgAGray{putTy}{\Int}$ events.
