@@ -331,14 +331,17 @@
 
 \newcommand{\msgAT}[4]{ \evparenth{{#1}\textcolor{#2}{\eff{#3}}\;{#4}}}
 \newcommand{\msgAColor}[3]{\evparenth{\textcolor{#1}{\eff{#2}}\;{#3}}}
+\newcommand{\msgBColor}[4]{\evparenth{\textcolor{#1}{\eff{#2}}\langle{#3},{#4}\rangle}}
 \newcommand{\msgA}[2]{\evparenth{\eff{#1}\;{#2}}}
-\newcommand{\msgAGray}[2]{ \msgAColor{gray}{#1}{#2} }
+\newcommand{\msgB}[3]{\evparenth{\eff{#1}\;\langle {#2},{#3}}}
+\newcommand{\msgAGray}[2]{\msgAColor{gray}{#1}{#2} }
 \newcommand{\msgAGreen}[2]{\msgAColor{DeepGreen}{#1}{#2}}
 \newcommand{\msgABlue}[2]{\msgAColor{CobaltBlue}{#1}{#2}}
 \newcommand{\msgAAmber}[2]{\msgAColor{Amber}{#1}{#2}}
 \newcommand{\msgAGolden}[2]{\msgAColor{DarkGolden}{#1}{#2}}
+\newcommand{\msgBGray}[3]{\msgBColor{gray}{#1}{#2}{#3} }
 
-\newcommand{\msgB}[3]{\evparenth{\eff{#1}\;{#2}~|~{#3}} }
+%\newcommand{\msgB}[3]{\evparenth{\eff{#1}\;{#2}~|~{#3}} }
 \newcommand{\msgBT}[5]{\evparenth{{#1}\textcolor{#2}{\eff{#3}}\;{#4}~|~{#5}} }
 
 \newcommand{\msgCT}[3]{\evparenth{{#1}\textcolor{#2}{\eff{#3}}} }
@@ -662,6 +665,7 @@
 %\newcommand{\returnC}{\Code{ret^C}}
 \newcommand{\bindC}{\Code{bind^C}}
 \newcommand{\CM}[2]{\mathcal{M}\;{#1}\;{#2}}
+\newcommand{\CInt}{\Code{Int}}
 \newcommand{\Int}{\Code{int}}
 \newcommand{\Bool}{\Code{bool}}
 \newcommand{\Unit}{\Code{unit}}
