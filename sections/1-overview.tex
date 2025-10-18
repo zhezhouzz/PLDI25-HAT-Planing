@@ -206,13 +206,13 @@ including those that may occur in the future.
 \begin{figure}[t!]
   {\footnotesize
     \begin{align*}
-      \eff{const} :~ &  x{:}\Int\sarr \rg{\allA}{\msgA{const}{x}}{\msgAGray{putType}{\CInt} \allA} \\
-      \eff{app} :~ & \rg{\allA}{\msgC{app}}{\allA  \msgAGray{getType}{\Code{Arr}(t_1, t_2)}  \msgC{appL}  \allA  \msgAGray{getType}{t_1}  \msgC{appR}  \msgAGray{putType}{t_2}  \allA} \\
-      \eff{abs} :~ & \rg{\allA\msgAGray{getDepth}{d}}{\msgA{abs}{t_2}}{\msgAGray{putDepth}{d+1}\allA  \msgC{var}  \allA  \msgAGray{getTy}{t_1}  \msgC{endAbs}\msgAGray{putDepth}{d}
-        \msgAGray{putTy}{\Code{Arr}(t_1,t_2)}  \allA} \\
-      \eff{var} :~ &  i{:}\ort{\Int}{\vnu \geq 0} \sarr \rg{\underbrace{\allA\msgA{abs}{t}\msgAGray{putDepth}{d}(\anyA\setminus\msgC{endAbs})^*}_\text{type $t$ at the $d$ level is open}\underbrace{\msgAGray{getDepth}{d + i}}_\text{current level is $d + i$} }{\msgA{var}{i}}{\msgAGray{putTy}{t}  \allA}
-      % \eff{ascribe} :~ &  t{:}\Code{ty}\sarr \rg{\allA(\msgC{const} \lor \msgC{var} \lor \msgC{endAbs} \lor \msgC{appR} )}{\msgAGray{ascribe}{t}}{\allA} \\
-      % \eff{depth} :~ &  t{:}\Code{ty}\sarr \rg{\allA(\msgC{const} \lor \msgC{var} \lor \msgC{endAbs} \lor \msgC{appR} )}{\msgAGray{ascribe}{t}}{\allA}
+      % \eff{const} :~ &  x{:}\Int\sarr \rg{\allA}{\msgA{const}{x}}{\msgAGray{putType}{\CInt} \allA} \\
+      % \eff{app} :~ & \rg{\allA}{\msgC{app}}{\allA  \msgAGray{getType}{\Code{Arr}(t_1, t_2)}  \msgC{appL}  \allA  \msgAGray{getType}{t_1}  \msgC{appR}  \msgAGray{putType}{t_2}  \allA} \\
+      &\eff{abs} :~  \rg{\Code{LAST}(\msgAGray{depth}{d})}{\msgA{abs}{t_1}}{\msgAGray{depth}{d+1}\allA  \msgC{var}\Code{LAST}(\msgAGray{ty}{t_2})\msgC{endAbs}\msgAGray{depth}{d}
+        \msgAGray{ty}{\Code{Arr}(t_1,t_2)}  \allA}
+        \\& \text{where} \quad \Code{LAST}(\msgA{op}{x}) \doteq \allA\msgA{op}{x}(\anyA \setminus \msgC{op})^*
+      %   \\
+      % \eff{var} :~ &  i{:}\ort{\Int}{\vnu \geq 0} \sarr \rg{\underbrace{\allA\msgA{abs}{t}\msgAGray{putDepth}{d}(\anyA\setminus\msgC{endAbs})^*}_\text{type $t$ at the $d$ level is open}\underbrace{\msgAGray{getDepth}{d + i}}_\text{current level is $d + i$} }{\msgA{var}{i}}{\msgAGray{putTy}{t}  \allA}
     \end{align*}
   }
 \vspace*{-.2in}
@@ -246,256 +246,59 @@ test generator programs.
 
 \SJ{Stop here ...}
 
-The type for $\eff{const}$ has no constraint on its prefix trace
-($\allA$), but records a $\textcolor{gray}{\eff{putType}}$ event in
-the trace that records the type of the output of the $\eff{const}$
-expression as $\Code{Int}$.  The arguments to a ghost event are either
-serialized terms (like $\Code{Int}$) or ghost variables.
-Type-checking a trace using ghost events involves solving constraints
-over their arguments based on algebraic axiomatizations, examples of
-which are given below.  The prophecy regex of the $\eff{app}$ type in
-\autoref{fig:spec} characterizes both the syntax and well-typing
-constraints of an STLC function application. It requires that (a)
-prior to evaluating a function argument ($\eff{appL}$), the type of
-the abstraction is \Code{Arr(t$_1$,t$_2$)}, i.e., the abstraction
-being applied is a function type ($\msgAGray{getType}{\Code{Arr}(t_1,t_2)}$), (b) after the argument is evaluated, its type is
-  determined to be \Code{t$_1$} ($\msgAGray{getType}{t_1}$), and (c)
-  the type of the application's result is \Code{t$_2$}
-  ($\msgAGray{getType}{t_2}$).  
-\footnote{The ghost variables
-  (e.g., $t_1$ and $t_2$) are implicitly quantified at the top level,
-  following the OCaml syntax convention. The event specifications
-  $\msgA{op}{\overline{v}}$ and $\eff{op}$ are syntactic sugar for
-  $\msgB{op}{\overline{x}}{\overline{x = v}}$ and
-  $\msgB{op}{\overline{x}}{\top}$.}  Besides the atoms of the grammar,
-types can include two additional events, $\eff{\textcolor{gray}{put}}$
-and $\eff{\textcolor{gray}{get}}$ used to manage stateful properties
-of a trace.
+As shown in \autoref{fig:spec}, the \tyName of $\eff{abs}$ uses ghost event $\effGray{depth}$ to maintain the depth of nested function abstractions, which is crucial for de Bruijn index. Concretely, the history regex captures the current depth as the \emph{last} tagged depth, where the ``last'' modality can be defined as $\allA\msgAGray{depth}{d}(\anyA \setminus \msgCGray{depth})^*$ in SRE. It then increases the depth by one at the beginning of the function body, and restores it after the $\eff{endAbs}$ event. 
+To guarentee the well-typeness, the current regex $\msgA{abs}{t_1}$ requires that the type of the bound variable is $t_1$, and the prophecy regex requires that the abstraction body has type $t_2$ ($\Code{LAST}(\msgAGray{ty}{t_2})$); then, the type of constructed abstraction term is tagged as $\Code{Arr}(t_1, t_2)$. This specification also requires that the body of the function abstraction references its bound variable at least once, thereby ruling out trivial terms like $e_1$.
 
-the postfix should contain two sub-terms separated by
-$\eff{appL}$ and $\eff{appR}$ events, where the first and second
-sub-terms are required to have type $t_1\sarr t_2$ and $t_1$ via
-$\eff{\textcolor{gray}{getTy}}$ respectively, and then updated the
-type of constructed term as $t_2$.
+\newcommand{\Arr}[2]{\Code{Arr}(#1,#2)}
+\newcommand{\ItoI}{\Arr{\Int}{\Int}}
+\newcommand{\Tconst}[2]{\zevent{const}{#1};\zeventGray{ty}{#2}}
+\newcommand{\Tvar}[2]{\zevent{var}{#1};\zeventGray{ty}{#2}}
+\newcommand{\Tapp}{\eff{app}}
+\newcommand{\TappL}{\eff{appL}}
+\newcommand{\TappR}[1]{\eff{appR}; \zeventGray{ty}{#1}}
+\newcommand{\appTrace}[3]{\Tapp; {#1}; \TappL; {#2}; \TappR{#3}}
+\newcommand{\Tabs}[2]{\zevent{abs}{#1};\zeventGray{depth}{#2}}
+\newcommand{\TendAbs}[2]{\eff{endAbs};\zeventGray{depth}{#1}; \zeventGray{ty}{#2}}
+\newcommand{\absTrace}[5]{\Tabs{#1}{#2}; {#3};\TendAbs{#4}{#5}}
 
-The type
-of $\eff{app}$ captures
-both the syntax and well-typing constraints of an application.
-It imposes no constraints on the event sequence in its history,
-but requires that the future trace should contain two arbitrary
-subterms (denoted by $\allA$), separated by
-$\eff{appL}$ and $\eff{appR}$ events.   The value of
-$\Code{ttype}$ in the first subterm is $\Code{Arr(t_1,t_2)}$,
-where $\Code{t_1}$ and $\Code{t_2}$ are elements of $\Code{ty}$,
-
-sub-terms are required to have type $t_1\sarr t_2$ and $t_1$ via
-$\eff{\textcolor{gray}{getTy}}$ respectively, and then updated the
-type of constructed term as $t_2$.
-
-
-In
-order to help specify the implicit state of test sequence generation,
-we add auxiliary $\eff{\textcolor{gray}{put}}$ and
-$\eff{\textcolor{gray}{get}}$ operator for the type and depth of
-nested function abstractions of current contructed term. These
-operators can also help to synthesize statful test generators.  For
-example, the first type in \autoref{fig:spec} characterizes the
-behavior of $\eff{const}$ messages. It has no constraint on its prefix
-trace ($\allA$), but requires that the postfix trace first update the
-type of current constructed term as $\Int$.
-
-The de Bruijn index constraint is captured via the $\eff{\textcolor{gray}{putDepth}}$ and $\eff{\textcolor{gray}{getDepth}}$ operation in the \PAT{}s of the $\eff{abs}$ and $\eff{var}$ operations. In addition to the well-typing constraint, the \PAT{} of the $\eff{abs}$ operation maintains the depth of nested function abstractions using $\eff{\textcolor{gray}{depth}}$. Specifically, its history regex obtains the current depth ($\msgAGray{getDepth}{d}$), increases it by one at the beginning of the function body, and restores it after the $\eff{endAbs}$ event. Moreover, its prophecy regex also uses a $\eff{var}$ event to require that the body of the function abstraction references its bound variable at least once, thereby ruling out terms like $e_1$.
-On the other hand, a valid index $i$ in $\eff{var}$ must be derived from an open abstraction at some depth in the prefix trace. The history regex of the $\eff{var}$ operation precisely characterizes this constraint: the abstraction at depth $d$ must be open ($\allA\msgA{abs}{t}\msgAGray{putDepth}{d}(\anyA\setminus\msgC{endAbs})^*$), and the current depth must be $d + i$.
-
-The \PAT{}s shown in \autoref{fig:spec} demonstrate that \PAT{}s are powerful enough to specify the de Bruijn index constraint and well-typedness of STLC in a compact manner. These relations capture scoping, indexing, and non-trivial recursive typing relationships. With help of these \PAT{}s, we can define a global property that exactly captures the three constraints that rule out \ref{ex:e1}--\ref{ex:e3} as the following:
+\begin{example}[STLC Trace] Consider the STLC term described in \ref{ex:e4}, which contains three nested abstractions. These abstractions are represented as the following traces, corresponding to the $\eff{abs}$ specification in \autoref{fig:spec}. For readability, we shows abstraction bodies as corresponding STLC term directly within a $\boxed{...}$ notation.
+{\small
 \begin{align*}
-  \msgAGray{putDepth}{0}\allA \eff{abs} \allA \msgAGray{getTy}{\Int} \label{prop:stlc}\tag{$A_\Code{STLC}$}
-\end{align*}\noindent
-where we first specify the initial depth as 0 and required the final constructed term to be a well-typed term of type $\Int$.
+&\underbrace{(\lambda \Int. \;\;\overbrace{(\lambda (\Int\sarr\Int). [0]\;[1])}^{\alpha_2}\;\;\; \overbrace{(\lambda \Int. [0])}^{\alpha_3}\;\;)}_{\alpha_1}\;\;\; 3
+\\&\alpha_1 \doteq\absTrace{\textcolor{orange}{\Int}}{1}{\boxed{(\lambda (\Int\sarr\Int). [0]\;[1])\; (\lambda \Int. [0])}}{0}{\ItoI}
+\\&\alpha_2 \doteq\absTrace{\textcolor{DeepGreen}{\ItoI}}{2}{\boxed{\textcolor{DeepGreen}{[0]}\;[\textcolor{orange}{1}]}}{1}{\Arr{\ItoI}{\Int}}
+\\&\alpha_3 \doteq\absTrace{\textcolor{blue}{\Int}}{2}{\boxed{\textcolor{blue}{[0]}}}{1}{\ItoI}
+\end{align*}}\noindent
+The ghost event $\effGray{ty}$ annotates the type of each subterm. In $\alpha_1$, the outermost abstraction has type $\Int$, requires its body to also have type $\Int$, and is itself assigned type $\ItoI$. The typing relation utilizing de Bruijn indices is reflected via ghost event $\effGray{ty}$. $\alpha_1$ increases the depth from $0$ to $1$ in its abstraction body, so $\alpha_2$ and $\alpha_3$ both occur at a nested level. A bound variable $i$ is assigned the type $t$ of the most recent $\zevent{abs}{t}$ event at depth $d$, if the current depth is $d + i$. For instance, the variable $[0]$ in $\alpha_3$ has type $\Int$ (blue) at depth $2$. 
+Notably, the bound variable $[1]$ in $\alpha_2$ is assigned type $\ItoI$ (orange) because its binding occurs at depth $1$, where the type annotation for $\ItoI$ from $\alpha_1$ resides; this assignment reflects the difference between the current depth ($2$) and the binding depth ($1$).
+Additionally, each abstraction body references its corresponding bound variable as required by the specification of $\eff{abs}$.
+\end{example}
 
-% Its history
-% regex describes how a $\eff{writeReq}$ message is handled in an
-% arbitrary context ($\allTL$, where $\globalA$ is the globally modality
-% in LTL$_f$), and its prophecy regex guarantees that a
-% $\eff{writeRsp}$ response message will eventually be issued at some
-% future point, as captured by the $\finalA$ operator.  This
-% specification captures the asynchronous behavior of request/response
-% pairs in our example, requiring that the handler of $\eff{writeReq}$
-% eventually triggers a $\eff{writeRsp}$ message. On the other hand, we
-% assume little information about the behaviors of the handlers for
-% $\eff{readRsp}$ and $\eff{writeRsp}$ messages, as can been seen by
-% their prophecy regex, which provide no guarantees about any future
-% messages they may produce ($\allTL$).
+We further highlight that \tyName\ specifications can express temporal trace properties beyond the serialized input setting discussed above. In particular, we illustrate their applicability to domains such as library API usage and concurrent executions in database and distributed systems mentioned in the beginning of this section.
 
-% \paragraph{Control flow} A handler's \PAT{} also captures  relevant
-% control-flow dependencies. For example, the type of $\eff{readReq}$
-% uses an intersection type ($\interty$) to encode its behaviors in the
-% two different contexts under which a $\eff{readReq}$ message may be
-% handled, corresponding to whether or not some value has been
-% previously written to the database. The first \PAT{} specifies that
-% the handler must eventually respond with the last value that was
-% requested to be written, as captured by the history regex: %
-% {
-%   $ \finalA \msg{writeReq}{v = \Code{x}} \land
-%   \neg\nextA\finalA\msg{writeReq}{\top} $ } %
-% and prophecy regex %
-% { $\msg{readRsp}{v = \Code{x} \land st = \true}$ }.
-% Otherwise, as specified by the second \PAT{}, no value has been
-% successfully written ($\neg\finalA \msg{writeRsp}{\top}$), and a
-% $\eff{readRsp}$ message with a $\false$ status will eventually be sent
-% ($\finalA\msg{readRsp}{st = \false}$).
-
-% This specification is sufficiently weak to allow a controller to probe
-% for violations of the RYW property.  Specifically, $\eff{readReq}$'s
-% specification allows a successful $\eff{readRsp}$ to return the value
-% in the database that exists at the time the $\eff{readReq}$ message is
-% handled, ignoring the possibility of other $\eff{writeRsp}$ messages
-% that are executed after the $\eff{readReq}$ but before the
-% corresponding response.  This is precisely the scenario depicted by
-% the controller program $P_C$ in \autoref{fig:2pc-term} (lines 5-7).
-% On the other hand, a stronger specification for $\eff{writeReq}$ would
-% restrict the controller to focus on executions that exhibit write
-% atomicity, e.g., prohibiting a $\eff{readReq}$ operation from being
-% handled before a $\eff{writeRsp}$, thus preventing executions that
-% would manifest a RYW violation:
-
-% {\footnotesize
-%   \begin{align*}
-%     \mykw{gen}~ \eff{writeReq} :~ &  \Code{x}\hasnty{int} \sarr \rg{\allTL}{\msg{writeReq}{v = \Code{x}}}{(\neg \msg{readReq}{\top}) \untilA \msg{writeRsp}{v = \Code{x}}}
-%   \end{align*}}\noindent
-% \PAT{}s thus provide an expressive framework in which to specify the
-% set of executions that are of interest to the test engineer, grounded
-% in the semantic relationships that are expected to hold among
-% different actors in the model: weaker specifications admit more
-% behaviors, at the potential cost of trying to explore executions that
-% are not realizable by the actors' implementations; stronger specifications
-% restrict this set, at the cost of excluding some potentially erroneous executions.
-
-\subsection{DSL}
-
-\newcommand{\ranint}{\underline{\Code{int\_gen\;()}}}
-
-\begin{figure}
-\centering
-\begin{minted}[xleftmargin=5pt, numbersep=4pt, linenos = true, fontsize = \footnotesize, escapeinside=??]{OCaml}
-let rec lam_body_gen (n: int) =
-  (?$\eff{var}$? n) ?$\oplus$? // ?$\textcolor{DeepGreen}{[n]}$?
-  (?$\eff{app}$?;
-     ?$\eff{abs}\;\Int\sarr\Int$?; ?$\eff{app}$?; ?$\eff{var}$? 0; ?$\mykw{obs}\;\eff{appL}$?; lam_body_gen (n+1); ?$\mykw{obs}\;\eff{appR}$?; ?$\mykw{obs}\;\eff{endAbs}$?;
-     // ?$\textcolor{DeepGreen}{\lambda (\Int\sarr\Int). ([0]\;(\underline{\Code{lam\_body\_gen}\;(n + 1)}))}$?
-   ?$\mykw{obs}\;\eff{appL}$?; ?$\eff{abs}$? int; ?$\eff{var}$? 0; ?$\mykw{obs}\;\eff{endAbs}$?; // ?$\textcolor{DeepGreen}{\lambda \Int. [0]}$?
-   ?$\mykw{obs}\;\eff{appR}$?) // ?$\textcolor{DeepGreen}{\lambda (\Int\sarr\Int). ([0]\;(\underline{\Code{lam\_body\_gen}\;(n + 1)}))\;\lambda \Int. [0]}$?
-in
-?$\eff{app}$?; ?$\eff{abs}$? int;f 0; ?$\mykw{obs}\;\eff{endAbs}$?; // ?$\textcolor{DeepGreen}{\lambda \Int. (\underline{\Code{lam\_body\_gen}\;0})}$?
-?$\mykw{obs}\;\eff{appL}$?; ?$\eff{const}$? (int_gen ()); // ?$\textcolor{DeepGreen}{\ranint}$?
-?$\mykw{obs}\;\eff{appR}$?; // ?$\textcolor{DeepGreen}{\lambda \Int. (\underline{\Code{lam\_body\_gen}\;0})\;(\ranint)}$?
-\end{minted}
-\vspace*{-.1in}
-\caption{STLC generator $P_\Code{STLC}$. }\label{fig:stlc-gen}
-\vspace*{-.2in}
-\end{figure}
-
-With \PAT{}s of operators and global property \ref{prop:stlc}, our tool can synthesize a test generator $P_\Code{STLC}$ in our DSL shown in \autoref{fig:stlc-gen} where we omit all auxiliary operations for simplicity. Our DSL is mostly similar with standard OCaml program with the STLC operations as function application ($\eff{op}$ and $\mykw{obs}\;\eff{op}$). This generator produce terms in a form ``$\lambda \Int. (\underline{\Code{lam\_body\_gen}\;0})\;(\ranint)$'' (line 9 - 11), where $\Code{lam\_body\_gen}$ (line 1 - 7) is a recurisve function that has two branches concatenated with a non-deterministic choice ($\oplus$) on line 2. The first branch returns a bound variable always refers the $\ranint$ and has index $n$ which is equal to the current depth of nested function abstractions. The second branch (line 3 - 7) returns a STLC term in the form $\lambda (\Int\sarr\Int). ([0]\;(\underline{\Code{lam\_body\_gen}\;(n + 1)}))\;\lambda \Int. [0]$. The generator will non-deterministically unfold the recursive function and produce the following STLC terms:
+\begin{example}[Stack Library] Consider an effectful stack library implemented as an fixed sized array, which leads elements dropping when the stack is full. In order to detect this violation, we would like to explore the traces in the following form:
 \begin{align*}
-  \text{1 iteration:} \quad & (\lambda \Int.\textcolor{blue}{[0]})\;3 \\
-  \text{2 iterations:} \quad & (\lambda \Int. \textcolor{purple}{(\lambda (\Int\sarr\Int). [0]\;\textcolor{blue}{[1]})\; (\lambda \Int. [0])})\; 3 \tag{exactly \ref{ex:e2}}
-  \\
-  \text{3 iterations:} \quad & (\lambda \Int.\textcolor{pink}{(\lambda (\Int\sarr\Int). [0]\;\textcolor{purple}{(\lambda (\Int\sarr\Int). [0]\;\textcolor{blue}{[2]})\; (\lambda \Int. [0])})\; (\lambda \Int. [0])})\; 3
+  \zevent{push}{1};\zevent{push}{2}; \zevent{push}{3}; ... \zevent{pop}{3};\zevent{pop}{2};\zevent{pop}{1}
 \end{align*}\noindent
-The term generated by 2 or more iterations can trigger the substitution bug in the interpreter.
+The $\eff{push}$ and $\eff{pop}$ operations appears in pairs and push values are always increasing. When the number of push operations exceeds the stack size, test developer will detect one pushed value is not popped. The pairing relation can be expressed as the following \tyName\ specification:
+\begin{align*}
+  \eff{push} :~ x{:}\Int\sarr \rg{(\anyA \setminus \msgB{push}{\vnu}{\vnu \geq x})^*}{\zevent{push}{x}}{\allA\zevent{pop}{x}\allA}
+\end{align*}\noindent
+The history regex requires there is no push operation with value greater equal to $x$, and the prophecy regex requires there \emph{eventually} be a pop operation with value $x$ in the future.
+\end{example}
 
-\paragraph{Generative and derived terms}
-The STLC operations are distinguished as either generative or derived operations ($\mykw{obs}$), where the former can be generated without constraint, but the latter must be derived from other operations. For example, the $\eff{endAbs}$ operation is derived from the generative $\eff{abs}$ operation; the $\eff{appL}$ and $\eff{appR}$ operations are derived from the generative $\eff{app}$ operation. Our DSL ensures the pairing relationship between generative and derived operations, which guarantees that the generated trace is well-formed with respect to STLC syntax. This feature is also crucial for test generators in other domains—for example, the pairing of $\eff{init}$ and $\eff{close}$ in the effectful library, the scoping relationship of $\eff{begin}$ and $\eff{commit}$ transactions in databases, and the correspondence between request and response messages in distributed systems.
-
-\paragraph{Typechecking} Specifying the behavior of operations in terms of
-\PAT{}s allows us to use a type system to statically check that
-test generator programs will only generate the expected traces.
-For example, to typecheck the use of $\eff{app}$ on line 9 in
-\autoref{fig:stlc-gen}, we first ``divide'' the generator $P_\Code{STLC}$ into three pieces:
-an empty history subprogram, a current event ($\eff{app}$), and a future subprogram on lines 9--11. The first subprogram corresponds to the set of prefix traces that can occur before
-$\eff{app}$, while the last subprogram captures all the postfix traces that may follow.
-Thus, we must ensure that each of these pieces
-is consistent with the type of $\eff{app}$, which requires correct scoping and well-typedness of STLC terms.
-Note that the future subprogram contains $\eff{appL}$ (line 10) and $\eff{appR}$ (line 12) operations, which are derived from the generative $\eff{app}$ operation. The term between $\eff{appL}$ and $\eff{appR}$ is a lambda abstraction with type $\Int\sarr\Int$, and the term between $\eff{app}$ and $\eff{appL}$ is a constant with type $\Int$. Checking the type of $\eff{abs}$ on line 9 is more intriguing, as its prophecy regex requires at least one $\eff{var}$ usage in the body of the function abstraction. This constraint is satisfied on line 2—no matter how many times the recursive function is unfolded, it always returns on line 2 and uses the bound variable at least once. Our type system can also check that the generator $P_\Code{STLC}$ is consistent with the global specification \ref{prop:stlc}, which requires that the generated STLC term has type $\Int$ and contains at least one lambda abstraction (line 9).
-
-
-% that
-% the last value written to the database is $\Code{y}$ (line $3$) in the
-% history, that the message being handled is $\eff{readReq}$, and that a
-% $\eff{readReq}$ message with value $\Code{y}$ will be produced in the
-% future (line $7$). Notably, $P_{C}$ can indeed induce a trace that
-% violates RYW consistency. We can show this by typechecking $P_{C}$
-% against the \PAT{} $\rg{\epsTL}{\negSCA}{\epsTL}$. This \PAT{} asserts
-% that when there are no prior messages ($\epsTL$), the execution of the
-% controller generates a trace consistent with \ref{eqn:autoEx}, and no
-% more future messages are generated ($\epsTL$).
-
-\subsection{Test Generator Synthesis}
-
-\begin{figure}[ht!]
-\vspace*{-.15in}
-    \centering
-    \includegraphics[width=1.0\linewidth]{figures/pret.drawio.png}
-\vspace*{-.2in}
-    \caption{Test controller synthesis pipeline.}
-    \label{fig:intuition-algo}
-% \vspace*{-.1in}
-\end{figure}
-
-Interpreting test sequences as traces allows us to frame the derivation of
-a test generator as a component-based synthesis problem, guided by the
-\PAT{} specifications of the operators (e.g., $\Delta$) and the global property (e.g., \ref{prop:stlc}). \autoref{fig:intuition-algo} provides a high-level overview of our
-algorithm, which consists of two phases. In the first phase, we
-systematically refine the global property $A$ to remove undesired test sequences (e.g., \ref{ex:e1}--\ref{ex:e3}). The resulting regex $A'$ encodes a stronger
-property on traces, i.e., $A' \subseteq A$, ensuring that each
-operation in the test sequence is consistent with its specification. In the second phase, we
-use $A'$ to derive a test generator program. For example, the set of
-traces captured by $P_\Code{STLC}$ can be refined from \ref{prop:stlc} to: %
-\vspace{-.4cm} \par\nobreak
-{\footnotesize
+\begin{example}[Non-repeatable Read]
+To model concurrent executions, we represent all asynchronous operations as paired request and response events, e.g., $\eff{writeReq}$ and $\eff{writeRsp}$ correspond to the invocation and acknowledgment of a write operation by a client. In a weakly consistent database (e.g., eventual consistency), non-repeatable reads manifest in traces such as:
+  {\small
   \begin{align*}
-  \msgAGray{putDepth}{0}\underbrace{\msgC{app}}_{\allA}&\msgA{abs}{\Int}\underbrace{...\msgC{endAbs}...\msgC{appL}\msgA{const}{\top}\msgAGray{putTy}{\Int}\msgAGray{getTy}{\Int}\msgC{appR}\msgAGray{putTy}{\Int}}_{\allA}\msgAGray{getTy}{\Int}
-  \label{prop:refinedSTLC}\tag{$A_\Code{STLC}'$}
-  \end{align*}}\noindent
-This regex specializes the two Kleene stars in \ref{prop:stlc} as two sub-regexes as shown above. Note that from the view of each event, the corresponding prefix trace and postfix trace are aligned with its \PAT{}.
-Observe that the structure of \ref{prop:refinedSTLC} closely resembles the
-test generator program $P_\Code{STLC}$, with the main difference being that
-$P_\Code{STLC}$ is more operational, dividing operations into generative and derived operations.
-
-% The test generator also provides the contents for generative operations, while the contents of
-% derived operations are constrained only by local variables.
-
-
-\paragraph{Property Refinement Loop}
-The refinement loop is a crucial piece of the algorithm in
-\autoref{fig:intuition-algo}, as it ensures that the traces accepted
-by the refined formula are consistent with our expectations of \PAT{}s. Viewed from another perspective, this algorithm searches
-for a family of traces that witness a property violation until it finds one
-that aligns with the provided specifications.
-A key challenge is dealing with latent dependencies among events, where these events may be hidden under a Kleene star. For example, \ref{prop:stlc}
-includes over 10 events, but only three of them appear in \ref{prop:refinedSTLC}
-(i.e., $\eff{\textcolor{gray}{putDepth}}$, $\eff{abs}$, and $\eff{\textcolor{gray}{getTy}}$). While \PAT{}s allow us to add dependent events of one event into the global property, each of these new events can
-impose additional requirements that must be satisfied. Naively inlining the \PAT{}s into the global property can easily cause the search space to grow exponentially.
-To address this
-challenge, our algorithm lazily injects new events into the test generator program, and then recursively repairs any unmet obligations. This allow our algorithm to smart event discover in both forward and backward directions.
-As an example, when working on an top-level event (i.e., not under Kleene star) $\eff{abs}$, the algorithm aligns the \PAT{} of $\eff{abs}$ with the current formula and merges them as the following:
-{\small\begin{align*}
-  \underbrace{\msgAGray{putDepth}{0}\allA\msgAGray{getDepth}{0}}_\texttt{merged with history regex}\;\; \msgA{abs}{t_2}\;\; \underbrace{... \msgC{var} ... \msgC{endAbs}\msgAGray{putDepth}{d} \msgAGray{putTy}{t_1\sarr t_2}  \allA \msgAGray{getTy}{\Int}}_\texttt{merged with prophecy regex}
-\end{align*}}\noindent
-The updated formula clearly shows that the $\eff{abs}$ event imposes a requirement that multiple events happen before and after it, which will be marked as \PAT{}s that still need to be satisfied. Most interestingly, this procedure can be preformed backwardly, which allows our algorithm to discover the previous event who triggers the unsolving event. For example, when working on the last $\eff{getTy}$ event, the algorithm identifies that it requires a previous $\eff{putTy}$ event to update the type of current constructed term as $\Int$, since the type of the lambda abstraction is a function type ($\msgAGray{putTy}{t_1\sarr t_2}$). Thus, the algorithm refines the current formula as the following:
-\vspace{-.4cm} \par\nobreak {\small %
+    &\text{\textcolor{gray}{Client 1:}}  & \zevent{writeReq}{4};\zevent{writeRsp}{4};&
+    \\& \text{\textcolor{gray}{Client 2:}} \quad \zevent{writeReq}{3};\zevent{writeRsp}{3};\eff{readReq};& &\zevent{readRsp}{4}
+  \end{align*}}
+The trace represents one potential case of non-deterministic concerrent executions. Two consecutive read operations by Client 1 may observe different values ($3$ and $4$), due to Client 2's concurrent write of value $4$ between the two reads. The following \tyName\ specification for $\eff{readReq}$ permits such traces:
   \begin{align*}
-   ... \msgC{endAbs}\msgAGray{putDepth}{d} \msgAGray{putTy}{t_1\sarr t_2}  \allA \underbrace{\msgAGray{putTy}{\Int}}_\texttt{new event discovered backwardly}  \allA \msgAGray{getTy}{\Int}
-\end{align*}}\noindent
-which guides the algorithm to discover other STLC constructor (e.g., $\eff{app}$) that can generate $\msgAGray{putTy}{\Int}$ events.
+    \eff{readReq} :~ \rg{\Code{LAST}(\zevent{writeReq}{x})}{\eff{readReq}}{\allA\zevent{readRsp}{x}\allA}
+  \end{align*}
+Here, the history regex $\Code{LAST}(\zevent{writeReq}{x})$ captures the most recent write request value $x$, regardless of which client performed the write; the prophecy regex requires that a future read response event returns value $x$.
+\end{example}
 
-\paragraph{Recursion} After all top-level events are refined, the algorithm treats the remaining Kleene star as a placeholder for recursion. We adapt a standard template-based approach to generate simple recursions. For example, the recursion in $P_\Code{STLC}$ is derived from a recursive function template with an increasing index parameter. This approach is efficient for handling cases in PBT across different domains, including recursion for balanced $\eff{push}$ and $\eff{pop}$ and retry loops for system initialization.
-
-
-% As an
-% example, when working on a $\eff{\textcolor{gray}{ascribe}}$ message, the algorithm identifies that it is dependent with one of STLC constructor, i.e., $\eff{const}$, $\eff{var}$. Moreover, $\eff{readReq}$'s type
-% also indicates that its content $\Code{y}$ should belong to a previous
-% $\eff{writeReq}$.  Based on these constraints, our algorithm refines
-% the current formula by adding $\eff{writeReq}$ and $\eff{readReq}$
-% messages before $\eff{readRsp}$, and marks both as messages whose
-% constraints still need to be satisfied as synthesis proceeds.
+\paragraph{Correct-by-Construction Test Generation} Our tool ensures that all traces generated during testing are consistent with the \tyName\ specifications by synthesizing test generator programs that are correct-by-construction with respect to the specifications.
