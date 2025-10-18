@@ -292,7 +292,7 @@ To model concurrent executions, we represent all asynchronous operations as pair
   {\small
   \begin{align*}
     &\text{\textcolor{gray}{Client 1:}}  & \zevent{writeReq}{4};\zevent{writeRsp}{4};&
-    \\& \text{\textcolor{gray}{Client 2:}} \quad \zevent{writeReq}{3};\zevent{writeRsp}{3};\eff{readReq};& &\zevent{readRsp}{4}
+    \\& \text{\textcolor{gray}{Client 2:}} \quad \eff{readReq};\zevent{readRsp}{3};\eff{readReq};& &\zevent{readRsp}{4}
   \end{align*}}
 The trace represents one potential case of non-deterministic concerrent executions. Two consecutive read operations by Client 1 may observe different values ($3$ and $4$), due to Client 2's concurrent write of value $4$ between the two reads. The following \tyName\ specification for $\eff{readReq}$ permits such traces:
   \begin{align*}
