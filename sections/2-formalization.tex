@@ -497,25 +497,36 @@ Since the loop body $e$ may be executed an unbounded number of times, the typing
 
 \subsection{Type Soundness}
 
-\begin{figure}[h!]
-  \vspace*{-.15in}
-  {\small\begin{align*}
-    \denot{\rg{H}{A}{F}} \doteq &\{e ~|~ \emptyset \basicvdash e : \Code{unit} \land \forall \alpha_h \in\denot{H}.\forall \alpha_f \in\denot{F}. \forall \alpha\; \beta_1\;\beta_2\;e_h\;e_f.
-    \\[-0.4em] & \ \underbrace{\msteptr{[]}{(\emptyset, e_h)}{\alpha_h}{(\beta_1, ())}}_\texttt{realizable histroy trace} \land \underbrace{\msteptr{\alpha_h}{(\beta_1, e)}{\alpha}{(\beta_2, ())}}_\texttt{trace produced by $e$} \land \underbrace{\msteptr{\alpha_h \listconcat \alpha }{(\beta_2, e_f)}{\alpha_f}{(\emptyset, ())}}_\texttt{realizable future trace} \impl \alpha \in\denot{A} \}
-  \end{align*}}
-  \vspace*{-.15in}
-  \caption{Selected type denotation.}
-  \label{fig:selected-denotation}
-  \vspace*{-.15in}
-  \end{figure}
+
+% \begin{figure}[h!]
+%   \vspace*{-.15in}
+%   {\footnotesize\begin{align*}
+%     &\denot{\rg{H}{A}{F}} \doteq \{e ~|~ \emptyset \basicvdash e : \Code{unit} \land \forall \alpha_h \in\denot{H}. \forall \alpha \in\denot{A}. \forall \beta_1\;\beta_2.
+%     \\[-0.4em] & \ \ \underbrace{\exists e_h. \msteptr{[]}{(\emptyset, e_h)}{\alpha_h}{(\beta_1, ())}}_\texttt{realizable histroy trace} \land \underbrace{\msteptr{\alpha_h}{(\beta_1, e)}{\alpha}{(\beta_2, ())}}_\texttt{trace produced by $e$} \impl \forall \alpha_f. \alpha_f \in\denot{F} \impl \underbrace{\exists e_f.\msteptr{\alpha_h \listconcat \alpha }{(\beta_2, e_f)}{\alpha_f}{(\emptyset, ())}}_\texttt{realizable future trace} \}
+%     % \\&\denot{\rgOver{H}{A}{F}} \doteq \{e ~|~ \emptyset \basicvdash e : \Code{unit} \land \forall \alpha_h \in\denot{H}. \forall \alpha \in\denot{A}. \forall \beta_1\;\beta_2.
+%     % \\[-0.4em] & \ \ \underbrace{\exists e_h. \msteptr{[]}{(\emptyset, e_h)}{\alpha_h}{(\beta_1, ())}}_\texttt{realizable histroy trace} \land \underbrace{\msteptr{\alpha_h}{(\beta_1, e)}{\alpha}{(\beta_2, ())}}_\texttt{trace produced by $e$} \impl \forall \alpha_f. \underbrace{\exists e_f. \msteptr{\alpha_h \listconcat \alpha }{(\beta_2, e_f)}{\alpha_f}{(\emptyset, ())}}_\texttt{realizable future trace} \impl \alpha_f \in\denot{F} \}
+%   \end{align*}}
+%   \vspace*{-.15in}
+%   \caption{Selected type denotation.}
+%   \label{fig:selected-denotation}
+%   \vspace*{-.15in}
+%   \end{figure}
 
 \paragraph{Type denotations} Similar to other refinement type systems~\cite{JV21},
-types in $\DSL$ are denoted as their inhabitants (i.e., $\denot{t}$ and $\denot{\tau}$).  The capability context is denoted as  observation capabilitys, while the type context $\Gamma$ is denoted as \emph{substitution} $\sigma$ (e.g., $[x\mapsto 3, y\mapsto 4]$ in Example~\ref{ex:semantics}) that provides the assignments for binding variables in $\Gamma$. Moreover, the denotation (denoted language) of SREs is the set of traces. Then, regex
+types in $\DSL$ are denoted as their inhabitants (i.e., $\denot{t}$ and $\denot{\tau}$).  The capability context is denoted as  observation capabilitys, while the type context $\Gamma$ is denoted as \emph{substitution} $\sigma$ (i.e., $[x_1\mapsto v_1, x_2\mapsto v_2]$) that provides the assignments for binding variables in $\Gamma$. Moreover, the denotation (denoted language) of SREs is the set of traces. Then, regex
 inclusion under a type context is defined as $\Gamma \vdash A \subseteq
 A' \doteq \forall \sigma \in \denot{\Gamma}. \denot{\sigma(A)}
 \subseteq \denot{\sigma(B)}$.
-\autoref{fig:selected-denotation} defines the denotation of $\rg{H}{A}{F}$: a term $e$ inhabits $\rg{H}{A}{F}$ iff, for all realizable (i.e., producible by the execution of some program) history traces $\alpha_h$ and future traces $\alpha_f$ accepted by $H$ and $F$, any current trace $\alpha$ produced by $e$ is accepted by $A$.
-\footnote{The details of these definition can be found in our \techreport{}.}
+The type denotation of $\rg{H}{A}{F}$ is defined as follows:
+{\footnotesize\begin{align*}
+  &\denot{\rg{H}{A}{F}} \doteq \{e ~|~ \emptyset \basicvdash e : \Code{unit} \land \forall \alpha_h \in\denot{H}. \forall \alpha \in\denot{A}. \forall \beta_1\;\beta_2.
+  \\[-0.4em] & \ \ \underbrace{\exists e_h. \msteptr{[]}{(\emptyset, e_h)}{\alpha_h}{(\beta_1, ())}}_\texttt{realizable histroy trace} \land \underbrace{\msteptr{\alpha_h}{(\beta_1, e)}{\alpha}{(\beta_2, ())}}_\texttt{trace produced by $e$} \impl \forall \alpha_f. \alpha_f \in\denot{F} \impl \underbrace{\exists e_f.\msteptr{\alpha_h \listconcat \alpha }{(\beta_2, e_f)}{\alpha_f}{(\emptyset, ())}}_\texttt{realizable future trace} \}
+  % \\&\denot{\rgOver{H}{A}{F}} \doteq \{e ~|~ \emptyset \basicvdash e : \Code{unit} \land \forall \alpha_h \in\denot{H}. \forall \alpha \in\denot{A}. \forall \beta_1\;\beta_2.
+  % \\[-0.4em] & \ \ \underbrace{\exists e_h. \msteptr{[]}{(\emptyset, e_h)}{\alpha_h}{(\beta_1, ())}}_\texttt{realizable histroy trace} \land \underbrace{\msteptr{\alpha_h}{(\beta_1, e)}{\alpha}{(\beta_2, ())}}_\texttt{trace produced by $e$} \impl \forall \alpha_f. \underbrace{\exists e_f. \msteptr{\alpha_h \listconcat \alpha }{(\beta_2, e_f)}{\alpha_f}{(\emptyset, ())}}_\texttt{realizable future trace} \impl \alpha_f \in\denot{F} \}
+\end{align*}}\noindent
+ A term $e$ inhabits $\rg{H}{A}{F}$ iff, for all realizable (i.e., producible by the execution of some program) history traces $\alpha_h$ and current trace $\alpha$ produced by $e$ is accepted by $H$ and $A$, all future traces $\alpha_f$ accepted by $F$ are also realizable.\footnote{The details of these definition can be found in our \techreport{}.} 
+ 
+ Unlike history and current regex whose denotations are overapproximated (typically ensuring safety), the denotation of a prophecy regular expression is underapproximated: the constraint $\alpha_f \in \denot{F}$ appears on the left-hand side of the implication. This underapproximation characterizes traces where, during test generation, $e$ should be explored further, as there exists a continuation $e_f$ that extends the current trace to satisfy the prophecy constraint. For example, in Example~\ref{ex:read-atomicity}, the prefix trace $\zevent{readReq}{\tau_2};\zevent{readRsp}{\tau_2,3};\zevent{readReq}{\tau_2};\ldots$ admits a possible future in which the read atomicity property holds (with a suffix $\,\ldots;\zevent{readRsp}{\tau_2,3}$), although there also exists realizable futures that violate this property.
 
 \paragraph{Operator context}
 We expect the trace produced by our test generator to be consistent with the operator context $\Delta$; i.e., each event in the trace must be consistent with corresponding $\PAT$ in $\Delta$.
@@ -533,9 +544,9 @@ We expect the trace produced by our test generator to be consistent with the ope
     \alpha_h \in \denot{H\msubst{x_i}{c_i}} \land \alpha_f \in \denot{F\msubst{x_i}{c_i}} \land \Theta \subseteq \{ \eff{op} ~|~ \zevent{op}{\overline{c}} \in \alpha_f\} \land \phi\msubst{x_i}{c_i} \land \forall i. c_i \in \denotation{t_i}
 \end{align*}}
 \end{definition}
-
+ 
 \begin{theorem}[Fundamental Theorem]\label{theorem:fundamental}A well-typed term, i.e., \(\Gamma; \Delta; \Theta \vdash e : \capTau{\Theta', \rg{H}{A}{F}}\), generates traces consistent with the \PAT: $\forall \sigma \in \denotation{\Gamma}. \sigma(e) \in \denotation{\sigma(\rg{H}{A}{F})}$.\footnote{The proofs of all theorems in this paper are provided in the \techreport{}.}
 \end{theorem}
 
-\begin{corollary}[Type Soundness]\label{theorem:sound} Given a operator context \(\Delta\) and a global property \(A\), a generator \(e\) that satisfies \(\emptyset;\Delta;\emptyset \vdash e : \capTau{\emptyset, \rg{\epsilon}{A}{\epsilon}}\) will consistent with both global property and operator context, i.e., $\forall \alpha. \msteptr{[]}{(\emptyset, e)}{\alpha}{(\emptyset, ())} \implies \alpha \in \denot{A} \land \traceDelta{\Delta}{\alpha}$.
+\begin{corollary}[Type Soundness]\label{theorem:sound} Given a operator context \(\Delta\) and a global property \(A\), a generator \(e\) that satisfies \(\emptyset;\Delta;\emptyset \vdash e : \capTau{\emptyset, \rg{\epsilon}{A}{\epsilon}}\) will consistent with both global property and operator context, i.e., $\forall \alpha. \msteptr{[]}{(\emptyset, e)}{\alpha}{(\emptyset, ())} \impl \alpha \in \denot{A} \land \traceDelta{\Delta}{\alpha}$.
 \end{corollary}
