@@ -128,7 +128,7 @@ programs interact; \PAT{}s capture temporal and data dependencies
 between the messages that define these interactions.
 
 
-To ground the discussion, consider a database that provides $\eff{begin}$, $\eff{write}$, $\eff{read}$, and $\eff{commit}$ operations, following the formalization in previous work~\cite{BK+21}. To safely use these APIs, we require each transaction to have a unique id. Additionally, we want the test generator to avoid generating uninteresting transactions, e.g., transactions that do not involve any writes. These two requirements can be encoded as the following \PAT{} for the $\eff{begin}$ operation:
+To ground the discussion, consider a database that provides $\eff{begin}$, $\eff{write}$, $\eff{read}$, and $\eff{commit}$ operations, following the formalization in previous work~\cite{BK+21}. To safely use these APIs, we require each transaction to have a unique id. Additionally, we want the test generator to avoid generating uninteresting transactions, e.g., incomplete transactions or transactions that do not involve any writes. These two requirements can be encoded as the following \PAT{} for the $\eff{begin}$ operation:
 \vspace{-.4cm} \par\nobreak { \footnotesize
   \begin{align*}
     % \Code{y{:}int} \garr
