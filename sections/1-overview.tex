@@ -79,7 +79,7 @@ concurrency reasoning approaches to constrain future events.
 
 \subsection{Examples}
 
-\begin{example}[Stack Library] Consider an effectful stack library
+\begin{example}[Stack Library]\label{ex:push-pop} Consider an effectful stack library
   implemented as a fixed-sized array.  An incorrect implementation
   that fails to grow the array when the stack is full will lead to
   \textbf{push} operations being dropped.  In order to detect this
