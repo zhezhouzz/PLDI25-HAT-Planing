@@ -75,10 +75,11 @@ by the history regex $H$, then the suffix trace will be matched by the
 prophecy regex $F$.'' Intuitively, prophecy regexes are a trace-based
 analogue of prophecy variables~\cite{LM22} used in other state-based
 concurrency reasoning approaches to constrain future events.
+\ZZ{Trace consistent with spec?}
 
 \subsection{Examples}
 
-\begin{example}[Stack Library] Consider an effectful stack library
+\begin{example}[Stack Library]\label{ex:push-pop} Consider an effectful stack library
   implemented as a fixed-sized array.  An incorrect implementation
   that fails to grow the array when the stack is full will lead to
   \textbf{push} operations being dropped.  In order to detect this
@@ -92,7 +93,7 @@ concurrency reasoning approaches to constrain future events.
   increasing.  We can now express a valid stack as one that only
   emits traces accepted by the following trace type:
 \begin{align*}
-  \eff{push} :~ x{:}\Int\sarr \rg{(\anyA \setminus \msgB{push}{\vnu}{\vnu \geq x})^*}{\zevent{push}{x}}{\allA\zevent{pop}{x}\allA}
+  \eff{push} :~ x{:}\Int\sarr \rg{(\anyA \setminus \msgB{push}{\vnu}{\vnu \geq x})^*}{\msgA{push}{x}}{\allA\msgA{pop}{x}\allA}
 \end{align*}\noindent
 The signature for $\eff{push}$ requires it to execute in a
 trace context whose history contains no previous $\eff{push}$ event
@@ -101,7 +102,7 @@ captured by the specification's prophecy regex, contains a $\eff{pop}$
 event that returns $x$.  
 \end{example}
 
-\begin{example}[Read Atomicity]
+\begin{example}[Read Atomicity]\label{ex:read-atomicity}
   Database transactions allow concurrent transactions to operate on
   database state.  To mask latency, client-issued read and write
   operations are typically implemented as asynchronous request and
@@ -114,8 +115,8 @@ event that returns $x$.
     from event arguments.}; we also assume that
   every $\eff{writeRsp}$ event is also a commit point: {\small
   \begin{align*}
-    &\text{\textcolor{gray}{Client 1:}}  & \zevent{writeReq}{4,\tau_1};\zevent{writeRsp}{4,\tau_1};&
-    \\& \text{\textcolor{gray}{Client 2:}} \quad \zevent{readReq}{\tau_2};\zevent{readRsp}{3,\tau_2};\zevent{readReq}{\tau_2};& &\zevent{readRsp}{4,\tau_2}
+    &\text{\textcolor{gray}{Client 1:}}  & \zevent{writeReq}{\tau_1,4};\zevent{writeRsp}{\tau_1,4};&
+    \\& \text{\textcolor{gray}{Client 2:}} \quad \zevent{readReq}{\tau_2,3};\zevent{readRsp}{\tau_2,3};\zevent{readReq}{\tau_2};& &\zevent{readRsp}{\tau_2,4}
   \end{align*}}
   Here, \textcolor{gray}{Client 2} issues two consecutive read
   operations.  A $\eff{readReq}$ event initiates a request to the
@@ -128,7 +129,7 @@ event that returns $x$.
   trace specification on
   $\eff{readReq}$ events admits executions that satisfy read atomicity:
    \begin{align*}
-    \eff{readReq} :~ \rg{\Code{LAST}(\zevent{readRsp}{x,\tau})}{\eff{readReq}}{\Code{FIRST}(\zevent{readRsp}{x,\tau})}
+    \eff{readReq} :~ \rg{\Code{LAST}(\msgA{readRsp}{\tau\;x})}{\msgA{readReq}{\tau\;x}}{\Code{FIRST}(\msgA{readRsp}{\tau\;x})}
   \end{align*}
   The regex specifies that if a transaction with id $\tau$ last
   observes that the value of the single key managed by the database is $x$,
@@ -137,13 +138,15 @@ event that returns $x$.
   \Code{FIRST}($\eff{evt}$) and \Code{LAST}($\eff{evt}$)
   are aliases for the following regexes:
   \begin{align*}
-    \Code{FIRST}(\eff{evt}) & \equiv (\anyA \setminus \eff{evt})^*; \eff{evt}; \allA\\
-    \Code{LAST}(\eff{evt})  & \equiv \allA; \eff{evt}; (\anyA \setminus \eff{evt})^*
+    \Code{FIRST}(\eff{evt})  \equiv (\anyA \setminus \eff{evt})^*; \eff{evt}; \allA \qquad\qquad
+    \Code{LAST}(\eff{evt})   \equiv \allA; \eff{evt}; (\anyA \setminus \eff{evt})^*
   \end{align*}
   Any trace in which a response to a request yields a different
   value than previously seen by the transaction exposes a
   read atomicity violation.
 \end{example}
+
+\ZZ{Shall we use another character than $\tau$?}
 
 \begin{example}[de Brujin STLC]
 Consider an interpreter for the simply-typed lambda calculus (STLC) in
@@ -243,6 +246,8 @@ t_2)$. This specification also requires that the body of the function
 abstraction references its bound variable at least once, thereby
 ruling out trivial terms like $e_1$.
 
+\ZZ{$\eff{var}$ doesn't have to be $0$}
+
 \newcommand{\Arr}[2]{\Code{Arr}(#1,#2)}
 \newcommand{\ItoI}{\Arr{\Code{Int}}{\Code{Int}}}
 \newcommand{\Tconst}[2]{\zevent{const}{#1};\zeventGray{ty}{#2}}
@@ -278,6 +283,9 @@ from $\alpha_1$ resides; this assignment reflects the difference
 between the current depth ($2$) and the binding depth ($1$).
 Additionally, each abstraction body references its corresponding bound
 variable as required by the specification.
+\end{example}
+
+\ZZ{Box seems off.}
 
 In the following section, we show how to guide a synthesis procedure
 to only generate traces consistent with \tyName{} specifications.  We
@@ -301,6 +309,8 @@ was because most of the STLC terms that were generated were similar to
 \ref{ex:e1}--\ref{ex:e3}, which do not use bound variables in an
 interesting way, but for which the test generator has no \emph{a
   priori} basis to discard.
+
+  \ZZ{Our tool can ...; spec can guide synthesis well.}
 
 %% When the properties are of interest are as sophisticated as the ones
 %% described here, involving temporal effectful actions, writing
