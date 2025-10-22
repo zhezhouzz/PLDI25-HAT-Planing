@@ -75,7 +75,7 @@ by the history regex $H$, then the suffix trace will be matched by the
 prophecy regex $F$.'' Intuitively, prophecy regexes are a trace-based
 analogue of prophecy variables~\cite{LM22} used in other state-based
 concurrency reasoning approaches to constrain future events.
-\ZZ{Trace consistent with spec?}
+% \ZZ{Trace consistent with spec?}
 
 \subsection{Examples}
 
@@ -115,22 +115,22 @@ event that returns $x$.
     from event arguments.}; we also assume that
   every $\eff{writeRsp}$ event is also a commit point: {\small
   \begin{align*}
-    &\text{\textcolor{gray}{Client 1:}}  & \zevent{writeReq}{\tau_1,4};\zevent{writeRsp}{\tau_1,4};&
-    \\& \text{\textcolor{gray}{Client 2:}} \quad \zevent{readReq}{\tau_2,3};\zevent{readRsp}{\tau_2,3};\zevent{readReq}{\tau_2};& &\zevent{readRsp}{\tau_2,4}
-  \end{align*}}
+    &\text{\textcolor{gray}{Client 1:}}  & \zevent{writeReq}{\iota_1,4};\zevent{writeRsp}{\iota_1,4};&
+    \\& \text{\textcolor{gray}{Client 2:}} \quad \zevent{readReq}{\iota_2,3};\zevent{readRsp}{\iota_2,3};\zevent{readReq}{\iota_2};& &\zevent{readRsp}{\iota_2,4}
+  \end{align*}}\noindent
   Here, \textcolor{gray}{Client 2} issues two consecutive read
   operations.  A $\eff{readReq}$ event initiates a request to the
-  database with transaction id $\tau_2$; the response from the
+  database with transaction id $\iota_2$; the response from the
   database is subsequently observed by a matching $\eff{readRsp}$ that
   follows the request.  In this trace, however, the second response
   witnesses a committed write performed by another
   concurrently-executing, non-committed transaction, with transaction
-  id $\tau_1$, that occurs after the request.  The following
+  id $\iota_1$, that occurs after the request.  The following
   trace specification on
   $\eff{readReq}$ events admits executions that satisfy read atomicity:
    \begin{align*}
-    \eff{readReq} :~ \rg{\Code{LAST}(\msgA{readRsp}{\tau\;x})}{\msgA{readReq}{\tau\;x}}{\Code{FIRST}(\msgA{readRsp}{\tau\;x})}
-  \end{align*}
+    \eff{readReq} :~ \rg{\Code{LAST}(\msgA{readRsp}{\iota\;x})}{\msgA{readReq}{\iota\;x}}{\Code{FIRST}(\msgA{readRsp}{\iota\;x})}
+  \end{align*}\noindent
   The regex specifies that if a transaction with id $\tau$ last
   observes that the value of the single key managed by the database is $x$,
   then the response value to a subsequent request made by the transaction
@@ -145,8 +145,6 @@ event that returns $x$.
   value than previously seen by the transaction exposes a
   read atomicity violation.
 \end{example}
-
-\ZZ{Shall we use another character than $\tau$?}
 
 \begin{example}[de Brujin STLC]
 Consider an interpreter for the simply-typed lambda calculus (STLC) in
@@ -223,12 +221,11 @@ generate interesting trace sequences of this kind:
 %%       % \eff{app} :~ & \rg{\allA}{\msgC{app}}{\allA  \msgAGray{getType}{\Code{Arr}(t_1, t_2)}  \msgC{appL}  \allA  \msgAGray{getType}{t_1}  \msgC{appR}  \msgAGray{putType}{t_2}  \allA} \\
  & \eff{abs} :~   [\Code{LAST}(\msgAGray{depth}{d})]
                  [\msgA{abs}{t_1}]
-                 [\msgAGray{depth}{d+1}\allA  \msgA{var}{0}\allA\Code{LAST}(\msgAGray{ty}{t_2})\msgC{endAbs}\msgAGray{depth}{d}]
+                 [\msgAGray{depth}{d+1}\allA  \msgC{var}\allA\Code{LAST}(\msgAGray{ty}{t_2})\msgC{endAbs}\msgAGray{depth}{d}]
 %%         \msgAGray{ty}{\Code{Arr}(t_1,t_2)}  \allA]
 %%       %   \\
 %%       % \eff{var} :~ &  i{:}\ort{\Int}{\vnu \geq 0} \sarr \rg{\underbrace{\allA\msgA{abs}{t}\msgAGray{putDepth}{d}(\anyA\setminus\msgC{endAbs})^*}_\text{type $t$ at the $d$ level is open}\underbrace{\msgAGray{getDepth}{d + i}}_\text{current level is $d + i$} }{\msgA{var}{i}}{\msgAGray{putTy}{t}  \allA}
-    \end{align*}}
-%%   }
+    \end{align*}}\noindent
 In the specification, the gray colored terms $\effGray{depth}$ and
 $\effGray{ty}$ are ghost events used to capture latent semantic
 dependencies among tokens; these events do not appear in the synthesized
@@ -243,10 +240,8 @@ $t_1$, and the prophecy regex requires that the abstraction body has
 type $t_2$ ($\Code{LAST}(\msgAGray{ty}{t_2})$); the type of
 constructed abstraction term is then tagged as $\Code{Arr}(t_1,
 t_2)$. This specification also requires that the body of the function
-abstraction references its bound variable at least once, thereby
+abstraction references bound variable at least once, thereby
 ruling out trivial terms like $e_1$.
-
-\ZZ{$\eff{var}$ doesn't have to be $0$}
 
 \newcommand{\Arr}[2]{\Code{Arr}(#1,#2)}
 \newcommand{\ItoI}{\Arr{\Code{Int}}{\Code{Int}}}
@@ -262,30 +257,28 @@ ruling out trivial terms like $e_1$.
 
 Recall that the STLC term described in \ref{ex:e4} contains three nested
 abstractions. These abstractions can be represented as the following
-traces, based on the $\eff{abs}$ specification given in
-\autoref{fig:spec}.  For readability, we assume the trace of the
+traces, based on the $\eff{abs}$ specification given above. For readability, we assume the trace of the
 history regex is empty, and that the default value associated with
 \textcolor{gray}{depth} is 0.
 {\small
+\vspace{-1em}
 \begin{align*}
 &\underbrace{(\lambda \Int. \;\;\overbrace{(\lambda (\Int\sarr\Int). [0]\;[1])}^{\alpha_2}\;\;\; \overbrace{(\lambda \Int. [0])}^{\alpha_3}\;\;)}_{\alpha_1}\;\;\; 3
-\\&\alpha_1 \doteq\absTrace{\textcolor{orange}{\Code{Int}}}{1}{\boxed{\alpha_2}}{0}{\ItoI}
-\\&\alpha_2 \doteq\absTrace{\textcolor{DeepGreen}{\ItoI}}{2}{\boxed{\alpha_3; \eff{var}(\textcolor{orange}{1})}}{1}{\Arr{\ItoI}{\Code{Int}}}
-\\&\alpha_3 \doteq\absTrace{\textcolor{blue}{\Code{Int}}}{2}{\boxed{\eff{var}\; \textcolor{blue}{[0]}}}{1}{\ItoI}
+\\&\alpha_1 \doteq\absTrace{\textcolor{orange}{\Code{Int}}}{1}{\boxed{\alpha_2\;\alpha_3}}{0}{\ItoI}
+\\&\alpha_2 \doteq\absTrace{\textcolor{DeepGreen}{\ItoI}}{2}{\boxed{\textcolor{DeepGreen}{[0]}\; \textcolor{orange}{[1]}}}{1}{\Arr{\ItoI}{\Code{Int}}}
+\\&\alpha_3 \doteq\absTrace{\textcolor{blue}{\Code{Int}}}{2}{\boxed{\textcolor{blue}{[0]}}}{1}{\ItoI}
 \end{align*}}\noindent
 The trace $\alpha_1$ increases the depth of its bound variable from
 $0$ to $1$ in its abstraction body, so $\alpha_2$ and $\alpha_3$ both
 occur at a nested level.  The variable $[0]$ in
-$\alpha_3$ has type $\Code{Int}$ (blue) at depth $2$.  Notably, the bound
-variable $[1]$ in $\alpha_2$ is assigned type $\ItoI$ (orange) because
-its binding occurs at depth $1$, where the type annotation for $\ItoI$
+$\alpha_2$ has type $\ItoI$ (green) at depth $2$, which refers the \emph{last} abstraction type at depth $2$.  Notably, the bound
+variable $[1]$ in $\alpha_2$ is assigned type $\Int$ (orange) because
+its binding occurs at depth $1$, where the type annotation for $\Int$
 from $\alpha_1$ resides; this assignment reflects the difference
 between the current depth ($2$) and the binding depth ($1$).
 Additionally, each abstraction body references its corresponding bound
 variable as required by the specification.
 \end{example}
-
-\ZZ{Box seems off.}
 
 In the following section, we show how to guide a synthesis procedure
 to only generate traces consistent with \tyName{} specifications.  We
@@ -310,7 +303,7 @@ was because most of the STLC terms that were generated were similar to
 interesting way, but for which the test generator has no \emph{a
   priori} basis to discard.
 
-  \ZZ{Our tool can ...; spec can guide synthesis well.}
+  % \ZZ{Our tool can ...; spec can guide synthesis well.}
 
 %% When the properties are of interest are as sophisticated as the ones
 %% described here, involving temporal effectful actions, writing

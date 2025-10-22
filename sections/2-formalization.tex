@@ -403,8 +403,10 @@ typing context $\Gamma$; an inclusion relation on SREs
 $\Gamma \vdash A \subseteq A$; and a mostly-standard semantic
 subtyping relation.
 \autoref{fig:selected-typing-rules} presents the key subtyping rule for \PAT{}s (\textsc{SubHAF}), which establishes subtyping by checking inclusion between their constituent regex under the current type context $\Gamma$.
-Note that prophecy regex constrain possible future event interleavings, just as history regex constrain the history trace. Current regex, in contrast, overapproximate all traces that the term may produce. Thus, inclusion on the history and prophecy regex is
-contravariant, while inclusion on current regex is covariant.
+Following prior work~\cite{ZYDJ24}, our denotation of \tyName positions the future regex negatively (as an input premise), and the current and prophecy regexes positively (as output consequences). Thus, the history regex is contravariant and the current regex is covariant in the subtyping relation. The prophecy regex is also contravariant, as it \emph{underapproximates} the future traces that must be ensured by the continuation. The formal type denotation is presented at the end of this section.
+
+% Note that prophecy regex constrain possible future event interleavings, just as history regex constrain the history trace. Current regex, in contrast, overapproximate all traces that the term may produce. Thus, inclusion on the history and prophecy regex is
+% contravariant, while inclusion on current regex is covariant.
 
 
 % \paragraph{Effect Operator Framing}  The use of prophecy
