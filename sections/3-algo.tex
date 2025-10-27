@@ -44,7 +44,7 @@ The global property \ref{prop:stlc} is an abstract trace. Every SRE can be norma
   \Params{Ghost variables $\overline{x{:}b}$, operator context
     $\Delta$, and abstract trace $\Pi$}%
   \Output{Generator $e$, such that
-    $\Gamma; \Delta; \emptyset \vdash e:\rg{\epsilon}{\Pi}{\epsilon}$} %
+    $\Gamma \vdash e : \uhat{\epsilon}{\Pi'} \land \Gamma \vdash \Pi' \subseteq \Pi$} %
   $\Gamma \leftarrow \overline{x{:}\rawnuot{b}{\top}}$; $M \leftarrow \emptyset$
   \tcp*[l]{initialize type context and dependency map}
 $(\Gamma, \Pi, M) \leftarrow \refine(\Gamma, M, \Pi)$ \tcp*[l]{refine events}
@@ -55,7 +55,7 @@ $(\Gamma, \Pi, M) \leftarrow \refine(\Gamma, M, \Pi)$ \tcp*[l]{refine events}
     \If(\tcp*[h]{the events triggered by $\msg{op}{\phi}$ is not examined}){$\eff{op} \not\in \textbf{Dom}(M)$}{
         $(\Gamma, M, \Pi) \leftarrow \forward(\Delta, \Gamma, M, \Pi_h, \msg{op}{\phi}, \Pi_f)$
     }
-    \If(\tcp*[h]{the event that triggers $\msg{op}{\phi}$ is not examined}){$\eff{op} \not\in \textbf{Codom}(M) \land \OBS(\eff{op})$}{
+    \If(\tcp*[h]{the event that triggers $\msg{op}{\phi}$ is not examined}){$\OBS(\eff{op}) \land \eff{op} \not\in \textbf{Codom}(M)$}{
         $(\Gamma, M, \Pi) \leftarrow \backward(\Delta,\Gamma,M, \Pi_h, \msg{op}{\phi}, \Pi_f)$
     }
   }
@@ -163,24 +163,20 @@ Concretely, if the event is not in the domain of $M$, forward synthesis is invok
 \setlength{\textfloatsep}{4pt}
 \begin{algorithm}[t!]
 \Procedure{$\forward(\Delta, \Gamma, M, \Pi_h, \msg{op}{\phi}, \Pi_f)$}{
-    $(\Theta, \overline{z{:}b}\garr\overline{y{:}t}\sarr\rg{\Pi_h'}{\msg{op}{\phi'}}{\Pi_f'}) \in \Delta(\eff{op})$\tcp*[l]{select \PAT of $\eff{op}$ from operator context}
+    $(\Theta, \overline{z{:}b}\garr\overline{y{:}t}\sarr\ohat{\Pi_h'}{\msg{op}{\phi'}\seqA \Pi_g}) \in \Delta(\eff{op})$\tcp*[l]{select \PAT of $\eff{op}$ from operator context}
     $\Gamma \leftarrow \Gamma, \overline{z{:}\rawnuot{b}{\top}}, \overline{y{:}t}$ \tcp*[l]{add ghost variables and parameters types to type context}
+    $\Pi_f' \leftarrow \bigwedge_{\eff{op_i} \in \Theta} (\allA\msg{op_i}{\top}\allA) $ \tcp*[l]{merge future regex}
     $\msg{op}{\phi} \leftarrow \msg{op}{\phi \land \phi'}$ \tcp*[l]{merge current regex}
-    $\Pi_h \leftarrow \Pi_h \land \Pi_h'$; $\;\;\Pi_f \leftarrow \Pi_f \land \Pi_f'$ \tcp*[l]{merge history and prophecy regex}
+    $\Pi_h \leftarrow \Pi_h \land \Pi_h'$; $\;\;\Pi_f \leftarrow \Pi_f \land (\Pi_g \seqA \Pi_f')$ \tcp*[l]{merge history and prophecy regex}
     \If(\tcp*[h]{non-emptiness check}){$\Gamma \vdash \Pi_h \seqA \msg{op}{\phi} \seqA \Pi_f \not \subseteq \emptyset$}{
         \Return{$(\Gamma, M \cup [\eff{op} \mapsto \Theta], \Pi_h \seqA \msg{op}{\phi} \seqA \Pi_f)$}\;
     }
 }
 \Procedure{$\backward(\Delta, \Gamma, M, \Pi_h, \msg{op}{\phi}, \Pi_f)$}{
     \tcp{Choose an $\eff{op_{parent}}$ that creates capability $\eff{op}$ and retrieve its \PAT{}}
-    $(\Theta, \overline{z{:}b}\garr\overline{y{:}t}\sarr\rg{\Pi_h'}{\msg{op_{parent}}{\phi_{parent}}}{\Pi_{f_1}' \seqA \msg{op}{\phi'} \seqA \Pi_{f_2}'}) \in \Delta(\eff{op_{parent}})$ where $\eff{op} \in \Theta$\;
-    % $() = \Pi_f'$ \tcp*[l]{The prophecy regex of $\eff{op_{parent}}$ must contains $\eff{op}$}
-    $\Gamma \leftarrow \Gamma, \overline{z{:}\rawnuot{b}{\top}}, \overline{y{:}t}$ \tcp*[l]{add ghost variables and parameters types to type context}
-    $\msg{op}{\phi} \leftarrow \msg{op}{\phi \land \phi'}$ \tcp*[l]{merge current regex}
-    $\Pi_h \leftarrow \Pi_h \land (\Pi_h' \seqA \msg{op_{parent}}{\phi_{parent}} \seqA \Pi_{f_1}')$; $\;\Pi_f \leftarrow \Pi_f \land \Pi_{f_2}'$ \tcp*[l]{merge history and prophecy regex}
-    \If(\tcp*[h]{non-emptiness check}){$\Gamma \vdash \Pi_h \seqA \msg{op_{parent}}{\phi_{parent}} \seqA \Pi_f \not \subseteq \emptyset$}{
-        \Return{$(\Gamma, M \cup [\eff{op_{parent}} \mapsto \Theta], \Pi_h \seqA \msg{op_{parent}}{\phi_{parent}} \seqA \Pi_f)$}\;
-    }
+    $(\Theta, t) \in \Delta(\eff{op_{parent}})$ where $\eff{op} \in \Theta$\;
+    $\Pi_{h1} \seqA \msg{op_{parent}}{\phi'} \seqA \Pi_{h2} \leftarrow \Pi_h \land (\allA\msg{op_{parent}}{\top}\allA)$ \tcp*[l]{merge history regex}
+    \Return{$\forward(\Delta, \Gamma, M, \Pi_{h1}, \msg{op_{parent}}{\phi'}, \Pi_{h2} \seqA \msg{op}{\phi} \seqA \Pi_f)$}\;
 }
 \caption{Forward and Backward Synthesis}
 \label{algo:forward-backward}
@@ -266,7 +262,7 @@ The $\msgAGray{putTy}{\Int}$ event is required by the history regex of $\effGray
         $(\Gamma \cup \Gamma_{\Code{rec}}, \_, \Pi_h \seqA \textcolor{orange}{\Pi_{\Code{rec}}'} \seqA \Pi_f) \leftarrow \refine(\Gamma, M, \Pi_h \seqA \textcolor{orange}{\Pi_{\Code{rec}}} \seqA \Pi_f)$ \tcp*[l]{only refine $A$}
         $f_\Code{rec} \leftarrow f_T[\derive(\Gamma_{\Code{rec}}, \Pi_{\Code{rec}}')]$ \tcp*[l]{derive recursion}
         $e_h, e_f \leftarrow \derive(\Gamma, \Pi_h), \derive(\Gamma, \Pi_f)$ \tcp*[l]{derive history and future}
-        \lIf{$\Gamma;\Delta;\emptyset \vdash (f_\Code{rec}\;0):\rg{\Pi_h}{\Pi'}{\Pi_f}$}{
+        \lIf{$\Gamma \vdash (f_\Code{rec}\;0):\uhat{\Pi_h}{\Pi'}{\Pi_f}$}{
           \Return{$e_h;(f_\Code{rec}\;0);e_f$}
         }
   }

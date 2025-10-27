@@ -1,0 +1,642 @@
+\section{Motivation}
+\label{sec:pret}
+
+We are interested in the generation of test inputs comprised of
+sequences of \emph{events} that can be handled by the
+system-under-test (SUT); the order of these events in the sequence is
+expected to be relevant to the property being checked because of
+latent data and control dependencies they exhibit or effectful
+behavior they induce.  Examples of applications in which tests are
+naturally crafted in this fashion include:
+\begin{enumerate}
+
+\item \textbf{Library API invocations:} The SUT is a library
+  implementing an effectful abstract data type (ADT) with a set of
+  APIs.  A test consists of a sequence of API calls that lead the
+  implementation to an error state.
+
+\item \textbf{Serialized inputs:} The SUT is a procedure that processes
+  serialized input data, and reconstructs an AST from this input.  The
+  inputs produced by the test generator are expected to establish
+  semantic dependencies among nodes in the corresponding AST that do
+  not satisfy a property of interest.
+
+\item \textbf{Database transactions:} The SUT is a database supporting
+  transactional read and write operations under various isolation
+  levels.  A test consists of a sequence of transaction operations
+  whose interleaved order is chosen to expose violations of isolation
+  guarantees by the database.
+
+\item \textbf{Distributed protocols:} The SUT is a distributed system
+  whose components are expected to adhere to a protocol.  A test is a
+  sequence of message invocations that lead the system to a global
+  state in which protocol invariants are not maintained.
+\end{enumerate}
+
+%% SJ: belongs in intro.
+%% A common feature shared by these examples, despite arising from
+%% diverse domains, is that the test generator must be cognizant of how
+%% event dependencies are (or are not) meaningful to manifesting a
+%% property violation.  To do so, we define (1) a formal specification language
+%% precisely describ latent dependencies
+%% among operations; (2) a domain-specific language for expressing
+%% generators that produce sequences conforming to these dependencies;
+%% and (3) a program synthesis technique for automatically constructing
+%% such generators from dependency specifications.
+\subsection{Type-based Trace Specifications}
+
+We refer to the sequence of events that comprise a test sequence as a
+\emph{trace}.  To reason about dependencies among events in a trace
+compositionally, we decompose global trace properties into local
+specifications assigned as types to individual operations.  We,
+therefore, allow type-level specifications to be associated with each
+event in a trace, enabling the specification of complex constraints in
+a modular fashion, transferring the burden of event quantification and
+data dependency management from a trace-level specification language
+to a type system.
+
+Concretely, we model these local specifications as a collection of
+operation signatures: parameter types constrain the payloads of
+events, while the return type captures relationships between
+events. We employ symbolic regular expressions (SREs) to qualify
+trace-based properties within a type, following prior work on
+trace-based type systems~\cite{KT+14,ZYDJ24,NUKT+18}. However, our
+formulation generalizes beyond history-sensitive specifications of
+effects or state, allowing types to express latent dependencies among
+all events, including those that may occur in the future.
+
+Our type abstraction, called a \tyName, has the form
+$\rg{H}{\msgB{op}{\overline{x}}{\phi}}{F}$, where the three components
+describe the history, current, and future regex (resp.) that establish
+the context for any trace containing the event $\eff{op}$. Each
+signature reads: ``If an event $\eff{op}$ with arguments
+$\overline{x}$ and refinement $\phi$ appears in a prefix trace matched
+by the history regex $H$, then the suffix trace will be matched by the
+prophecy regex $F$.'' Intuitively, prophecy regexes are a trace-based
+analogue of prophecy variables~\cite{LM22} used in other state-based
+concurrency reasoning approaches to constrain future events.
+% \ZZ{Trace consistent with spec?}
+
+\subsection{Examples}
+
+\begin{example}[Stack Library]\label{ex:push-pop} Consider an effectful stack library
+  implemented as a fixed-sized array.  An incorrect implementation
+  that fails to grow the array when the stack is full will lead to
+  \textbf{push} operations being dropped.  In order to detect this
+  violation, we need to ascertain if erroneous traces of the form:
+  \begin{align*}
+  \zevent{push}{1};\zevent{push}{2}; \zevent{push}{3}; \zevent{pop}{2};\zevent{pop}{1}
+\end{align*}\noindent
+  \noindent are feasible.  It is expected that $\eff{push}$ and
+  $\eff{pop}$ events will always appear as pairs.  For this
+  simple example, assume pushed values are always
+  increasing.  We can now express a valid stack as one that only
+  emits traces accepted by the following trace type:
+\begin{align*}
+  \eff{push} :~ x{:}\Int\sarr \rg{(\anyA \setminus \msgB{push}{\vnu}{\vnu \geq x})^*}{\msgA{push}{x}}{\allA\msgA{pop}{x}\allA}
+\end{align*}\noindent
+\begin{align*}
+  &\eff{push} :~ x{:}\Int\sarr \uhat{\Code{Last}(\msgAGray{depth}{d})}{\msgA{push}{x}\msgAGray{depth}{d+1}}
+  \\&\eff{pop} :~ x{:}\Int\sarr \uhat{\Code{Last}(\msgAGray{depth}{d}) \land \Code{Mem}(d, x)}{\msgA{pop}{x}\msgAGray{depth}{d-1}}
+  \\&\Code{Mem}(d, x) \equiv \allA\msgA{push}{x}\msgAGray{depth}{d}(\anyA\setminus\msgGray{depth}{\vnu = d})^*
+\end{align*}\noindent
+The signature for $\eff{push}$ requires it to execute in a
+trace context whose history contains no previous $\eff{push}$ event
+with value greater equal to its input, and whose future trace,
+captured by the specification's prophecy regex, contains a $\eff{pop}$
+event that returns $x$.  
+\end{example}
+
+\begin{example}[Read Atomicity]\label{ex:read-atomicity}
+  Database transactions allow concurrent transactions to operate on
+  database state.  To mask latency, client-issued read and write
+  operations are typically implemented as asynchronous request and
+  response event pairs.  It is desirable that read operations be
+  logically atomic, i.e., the response to a client-issued read request
+  on a key $k$ always returns the last committed value of $k$ \emph{at
+    the time of the request}. The following trace captures an
+  execution that violates read atomicity\footnote{For simplicity, we assume
+    the database manages a single key that is elided
+    from event arguments.}; we also assume that
+  every $\eff{writeRsp}$ event is also a commit point: {\small
+  \begin{align*}
+    &\text{\textcolor{gray}{Client 1:}}  & \zevent{writeReq}{\iota_1,4};\zevent{writeRsp}{\iota_1,4};&
+    \\& \text{\textcolor{gray}{Client 2:}} \quad \zevent{readReq}{\iota_2,3};\zevent{readRsp}{\iota_2,3};\zevent{readReq}{\iota_2};& &\zevent{readRsp}{\iota_2,4}
+  \end{align*}}\noindent
+  Here, \textcolor{gray}{Client 2} issues two consecutive read
+  operations.  A $\eff{readReq}$ event initiates a request to the
+  database with transaction id $\iota_2$; the response from the
+  database is subsequently observed by a matching $\eff{readRsp}$ that
+  follows the request.  In this trace, however, the second response
+  witnesses a committed write performed by another
+  concurrently-executing, non-committed transaction, with transaction
+  id $\iota_1$, that occurs after the request.  The following
+  trace specification on
+  $\eff{readReq}$ events admits executions that satisfy read atomicity:
+   \begin{align*}
+    \eff{readReq} :~ \rg{\Code{LAST}(\msgA{readRsp}{\iota\;x})}{\msgA{readReq}{\iota\;x}}{\Code{FIRST}(\msgA{readRsp}{\iota\;x})}
+  \end{align*}\noindent
+  \begin{align*}
+    &\eff{readRsp} :~ \rg{\Code{LAST}(\msgA{writeRsp}{\iota\;x})\msgA{readReq}{\iota}(\anyA \setminus \msgC{writeRsp})^*}{\msgA{readRsp}{\iota\;x}}{\msgA{readRsp}{\iota\;x}}
+  \end{align*}\noindent
+  The regex specifies that if a transaction with id $\tau$ last
+  observes that the value of the single key managed by the database is $x$,
+  then the response value to a subsequent request made by the transaction
+  must also be $x$, regardless of any intervening operation.
+  \Code{FIRST}($\eff{evt}$) and \Code{LAST}($\eff{evt}$)
+  are aliases for the following regexes:
+  \begin{align*}
+    \Code{FIRST}(\eff{evt})  \equiv (\anyA \setminus \eff{evt})^*; \eff{evt}; \allA \qquad\qquad
+    \Code{LAST}(\eff{evt})   \equiv \allA; \eff{evt}; (\anyA \setminus \eff{evt})^*
+  \end{align*}
+  Any trace in which a response to a request yields a different
+  value than previously seen by the transaction exposes a
+  read atomicity violation.
+\end{example}
+
+\begin{example}[de Brujin STLC]
+Consider an interpreter for the simply-typed lambda calculus (STLC) in
+which variables are represented by their de Brujin
+index~\cite{DeBruijn}.  An implementation must take care in how it
+increments indices under a lambda abstraction during substitution:
+\begin{align*}
+  \text{\textsc{Reduction rule}:} \quad & (\lambda t. e)\; v \hookrightarrow e [0 \mapsto v]\\
+  \text{\textsc{Incorrect substitution}:} \quad & (\lambda t. e)[n \mapsto v] = \lambda t. (e[\textcolor{red}{n} \mapsto v]) \quad \textcolor{red}{\xmark} \text{ \textcolor{gray}{should be $n + 1$}}
+\end{align*}\noindent
+Clearly, not all STLC terms have a structure whose reduction would
+manifest an incorrect implementation of substitution.  In the following well-typed examples:
+\begin{align*}
+  \text{\textcolor{gray}{No bound variable:}} \quad & 2 \label{ex:e1}\tag{$e_1$}\\
+  \text{\textcolor{gray}{Already in normal form:}} \quad & \lambda \Int. \lambda (\Int\sarr\Int).  ([0]\;[1]) \label{ex:e2}\tag{$e_2$}\\
+  \text{\textcolor{gray}{Bound variable is not used:}} \quad & (\lambda (\Int\sarr\Int\sarr\Int). 3)\; (\lambda \Int. \lambda \Int. [1]) \label{ex:e3}\tag{$e_3$}\\
+  % \text{\textcolor{gray}{Bound variable has index 0:}} \quad & (\lambda \Int. [0])\; 2 \tag{$\alpha_3$}\\
+  \text{Term that triggers the bug:} \quad & (\lambda \Int. (\lambda (\Int\sarr\Int). [0]\;[1])\; (\lambda \Int. [0]))\; 3 \label{ex:e4}\tag{$e_4$}\\
+  &\hookrightarrow (\lambda (\Int\sarr\Int). 3\;[1])\; (\lambda \Int. 3)  \quad \text{\textcolor{red}{wrong substitution}} \\
+  &\hookrightarrow  3\;[1] \quad \text{\textcolor{red}{stuck!}}
+\end{align*}\noindent
+only \ref{ex:e4}'s evaluation involves an interesting use of
+substitution and index manipulation.  Its trace reflects a buggy implementation
+in which the argument value $3$ is mistakenly substituted for the
+bound variable ``$[0]$'' in the two inner abstractions, instead of
+being substituted for ``$[1]$''. In contrast, in $e_1$, $e_2$, and $e_3$,
+the term is either already in normal form ($e_1$, $e_2$)
+or performs a substitution that does not involve changing the value of
+any index ($e_3$).
+
+To frame this problem in terms of event sequences over traces, we
+consider a setting in which a test generator outputs
+\emph{serialized} terms, rather than ASTs:
+\begin{minted}[xleftmargin=5pt, numbersep=4pt, escapeinside=??]{OCaml}
+  type ty = Int | Arr of ty * ty
+  type serialized_term =  Const of int | Var of int |
+                          Abs of ty | EndAbs |
+                          App | AppL | AppR
+\end{minted}
+The definitions of constants and variables in this serialized format
+are standard, and variables carry their de Bruijn index. However, the
+usual function abstraction constructor ``$\Code{Abs\;\mykw{of}\;ty *
+  term}$'' is now represented by two operations,
+``$\Code{Abs\;\mykw{of}\;ty}$'' and ``$\Code{EndAbs}$'', where the
+function body is the term that is generated between them.  Similarly,
+the typical application constructor ``$\Code{App\;\mykw{of}\;term *
+  term}$'' is now captured by three operations: ``$\Code{App}$'',
+``$\Code{AppL}$'', and ``$\Code{AppR}$'' that prefaces the application
+($\Code{App}$), marks the beginning of the argument ($\Code{Appl}$),
+and signals the end of the application ($\Code{AppR}$).
+
+To expose substitution bugs in an interpreter that operates over
+serialized terms, we would like to generate traces that correspond to
+terms similar to $e_4$ while avoiding those like $e_1$--$e_3$.  Any
+procedure to do this needs to at least adhere to the following
+constraints:
+\begin{enumerate}
+  \item The test must contain at least one function abstraction (to rule out $e_1$).
+  \item The test must be reducible, and not already in normal form (to rule out $e_2$).
+  \item The body of every function abstraction must reference its
+    bound variable (to rule out $e_3$).
+\end{enumerate}
+Although these constraints do not fully capture the intricate
+dependencies required to generate test sequences like $e_4$ — and,
+in practice, users may not know the exact conditions necessary to
+expose such bugs in advance — they nonetheless significantly restrict
+the search space of feasible terms and increase the probability of
+uncovering the fault, if it exists.
+
+The following \tyName{} signature for $\eff{abs}$ can be used to
+generate interesting trace sequences of this kind:
+{\small    \begin{align*}
+%%       % \eff{const} :~ &  x{:}\Int\sarr \rg{\allA}{\msgA{const}{x}}{\msgAGray{putType}{\CInt} \allA} \\
+%%       % \eff{app} :~ & \rg{\allA}{\msgC{app}}{\allA  \msgAGray{getType}{\Code{Arr}(t_1, t_2)}  \msgC{appL}  \allA  \msgAGray{getType}{t_1}  \msgC{appR}  \msgAGray{putType}{t_2}  \allA} \\
+ & \eff{abs} :~  [\Code{LAST}(\msgAGray{depth}{d})]
+                 [\msgA{abs}{t_1}]
+                 [\msgAGray{depth}{d+1}\allA  \msgC{var}\allA\Code{LAST}(\msgAGray{ty}{t_2})\msgC{endAbs}\msgAGray{depth}{d}]
+%%         \msgAGray{ty}{\Code{Arr}(t_1,t_2)}  \allA]
+%%       %   \\
+%%       % \eff{var} :~ &  i{:}\ort{\Int}{\vnu \geq 0} \sarr \rg{\underbrace{\allA\msgA{abs}{t}\msgAGray{putDepth}{d}(\anyA\setminus\msgC{endAbs})^*}_\text{type $t$ at the $d$ level is open}\underbrace{\msgAGray{getDepth}{d + i}}_\text{current level is $d + i$} }{\msgA{var}{i}}{\msgAGray{putTy}{t}  \allA}
+    \end{align*}}\noindent
+{\small    \begin{align*}
+& \eff{abs} :~  \uhat{\Code{LAST}(\msgAGray{depth}{d})}{\msgA{abs}{t_1}\msgAGray{depth}{d+1}}
+\\& \eff{endAbs} :~   
+\uhat{\allA\msgA{abs}{t_1}\msgAGray{depth}{d+1}\allA  \msgC{var}\allA\Code{LAST}(\msgAGray{ty}{t_2})}{\msgC{endAbs}\msgAGray{depth}{d}}
+\end{align*}}\noindent
+In the specification, the gray colored terms $\effGray{depth}$ and
+$\effGray{ty}$ are ghost events used to capture latent semantic
+dependencies among tokens; these events do not appear in the synthesized
+output.  For example, $\effGray{depth}$ maintains the depth of nested
+function abstractions, which is crucial for generating correct terms.
+Concretely, the history regex captures the current depth as the
+\emph{last} tagged depth. It then increases the depth by one at the
+beginning of the function body, and restores it after the
+$\eff{endAbs}$ event.  To guarantee well-typedness, the current regex
+$\msgA{abs}{t_1}$ requires that the type of the bound variable is
+$t_1$, and the prophecy regex requires that the abstraction body has
+type $t_2$ ($\Code{LAST}(\msgAGray{ty}{t_2})$); the type of
+constructed abstraction term is then tagged as $\Code{Arr}(t_1,
+t_2)$. This specification also requires that the body of the function
+abstraction references bound variable at least once, thereby
+ruling out trivial terms like $e_1$.
+
+\newcommand{\Arr}[2]{\Code{Arr}(#1,#2)}
+\newcommand{\ItoI}{\Arr{\Code{Int}}{\Code{Int}}}
+\newcommand{\Tconst}[2]{\zevent{const}{#1};\zeventGray{ty}{#2}}
+\newcommand{\Tvar}[2]{\zevent{var}{#1};\zeventGray{ty}{#2}}
+\newcommand{\Tapp}{\eff{app}}
+\newcommand{\TappL}{\eff{appL}}
+\newcommand{\TappR}[1]{\eff{appR}; \zeventGray{ty}{#1}}
+\newcommand{\appTrace}[3]{\Tapp; {#1}; \TappL; {#2}; \TappR{#3}}
+\newcommand{\Tabs}[2]{\zevent{abs}{#1};\zeventGray{depth}{#2}}
+\newcommand{\TendAbs}[2]{\eff{endAbs};\zeventGray{depth}{#1}; \zeventGray{ty}{#2}}
+\newcommand{\absTrace}[5]{\Tabs{#1}{#2}; {#3};\TendAbs{#4}{#5}}
+
+Recall that the STLC term described in \ref{ex:e4} contains three nested
+abstractions. These abstractions can be represented as the following
+traces, based on the $\eff{abs}$ specification given above. For readability, we assume the trace of the
+history regex is empty, and that the default value associated with
+\textcolor{gray}{depth} is 0.
+{\small
+\vspace{-1em}
+\begin{align*}
+&\underbrace{(\lambda \Int. \;\;\overbrace{(\lambda (\Int\sarr\Int). [0]\;[1])}^{\alpha_2}\;\;\; \overbrace{(\lambda \Int. [0])}^{\alpha_3}\;\;)}_{\alpha_1}\;\;\; 3
+\\&\alpha_1 \doteq\absTrace{\textcolor{orange}{\Code{Int}}}{1}{\boxed{\alpha_2\;\alpha_3}}{0}{\ItoI}
+\\&\alpha_2 \doteq\absTrace{\textcolor{DeepGreen}{\ItoI}}{2}{\boxed{\textcolor{DeepGreen}{[0]}\; \textcolor{orange}{[1]}}}{1}{\Arr{\ItoI}{\Code{Int}}}
+\\&\alpha_3 \doteq\absTrace{\textcolor{blue}{\Code{Int}}}{2}{\boxed{\textcolor{blue}{[0]}}}{1}{\ItoI}
+\end{align*}}\noindent
+The trace $\alpha_1$ increases the depth of its bound variable from
+$0$ to $1$ in its abstraction body, so $\alpha_2$ and $\alpha_3$ both
+occur at a nested level.  The variable $[0]$ in
+$\alpha_2$ has type $\ItoI$ (green) at depth $2$, which refers the \emph{last} abstraction type at depth $2$.  Notably, the bound
+variable $[1]$ in $\alpha_2$ is assigned type $\Int$ (orange) because
+its binding occurs at depth $1$, where the type annotation for $\Int$
+from $\alpha_1$ resides; this assignment reflects the difference
+between the current depth ($2$) and the binding depth ($1$).
+Additionally, each abstraction body references its corresponding bound
+variable as required by the specification.
+\end{example}
+
+In the following section, we show how to guide a synthesis procedure
+to only generate traces consistent with \tyName{} specifications.  We
+emphasize that these specifications are not meant to define an
+overapproximation of a safety property, as types are typically used;
+their role is only to constrain the search space of terms used to
+synthesis a test generator, thus giving developers significant leeway
+on the level of precision they enforce on traces.  Writing a test
+generator that is biased towards generating terms like \ref{ex:e4} is
+non-trivial, and would involve incorporating context-sensitive
+tracking of variable usage as part of the core generator logic.  On
+the other hand, simply using a generator that produces well-typed STLC
+terms~\cite{BeginnerLuck,CoverageType,FQL24} and expecting that it can
+be directly used to generate terms like \ref{ex:e4} is misplaced.  To
+see why, we adapted a well-typed STLC generator~\cite{CoverageType} to
+output serialized de Brujin terms as described above, and used it to
+generate test inputs to an interpreter that incorrectly performs
+substitutions as described above. It took 45 minutes and 275,915
+attempts for the PBT system to generate an error-inducing input.  This
+was because most of the STLC terms that were generated were similar to
+\ref{ex:e1}--\ref{ex:e3}, which do not use bound variables in an
+interesting way, but for which the test generator has no \emph{a
+  priori} basis to discard.
+
+  % \ZZ{Our tool can ...; spec can guide synthesis well.}
+
+%% When the properties are of interest are as sophisticated as the ones
+%% described here, involving temporal effectful actions, writing
+%% handwritten generators can be significantly more laborious than
+%% writing \tyName{} specifications.  As one data point to support claim,
+%%   The result is not particularly surprising given that
+%% the baseline generator only knows how to generate well-typed terms,
+%% and not well-typed terms intended to trigger a substitution error.
+%% But, adapting the generator to constrain the terms it generates as
+%% described above is a   In contrast, we show how
+%% \tyName\ specifications can be used for this purpose to synthesize
+%% such sophisticated generators automatically.
+
+
+
+
+%% -----------------------------
+
+%% An example of a serialized STLC term is shown below, where we color
+%% the corresponding parts of the AST and its serialized counterpart for
+%% better readability.
+%% \begin{align*}
+%%   \text{\textcolor{gray}{STLC term:}} \quad & \textcolor{blue}{(\lambda \Int}. \textcolor{orange}{[0]} \textcolor{blue}{)}\; \textcolor{DeepGreen}{3} \\
+%%   \text{\textcolor{gray}{serialized STLC term:}} \quad & \eff{app}; \textcolor{blue}{\zevent{abs}{\Int}}; \textcolor{orange}{\zevent{var}{0}}; \textcolor{blue}{\eff{endAbs}}; \eff{appL}; \textcolor{DeepGreen}{\zevent{const}{3}}; \eff{appR}
+%% \end{align*}\noindent
+%% We denote de Bruijn indices with ``$[...]$'' to distinguish them from
+%% constants.  and write ``$\eff{op}(\emph{args})$'' to represent an event
+%% that performs a constructor
+%% application ``\Code{Op}(\emph{args})''
+%% in a test sequence.  We assume the interpreter accepts a
+%% serialized lambda term as input and evaluates it to a value. In the example
+%% above, the input sequence should be reduced as $(\lambda \Int. [0])\;3
+%% \hookrightarrow 3$.
+
+%% Clearly, not all STLC terms have a structure whose reduction would
+%% manifest this error.  In the following well-typed examples:
+%% \begin{align*}
+%%   \text{\textcolor{gray}{No bound variable:}} \quad & 2 \label{ex:e1}\tag{$e_1$}\\
+%%   \text{\textcolor{gray}{Already in normal form:}} \quad & \lambda \Int. \lambda (\Int\sarr\Int).  ([0]\;[1]) \label{ex:e2}\tag{$e_2$}\\
+%%   \text{\textcolor{gray}{Bound variable is not used:}} \quad & (\lambda (\Int\sarr\Int\sarr\Int). 3)\; (\lambda \Int. \lambda \Int. [1]) \label{ex:e3}\tag{$e_3$}\\
+%%   % \text{\textcolor{gray}{Bound variable has index 0:}} \quad & (\lambda \Int. [0])\; 2 \tag{$\alpha_3$}\\
+%%   \text{Term that triggers the bug:} \quad & (\lambda \Int. (\lambda (\Int\sarr\Int). [0]\;[1])\; (\lambda \Int. [0]))\; 3 \label{ex:e4}\tag{$e_4$}\\
+%%   &\hookrightarrow (\lambda (\Int\sarr\Int). 3\;[1])\; (\lambda \Int. 3)  \quad \text{\textcolor{red}{wrong substitution}} \\
+%%   &\hookrightarrow  3\;[1] \quad \text{\textcolor{red}{stuck!}}
+%% \end{align*}\noindent
+%% only \ref{ex:e4}'s evaluation involves an interesting use of
+%% substitution and index manipulation.  Here, a buggy implementation
+%% results in the argument value $3$ being mistakenly substituted for the
+%% bound variable ``$[0]$'' in the two inner abstractions, instead of
+%% ``$[1]$''. In contrast, in $e_1$, $e_2$, and $e_3$,
+%% the term is either already in normal form ($e_1$, $e_2$)
+%% or performs a substitution that does not involve changing the value of
+%% any index ($e_3$).
+
+
+
+
+
+
+
+
+
+
+
+
+
+%% To expose this substitution bug, the generator should prioritize the
+%% generation of terms similar to $e_4$ while avoiding those like
+%% $e_1$--$e_3$.  To do this, it needs to at least adhere to
+%% the following constraints:
+%% \begin{enumerate}
+%%   \item The test must contain at least one function abstraction (to rule out $e_1$).
+%%   \item The test must be reducible, and not already in normal form (to rule out $e_2$).
+%%   \item The body of every function abstraction must reference its
+%%     bound variable (to rule out $e_3$).
+%% \end{enumerate}
+%% Although these constraints do not fully capture the intricate
+%% dependencies required to generate test sequences like $e_4$ — and,
+%% in practice, users may not know the exact conditions necessary to
+%% expose such bugs in advance — they nonetheless significantly restrict
+%% the search space of feasible terms and increase the probability of
+%% uncovering the fault.
+
+
+
+
+
+%% =========
+
+%% In our running example, traces consist of tokens drawn
+%% from the grammar shown in \autoref{fig:stlc-syntax}.  Constraints on
+%% these tokens can often be naturally expressed using temporal logic or
+%% regular expressions. For example, the constraint that the term must
+%% contain at least one abstraction can be expressed as a regular
+%% expression (regex) $\allA \eff{abs} \allA$; here, $\allA$ denotes the
+%% set of all traces, and $\eff{abs}$ represents the occurrence of a
+%% function abstraction.  However, the third constraint, which requires
+%% that \emph{for every} pair of an $\eff{abs}$ token and its
+%% corresponding $\eff{endAbs}$ token, there exists a $\eff{var}$ event
+%% within the body necessitates some form of universal quantification
+%% over events. Similarly, a well-typedness constraint involves
+%% establishing data dependencies and is naturally defined inductively
+%% over the syntax of terms, making it challenging to express as a
+%% uniform trace property that precisely distinguishes well-typed traces.
+
+
+
+
+
+
+
+%% More concretely, we consider how to apply our approach to the
+%% well-studied~\cite{BeginnerLuck,CoverageType,FQL24} problem of testing
+%% the correctness of an interpreter for simply-typed lambda calculus
+%% (STLC) terms.  We focus on terms in which variables are represented by
+%% their de Brujin index~\cite{DeBruijn} and seek to use PBT to discover
+%% errors in an interpreter implementation that fails to correctly
+%% increment the index during substitution under a lambda abstraction,
+%% leading to incorrect variable capture.
+%% \begin{align*}
+%%   \text{\textsc{Reduction rule}:} \quad & (\lambda t. e)\; v \hookrightarrow e [0 \mapsto v]\\
+%%   \text{\textsc{Incorrect substitution}:} \quad & (\lambda t. e)[n \mapsto v] = \lambda t. (e[\textcolor{red}{n} \mapsto v]) \quad \textcolor{red}{\xmark} \text{ \textcolor{gray}{should be $n + 1$}}
+%% \end{align*}\noindent
+
+%% Clearly, not all STLC terms have a structure whose reduction would
+%% manifest this error.  In the following well-typed examples:
+%% \begin{align*}
+%%   \text{\textcolor{gray}{No bound variable:}} \quad & 2 \label{ex:e1}\tag{$e_1$}\\
+%%   \text{\textcolor{gray}{Already in normal form:}} \quad & \lambda \Int. \lambda (\Int\sarr\Int).  ([0]\;[1]) \label{ex:e2}\tag{$e_2$}\\
+%%   \text{\textcolor{gray}{Bound variable is not used:}} \quad & (\lambda (\Int\sarr\Int\sarr\Int). 3)\; (\lambda \Int. \lambda \Int. [1]) \label{ex:e3}\tag{$e_3$}\\
+%%   % \text{\textcolor{gray}{Bound variable has index 0:}} \quad & (\lambda \Int. [0])\; 2 \tag{$\alpha_3$}\\
+%%   \text{Term that triggers the bug:} \quad & (\lambda \Int. (\lambda (\Int\sarr\Int). [0]\;[1])\; (\lambda \Int. [0]))\; 3 \label{ex:e4}\tag{$e_4$}\\
+%%   &\hookrightarrow (\lambda (\Int\sarr\Int). 3\;[1])\; (\lambda \Int. 3)  \quad \text{\textcolor{red}{wrong substitution}} \\
+%%   &\hookrightarrow  3\;[1] \quad \text{\textcolor{red}{stuck!}}
+%% \end{align*}\noindent
+%% only \ref{ex:e4}'s evaluation involves an interesting use of
+%% substitution and index manipulation.  Here, a buggy implementation
+%% results in the argument value $3$ being mistakenly substituted for the
+%% bound variable ``$[0]$'' in the two inner abstractions, instead of
+%% ``$[1]$''. In contrast, in $e_1$, $e_2$, and $e_3$,
+%% the term is either already in normal form ($e_1$, $e_2$)
+%% or performs a substitution that does not involve changing the value of
+%% any index ($e_3$).
+
+%% To expose this substitution bug, the generator should prioritize the
+%% generation of terms similar to $e_4$ while avoiding those like
+%% $e_1$--$e_3$.  To do this, it needs to at least adhere to
+%% the following constraints:
+%% \begin{enumerate}
+%%   \item The test must contain at least one function abstraction (to rule out $e_1$).
+%%   \item The test must be reducible, and not already in normal form (to rule out $e_2$).
+%%   \item The body of every function abstraction must reference its
+%%     bound variable (to rule out $e_3$).
+%% \end{enumerate}
+%% Although these constraints do not fully capture the intricate
+%% dependencies required to generate test sequences like $e_4$ — and,
+%% in practice, users may not know the exact conditions necessary to
+%% expose such bugs in advance — they nonetheless significantly restrict
+%% the search space of feasible terms and increase the probability of
+%% uncovering the fault.
+
+%% \begin{figure}[th!]
+%% \begin{minted}[xleftmargin=5pt, numbersep=4pt, linenos = true,  escapeinside=??]{OCaml}
+%%   type ty = Int | Arr of ty * ty
+%%   type serialized_term = Const of int | Var of int | Abs of ty | EndAbs
+%%                        | App | AppL | AppR
+%% \end{minted}
+%% \vspace*{-.1in}
+%% \caption{STLC terms in a serialized form.}
+%% \label{fig:stlc-syntax}
+%% \vspace*{-.1in}
+%% \end{figure}
+
+%% To frame test generation for this problem in terms of event sequences
+%% as mentioned above, we consider a setting in which the generator
+%% outputs \emph{serialized} terms, rather than ASTs (see
+%% \autoref{fig:stlc-syntax}), offloading the task of transforming the
+%% flattened sequence of tokens it produces into an AST representation,
+%% to the interpreter.
+
+%% The definitions of constants and variables are standard, and variables
+%% carry their de Bruijn index. However, the usual function abstraction
+%% constructor ``$\Code{Abs\;\mykw{of}\;ty * term}$'' is now represented
+%% by two operations, ``$\Code{Abs\;\mykw{of}\;ty}$'' and
+%% ``$\Code{EndAbs}$'', where the function body is the term that is
+%% generated between them.  Similarly, the typical application constructor
+%% ``$\Code{App\;\mykw{of}\;term * term}$'' is now captured by three
+%% operations: ``$\Code{App}$'', ``$\Code{AppL}$'', and ``$\Code{AppR}$''
+%% that prefaces the application ($\Code{App}$), marks the beginning of
+%% the argument ($\Code{Appl}$), and signals the end of the application
+%% ($\Code{AppR}$).
+
+%% An example of a serialized STLC term is shown below, where we color
+%% the corresponding parts of the term and the serialized term for better
+%% readability.
+%% \begin{align*}
+%%   \text{\textcolor{gray}{STLC term:}} \quad & \textcolor{blue}{(\lambda \Int}. \textcolor{orange}{[0]} \textcolor{blue}{)}\; \textcolor{DeepGreen}{3} \\
+%%   \text{\textcolor{gray}{serialized STLC term:}} \quad & \eff{app}; \textcolor{blue}{\zevent{abs}{\Int}}; \textcolor{orange}{\zevent{var}{0}}; \textcolor{blue}{\eff{endAbs}}; \eff{appL}; \textcolor{DeepGreen}{\zevent{const}{3}}; \eff{appR}
+%% \end{align*}\noindent
+%% We denote de Bruijn indices with ``$[...]$'' to distinguish them from
+%% constants.  and write ``$\eff{op}(\emph{args})$'' to represent a constructor
+%% application ``\Code{Op}(\emph{args})''
+%% in a test sequence, for clarity.  The interpreter accepts a
+%% serialized lambda term and evaluates it to a value. In the example
+%% above, the input sequence should be reduced as $(\lambda \Int. [0])\;3
+%% \hookrightarrow 3$.
+
+%% To quantify the difficulty of having a testing framework produce terms
+%% like \ref{ex:ex4}, we adapted a well-typed STLC
+%% generator~\cite{BeginnerLuck,CoverageType} to output serialized terms
+%% as described above, and tried to use it to find a substitution
+%% violation in a known buggy interpreter that implements the incorrect
+%% substitution rule described above.  It took 45 minutes and 275,915
+%% attempts for the PBT system to find this bug.  This was because most
+%% of the STLC terms that were generated were similar to
+%% \ref{ex:e1}--\ref{ex:e3}, which do not use bound variables in an
+%% interesting way.  The result is not particularly surprising given that
+%% the baseline generator only knows how to generate well-typed terms,
+%% and not well-typed terms intended to trigger a substitution error.
+%% Adapting the generator to constrain the terms it generates as
+%% described above requires additional context-sensitive tracking of
+%% variable usage that is non-trivial to implement.  In the following, we
+%% show how \tyName\ specifications can be used for this purpose to
+%% synthesize such generators automatically.
+
+%% \subsection{Temporal Trace Types, \tyName}
+
+%% \paragraph{Traces and Trace-Based Specifications}
+%% We refer to the sequence of events that comprise a test sequence as a
+%% \emph{trace}. In our running example, traces consist of tokens drawn
+%% from the grammar shown in \autoref{fig:stlc-syntax}.  Constraints
+%% on these tokens can often be naturally expressed using temporal logic
+%% or regular expressions. For example, the constraint that the term must
+%% contain at least one abstraction can be expressed as a regular
+%% expression (regex) $\allA \eff{abs} \allA$; here, $\allA$ denotes the
+%% set of all traces, and $\eff{abs}$ represents the occurrence of a
+%% function abstraction.  However, the third constraint, which requires
+%% that \emph{for every} pair of an $\eff{abs}$ token and its
+%% corresponding $\eff{endAbs}$ token, there exists a $\eff{var}$ event
+%% within the body necessitates some form of universal quantification
+%% over events. Similarly, a well-typedness constraint involves
+%% establishing data dependencies and is naturally defined inductively
+%% over the syntax of terms, making it challenging to express as a
+%% uniform trace property that precisely distinguishes well-typed traces.
+
+%% To address these concerns, we decompose global trace properties into
+%% local specifications assigned as types to individual operations.  In
+%% other words, we allow type-level specifications to be associated with
+%% each event in a trace, enabling the specification of complex
+%% constraints in a modular fashion, transferring the burden of event
+%% quantification and data dependency management from a trace-level
+%% specification language to the type system itself.  Concretely, we
+%% model these local specifications as a collection of operation
+%% signatures: parameter types constrain the payloads of events, while
+%% the return type captures relationships between events. We employ
+%% symbolic regular expressions (SREs) to qualify trace-based properties
+%% within a type, following prior work on trace-based type
+%% systems~\cite{KT+14,ZYDJ24,NUKT+18}. However, our formulation
+%% generalizes beyond history-sensitive specifications of effects or
+%% state, allowing types to express latent dependencies among all events,
+%% including those that may occur in the future.
+
+%% %% Thus, the return type of
+%% %% an operation can include both a ``rely'' component, specifying
+%% %% assumptions about prior events (the history regex) that allow this
+%% %% type to be manifested, and a ``guarantee'' component (the prophecy
+%% %% regex) that constrains future events.
+
+
+
+%% \paragraph{History, current, and prophecy regex specifictions} 
+%% A \tyName\ has the form
+%% $\rg{H}{\msgB{op}{\overline{x}}{\phi}}{F}$, where the three components
+%% describe the history, current, and future regex (resp.) that
+%% establish the context for any trace containing the event
+%% $\eff{op}$. Each signature reads: ``If an operation matching
+%% $\msgB{op}{\overline{x}}{\phi}$ appears in a prefix trace matched by
+%% the history regex $H$, then the suffix trace will be matched by the
+%% prophecy regex $F$.'' Intuitively, future regexes are a trace-based
+%% analogue of prophecy variables~\cite{LM22} used in other state-based
+%% concurrency reasoning approaches to constrain future events.
+
+%% The \tyName\ specifications of the STLC operators in our motivating
+%% example are shown in \autoref{fig:spec}.  The specifications consist
+%% of two kinds of events.  \emph{Effect} events, given in
+%% \textbf{bold}, and their ordering in a \tyName\ constrains
+%% the shape of well-typed terms.  \emph{Ghost} events, depicted in
+%% \textcolor{gray}{gray}, establish semantic dependencies in traces that
+%% characterize notions of well-typedness and de Brujin index
+%% representations in terms.  These events do not appear in synthesized
+%% test generator programs.
+
+%% \SJ{Stop here ...}
+
+
+%% \begin{example}[STLC Trace] 
+
+%% \begin{example}[Stack Library] Consider an effectful stack library implemented as an fixed sized array, which leads elements dropping when the stack is full. In order to detect this violation, we would like to explore the traces in the following form:
+%% \begin{align*}
+%%   \zevent{push}{1};\zevent{push}{2}; \zevent{push}{3}; ... \zevent{pop}{3};\zevent{pop}{2};\zevent{pop}{1}
+%% \end{align*}\noindent
+%% The $\eff{push}$ and $\eff{pop}$ operations appears in pairs and push values are always increasing. When the number of push operations exceeds the stack size, test developer will detect one pushed value is not popped. The pairing relation can be expressed as the following \tyName\ specification:
+%% \begin{align*}
+%%   \eff{push} :~ x{:}\Int\sarr \rg{(\anyA \setminus \msgB{push}{\vnu}{\vnu \geq x})^*}{\zevent{push}{x}}{\allA\zevent{pop}{x}\allA}
+%% \end{align*}\noindent
+%% The history regex requires there is no push operation with value greater equal to $x$, and the prophecy regex requires there \emph{eventually} be a pop operation with value $x$ in the future.
+%% \end{example}
+
+%% \begin{example}[Non-repeatable Read]
+%% To model concurrent executions, we represent all asynchronous operations as paired request and response events, e.g., $\eff{writeReq}$ and $\eff{writeRsp}$ correspond to the invocation and acknowledgment of a write operation by a client. In a weakly consistent database (e.g., eventual consistency), non-repeatable reads manifest in traces such as:
+%%   {\small
+%%   \begin{align*}
+%%     &\text{\textcolor{gray}{Client 1:}}  & \zevent{writeReq}{4};\zevent{writeRsp}{4};&
+%%     \\& \text{\textcolor{gray}{Client 2:}} \quad \eff{readReq};\zevent{readRsp}{3};\eff{readReq};& &\zevent{readRsp}{4}
+%%   \end{align*}}
+%% The trace represents one potential case of non-deterministic concerrent executions. Two consecutive read operations by Client 1 may observe different values ($3$ and $4$), due to Client 2's concurrent write of value $4$ between the two reads. The following \tyName\ specification for $\eff{readReq}$ permits such traces:
+%%   \begin{align*}
+%%     \eff{readReq} :~ \rg{\Code{LAST}(\zevent{writeReq}{x})}{\eff{readReq}}{\allA\zevent{readRsp}{x}\allA}
+%%   \end{align*}
+%% Here, the history regex $\Code{LAST}(\zevent{writeReq}{x})$ captures the most recent write request value $x$, regardless of which client performed the write; the prophecy regex requires that a future read response event returns value $x$.
+%% \end{example}
+
+%% \paragraph{Correct-by-Construction Test Generation} Our tool ensures that all traces generated during testing are consistent with the \tyName\ specifications by synthesizing test generator programs that are correct-by-construction with respect to the specifications.

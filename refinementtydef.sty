@@ -89,6 +89,7 @@
 % \newcommand{\zwhile}[3]{\mykw{let}\ \mykw{while}({#1})\{{#2}\}\ \mykw{in}\ {#3}}
 % \newcommand{\zwhile}[3]{\mykw{let}\ \mykw{do}\{{#2}\}\ \mykw{while}({#1})\ \mykw{in}\ {#3}}
 \newcommand{\zloop}[2]{\mykw{let}\ \mykw{loop}\{{#1}\} \ \mykw{in}\ {#2}}
+\newcommand{\egen}[2]{\mykw{gen}\ \eff{#1} \ {#2}}
 \newcommand{\zgen}[3]{\mykw{let}\ \mykw{gen}\ \eff{#1} \ {#2} \ \mykw{in}\ {#3}}
 \newcommand{\zobs}[3]{\mykw{let}\ {#1}\ {=}\ \mykw{obs}\ \eff{#2}\ \mykw{in}\ {#3}}
 \newcommand{\zobsPhi}[4]{\mykw{let}\ {#1}\ {=}\ \mykw{obs}\ \eff{#2}\ {#3}\ \mykw{in}\ {#4}}
@@ -354,6 +355,7 @@
 \newcommand{\msgCGray}[1]{\evparenth{\effGray{#1}}}
 
 \newcommand{\msg}[2]{ \evparenth{\eff{#1}~|~{#2}} }
+\newcommand{\msgGray}[2]{ \evparenth{\effGray{#1}~|~{#2}} }
 % \newcommand{\acSe}[2]{ \evparenth{\mykw{app}\;\eff{#1}({#2})} }
 \newcommand{\acSe}[2]{\eff{#1}({#2}) }
 % \newcommand{\acGen}[2]{ \evparenth{\mykw{gen}\;\eff{#1}({#2})} }
@@ -473,7 +475,11 @@
 \newcommand{\astate}[2]{ \bufLR{#1}\times{#2}}
 \newcommand{\atriple}[3]{ {#1}{\times}\bufLR{#2}{\times}\effLR{#3}}
 \newcommand{\relyg}[3]{ \bufLR{#1}{#2}\effLR{#3}}
-\newcommand{\rg}[3]{ \oeffLR{#1}\oeffLR{#2}\ueffLR{#3}}
+% \newcommand{\rg}[3]{ \oeffLR{#1}\oeffLR{#2}\ueffLR{#3}}
+\newcommand{\rg}[3]{ \ueffLR{#1}\ueffLR{#2}\ueffLR{#3}}
+% \newcommand{\pret}[2]{ \ueffLR{#1}\ueffLR{#2}}
+\newcommand{\uhat}[2]{ \ueffLR{#1}\ueffLR{#2}}
+\newcommand{\ohat}[2]{ \oeffLR{#1}\ueffLR{#2}}
 \newcommand{\rgOver}[3]{ \oeffLR{#1}\oeffLR{#2}\oeffLR{#3}}
 \newcommand{\ha}[2]{\effLR{#1}\effLR{#2}}
 \newcommand{\rgB}[4]{ \effLR{#1}\effLR{#2}\effLR{#3}\bufLR{#4}}
@@ -646,7 +652,7 @@
 \newcommand{\compile}{\textcolor{CobaltBlue}{\Code{Compile}}}
 \newcommand{\Mfw}{\Theta_\Code{fw}}
 \newcommand{\Mbw}{\Theta_\Code{bw}}
-\newcommand{\GEN}{\Code{Generable}}
+\newcommand{\GEN}{\Code{Gen}}
 \newcommand{\OBS}{\Code{Obs}}
 
 \newcommand{\msubst}[2]{[\overline{{#1}\mapsto {#2}}]}
