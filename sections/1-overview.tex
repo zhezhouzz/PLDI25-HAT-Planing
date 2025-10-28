@@ -1,6 +1,10 @@
-\section{Motivation}
-\label{sec:pret}
+\section{Overview}\label{sec:overview}
 
+
+We propose a trace-based specification framework for underapproximating temporal properties in the testing of complex, potentially concurrent systems. Our approach supports the automatic synthesis of test generators, expressed in a domain-specific language, that are provably correct with respect to the given specifications. We first present the key features of our approach, followed by illustrative examples from multiple domains.
+
+
+\ZZ{TODO: move this parts to introduction}
 We are interested in the generation of test inputs comprised of
 sequences of \emph{events} that can be handled by the
 system-under-test (SUT); the order of these events in the sequence is
@@ -43,7 +47,7 @@ naturally crafted in this fashion include:
 %% generators that produce sequences conforming to these dependencies;
 %% and (3) a program synthesis technique for automatically constructing
 %% such generators from dependency specifications.
-\subsection{Type-based Trace Specifications}
+\subsection{Trace-based Specifications}
 
 We refer to the sequence of events that comprise a test sequence as a
 \emph{trace}.  To reason about dependencies among events in a trace
@@ -65,35 +69,41 @@ formulation generalizes beyond history-sensitive specifications of
 effects or state, allowing types to express latent dependencies among
 all events, including those that may occur in the future.
 
-Our type abstraction, called a \tyName, has the form
-$\uhat{H}{F}$, where the two components
-describe the history and future regex (resp.) that establish an underapproximation of behaviours of program execution. Each
-signature reads: ``For all trace $\alpha$ that is matched by future regex $F$, there exists a history trace $\alpha_h$ matched by history regex $H$ such that the trace $\alpha$ can be produced by program $e$ under the history trace $\alpha_h$.'' 
+The incorrectness using a triple $[P]\;e\;[Q]$ to represent an underapproximation of program $e$, i.e., for all post states in $Q$, there exists a pre state in $P$ such that the program $e$ can reach the post state from the pre state. We adapt this idea into our trace-based setting as follows:
+\begin{align*}
+  [\underbrace{\I{presumption}}_{\texttt{state before execution}}]\;\I{code}\;[\underbrace{\I{result}}_{\texttt{state after execution}}]  \;\; \effL\underbrace{\I{history}}_{\texttt{trace before execution}}\effR \;\I{code}\;\effL\underbrace{\I{future}}_{\texttt{new produced trace}} \effR
+\end{align*}\noindent
+The triple $\effLR{H}\;e\;\effLR{F}$ consists of a history regex $H$, a code $e$, and a future regex $F$. It means ``For all trace $\alpha$ that is matched by future regex $F$, there exists a history trace $\alpha_h$ matched by history regex $H$ such that the trace $\alpha$ can be produced by program $e$ under the history trace $\alpha_h$.''
+
+
+\subsection{Domain-Specific Language} 
+
+To support test generation across diverse domains, we introduce a domain-specific language (DSL) based on the lambda calculus, extended with recursion, nondeterministic choice ($\oplus$), and (asynchronous) effectful operations ($\eff{op}$). The DSL enables interaction with the SUT through the $\mykw{gen}$ and $\mykw{obs}$ primitives. For example, $\sgen{ReadReq}{}$ asynchronously generates a read request to the SUT, which enable a later on $\zobs{x}{readRsp}{e}$ expression to observe the corresponding response, binds it to $x$ in the $\mykw{let}$-body $e$. This approach enables concise expression of interactive test generators for systems such as database transactions and distributed protocols. The DSL further specifies random value generation and property checking via $\mykw{assume}$ and $\mykw{assert}$. Concretely, $\mykw{assume}(\phi)$ constrains $x$ to random values that satisfy the assumption $\phi$, while $\mykw{assert}(\phi)$ terminates the test upon property violation.
 
 \subsection{Examples}
 
-\begin{example}[Set Library]\label{ex:set-library} 
-Consider an effectful set library implemented as a fixed-sized array. An incorrect implementation that fails to grow the array when the set is full will result in $\eff{insert}$ operations being dropped. To detect this violation, we need to ascertain whether traces of the following form will raise an exception:
-\begin{align*}
-  \zevent{insert}{0};\zevent{insert}{4};\zevent{insert}{7};\zevent{delete}{7};\zevent{delete}{4};\textcolor{red}{\zevent{delete}{0} \quad \text{Exception!}}
-\end{align*}
-\noindent
-The implementation uses an underlying array of length $2$, and mistakenly raises an ``element not found'' exception even when element $0$ is supposed to exist. It is expected that all inserted values are unique and the $\eff{delete}$ operation only deletes an element if it was \emph{inserted before and not deleted yet}. These temporal meaning can be expressed using the following trace types:
-\begin{align*}
-  &\eff{delete} :~ x{:}\Int\sarr \uhat{\allA\msgA{insert}{x}(\anyA \setminus \msgA{insert}{x} \setminus \msgA{delete}{x})^*}{\msgA{delete}{x}}
-\end{align*}
-\noindent
-The signature for $\eff{delete}$ requires that a previous $\eff{insert}$ event occurred and that there is no subsequent $\eff{delete}$ or $\eff{insert}$ event on the same element. This underapproximates the traces to explore, ruling out traces deleting elements that were never inserted (e.g., $\zevent{delete}{3}$) and inefficiently inserting the same value multiple times (e.g., $\zevent{insert}{1};\zevent{insert}{1};\zevent{delete}{1}$). The following code snippet shows a test generator that generates such traces:
-\begin{minted}[fontsize = \footnotesize, escapeinside=??, xleftmargin=18pt, linenos]{ocaml}
-  let rec set_gen (prev_elem: int) =
-    () ?$\oplus$?
-    let elem = prev_elem + positive_random_int () in
-    ?$\eff{insert}$? elem; set_gen (elem); ?$\eff{delete}$? elem
-  in set_gen 0
-\end{minted}
+% \begin{example}[Set Library]\label{ex:set-library} 
+% Consider an effectful set library implemented as a fixed-sized array. An incorrect implementation that fails to grow the array when the set is full will result in $\eff{insert}$ operations being dropped. To detect this violation, we need to ascertain whether traces of the following form will raise an exception:
+% \begin{align*}
+%   \zevent{insert}{0};\zevent{insert}{4};\zevent{insert}{7};\zevent{delete}{7};\zevent{delete}{4};\textcolor{red}{\zevent{delete}{0} \quad \text{Exception!}}
+% \end{align*}
+% \noindent
+% The implementation uses an underlying array of length $2$, and mistakenly raises an ``element not found'' exception even when element $0$ is supposed to exist. It is expected that all inserted values are unique and the $\eff{delete}$ operation only deletes an element if it was \emph{inserted before and not deleted yet}. These temporal meaning can be expressed using the following trace types:
+% \begin{align*}
+%   &\eff{delete} :~ x{:}\Int\sarr \uhat{\allA\msgA{insert}{x}(\anyA \setminus \msgA{insert}{x} \setminus \msgA{delete}{x})^*}{\msgA{delete}{x}}
+% \end{align*}
+% \noindent
+% The signature for $\eff{delete}$ requires that a previous $\eff{insert}$ event occurred and that there is no subsequent $\eff{delete}$ or $\eff{insert}$ event on the same element. This underapproximates the traces to explore, ruling out traces deleting elements that were never inserted (e.g., $\zevent{delete}{3}$) and inefficiently inserting the same value multiple times (e.g., $\zevent{insert}{1};\zevent{insert}{1};\zevent{delete}{1}$). The following code snippet shows a test generator that generates such traces:
+% \begin{minted}[fontsize = \footnotesize, escapeinside=??, xleftmargin=18pt, linenos]{ocaml}
+%   let rec set_gen (prev_elem: int) =
+%     () ?$\oplus$?
+%     let elem = prev_elem + positive_random_int () in
+%     ?$\eff{insert}$? elem; set_gen (elem); ?$\eff{delete}$? elem
+%   in set_gen 0
+% \end{minted}
 
-\noindent The recursive function $\Code{set\_gen}$ consists of two branches combined with the non-deterministic choice operator $\oplus$. It either terminates, or continues to generate nested $\eff{insert}$ and $\eff{delete}$ event pairs on strictly increasing elements.
-\end{example}
+% \noindent The recursive function $\Code{set\_gen}$ consists of two branches combined with the non-deterministic choice operator $\oplus$. It either terminates, or continues to generate nested $\eff{insert}$ and $\eff{delete}$ event pairs on strictly increasing elements.
+% \end{example}
 
 \begin{example}[Read Atomicity]\label{ex:read-atomicity}
   Database transactions allow concurrent transactions to operate on
@@ -109,7 +119,7 @@ The signature for $\eff{delete}$ requires that a previous $\eff{insert}$ event o
   every $\eff{writeRsp}$ event is also a commit point: {\small
   \begin{align*}
     &\text{\textcolor{gray}{Client 1:}}  & \zevent{writeReq}{\iota_1,4};\zevent{writeRsp}{\iota_1,4};&
-    \\& \text{\textcolor{gray}{Client 2:}} \quad \zevent{readReq}{\iota_2,3};\zevent{readRsp}{\iota_2,3};\zevent{readReq}{\iota_2};& &\zevent{readRsp}{\iota_2,4}
+    \\& \text{\textcolor{gray}{Client 2:}} \quad \zevent{readReq}{\iota_2,3};\zevent{readRsp}{\iota_2,3};\zevent{readReq}{\iota_2};& &\textcolor{red}{\zevent{readRsp}{\iota_2,4}}
   \end{align*}}\noindent
   Here, \textcolor{gray}{Client 2} issues two consecutive read
   operations.  A $\eff{readReq}$ event initiates a request to the
@@ -118,11 +128,11 @@ The signature for $\eff{delete}$ requires that a previous $\eff{insert}$ event o
   follows the request.  In this trace, however, the second response
   witnesses a committed write performed by another
   concurrently-executing, non-committed transaction, with transaction
-  id $\iota_1$, that occurs after the request.  The following
+  id $\iota_1$, that occurs after the request. The following
   trace specification on
   $\eff{readReq}$ events admits executions that satisfy read atomicity:
   \begin{align*}
-    &\eff{readRsp} :~ \uhat{\Code{LAST}(\msgA{writeRsp}{\iota\;x})\msgA{readReq}{\iota}\allA}{\msgA{readRsp}{\iota\;x}}
+    &\effLR{\Code{LAST}(\msgA{writeRsp}{\iota\;x})\msgA{readReq}{\iota}\allA}\; \zobs{\iota\;x}{readRsp}{e}\; \effLR{F}
   \end{align*}\noindent
   The regex specifies that if a transaction with id $\iota$ last
   observes that the value of the single key managed by the database is $x$ at the point of $\eff{readReq}$ happening,
@@ -140,75 +150,137 @@ The signature for $\eff{delete}$ requires that a previous $\eff{insert}$ event o
   \begin{minted}[fontsize = \footnotesize, escapeinside=??, xleftmargin=18pt, linenos]{ocaml}
     let rec transaction_gen () =
       let x = random_int () in
-      ?$\eff{writeReq}$? x; let _ = ?$\mykw{obs}\;\eff{writeRsp}$? in
-      ?$\eff{readReq}$?; 
-      ?$\eff{writeReq}$? (x + 1); let _ = ?$\mykw{obs}\;\eff{writeRsp}$? in
-      let y = ?$\mykw{obs}\;\eff{readRsp}$? in (assert (y != x) ?$\oplus$? transaction_gen ())
+      ?$\eff{writeReq}$? tid1 x; let _ = ?$\mykw{obs}\;\eff{writeRsp}$? in
+      ?$\eff{readReq}$? tid2; 
+      ?$\eff{writeReq}$? tid1 (x + 1); let _ = ?$\mykw{obs}\;\eff{writeRsp}$? in
+      let _, y = ?$\mykw{obs}\;\eff{readRsp}$? tid2 in (assert (y != x) ?$\oplus$? transaction_gen ())
   \end{minted}
 
   \noindent In each iteration, the generator issues two distinct writes (line 3 and 5) with a read request in between (line 4),  and observing the read result $y$ via $\mykw{obs}$ (line 6). It then compares $y$ with $x$ to determine whether to terminate (i.e., the read result is different from the first written value) or recursively generate further transactions.
 \end{example}
 
-\begin{example}[Strong Consistency]\label{ex:sc} 
-As another concurrency example, we consider how a simple key-value store might respond to a message $\zevent{getReq}{\Code{key}}$ that queries the value of a key $\Code{key}$ under different consistency guarantees.
-In any reasonable implementation, the value $\Code{val}$ in a response message $\zevent{getRsp}{\Code{key},\Code{val}}$ should correspond to \emph{some} value the database stored in response to a previous $\eff{putReq}$ request.
-We can encode these dependencies via the following \tyName{} for the $\eff{getRsp}$ response:%
-\vspace{-.4cm} \par\nobreak {
-  \begin{align*}
-    \uhat{\allA \msgA{putReq}{\Code{key}\;\Code{val}} \allA \msgA{getRsp}{\Code{key}}\allA}{\msgA{getRsp}{\Code{key}\;\Code{val}}} %
-  \end{align*}
-}\noindent
-Intuitively, this type guides the test generator to produce eventually consistent (EC)~\cite{Burckhardt2014,Session} behavior, since the store is free to buffer and respond to $\eff{put}$ and $\eff{get}$ requests arbitrarily.
-While performant, this policy can be too permissive for users, who may expect the store to be strongly consistent (SC), i.e., one that always returns the value of a key as it was at the point a request message is handled.
-We can specify a violation of SC using the following \tyName{} for the test generator:
-\vspace{-.4cm} \par\nobreak {
-  \begin{align*}
-    \uhat{\epsilon}{\allA\msgA{putReq}{\Code{key}\;\Code{val}} (\anyA \setminus \msgA{putReq}{\Code{key}})^* \msgB{getRsp}{k\;v}{k = \Code{key} \land v \not= \Code{val}}}
-  \end{align*}
-}\noindent
-Observe that checking whether a store is SC cannot be accomplished by testing how the database handles these messages in isolation: a violation of SC crucially depends on a specific sequence of get and put messages with appropriate inputs.
-The above specification identifies an erroneous execution of the SUT as one in which the last $\eff{putReq}$ binds $\Code{key}$ to $\Code{val}$, but a $\eff{getRsp}$ message on $\Code{key}$ generated in response to a previously issued $\eff{getReq}$ message returns a value other than $\Code{val}$.
-\end{example}
+% \begin{example}[Strong Consistency]\label{ex:sc} 
+% As another concurrency example, we consider how a simple key-value store might respond to a message $\zevent{getReq}{\Code{key}}$ that queries the value of a key $\Code{key}$ under different consistency guarantees.
+% In any reasonable implementation, the value $\Code{val}$ in a response message $\zevent{getRsp}{\Code{key},\Code{val}}$ should correspond to \emph{some} value the database stored in response to a previous $\eff{putReq}$ request.
+% We can encode these dependencies via the following \tyName{} for the $\eff{getRsp}$ response:%
+% \vspace{-.4cm} \par\nobreak {
+%   \begin{align*}
+%     \effLR{\allA \msgA{putReq}{\Code{key}\;\Code{val}} \allA \msgA{getRsp}{\Code{key}}\allA}\;\zobs{\Code{key},\Code{val}}{getRsp}{e}\; \effLR{F} %
+%   \end{align*}
+% }\noindent
+% Intuitively, this type guides the test generator to produce eventually consistent (EC)~\cite{Burckhardt2014,Session} behavior, since the store is free to buffer and respond to $\eff{put}$ and $\eff{get}$ requests arbitrarily.
+% While performant, this policy can be too permissive for users, who may expect the store to be strongly consistent (SC), i.e., one that always returns the value of a key as it was at the point a request message is handled.
+% We can specify a violation of SC using the following \tyName{} for the test generator:
+% \vspace{-.4cm} \par\nobreak {
+%   \begin{align*}
+%     \uhat{\epsilon}{\allA\msgA{putReq}{\Code{key}\;\Code{val}} (\anyA \setminus \msgA{putReq}{\Code{key}})^* \msgB{getRsp}{k\;v}{k = \Code{key} \land v \not= \Code{val}}}
+%   \end{align*}
+% }\noindent
+% Observe that checking whether a store is SC cannot be accomplished by testing how the database handles these messages in isolation: a violation of SC crucially depends on a specific sequence of get and put messages with appropriate inputs.
+% The above specification identifies an erroneous execution of the SUT as one in which the last $\eff{putReq}$ binds $\Code{key}$ to $\Code{val}$, but a $\eff{getRsp}$ message on $\Code{key}$ generated in response to a previously issued $\eff{getReq}$ message returns a value other than $\Code{val}$.
+% \end{example}
 
 
 \begin{example}[Information-Flow Control]\label{ex:ifc} 
-As a final example, we consider test generation for a secure information-flow control (IFC) abstract machine that enforces end-to-end noninterference (EENI)~\cite{pbt-ifc}: if two input programs and initial machine states are indistinguishable to a \emph{public observer}, then the resulting final states must also be indistinguishable. We encode the IFC machine input as a sequence of commands, where each command consists of a pair of arguments representing two syntactically aligned but potentially secret-differing programs.
+We consider test generation for a secure information-flow control (IFC) abstract machine that enforces end-to-end noninterference (EENI)~\cite{pbt-ifc}: if two input programs and initial machine states are indistinguishable to a \emph{public observer}, then the resulting final states must also be indistinguishable. We encode the IFC machine input as a sequence of commands, where each command consists of a pair of arguments representing two syntactically aligned but potentially secret-differing programs.
 For instance, the following serialized input corresponds to two indistinguishable IFC programs that both store value $1$ from stack into memory, but at different addresses:
-\begin{align*}
-  &\zevent{push}{\Code{L}, 1, 1};\zevent{push}{\Code{H}, 0, 1};\eff{store} \equiv
-  \\\text{\textcolor{gray}{Program 1:}} \quad &\zevent{push}{\Code{L}, 1};\zevent{push}{\Code{H}, 0};\eff{store} \quad \text{\textcolor{gray}{and}} \quad  \text{\textcolor{gray}{Program 2:}} \quad \zevent{push}{\Code{L}, 1};\zevent{push}{\Code{H}, 1};\eff{store} 
-\end{align*}\noindent
+\begin{flalign*}
+  &\zevent{push}{\Code{L}, 1, 1};\zevent{push}{\Code{H}, 0, 1};\eff{store} \equiv &  &&
+  \\\text{\textcolor{gray}{Program 1:}} \quad &\zevent{push}{\Code{L}, 1};\zevent{push}{\Code{H}, 0};\eff{store} \quad \text{\textcolor{gray}{and}} \quad  &&\text{\textcolor{gray}{Program 2:}} \quad \zevent{push}{\Code{L}, 1};\zevent{push}{\Code{H}, 1};\eff{store} 
+  \\\text{\textcolor{gray}{Memory 1:}} \quad & [(\Code{L}, 0); (\Code{L}, 0)] \Downarrow \textcolor{red}{[(\Code{H}, 0); (\Code{L}, 0)]} \quad  &&\text{\textcolor{gray}{Memory 2:}} \quad [(\Code{L}, 0); (\Code{L}, 0)] \Downarrow \textcolor{red}{[(\Code{L}, 0); (\Code{H}, 0)]} 
+\end{flalign*}\noindent
 Here, $\Code{L}$ and $\Code{H}$ are the low (public) and high (secret) security levels, with $\Code{L} \sqsubseteq \Code{H}$.
 To ensure indistinguishability, public commands (level $\Code{L}$) must use identical argument values in both programs, whereas secret commands (level $\Code{H}$) may choose different address values ($0$ and $1$).
+Although both executions start from the same initial memory state ([{(\Code{L}, 0); (\Code{L}, 0)}]), the IFC machine may yield different final states ([{(\Code{H}, 0); (\Code{L}, 0)}] and [{(\Code{L}, 0); (\Code{H}, 0)}]) after $\eff{store}$, when it should instead terminate before this command~\cite{pbt-ifc}.
+
 Random generation of such IFC commands often yields invalid or uninteresting cases, e.g., $\zevent{push}{\Code{L}, 1, 0}$ (violates noninterference), $\zevent{push}{\Code{L}, -1, -1};\eff{store}$ (invalid address), or $\zevent{push}{\Code{H}, 1, 1}$ (uninteresting secret).
-To avoid these, we employ the following \tyName{} types to guide generation:
+To avoid these, we employ the following specifications to guide generation:
 \begin{align*}
-  \eff{push} :~& \uhat{\allA}{\msgB{push}{\I{lvl}\;x\;y}{\I{lvl} = \Code{L} \iff x = y}}
-  \\\eff{store} :~& \uhat{\allA\msgC{push}\allA\msgB{push}{\I{lvl}\;x\;y}{\I{isAddr}(x) \land \I{isAddr}(y)}}{\eff{store}}
+  &\effLR{\anyA}\; \eff{push}\; \I{lvl}\;x\;y; e\; \effLR{\msg{push}{\I{lvl} = \Code{L} \iff x = y} \seqA F}
+  \\& \effLR{\allA\msgC{push}(\anyA \setminus \msgC{store})^* \msgB{push}{\I{lvl}\;x\;y}{\I{isAddr}(x) \land \I{isAddr}(y)}}\;  \eff{store}; e \; \effLR{F}
 \end{align*}\noindent  
-The type of $\eff{push}$ enforces that the arguments are equal only at the public level, while the type of $\eff{store}$ ensures that the value to store exists (i.e., $\allA\msgC{push}\allA$) and that it is preceded by a $\eff{push}$ with valid addresses.
+The future regex of $\eff{push}$ enforces that the arguments are equal only at the public level, while the history regex of $\eff{store}$ ensures that the value to store exists (i.e., $\allA\msgC{push}(\anyA \setminus \msgC{store})^*$) and that it is preceded by a $\eff{push}$ with valid addresses. The following code snippet shows a test generator that generates such traces, where $\mykw{assume}\;\phi(x)$ returns an assignment of $x$ that satisfies the given assumption $\phi(x)$.
+
+\begin{minted}[fontsize = \footnotesize, escapeinside=??, xleftmargin=18pt, linenos]{ocaml}
+  let push_gen () =
+    let (x: int) = assume (isArr x) in
+    let (y: int) = assume (isArr y) in
+    (assume (x = y); ?$\eff{push}$? L x y) ?$\oplus$? (assume (x != y); ?$\eff{push}$? H x y)
+  in push_gen x; push_gen y; ?$\eff{store}$?;
+\end{minted}
+
 \end{example}
 
-\ZZ{TODO: rewrite this paragraph}
-In the following section, we show how to guide a synthesis procedure
-to only generate traces consistent with \tyName{} specifications.  We
-emphasize that these specifications are not meant to define an
-overapproximation of a safety property, as types are typically used;
-their role is only to constrain the search space of terms used to
+\begin{example}[De Bruijn Index]\label{ex:de-bruijn-index}
+  We consider how to apply our approach to the
+  well-studied~\cite{BeginnerLuck,CoverageType,FQL24} problem of testing
+  the correctness of an interpreter for simply-typed lambda calculus
+  (STLC) terms.  We focus on terms in which variables are represented by
+  their de Brujin index~\cite{DeBruijn} and seek to use PBT to discover
+  errors in an interpreter implementation that fails to correctly
+  increment the index during substitution under a lambda abstraction,
+  leading to incorrect variable capture.
+  \begin{align*}
+    \text{\textsc{Reduction rule}:} \quad & (\lambda t. e)\; v \hookrightarrow e [0 \mapsto v]\\
+    \text{\textsc{Incorrect substitution}:} \quad & (\lambda t. e)[n \mapsto v] = \lambda t. (e[\textcolor{red}{n} \mapsto v]) \quad \textcolor{red}{\xmark} \text{ \textcolor{gray}{should be $n + 1$}}
+  \end{align*}\noindent
+  The following well-typed STLC term can trigger the incorrect substitution error:
+  \begin{flalign*}
+    & (\lambda \Int. (\lambda (\Int\sarr\Int). [0]\;[1])\; (\lambda \Int. [0]))\; 3 && \tag{$e_\Code{STLC}$}\label{ex:e4} \\
+    &\hookrightarrow (\lambda (\Int\sarr\Int). \textcolor{red}{3}\;[1])\; (\lambda \Int. \textcolor{red}{3})  \quad &&\text{\textcolor{red}{(wrong substitution ``$[0] \mapsto 3$'')}}
+    \\&\hookrightarrow  3\;[1] \quad &&\text{\textcolor{red}{(stuck!)}}
+  \end{flalign*}\noindent
+  Here, a buggy implementation
+  results in the argument value $3$ being mistakenly substituted for the
+  bound variable ``$[0]$'' in the two inner abstractions, instead of
+  ``$[1]$''.
+
+  Guiding test generation for interpreters over \emph{serialized} STLC terms is challenging, as the generated token sequences must contain \emph{nested function abstractions} with appropriate de Bruijn indices; otherwise, errors involving incorrect variable substitution with non-zero bound variable indices cannot be detected. Enforcing correct de Bruijn indices is particularly difficult, as it requires reasoning about counting properties that are not easily expressible using temporal logic or regular languages. To increase the expressive power of SREs, we introduce a ghost event $\effGray{depth}$ that tracks the current abstraction depth\footnote{The well-typeness of STLC terms can also be expressed using auxiliary ghost events $\effGray{ty}$, the details is shown in supplementary material. }:
+  % {\small\begin{align*}
+  %   \effLR{\Code{LAST}(\msgAGray{depth}{d}) \msgA{token}{\boxed{(\lambda t.}\;} \msgAGray{depth}{d + 1} \allA \msgA{token}{\boxed{[n]}\;} \allA }\; \eff{token}\;\boxed{)}\;\effLR{\msgA{token}{\boxed{)}\;} \msgAGray{depth}{d}}
+  % \end{align*}}\noindent
+  {\begin{align*}
+    \effLR{\Code{LAST}(\msgAGray{depth}{d}) \msgA{token}{\boxed{(\lambda t.}\;} \msgAGray{depth}{d + 1} \allA }\; \eff{token}\;\boxed{)}\;\effLR{\msgA{token}{\boxed{)}\;} \msgAGray{depth}{d}}
+  \end{align*}}\noindent
+  As shown above, upon entering a function abstraction, we retrieve the last tagged depth (initialized to $0$), increment it at the start of the body, and restore it upon exiting. Leveraging $\effGray{depth}$, we can enforce the de Bruijn index correctness constraint as follows:
+  \begin{align*}
+    \effLR{\Code{LAST}(\msgBGray{depth}{d}{n < d})}\; \eff{token}\;\boxed{[n]}\;\effLR{\msgA{token}{\boxed{[n]}\;}}
+  \end{align*}\noindent
+  Here, the bound variable index $n$ is required to be less than the current depth $d$. The following code snippet shows a test generator for nested abstractions adhering to the de Bruijn index constraint:
+  % \begin{minted}[fontsize = \footnotesize, escapeinside=??, xleftmargin=18pt, linenos]{ocaml}
+  %   let rec abs_gen (d: depth) =
+  %     (let (i: int) = assume (0 <= i && i < d) in ?$\eff{token}\; \boxed{[i]}$?) ?$\oplus$?
+  %     (let t = random_stlc_ty () in ?$\eff{token}\;\boxed{(\lambda t. [0]};$? abs_gen (d + 1); ?$\eff{token}\;\boxed{)\;(\lambda t. [0])}$?
+  % \end{minted}
+  \begin{minted}[fontsize = \footnotesize, escapeinside=??, xleftmargin=18pt, linenos]{ocaml}
+    let rec abs_gen (d: depth) =
+      (let (i: int) = assume (0 <= i && i < d) in ?$\eff{token}\; \boxed{[i]}$?) ?$\oplus$?
+      (let t = random_stlc_ty () in ?$\eff{token}\;\boxed{(\lambda t.};$? abs_gen (d + 1); ?$\eff{token}\;\boxed{)}$?
+  \end{minted}
+
+  \noindent Although the ghost event is not present in the code, it can be a hint to make our synthesizer to construct a recursive function $\Code{abs\_gen}$ parameterized by the current depth $d$, ensuring correct tracking of abstraction nesting.
+\end{example}
+
+In the following section, we will show how to guide a synthesis procedure
+to only generate traces consistent with underapproximation specifications.  We
+emphasize that these specifications can constrain the search space of terms used to
 synthesis a test generator, thus giving developers significant leeway
-on the level of precision they enforce on traces.  Writing a test
-generator that is biased towards generating terms like \ref{ex:e4} is
-non-trivial, and would involve incorporating context-sensitive
-tracking of variable usage as part of the core generator logic.  On
-the other hand, simply using a generator that produces well-typed STLC
-terms~\cite{BeginnerLuck,CoverageType,FQL24} and expecting that it can
-be directly used to generate terms like \ref{ex:e4} is misplaced.  To
-see why, we adapted a well-typed STLC generator~\cite{CoverageType} to
-output serialized de Brujin terms as described above, and used it to
-generate test inputs to an interpreter that incorrectly performs
-substitutions as described above. It took 45 minutes and 275,915
-attempts for the PBT system to generate an error-inducing input.  This
-was because most of the STLC terms that were generated were similar to
-\ref{ex:e1}--\ref{ex:e3}, which do not use bound variables in an
-interesting way, but for which the test generator has no \emph{a
-  priori} basis to discard.
+on the level of precision they enforce on traces. 
+
+% ZZ: Current spec of STLC to too weak, people won't believe we do better than well-typed STLC generator. I suggest to move this part to the evaluation section.
+% Writing a test
+% generator that is biased towards generating terms like \ref{ex:e4} is
+% non-trivial, and would involve incorporating context-sensitive
+% tracking of variable usage as part of the core generator logic.  On
+% the other hand, simply using a generator that produces well-typed STLC
+% terms~\cite{BeginnerLuck,CoverageType,FQL24} and expecting that it can
+% be directly used to generate terms like \ref{ex:e4} is misplaced.  To
+% see why, we adapted a well-typed STLC generator~\cite{CoverageType} to
+% output serialized de Brujin terms as described above, and used it to
+% generate test inputs to an interpreter that incorrectly performs
+% substitutions as described above. It took 45 minutes and 275,915
+% attempts for the PBT system to generate an error-inducing input.  This
+% was because most of the STLC terms that were generated were similar to
+% \ref{ex:e1}--\ref{ex:e3}, which do not use bound variables in an
+% interesting way, but for which the test generator has no \emph{a
+%   priori} basis to discard.
