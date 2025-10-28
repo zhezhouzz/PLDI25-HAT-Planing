@@ -10,7 +10,7 @@
     \\\text{\textbf{Pure Operations}}& \quad & \primop ::= \quad & {+} ~|~ {-} ~|~ {==} ~|~ {<} ~|~ {\leq} ~|~ ...
     \\ \text{\textbf{Constants }}& \quad &c ::= \quad & () ~|~ \mathbb{B} ~|~ \mathbb{Z} ~|~ ...
     \\ \text{\textbf{Qualifiers}}& \quad & \phi ::= \quad & c ~|~ x ~|~ \primop\;\overline{v} ~|~ \bot ~|~ \top  ~|~ \neg \phi ~|~ \phi \land \phi ~|~ \phi \lor \phi ~|~ \phi \impl \phi ~|~ \forall x{:}b.\, \phi
-    \\\text{\textbf{Effectful Operations}}& \quad & \eff{op} ::= \quad & \eff{readReq} ~|~ \eff{readRsp} ~|~ \eff{abs} ~|~ \eff{endAbs} ~|~ \effGray{ty} ~|~ \effGray{depth} ~|~ ...
+    \\\text{\textbf{Effectful Operations}}& \quad & \eff{op} ::= \quad & \eff{readReq} ~|~ \eff{readRsp} ~|~ \eff{writeReq} ~|~ \eff{writeRsp} ~|~ ...
     % \\\text{\textbf{Event Kinds}}& \quad & k ::= \quad & \eff{gen} ~|~ \eff{obs}
     \\ \text{\textbf{Values }}& \quad  & v ::= \quad & c ~|~ x ~|~ \zlam{x}{s}{e} ~|~ \zfix{f}{s}{x}{s}{e}
     \\ \text{\textbf{Expressions}}& \quad & e ::=\quad & v ~|~ \zlet{x{:}b}{e}{e} ~|~ \zlet{x{:}b}{\primop\ \overline{v}}{e} ~|~ \zgen{op}{\overline{v}}{e} ~|~ \zobs{\overline{x{:}b}}{op}{e}
@@ -286,7 +286,7 @@ $\overline{x}$ must satisfy the qualifier $\phi$.
 
 
 
-\paragraph{Prophecy Regex Types} A \tyName{} $\uhat{H}{F}$ is
+\paragraph{Incorrectness Hoare Automata Types} A \tyName{} $\uhat{H}{F}$ is
 comprised of two SREs: a \emph{history} SRE $H$ that captures the
 history traces (i.e., a sequence of visible, already handled events) in which a term can be executed, a \emph{future} SRE $A$ that
 describes newly handled events that arise from executing a term.
@@ -294,19 +294,21 @@ describes newly handled events that arise from executing a term.
 Function types use \tyName{}s in their result types
 to describe the effects they perform, when combined with intersection
 types ($\interty$), this allows users to express complex control
-flows. Function types also use \emph{ghost variables}
-($x{:}b \garr \tau$) to capture data dependencies among
-symbolic events; for example, the full signature of the $\eff{app}$
-operator from \autoref{sec:intro} uses the ghost variables $t_1$ and $t_2$.
+flows. 
 
-\begin{example}[Synchronized Operations]\label{ex:getty}
-The synchronized $\effGray{ayncGetTy}$ operation in Example~\ref{fig:aux-semantics} need to make sure the corresponding $\effGray{getTy}$ event is performed right after. This is captured by the following \tyName{}:{
-    \footnotesize
+\paragraph{Ghost variables and ghost events}
+Following prior work, we incorporate \emph{ghost variables} ($x{:}b \garr \tau$) in function types to explicitly capture data dependencies between symbolic events.
+Additionally, we introduce \emph{ghost events} (displayed in $\effGray{gray}$ to distinguish them from regular effect operators), enabling our \tyName to specify non-regular properties, such as counting.
+Both ghost variables and ghost events are not manifested in program terms and are independent of the operational semantics; they serve exclusively as bookkeeping annotations within the type system.
+
+\begin{example}[Queue Library]\label{ex:stack}
+The precise semantics of $\eff{enqueue}$, $\eff{dequeue}$ operation of an effectful queue library requires \emph{first-in-first-out} (FIFO) property which needs counting. We introduce two ghost event $\effGray{numEnq}$ and $\effGray{numDeq}$ which are counters that records the number of previous added and removed elements. Thus, the FIFO property can be defined as ``the $i^{th}$ dequeued element is exactly the $i^{th}$ enqueued element'', and expressed as the following \tyName{}:
+{\footnotesize
     \begin{align*}
-      \eff{ayncGetTy} :~ & t{:}\Code{ty}\garr\rg{\allA\msgAGray{putTy}{t}(\anyA\setminus\msgCGray{putTy})^*}{\msgCGray{ayncGetTy}}{\msgA{getTy}{t}\allA}
+      \eff{enqueue} :~ & i{:}\Int\garr x{:}\Int\sarr\uhat{\Code{LAST}(\msgAGray{numEnq}{i - 1})}{\msgA{enqueue}{x}\msgAGray{numEnq}{i}}
+      \\\eff{dequeue} :~ & i{:}\Int\garr x{:}\Int\sarr\uhat{\Code{LAST}(\msgA{enqueue}{x}\msgAGray{numEnq}{i}) \land \Code{LAST}(\msgAGray{numDeq}{i - 1})}{\msgA{dequeue}{x}\msgAGray{numDeq}{i}}
     \end{align*}}\noindent
-  The history regex get the most last $\msgA{putTy}{t}$ event in the history by requires there are no more $\eff{putTy}$ event happens after it (i.e., $(\anyA\setminus\msgCGray{putTy})^*$). Its prophecy regex requires that the $\msgA{getTy}{t}$ event happen first (i.e., $\msgAGray{getTy}{t}\allA$) in the future.
-  For brevity, we omit $\effGray{ayncGetTy}$ when the context is clear, as it always precedes $\effGray{getTy}$.
+  The history regex of $\eff{enqueue}$ operator maintains the counter by get number of previous added elements by match the most last $\effGray{numEnq}$ event in the history (we assume this is number is $0$ when there is no previous $\effGray{numEnq}$) and increase this number by $1$ by appending a new ghost event in future regex. The \tyName of $\eff{dequeue}$ besides maintians the counter $\effGray{numDeq}$ in the same way, also requires the $\eff{dequeue}$ element is exactly the $i^th$ $\eff{enqueue}$ element, i.e., the one update the counter $\effGray{numDeq}$ as $i$. 
 \end{example}
 
 \subsection{Typing rules}
