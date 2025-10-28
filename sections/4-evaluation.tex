@@ -1,5 +1,28 @@
 \section{Implementation And Evaluation}\label{sec:impl}
 
+\newcommand{\ranint}{\underline{\Code{int\_gen\;()}}}
+
+
+\begin{figure}
+  \centering
+  \begin{minted}[xleftmargin=5pt, numbersep=4pt, linenos = true, fontsize = \footnotesize, escapeinside=??]{OCaml}
+  let rec lam_body_gen (n: int) =
+    (?$\eff{var}$? n) ?$\oplus$? // ?$\textcolor{DeepGreen}{[n]}$?
+    (?$\eff{app}$?;
+       ?$\eff{abs}\;\Int\sarr\Int$?; ?$\eff{app}$?; ?$\eff{var}$? 0; ?$\mykw{obs}\;\eff{appL}$?; lam_body_gen (n+1); ?$\mykw{obs}\;\eff{appR}$?; ?$\mykw{obs}\;\eff{endAbs}$?;
+       // ?$\textcolor{DeepGreen}{\lambda (\Int\sarr\Int). ([0]\;(\underline{\Code{lam\_body\_gen}\;(n + 1)}))}$?
+     ?$\mykw{obs}\;\eff{appL}$?; ?$\eff{abs}$? int; ?$\eff{var}$? 0; ?$\mykw{obs}\;\eff{endAbs}$?; // ?$\textcolor{DeepGreen}{\lambda \Int. [0]}$?
+     ?$\mykw{obs}\;\eff{appR}$?) // ?$\textcolor{DeepGreen}{\lambda (\Int\sarr\Int). ([0]\;(\underline{\Code{lam\_body\_gen}\;(n + 1)}))\;\lambda \Int. [0]}$?
+  in
+  ?$\eff{app}$?; ?$\eff{abs}$? int;f 0; ?$\mykw{obs}\;\eff{endAbs}$?; // ?$\textcolor{DeepGreen}{\lambda \Int. (\underline{\Code{lam\_body\_gen}\;0})}$?
+  ?$\mykw{obs}\;\eff{appL}$?; ?$\eff{const}$? (int_gen ()); // ?$\textcolor{DeepGreen}{\ranint}$?
+  ?$\mykw{obs}\;\eff{appR}$?; // ?$\textcolor{DeepGreen}{\lambda \Int. (\underline{\Code{lam\_body\_gen}\;0})\;(\ranint)}$?
+  \end{minted}
+  \vspace*{-.1in}
+  \caption{STLC generator $P_\Code{STLC}$. }\label{fig:stlc-gen}
+  \vspace*{-.2in}
+  \end{figure}
+
 We have implemented a tool based on the above approach, called
 \name{}, that targets reactive distributed system models (i.e.,
 message-passing systems defined as a collection of actors). \name{}
@@ -91,65 +114,31 @@ Our experimental evaluation addresses three research questions:
 \midrule
 \textsf{Graph}$^{\star}$ & $5$ & $21$ & $12$ & $2$& $8$ & $9$ & $1$ & $12$& - & $5.48$ & $788$ & $5$ & $8$\\
 \midrule
-\textsf{Filesystem}$^{\star}$ & $3$ & $21$ & $12$ & $2$& $6$ &
-                                                                       $8$ & $1$ & $21$& - & $6.53$ & $964$ & $2$ & $18$\\
+\textsf{Filesystem}$^{\star}$ & $3$ & $21$ & $12$ & $2$& $6$ &$8$ & $1$ & $21$& - & $6.53$ & $964$ & $2$ & $18$\\
 \midrule
-\textsf{NFA}$^{\dagger}$ & $13$ & $4$ & $1$ & $2$& $8$ &
-                                                                     $1$ & $4$ & $40$& $4$ & $1.13$ & $165$ & $2$ & $11$\\
+\textsf{NFA}$^{\dagger}$ & $13$ & $4$ & $1$ & $2$& $8$ & $1$ & $4$ & $40$& $4$ & $1.13$ & $165$ & $2$ & $11$\\
 \midrule
-\textsf{HashTable}$^{\dagger}$ & $13$ & $4$ & $1$ & $2$& $8$ &
-                                                                     $1$ & $4$ & $40$& $4$ & $1.13$ & $165$ & $2$ & $11$\\
+\textsf{IFCStore}$^{\dagger}$ & $6$ & $18$ & $15$ & $2$& $3$ & $5$ &$1$ & $40$& $2$ & $8.31$ & $1191$ & $2$ & $5$\\
 \midrule
-\textsf{IFCStore}$^{\dagger}$ & $6$ & $18$ & $15$ & $2$& $3$ & $5$ &
-                                                                       $1$ & $40$& $2$ & $8.31$ & $1191$ & $2$ & $5$\\
+\textsf{IFCAdd}$^{\dagger}$ & $9$ & $17$ & $7$ & $2$& $6$ & $5$ & $2$ & $133$& $6$ & $6.87$ & $1043$ & $3$ & $8$\\
 \midrule
-\textsf{IFCAdd}$^{\dagger}$ & $9$ & $17$ & $7$ & $2$& $6$ & $5$
-                                                                                                      & $2$ & $133$& $6$ & $6.87$ & $1043$ & $3$ & $8$\\
+\textsf{IFCLoad}$^{\dagger}$ & $7$ & $18$ & $9$ & $4$& $10$ & $9$ & $1$ & $61$& $7$ & $7.08$ & $1073$ & $4$ & $20$\\
 \midrule
-\textsf{IFCLoad}$^{\dagger}$ & $7$ & $18$ & $9$ & $4$& $10$ & $9$ &
-                                                                      $1$ & $61$& $7$ & $7.08$ & $1073$ & $4$ & $20$\\
+\textsf{STLC}$^{\diamond}$ & $7$ & $36$ & $26$ & $4$& $9$ & $10$ & $1$ & $670$& $400$ & $27.07$ & $4016$ & $6$ & $19$\\           
 \midrule
-\textsf{STLC}$^{\diamond}$ & $7$ & $36$ & $26$ & $4$& $9$
-                                                                                  & $10$ & $1$ & $670$& $400$ & $27.07$ & $4016$ & $6$ & $19$\\
-\bottomrule
-\end{tabular}
-\label{tab:evaluation}
-% \vspace*{-.15in}
-\end{table}
-
-\begin{table}[t!]
-  \renewcommand{\arraystretch}{0.8}
-  % \vspace*{-.1in}
-  \caption{\small Database}
-\vspace*{-.1in}
-\footnotesize
-\setlength{\tabcolsep}{2.3pt}
-\begin{tabular}{c||cc||cccc||ccc||c|ccc}
-  \toprule
-  Benchmark & \#$\eff{op}$ & \#qualifier & \#var &\#$\mykw{gen}$ & \#$\mykw{obs}$ & \#$\mykw{assert}$ & \multicolumn{3}{c||}{\# Num. Executions} & t$_\text{total}$(s) & \#SMT & \#fw & \#bw \\
-  & & & & & & &  Clouseau & P+Rand & P+M   & &  \\
-\midrule
-\textsf{CartRC} & $4$ & $9$ & $6$ & $3$& $3$ & $4$ & $1$ & $6$& - & $2.73$ & $420$ & $4$ & $6$\\
-\midrule
-\textsf{CartCC} & $5$ & $21$ & $12$ & $2$& $8$ & $9$ & $1$ & $12$& - & $5.48$ & $788$ & $5$ & $8$\\
-\midrule
-\textsf{CoursewareRC} & $3$ & $21$ & $12$ & $2$& $6$ &
-                                                                       $8$ & $1$ & $21$& - & $6.53$ & $964$ & $2$ & $18$\\
-\midrule
-\textsf{CoursewareCC} & $13$ & $4$ & $1$ & $2$& $8$ &
-                                                                     $1$ & $4$ & $40$& $4$ & $1.13$ & $165$ & $2$ & $11$\\
-\midrule
-\textsf{TwitterRC} & $13$ & $4$ & $1$ & $2$& $8$ &
-                                                                     $1$ & $4$ & $40$& $4$ & $1.13$ & $165$ & $2$ & $11$\\
-\midrule
-\textsf{TwitterCC} & $6$ & $18$ & $15$ & $2$& $3$ & $5$ &
-                                                                       $1$ & $40$& $2$ & $8.31$ & $1191$ & $2$ & $5$\\
-\midrule
-\textsf{TreiberStackRC} & $9$ & $17$ & $7$ & $2$& $6$ & $5$
-                                                                                                      & $2$ & $133$& $6$ & $6.87$ & $1043$ & $3$ & $8$\\
-\midrule
-\textsf{TreiberStackCC} & $7$ & $18$ & $9$ & $4$& $10$ & $9$ &
-                                                                      $1$ & $61$& $7$ & $7.08$ & $1073$ & $4$ & $20$\\
+\textsf{HashTable}$^{\diamond}$ & $7$ & $36$ & $26$ & $4$& $9$ & $10$ & $1$ & $670$& $400$ & $27.07$ & $4016$ & $6$ & $19$\\   
+\midrule  
+\textsf{CartRC} & $4$ & $9$ & $6$ & $3$& $3$ & $4$ & $1$ & $6$& - & $2.73$ & $420$ & $4$ & $6$\\                                                                                \midrule                                                                                
+\textsf{CartCC} & $5$ & $21$ & $12$ & $2$& $8$ & $9$ & $1$ & $12$& - & $5.48$ & $788$ & $5$ & $8$\\                                                                                \midrule                                                                                
+\textsf{CoursewareRC} & $3$ & $21$ & $12$ & $2$& $6$ &  $8$ & $1$ & $21$& - & $6.53$ & $964$ & $2$ & $18$\\                                                                                \midrule                                                                                
+\textsf{CoursewareCC} & $13$ & $4$ & $1$ & $2$& $8$ & $1$ & $4$ & $40$& $4$ & $1.13$ & $165$ & $2$ & $11$\\                                                                                \midrule                                                                                
+\textsf{TwitterRC} & $13$ & $4$ & $1$ & $2$& $8$ & $1$ & $4$ & $40$& $4$ & $1.13$ & $165$ & $2$ & $11$\\                                                                                \midrule                                                                                
+\textsf{TwitterCC} & $6$ & $18$ & $15$ & $2$& $3$ & $5$ & $1$ & $40$& $2$ & $8.31$ & $1191$ & $2$ & $5$\\
+\midrule                                                                                
+\textsf{SmallBankRC} & $13$ & $4$ & $1$ & $2$& $8$ & $1$ & $4$ & $40$& $4$ & $1.13$ & $165$ & $2$ & $11$\\                                                                                \midrule                                                                                
+\textsf{SmallBankCC} & $6$ & $18$ & $15$ & $2$& $3$ & $5$ & $1$ & $40$& $2$ & $8.31$ & $1191$ & $2$ & $5$\\                                                                                 \midrule                                                                                
+\textsf{TreiberStackRC} & $9$ & $17$ & $7$ & $2$& $6$ & $5$ & $2$ & $133$& $6$ & $6.87$ & $1043$ & $3$ & $8$\\                                                                                \midrule                                                                                
+\textsf{TreiberStackCC} & $7$ & $18$ & $9$ & $4$& $10$ & $9$ & $1$ & $61$& $7$ & $7.08$ & $1073$ & $4$ & $20$\\                                       
 \bottomrule
 \end{tabular}
 \label{tab:evaluation}
@@ -185,33 +174,27 @@ Our experimental evaluation addresses three research questions:
 \midrule
 \textsf{Database} & $4$ & $9$ & $6$ & $3$& $3$ & $4$ & $1$ & $6$& - & $2.73$ & $420$ & $4$ & $6$\\
 \midrule
-\textsf{Firewall}$^{\star}$ & $5$ & $21$ & $12$ & $2$& $8$ & $9$ & $1$
-                                                                                                                                                 & $12$& - & $5.48$ & $788$ & $5$ & $8$\\
+\textsf{Firewall}$^{\star}$ & $5$ & $21$ & $12$ & $2$& $8$ & $9$ & $1$                                                                          & $12$& - & $5.48$ & $788$ & $5$ & $8$\\
 \midrule
-\textsf{RingLeaderElection}$^{\star}$ & $3$ & $21$ & $12$ & $2$& $6$ &
-                                                                       $8$ & $1$ & $21$& - & $6.53$ & $964$ & $2$ & $18$\\
+\textsf{RingLeaderElection}$^{\star}$ & $3$ & $21$ & $12$ & $2$& $6$ &$8$ & $1$ & $21$& - & $6.53$ & $964$ & $2$ & $18$\\
 \midrule
 \textsf{EspressoMachine}$^{\dagger}$ & $13$ & $4$ & $1$ & $2$& $8$ &
                                                                      $1$ & $4$ & $40$& $4$ & $1.13$ & $165$ & $2$ & $11$\\
 \midrule
-\textsf{BankServer}$^{\dagger}$ & $6$ & $18$ & $15$ & $2$& $3$ & $5$ &
-                                                                       $1$ & $40$& $2$ & $8.31$ & $1191$ & $2$ & $5$\\
+\textsf{BankServer}$^{\dagger}$ & $6$ & $18$ & $15$ & $2$& $3$ & $5$ &$1$ & $40$& $2$ & $8.31$ & $1191$ & $2$ & $5$\\
 \midrule
-\textsf{Simplified2PC}$^{\dagger}$ & $9$ & $17$ & $7$ & $2$& $6$ & $5$
-                                                                                                      & $2$ & $133$& $6$ & $6.87$ & $1043$ & $3$ & $8$\\
+\textsf{Simplified2PC}$^{\dagger}$ & $9$ & $17$ & $7$ & $2$& $6$ & $5$                               & $2$ & $133$& $6$ & $6.87$ & $1043$ & $3$ & $8$\\
 \midrule
 \textsf{HeartBeat}$^{\dagger}$ & $7$ & $18$ & $9$ & $4$& $10$ & $9$ &
                                                                       $1$ & $61$& $7$ & $7.08$ & $1073$ & $4$ & $20$\\
 \midrule
-\textsf{ChainReplication}$^{\diamond}$ & $7$ & $36$ & $26$ & $4$& $9$
-                                                                                  & $10$ & $1$ & $670$& $400$ & $27.07$ & $4016$ & $6$ & $19$\\
+\textsf{ChainReplication}$^{\diamond}$ & $7$ & $36$ & $26$ & $4$& $9$           & $10$ & $1$ & $670$& $400$ & $27.07$ & $4016$ & $6$ & $19$\\
 \midrule
 \textsf{Paxos}$^{\diamond}$ & $10$ & $32$ & $36$ & $4$& $10$ & $13$ &
                                                                       $1$ & {\tiny Timeout}& $667$ & $59.98$ & $8763$ & $4$ & $16$\\
 \midrule
 \textsf{Raft} & $9$ & $32$ & $29$ & $3$& $14$ & $14$ & $1$ & {\tiny
-                                                             Timeout}&
-                                                                       - & $56.07$ & $8356$ & $10$ & $22$\\
+                                                             Timeout}&- & $56.07$ & $8356$ & $10$ & $22$\\
 % \midrule
 % \textsf{Anon2PCModel}$^{\square}$ & $17$ & $73$ & $36$ & $4$& $10$ &
 %                                                                      $10$ & $1$ & {\tiny Timeout}& $53$ & $60.36$ & $9023$ & $6$ & $12$\\

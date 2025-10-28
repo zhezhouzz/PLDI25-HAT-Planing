@@ -127,6 +127,21 @@ behaviors of the entire system requires exploring how these individual
 programs interact; \PAT{}s capture temporal and data dependencies
 between the messages that define these interactions.
 
+
+To ground the discussion, consider a database that provides $\eff{begin}$, $\eff{write}$, $\eff{read}$, and $\eff{commit}$ operations, following the formalization in previous work~\cite{BK+21}. To safely use these APIs, we require each transaction to have a unique id. Additionally, we want the test generator to avoid generating uninteresting transactions, e.g., incomplete transactions or transactions that do not involve any writes. These two requirements can be encoded as the following \PAT{} for the $\eff{begin}$ operation:
+\vspace{-.4cm} \par\nobreak { \footnotesize
+  \begin{align*}
+    % \Code{y{:}int} \garr
+    % \rg{\underbrace{(\anyA \setminus \msgB{begin}{id}{id = \Code{i}})^*}_\texttt{history regex}} %
+    % {\underbrace{\msgB{begin}{id}{id = \Code{i}}}_\texttt{current regex}}%
+    % { \underbrace{\allA \msgB{write}{id\;k\;v}{id = \Code{i}} \allA \msgB{commit}{id}{id = \Code{i}} \allA }_\texttt{prophecy regex} }
+    \rg{\underbrace{(\anyA \setminus \msgA{begin}{\Code{id}})^*}_\texttt{history regex}} %
+    {\underbrace{\msgA{begin}{\Code{id}}}_\texttt{current regex}}%
+    { \underbrace{\allA \msgC{write} \allA \msgA{commit}{\Code{id}} \allA }_\texttt{prophecy regex} }
+  \end{align*}
+}\noindent
+The history regex overapproximates the safety condition on the history context in which $\eff{begin}$ may occur, namely, that there is no previous $\eff{begin}$ operation with the same transaction $\Code{id}$. The prophecy regex underapproximates the coverage completeness condition specifying the future context that must be exercised by the test, i.e., a $\eff{write}$ operation must happen before the transaction is committed. As a result, a most general test generator (i.e., one that explores all possible traces) is disallowed from being concatenated before the $\eff{begin}$ operation, since it may produce history traces like $\zevent{begin}{\Code{id}};\ldots$ that violates the safety condition. However, this generator can be concatenated after $\eff{begin}$, since it (albeit inefficiently) explores more cases than required by the \tyName.
+
 To ground the discussion, consider how an actor that maintains a
 simple key-value store might respond to a message
 $\eff{getReq}(\mathit{k})$ asking for the value of a key $\mathit{k}$.
