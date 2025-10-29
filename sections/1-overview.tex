@@ -97,7 +97,7 @@ To support test generation across diverse domains, we introduce a domain-specifi
 % \begin{minted}[fontsize = \footnotesize, escapeinside=??, xleftmargin=18pt, linenos]{ocaml}
 %   let rec set_gen (prev_elem: int) =
 %     () ?$\oplus$?
-%     let elem = prev_elem + positive_random_int () in
+%     let elem = prev_elem + positive_int_gen () in
 %     ?$\eff{insert}$? elem; set_gen (elem); ?$\eff{delete}$? elem
 %   in set_gen 0
 % \end{minted}
@@ -148,15 +148,15 @@ To support test generation across diverse domains, we introduce a domain-specifi
   
   Our DSL supports \emph{interactive} test generation through the $\mykw{obs}$ syntax, which enables tests to dynamically observe the effects of the SUT and control subsequent generation behavior. For instance, the following test generator for the read atomicity property utilizes $\mykw{obs}$ to inspect SUT responses:
   \begin{minted}[fontsize = \footnotesize, escapeinside=??, xleftmargin=18pt, linenos]{ocaml}
-    let rec transaction_gen () =
-      let x = random_int () in
+    let rec transaction_gen tid1 tid2 =
+      let x = int_gen () in
       ?$\eff{writeReq}$? tid1 x; let _ = ?$\mykw{obs}\;\eff{writeRsp}$? in
       ?$\eff{readReq}$? tid2; 
-      ?$\eff{writeReq}$? tid1 (x + 1); let _ = ?$\mykw{obs}\;\eff{writeRsp}$? in
-      let _, y = ?$\mykw{obs}\;\eff{readRsp}$? tid2 in (assert (y != x) ?$\oplus$? transaction_gen ())
+      ?$\eff{writeReq}$? tid1 (int_gen ()); let _ = ?$\mykw{obs}\;\eff{writeRsp}$? in
+      let _, y = ?$\mykw{obs}\;\eff{readRsp}$? tid2 in assert x == y; (() ?$\oplus$? transaction_gen tid1 tid2)
   \end{minted}
 
-  \noindent In each iteration, the generator issues two distinct writes (line 3 and 5) with a read request in between (line 4),  and observing the read result $y$ via $\mykw{obs}$ (line 6). It then compares $y$ with $x$ to determine whether to terminate (i.e., the read result is different from the first written value) or recursively generate further transactions.
+  \noindent In each iteration, the generator issues two potentially distinct writes (lines 3 and 5) with a read request in between (line 4), and observes the read result $y$ via $\mykw{obs}$ (line 6). Before generating further transactions, it compares $y$ with $x$ to determine whether to terminate the test exploration and report a violation (i.e., if the read result is different from the first written value).
 \end{example}
 
 % \begin{example}[Strong Consistency]\label{ex:sc} 
