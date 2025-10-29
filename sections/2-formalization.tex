@@ -540,15 +540,15 @@ types in $\DSL$ are denoted as their inhabitants (i.e., $\denot{t}$ and $\denot{
 inclusion under a type context is defined as $\Gamma \vdash A \subseteq
 A' \doteq \forall \sigma \in \denot{\Gamma}. \denot{\sigma(A)}
 \subseteq \denot{\sigma(B)}$.
-The type denotation of $\rg{H}{A}{F}$ is defined as follows:
+The type denotation of $\uhat{H}{F}$ is defined as follows:
 % {\small\begin{align*}
 %   &\denot{\rg{H}{A}{F}}_{(\Theta, \Theta')} \doteq \{(e,  e_f) ~|~ \emptyset \basicvdash e : \Code{unit} \land
 %   \\&\qquad \forall \alpha \in \denot{A}. \exists \alpha_h \in\denot{H}.\exists \alpha_f \in \denot{F}. \exists \beta \in \denot{\Theta}. \exists \beta' \in \denot{\Theta'}. \msteptr{\alpha_h}{(\beta, e;e_f)}{\alpha}{(\beta',  e_f)}\mharr{\alpha_f}{(\emptyset, ())} \}
 % \end{align*}}\noindent
 {\small\begin{align*}
-  &\denot{\uhat{H}{A}} \doteq \{e ~|~ \emptyset \basicvdash e : \Code{unit} \land \forall \alpha \in \denot{A}. \exists \alpha_h \in\denot{H}. \exists \beta\;\beta'. \msteptr{\alpha_h}{(\beta, e)}{\alpha}{(\beta',  ())} \}
+  &\denot{\uhat{H}{F}} \doteq \{e ~|~ \emptyset \basicvdash e : \Code{unit} \land \forall \alpha_f \in \denot{F}. \exists \alpha_h \in\denot{H}. \exists \beta\;\beta'. \msteptr{\alpha_h}{(\beta, e)}{\alpha_f}{(\beta',  ())} \}
 \end{align*}}\noindent
-A term $e$ inhabits $\uhat{H}{F}$ iff, for trace $\alpha$ accepted by $F$, there exists history trace $\alpha_h$ accept by $H$, such that the execution of $e$ under history trace produces the trace $\alpha$.
+A term $e$ inhabits $\uhat{H}{F}$ iff, for trace $\alpha_f$ accepted by $F$, there exists history trace $\alpha_h$ accept by $H$, such that the execution of $e$ under history trace produces the trace $\alpha_f$.
 \footnote{The details of these definition can be found in our \techreport{}.} 
 Our formulation constitutes a trace-based analogue of incorrectness logic~\cite{OHP19}, in which effects are modeled as program state transitions:
 \begin{align*}
@@ -579,8 +579,8 @@ The distinction is that we characterize $F$ as the set of newly produced traces 
 % \end{align*}}
 % \end{definition}
  
-\begin{theorem}[Fundamental Theorem]\label{theorem:fundamental}A well-typed term, i.e., \(\Gamma\vdash e : \uhat{H}{A}\), generates traces consistent with the \tyName: $\forall \sigma \in \denotation{\Gamma}. \sigma(e) \in \denotation{\sigma(\uhat{H}{A})}$.\footnote{The proofs of all theorems in this paper are provided in the \techreport{}.}
+\begin{theorem}[Fundamental Theorem]\label{theorem:fundamental}A well-typed term, i.e., \(\Gamma\vdash e : \uhat{H}{F}\), generates traces consistent with the \tyName: $\forall \sigma \in \denotation{\Gamma}. \sigma(e) \in \denotation{\sigma(\uhat{H}{F})}$.\footnote{The proofs of all theorems in this paper are provided in the \techreport{}.}
 \end{theorem}
 
-\begin{corollary}[Type Soundness]\label{theorem:sound} A generator \(e\) that satisfies \(\emptyset \vdash e : \uhat{\epsilon}{A}\) must produce all traces accepted by $A$, i.e., $\alpha \in \denot{A}. \exists \beta.\msteptr{[]}{(\emptyset, e)}{\alpha}{(\beta, ())}$.
+\begin{corollary}[Type Soundness]\label{theorem:sound} A generator \(e\) that satisfies \(\emptyset \vdash e : \uhat{\epsilon}{F}\) must produce all traces accepted by $F$, i.e., $\alpha \in \denot{F}. \exists \beta.\msteptr{[]}{(\emptyset, e)}{\alpha}{(\beta, ())}$.
 \end{corollary}
