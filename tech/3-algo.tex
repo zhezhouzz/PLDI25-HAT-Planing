@@ -74,7 +74,7 @@ SRE into a set of abstract traces. It keeps the Kleene star operator $A^*$ uncha
       \Case{$\msgB{op}{\overline{x}}{\phi} \cons \Pi'$ when $\mykw{obs}\;\eff{op}$}{
         $\overline{x'} \leftarrow \Code{GetFreshNames}(\overline{x})$\;
         $e \leftarrow \S{DeriveTrace}(\Pi')$\;
-        \Return{$\zobs{\overline{x'}}{op}{\zassert{\phi\msubst{x}{x'}}{e}}$}
+        \Return{$\zobs{\overline{x'}}{op}{}{\zassert{\phi\msubst{x}{x'}}{e}}$}
       }
     }
     }

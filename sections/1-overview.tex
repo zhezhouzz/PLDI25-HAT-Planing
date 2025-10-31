@@ -35,7 +35,7 @@ The triple $\effLR{H}\;e\;\effLR{F}$ consists of a history regex $H$, a code $e$
 
 \subsection{Domain-Specific Language} 
 
-To support test generation across diverse domains, we introduce a domain-specific language (DSL) based on the lambda calculus, extended with recursion, nondeterministic choice ($\oplus$), and (asynchronous) effectful operations ($\eff{op}$). The DSL enables interaction with the SUT through the $\mykw{gen}$ and $\mykw{obs}$ primitives. For example, $\sgen{ReadReq}{}$ asynchronously generates a read request to the SUT, which enable a later on $\zobs{x}{readRsp}{e}$ expression to observe the corresponding response, binds it to $x$ in the $\mykw{let}$-body $e$. This approach enables concise expression of interactive test generators for systems such as database transactions and distributed protocols. The DSL further specifies random value generation and property checking via $\mykw{assume}$ and $\mykw{assert}$. Concretely, $\mykw{assume}(\phi)$ constrains $x$ to random values that satisfy the assumption $\phi$, while $\mykw{assert}(\phi)$ terminates the test upon property violation.
+To support test generation across diverse domains, we introduce a domain-specific language (DSL) based on the lambda calculus, extended with recursion, nondeterministic choice ($\oplus$), and (asynchronous) effectful operations ($\eff{op}$). The DSL enables interaction with the SUT through the $\mykw{gen}$ and $\mykw{obs}$ primitives. For example, $\sgen{ReadReq}{}$ asynchronously generates a read request to the SUT, which enable a later on $\zobs{x}{readRsp}{\overline{v}}{e}$ expression to observe the corresponding response, binds it to $x$ in the $\mykw{let}$-body $e$. This approach enables concise expression of interactive test generators for systems such as database transactions and distributed protocols. The DSL further specifies random value generation and property checking via $\mykw{assume}$ and $\mykw{assert}$. Concretely, $\mykw{assume}(\phi)$ constrains $x$ to random values that satisfy the assumption $\phi$, while $\mykw{assert}(\phi)$ terminates the test upon property violation.
 
 \subsection{Examples}
 
@@ -89,7 +89,7 @@ To support test generation across diverse domains, we introduce a domain-specifi
   trace specification on
   $\eff{readReq}$ events admits executions that satisfy read atomicity:
   \begin{align*}
-    &\effLR{\Code{LAST}(\msgA{writeRsp}{\iota\;x})\msgA{readReq}{\iota}\allA}\; \zobs{\iota\;x}{readRsp}{e}\; \effLR{F}
+    &\effLR{\Code{LAST}(\msgA{writeRsp}{\iota\;x})\msgA{readReq}{\iota}\allA}\; \zobs{x}{readRsp}{\iota}{e}\; \effLR{F}
   \end{align*}\noindent
   The regex specifies that if a transaction with id $\iota$ last
   observes that the value of the single key managed by the database is $x$ at the point of $\eff{readReq}$ happening,
@@ -107,10 +107,10 @@ To support test generation across diverse domains, we introduce a domain-specifi
   \begin{minted}[fontsize = \footnotesize, escapeinside=??, xleftmargin=18pt, linenos]{ocaml}
     let rec transaction_gen tid1 tid2 =
       let x = int_gen () in
-      ?$\eff{writeReq}$? tid1 x; let _ = ?$\mykw{obs}\;\eff{writeRsp}$? in
+      ?$\eff{writeReq}$? tid1 x; let _ = ?$\mykw{obs}\;\eff{writeRsp}$? tid1 in
       ?$\eff{readReq}$? tid2; 
-      ?$\eff{writeReq}$? tid1 (int_gen ()); let _ = ?$\mykw{obs}\;\eff{writeRsp}$? in
-      let _, y = ?$\mykw{obs}\;\eff{readRsp}$? tid2 in assert x == y; (() ?$\oplus$? transaction_gen tid1 tid2)
+      ?$\eff{writeReq}$? tid1 (int_gen ()); let _ = ?$\mykw{obs}\;\eff{writeRsp}$? tid1 in
+      let y = ?$\mykw{obs}\;\eff{readRsp}$? tid2 in assert x == y; (() ?$\oplus$? transaction_gen tid1 tid2)
   \end{minted}
 
   \noindent In each iteration, the generator issues two potentially distinct writes (lines 3 and 5) with a read request in between (line 4), and observes the read result $y$ via $\mykw{obs}$ (line 6). Before generating further transactions, it compares $y$ with $x$ to determine whether to terminate the test exploration and report a violation (i.e., if the read result is different from the first written value).
