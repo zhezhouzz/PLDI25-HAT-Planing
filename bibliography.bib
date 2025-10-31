@@ -686,28 +686,6 @@
   year   = {2020}
 }
 
-@inproceedings{claessen2011quickcheck,
-  author    = {Claessen, Koen and Hughes, John},
-  title     = {{QuickCheck: A Lightweight Tool for Random Testing of Haskell Programs}},
-  year      = {2000},
-  isbn      = {1581132026},
-  publisher = {Association for Computing Machinery},
-  address   = {New York, NY, USA},
-  url       = {https://doi.org/10.1145/351240.351266},
-  doi       = {10.1145/351240.351266},
-  abstract  = {Quick Check is a tool which aids the Haskell programmer in formulating and testing
-               properties of programs. Properties are described as Haskell functions, and can be
-               automatically tested on random input, but it is also possible to define custom test
-               data generators. We present a number of case studies, in which the tool was successfully
-               used, and also point out some pitfalls to avoid. Random testing is especially suitable
-               for functional programs because properties can be stated at a fine grain. When a function
-               is built from separately tested components, then random testing suffices to obtain
-               good coverage of the definition under test.},
-  booktitle = {Proceedings of the Fifth ACM SIGPLAN International Conference on Functional Programming},
-  pages     = {268–279},
-  numpages  = {12},
-  series    = {ICFP '00}
-}
 
 @article{BidirectionalTyping,
   author     = {Dunfield, Jana and Krishnaswami, Neel},
@@ -761,7 +739,7 @@
   abstract = {In ordinary lambda calculus the occurrences of a bound variable are made recognizable by the use of one and the same (otherwise irrelevant) name at all occurrences. This convention is known to cause considerable trouble in cases of substitution. In the present paper a different notational system is developed, where occurrences of variables are indicated by integers giving the “distance” to the binding λ instead of a name attached to that λ. The system is claimed to be efficient for automatic formula manipulation as well as for metalingual discussion. As an example the most essential part of a proof of the Church-Rosser theorem is presented in this namefree calculus.}
 }
 
-@article{CoverageType,
+@article{ZMD+23,
   author     = {Zhou, Zhe and Mishra, Ashish and Delaware, Benjamin and Jagannathan, Suresh},
   title      = {Covering All the Bases: Type-Based Verification of Test Input Generators},
   year       = {2023},
@@ -1569,8 +1547,6 @@
 
  @inbook{Ramsey1987,
   author    = {Ramsey, F. P.},
-  editor    = {Gessel, Ira
-               and Rota, Gian-Carlo},
   title     = {On a Problem of Formal Logic},
   booktitle = {Classic Papers in Combinatorics},
   year      = {1987},
@@ -2020,3 +1996,79 @@ series = {ICFP '13}
   biburl       = {https://dblp.org/rec/journals/pacmpl/FrankQL24.bib},
   bibsource    = {dblp computer science bibliography, https://dblp.org}
 }
+
+
+@inproceedings{CD11,
+  author = {Calcagno, Cristiano and Distefano, Dino},
+  title = {{Infer: An Automatic Program Verifier for Memory Safety of C Programs}},
+  year = {2011},
+  isbn = {9783642203978},
+  publisher = {Springer-Verlag},
+  address = {Berlin, Heidelberg},
+  booktitle = {Proceedings of the Third International Conference on NASA Formal Methods},
+  pages = {459–465},
+  numpages = {7}, location = {Pasadena, CA}, series = {NFM'11} }
+
+@article{DFLO19,
+  author = {Distefano, Dino and F\"{a}hndrich, Manuel and Logozzo, Francesco and O'Hearn, Peter W.},
+  title = {{Scaling Static Analyses at Facebook}},
+  year = {2019},
+  issue_date = {August 2019},
+  publisher = {Association for Computing Machinery},
+  address = {New York, NY, USA},
+  volume = {62},
+  number = {8},
+  issn = {0001-0782},
+  journal = {Commun. ACM}, month = jul, pages = {62–70}, numpages = {9} }
+
+@article{ZDS23,
+ author = {Zilberstein, Noam and Dreyer, Derek and Silva, Alexandra},
+ title = {{Outcome Logic: A Unifying Foundation for Correctness and Incorrectness Reasoning}},
+ year = {2023},
+ issue_date = {April 2023},
+ publisher = {Association for Computing Machinery},
+ address = {New York, NY, USA},
+ volume = {7},
+ number = {OOPSLA1},
+ journal = {Proc. ACM Program. Lang.}, month = apr, articleno = {93}, numpages = {29}}
+ 
+ 
+@article{RW24,
+author = {Ramsay, Steven and Walpole, Charlie},
+title = {{Ill-Typed Programs Don’t Evaluate}},
+year = {2024},
+issue_date = {January 2024},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA}, volume = {8}, number = {POPL},
+journal = {Proc. ACM Program. Lang.}, month = jan, articleno = {67}, numpages = {31} } 
+ 
+
+@article{WGJ24,
+author = {Webbers, Robin and von Gleissenthall, Klaus and Jhala, Ranjit},
+title = {{Refinement Type Refutations}},
+year = {2024},
+issue_date = {October 2024},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+volume = {8}, number = {OOPSLA2},
+journal = {Proc. ACM Program. Lang.}, month = oct, articleno = {305}, numpages = {26} }
+ 
+ 
+@inproceedings{PCRH+11,
+author = {Pa\l{}ka, Micha\l{} H. and Claessen, Koen and Russo, Alejandro and Hughes, John},
+title = {Testing an Optimising Compiler by Generating Random Lambda Terms},
+year = {2011},
+isbn = {9781450305921},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+url = {https://doi.org/10.1145/1982595.1982615},
+doi = {10.1145/1982595.1982615},
+abstract = {This paper considers random testing of a compiler, using randomly generated programs as inputs, and comparing their behaviour with and without optimisation. Since the generated programs must compile, then we need to take into account syntax, scope rules, and type checking during our random generation. Doing so, while attaining a good distribution of test data, proves surprisingly subtle; the main contribution of this paper is a workable solution to this problem. We used it to generate typed functions on lists, which we compiled using the Glasgow Haskell compiler, a mature production quality Haskell compiler. After around 20,000 tests we triggered an optimiser failure, and automatically simplified it to a program with just a few constructs.},
+booktitle = {Proceedings of the 6th International Workshop on Automation of Software Test},
+pages = {91–97},
+numpages = {7},
+keywords = {random testing, software testing},
+location = {Waikiki, Honolulu, HI, USA},
+series = {AST '11}
+}
+
