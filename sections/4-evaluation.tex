@@ -3,25 +3,25 @@
 \newcommand{\ranint}{\underline{\Code{int\_gen\;()}}}
 
 
-\begin{figure}
-  \centering
-  \begin{minted}[xleftmargin=5pt, numbersep=4pt, linenos = true, fontsize = \footnotesize, escapeinside=??]{OCaml}
-  let rec lam_body_gen (n: int) =
-    (?$\eff{var}$? n) ?$\oplus$? // ?$\textcolor{DeepGreen}{[n]}$?
-    (?$\eff{app}$?;
-       ?$\eff{abs}\;\Int\sarr\Int$?; ?$\eff{app}$?; ?$\eff{var}$? 0; ?$\mykw{obs}\;\eff{appL}$?; lam_body_gen (n+1); ?$\mykw{obs}\;\eff{appR}$?; ?$\mykw{obs}\;\eff{endAbs}$?;
-       // ?$\textcolor{DeepGreen}{\lambda (\Int\sarr\Int). ([0]\;(\underline{\Code{lam\_body\_gen}\;(n + 1)}))}$?
-     ?$\mykw{obs}\;\eff{appL}$?; ?$\eff{abs}$? int; ?$\eff{var}$? 0; ?$\mykw{obs}\;\eff{endAbs}$?; // ?$\textcolor{DeepGreen}{\lambda \Int. [0]}$?
-     ?$\mykw{obs}\;\eff{appR}$?) // ?$\textcolor{DeepGreen}{\lambda (\Int\sarr\Int). ([0]\;(\underline{\Code{lam\_body\_gen}\;(n + 1)}))\;\lambda \Int. [0]}$?
-  in
-  ?$\eff{app}$?; ?$\eff{abs}$? int;f 0; ?$\mykw{obs}\;\eff{endAbs}$?; // ?$\textcolor{DeepGreen}{\lambda \Int. (\underline{\Code{lam\_body\_gen}\;0})}$?
-  ?$\mykw{obs}\;\eff{appL}$?; ?$\eff{const}$? (int_gen ()); // ?$\textcolor{DeepGreen}{\ranint}$?
-  ?$\mykw{obs}\;\eff{appR}$?; // ?$\textcolor{DeepGreen}{\lambda \Int. (\underline{\Code{lam\_body\_gen}\;0})\;(\ranint)}$?
-  \end{minted}
-  \vspace*{-.1in}
-  \caption{STLC generator $P_\Code{STLC}$. }\label{fig:stlc-gen}
-  \vspace*{-.2in}
-  \end{figure}
+% \begin{figure}
+%   \centering
+%   \begin{minted}[xleftmargin=5pt, numbersep=4pt, linenos = true, fontsize = \footnotesize, escapeinside=??]{OCaml}
+%   let rec lam_body_gen (n: int) =
+%     (?$\eff{var}$? n) ?$\oplus$? // ?$\textcolor{DeepGreen}{[n]}$?
+%     (?$\eff{app}$?;
+%        ?$\eff{abs}\;\Int\sarr\Int$?; ?$\eff{app}$?; ?$\eff{var}$? 0; ?$\mykw{obs}\;\eff{appL}$?; lam_body_gen (n+1); ?$\mykw{obs}\;\eff{appR}$?; ?$\mykw{obs}\;\eff{endAbs}$?;
+%        // ?$\textcolor{DeepGreen}{\lambda (\Int\sarr\Int). ([0]\;(\underline{\Code{lam\_body\_gen}\;(n + 1)}))}$?
+%      ?$\mykw{obs}\;\eff{appL}$?; ?$\eff{abs}$? int; ?$\eff{var}$? 0; ?$\mykw{obs}\;\eff{endAbs}$?; // ?$\textcolor{DeepGreen}{\lambda \Int. [0]}$?
+%      ?$\mykw{obs}\;\eff{appR}$?) // ?$\textcolor{DeepGreen}{\lambda (\Int\sarr\Int). ([0]\;(\underline{\Code{lam\_body\_gen}\;(n + 1)}))\;\lambda \Int. [0]}$?
+%   in
+%   ?$\eff{app}$?; ?$\eff{abs}$? int;f 0; ?$\mykw{obs}\;\eff{endAbs}$?; // ?$\textcolor{DeepGreen}{\lambda \Int. (\underline{\Code{lam\_body\_gen}\;0})}$?
+%   ?$\mykw{obs}\;\eff{appL}$?; ?$\eff{const}$? (int_gen ()); // ?$\textcolor{DeepGreen}{\ranint}$?
+%   ?$\mykw{obs}\;\eff{appR}$?; // ?$\textcolor{DeepGreen}{\lambda \Int. (\underline{\Code{lam\_body\_gen}\;0})\;(\ranint)}$?
+%   \end{minted}
+%   \vspace*{-.1in}
+%   \caption{STLC generator $P_\Code{STLC}$. }\label{fig:stlc-gen}
+%   \vspace*{-.2in}
+%   \end{figure}
 
 We have implemented a tool based on the above approach, called
 \name{}, that targets reactive distributed system models (i.e.,
