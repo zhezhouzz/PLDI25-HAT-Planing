@@ -4,49 +4,6 @@
 We propose a trace-based specification framework for underapproximating temporal properties in the testing of complex, potentially concurrent systems. Our approach supports the automatic synthesis of test generators, expressed in a domain-specific language, that are provably correct with respect to the given specifications. We first present the key features of our approach, followed by illustrative examples from multiple domains.
 
 
-\ZZ{TODO: move this parts to introduction}
-We are interested in the generation of test inputs comprised of
-sequences of \emph{events} that can be handled by the
-system-under-test (SUT); the order of these events in the sequence is
-expected to be relevant to the property being checked because of
-latent data and control dependencies they exhibit or effectful
-behavior they induce.  Examples of applications in which tests are
-naturally crafted in this fashion include:
-\begin{enumerate}
-
-\item \textbf{Library API invocations:} The SUT is a library
-  implementing an effectful abstract data type (ADT) with a set of
-  APIs.  A test consists of a sequence of API calls that lead the
-  implementation to an error state.
-
-\item \textbf{Serialized inputs:} The SUT is a procedure that processes
-  serialized input data, and reconstructs an AST from this input.  The
-  inputs produced by the test generator are expected to establish
-  semantic dependencies among nodes in the corresponding AST that do
-  not satisfy a property of interest.
-
-\item \textbf{Database transactions:} The SUT is a database supporting
-  transactional read and write operations under various isolation
-  levels.  A test consists of a sequence of transaction operations
-  whose interleaved order is chosen to expose violations of isolation
-  guarantees by the database.
-
-\item \textbf{Distributed protocols:} The SUT is a distributed system
-  whose components are expected to adhere to a protocol.  A test is a
-  sequence of message invocations that lead the system to a global
-  state in which protocol invariants are not maintained.
-\end{enumerate}
-
-%% SJ: belongs in intro.
-%% A common feature shared by these examples, despite arising from
-%% diverse domains, is that the test generator must be cognizant of how
-%% event dependencies are (or are not) meaningful to manifesting a
-%% property violation.  To do so, we define (1) a formal specification language
-%% precisely describ latent dependencies
-%% among operations; (2) a domain-specific language for expressing
-%% generators that produce sequences conforming to these dependencies;
-%% and (3) a program synthesis technique for automatically constructing
-%% such generators from dependency specifications.
 \subsection{Trace-based Specifications}
 
 We refer to the sequence of events that comprise a test sequence as a
@@ -97,7 +54,7 @@ To support test generation across diverse domains, we introduce a domain-specifi
 % \begin{minted}[fontsize = \footnotesize, escapeinside=??, xleftmargin=18pt, linenos]{ocaml}
 %   let rec set_gen (prev_elem: int) =
 %     () ?$\oplus$?
-%     let elem = prev_elem + positive_random_int () in
+%     let elem = prev_elem + positive_int_gen () in
 %     ?$\eff{insert}$? elem; set_gen (elem); ?$\eff{delete}$? elem
 %   in set_gen 0
 % \end{minted}
@@ -148,15 +105,15 @@ To support test generation across diverse domains, we introduce a domain-specifi
   
   Our DSL supports \emph{interactive} test generation through the $\mykw{obs}$ syntax, which enables tests to dynamically observe the effects of the SUT and control subsequent generation behavior. For instance, the following test generator for the read atomicity property utilizes $\mykw{obs}$ to inspect SUT responses:
   \begin{minted}[fontsize = \footnotesize, escapeinside=??, xleftmargin=18pt, linenos]{ocaml}
-    let rec transaction_gen () =
-      let x = random_int () in
+    let rec transaction_gen tid1 tid2 =
+      let x = int_gen () in
       ?$\eff{writeReq}$? tid1 x; let _ = ?$\mykw{obs}\;\eff{writeRsp}$? in
       ?$\eff{readReq}$? tid2; 
-      ?$\eff{writeReq}$? tid1 (x + 1); let _ = ?$\mykw{obs}\;\eff{writeRsp}$? in
-      let _, y = ?$\mykw{obs}\;\eff{readRsp}$? tid2 in (assert (y != x) ?$\oplus$? transaction_gen ())
+      ?$\eff{writeReq}$? tid1 (int_gen ()); let _ = ?$\mykw{obs}\;\eff{writeRsp}$? in
+      let _, y = ?$\mykw{obs}\;\eff{readRsp}$? tid2 in assert x == y; (() ?$\oplus$? transaction_gen tid1 tid2)
   \end{minted}
 
-  \noindent In each iteration, the generator issues two distinct writes (line 3 and 5) with a read request in between (line 4),  and observing the read result $y$ via $\mykw{obs}$ (line 6). It then compares $y$ with $x$ to determine whether to terminate (i.e., the read result is different from the first written value) or recursively generate further transactions.
+  \noindent In each iteration, the generator issues two potentially distinct writes (lines 3 and 5) with a read request in between (line 4), and observes the read result $y$ via $\mykw{obs}$ (line 6). Before generating further transactions, it compares $y$ with $x$ to determine whether to terminate the test exploration and report a violation (i.e., if the read result is different from the first written value).
 \end{example}
 
 % \begin{example}[Strong Consistency]\label{ex:sc} 
