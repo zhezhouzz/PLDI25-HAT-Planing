@@ -1320,6 +1320,24 @@
   bibsource = {dblp computer science bibliography, https://dblp.org}
 }
 
+@article{CoverageType,
+  author     = {Zhou, Zhe and Mishra, Ashish and Delaware, Benjamin and Jagannathan, Suresh},
+  title      = {Covering All the Bases: Type-Based Verification of Test Input Generators},
+  year       = {2023},
+  issue_date = {June 2023},
+  publisher  = {Association for Computing Machinery},
+  address    = {New York, NY, USA},
+  volume     = {7},
+  number     = {PLDI},
+  url        = {https://doi.org/10.1145/3591271},
+  doi        = {10.1145/3591271},
+  abstract   = {Test input generators are an important part of property-based testing (PBT) frameworks. Because PBT is intended to test deep semantic and structural properties of a program, the outputs produced by these generators can be complex data structures, constrained to satisfy properties the developer believes is most relevant to testing the function of interest. An important feature expected of these generators is that they be capable of producing all acceptable elements that satisfy the function’s input type and generator-provided constraints. However, it is not readily apparent how we might validate whether a particular generator’s output satisfies this coverage requirement. Typically, developers must rely on manual inspection and post-mortem analysis of test runs to determine if the generator is providing sufficient coverage; these approaches are error-prone and difficult to scale as generators become more complex. To address this important concern, we present a new refinement type-based verification procedure for validating the coverage provided by input test generators, based on a novel interpretation of types that embeds “must-style” underapproximate reasoning principles as a fundamental part of the type system. The types associated with expressions now capture the set of values guaranteed to be produced by the expression, rather than the typical formulation that uses types to represent the set of values an expression may produce. Beyond formalizing the notion of coverage types in the context of a rich core language with higher-order procedures and inductive datatypes, we also present a detailed evaluation study to justify the utility of our ideas.},
+  journal    = {Proc. ACM Program. Lang.},
+  month      = jun,
+  articleno  = {157},
+  numpages   = {24},
+  keywords   = {underapproximate reasoning, refinement types, property-based testing}
+}
 
 @article{ZYDJ24,
   author    = {Zhe Zhou and
@@ -1816,21 +1834,21 @@
 }
 
 @inproceedings{pbt-ifc,
-author = {Hritcu, Catalin and Hughes, John and Pierce, Benjamin C. and Spector-Zabusky, Antal and Vytiniotis, Dimitrios and Azevedo de Amorim, Arthur and Lampropoulos, Leonidas},
-title = {Testing noninterference, quickly},
-year = {2013},
-isbn = {9781450323260},
-publisher = {Association for Computing Machinery},
-address = {New York, NY, USA},
-url = {https://doi.org/10.1145/2500365.2500574},
-doi = {10.1145/2500365.2500574},
-abstract = {Information-flow control mechanisms are difficult to design and labor intensive to prove correct. To reduce the time wasted on proof attempts doomed to fail due to broken definitions, we advocate modern random testing techniques for finding counterexamples during the design process. We show how to use QuickCheck, a property-based random-testing tool, to guide the design of a simple information-flow abstract machine. We find that both sophisticated strategies for generating well-distributed random programs and readily falsifiable formulations of noninterference properties are critically important. We propose several approaches and evaluate their effectiveness on a collection of injected bugs of varying subtlety. We also present an effective technique for shrinking large counterexamples to minimal, easily comprehensible ones. Taken together, our best methods enable us to quickly and automatically generate simple counterexamples for all these bugs.},
-booktitle = {Proceedings of the 18th ACM SIGPLAN International Conference on Functional Programming},
-pages = {455–468},
-numpages = {14},
-keywords = {security, random testing, quickcheck, noninterference, dynamic information-flow control, design, abstract machine},
-location = {Boston, Massachusetts, USA},
-series = {ICFP '13}
+  author    = {Hritcu, Catalin and Hughes, John and Pierce, Benjamin C. and Spector-Zabusky, Antal and Vytiniotis, Dimitrios and Azevedo de Amorim, Arthur and Lampropoulos, Leonidas},
+  title     = {Testing noninterference, quickly},
+  year      = {2013},
+  isbn      = {9781450323260},
+  publisher = {Association for Computing Machinery},
+  address   = {New York, NY, USA},
+  url       = {https://doi.org/10.1145/2500365.2500574},
+  doi       = {10.1145/2500365.2500574},
+  abstract  = {Information-flow control mechanisms are difficult to design and labor intensive to prove correct. To reduce the time wasted on proof attempts doomed to fail due to broken definitions, we advocate modern random testing techniques for finding counterexamples during the design process. We show how to use QuickCheck, a property-based random-testing tool, to guide the design of a simple information-flow abstract machine. We find that both sophisticated strategies for generating well-distributed random programs and readily falsifiable formulations of noninterference properties are critically important. We propose several approaches and evaluate their effectiveness on a collection of injected bugs of varying subtlety. We also present an effective technique for shrinking large counterexamples to minimal, easily comprehensible ones. Taken together, our best methods enable us to quickly and automatically generate simple counterexamples for all these bugs.},
+  booktitle = {Proceedings of the 18th ACM SIGPLAN International Conference on Functional Programming},
+  pages     = {455–468},
+  numpages  = {14},
+  keywords  = {security, random testing, quickcheck, noninterference, dynamic information-flow control, design, abstract machine},
+  location  = {Boston, Massachusetts, USA},
+  series    = {ICFP '13}
 }
 
 @inproceedings{HC+24,
@@ -1981,95 +1999,117 @@ series = {ICFP '13}
 
 
 @article{FQL24,
-  author       = {Justin Frank and
-                  Benjamin Quiring and
-                  Leonidas Lampropoulos},
-  title        = {{Generating Well-Typed Terms That Are Not "Useless"}},
-  journal      = {Proc. {ACM} Program. Lang.},
-  volume       = {8},
-  number       = {{POPL}},
-  pages        = {2318--2339},
-  year         = {2024},
-  url          = {https://doi.org/10.1145/3632919},
-  doi          = {10.1145/3632919},
-  timestamp    = {Sat, 10 Feb 2024 18:05:27 +0100},
-  biburl       = {https://dblp.org/rec/journals/pacmpl/FrankQL24.bib},
-  bibsource    = {dblp computer science bibliography, https://dblp.org}
+  author    = {Justin Frank and
+               Benjamin Quiring and
+               Leonidas Lampropoulos},
+  title     = {{Generating Well-Typed Terms That Are Not "Useless"}},
+  journal   = {Proc. {ACM} Program. Lang.},
+  volume    = {8},
+  number    = {{POPL}},
+  pages     = {2318--2339},
+  year      = {2024},
+  url       = {https://doi.org/10.1145/3632919},
+  doi       = {10.1145/3632919},
+  timestamp = {Sat, 10 Feb 2024 18:05:27 +0100},
+  biburl    = {https://dblp.org/rec/journals/pacmpl/FrankQL24.bib},
+  bibsource = {dblp computer science bibliography, https://dblp.org}
 }
 
 
 @inproceedings{CD11,
-  author = {Calcagno, Cristiano and Distefano, Dino},
-  title = {{Infer: An Automatic Program Verifier for Memory Safety of C Programs}},
-  year = {2011},
-  isbn = {9783642203978},
+  author    = {Calcagno, Cristiano and Distefano, Dino},
+  title     = {{Infer: An Automatic Program Verifier for Memory Safety of C Programs}},
+  year      = {2011},
+  isbn      = {9783642203978},
   publisher = {Springer-Verlag},
-  address = {Berlin, Heidelberg},
+  address   = {Berlin, Heidelberg},
   booktitle = {Proceedings of the Third International Conference on NASA Formal Methods},
-  pages = {459–465},
-  numpages = {7}, location = {Pasadena, CA}, series = {NFM'11} }
+  pages     = {459–465},
+  numpages  = {7},
+  location  = {Pasadena, CA},
+  series    = {NFM'11}
+}
 
 @article{DFLO19,
-  author = {Distefano, Dino and F\"{a}hndrich, Manuel and Logozzo, Francesco and O'Hearn, Peter W.},
-  title = {{Scaling Static Analyses at Facebook}},
-  year = {2019},
+  author     = {Distefano, Dino and F\"{a}hndrich, Manuel and Logozzo, Francesco and O'Hearn, Peter W.},
+  title      = {{Scaling Static Analyses at Facebook}},
+  year       = {2019},
   issue_date = {August 2019},
-  publisher = {Association for Computing Machinery},
-  address = {New York, NY, USA},
-  volume = {62},
-  number = {8},
-  issn = {0001-0782},
-  journal = {Commun. ACM}, month = jul, pages = {62–70}, numpages = {9} }
+  publisher  = {Association for Computing Machinery},
+  address    = {New York, NY, USA},
+  volume     = {62},
+  number     = {8},
+  issn       = {0001-0782},
+  journal    = {Commun. ACM},
+  month      = jul,
+  pages      = {62–70},
+  numpages   = {9}
+}
 
 @article{ZDS23,
- author = {Zilberstein, Noam and Dreyer, Derek and Silva, Alexandra},
- title = {{Outcome Logic: A Unifying Foundation for Correctness and Incorrectness Reasoning}},
- year = {2023},
- issue_date = {April 2023},
- publisher = {Association for Computing Machinery},
- address = {New York, NY, USA},
- volume = {7},
- number = {OOPSLA1},
- journal = {Proc. ACM Program. Lang.}, month = apr, articleno = {93}, numpages = {29}}
+  author     = {Zilberstein, Noam and Dreyer, Derek and Silva, Alexandra},
+  title      = {{Outcome Logic: A Unifying Foundation for Correctness and Incorrectness Reasoning}},
+  year       = {2023},
+  issue_date = {April 2023},
+  publisher  = {Association for Computing Machinery},
+  address    = {New York, NY, USA},
+  volume     = {7},
+  number     = {OOPSLA1},
+  journal    = {Proc. ACM Program. Lang.},
+  month      = apr,
+  articleno  = {93},
+  numpages   = {29}
+}
  
  
 @article{RW24,
-author = {Ramsay, Steven and Walpole, Charlie},
-title = {{Ill-Typed Programs Don’t Evaluate}},
-year = {2024},
-issue_date = {January 2024},
-publisher = {Association for Computing Machinery},
-address = {New York, NY, USA}, volume = {8}, number = {POPL},
-journal = {Proc. ACM Program. Lang.}, month = jan, articleno = {67}, numpages = {31} } 
+  author     = {Ramsay, Steven and Walpole, Charlie},
+  title      = {{Ill-Typed Programs Don’t Evaluate}},
+  year       = {2024},
+  issue_date = {January 2024},
+  publisher  = {Association for Computing Machinery},
+  address    = {New York, NY, USA},
+  volume     = {8},
+  number     = {POPL},
+  journal    = {Proc. ACM Program. Lang.},
+  month      = jan,
+  articleno  = {67},
+  numpages   = {31}
+} 
  
 
 @article{WGJ24,
-author = {Webbers, Robin and von Gleissenthall, Klaus and Jhala, Ranjit},
-title = {{Refinement Type Refutations}},
-year = {2024},
-issue_date = {October 2024},
-publisher = {Association for Computing Machinery},
-address = {New York, NY, USA},
-volume = {8}, number = {OOPSLA2},
-journal = {Proc. ACM Program. Lang.}, month = oct, articleno = {305}, numpages = {26} }
+  author     = {Webbers, Robin and von Gleissenthall, Klaus and Jhala, Ranjit},
+  title      = {{Refinement Type Refutations}},
+  year       = {2024},
+  issue_date = {October 2024},
+  publisher  = {Association for Computing Machinery},
+  address    = {New York, NY, USA},
+  volume     = {8},
+  number     = {OOPSLA2},
+  journal    = {Proc. ACM Program. Lang.},
+  month      = oct,
+  articleno  = {305},
+  numpages   = {26}
+}
  
  
 @inproceedings{PCRH+11,
-author = {Pa\l{}ka, Micha\l{} H. and Claessen, Koen and Russo, Alejandro and Hughes, John},
-title = {Testing an Optimising Compiler by Generating Random Lambda Terms},
-year = {2011},
-isbn = {9781450305921},
-publisher = {Association for Computing Machinery},
-address = {New York, NY, USA},
-url = {https://doi.org/10.1145/1982595.1982615},
-doi = {10.1145/1982595.1982615},
-abstract = {This paper considers random testing of a compiler, using randomly generated programs as inputs, and comparing their behaviour with and without optimisation. Since the generated programs must compile, then we need to take into account syntax, scope rules, and type checking during our random generation. Doing so, while attaining a good distribution of test data, proves surprisingly subtle; the main contribution of this paper is a workable solution to this problem. We used it to generate typed functions on lists, which we compiled using the Glasgow Haskell compiler, a mature production quality Haskell compiler. After around 20,000 tests we triggered an optimiser failure, and automatically simplified it to a program with just a few constructs.},
-booktitle = {Proceedings of the 6th International Workshop on Automation of Software Test},
-pages = {91–97},
-numpages = {7},
-keywords = {random testing, software testing},
-location = {Waikiki, Honolulu, HI, USA},
-series = {AST '11}
+  author    = {Pa\l{}ka, Micha\l{} H. and Claessen, Koen and Russo, Alejandro and Hughes, John},
+  title     = {Testing an Optimising Compiler by Generating Random Lambda Terms},
+  year      = {2011},
+  isbn      = {9781450305921},
+  publisher = {Association for Computing Machinery},
+  address   = {New York, NY, USA},
+  url       = {https://doi.org/10.1145/1982595.1982615},
+  doi       = {10.1145/1982595.1982615},
+  abstract  = {This paper considers random testing of a compiler, using randomly generated programs as inputs, and comparing their behaviour with and without optimisation. Since the generated programs must compile, then we need to take into account syntax, scope rules, and type checking during our random generation. Doing so, while attaining a good distribution of test data, proves surprisingly subtle; the main contribution of this paper is a workable solution to this problem. We used it to generate typed functions on lists, which we compiled using the Glasgow Haskell compiler, a mature production quality Haskell compiler. After around 20,000 tests we triggered an optimiser failure, and automatically simplified it to a program with just a few constructs.},
+  booktitle = {Proceedings of the 6th International Workshop on Automation of Software Test},
+  pages     = {91–97},
+  numpages  = {7},
+  keywords  = {random testing, software testing},
+  location  = {Waikiki, Honolulu, HI, USA},
+  series    = {AST '11}
 }
 
 @inproceedings{BC+10,

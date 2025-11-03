@@ -57,7 +57,7 @@ Assume the user want to test if the read atomicity property is violated by the s
   \Params{Ghost variables $\overline{x{:}b}$, operator context
     $\Delta$, and abstract trace $\Pi$}%
   \Output{Generator $e$, such that
-    $\Gamma \vdash e : \uhat{\epsilon}{\Pi'} \land \Gamma \vdash \Pi' \subseteq \Pi$} %
+    $\Gamma \vdash e : \uhat{\epsilon}{\Unit}{\Pi'} \land \Gamma \vdash \Pi' \subseteq \Pi$} %
   $\Gamma \leftarrow \overline{x{:}\urt{b}{\top}}$
   \tcp*[l]{initialize type context and dependency map}
 $(\Gamma, \Pi) \leftarrow \refine(\Gamma, \Pi)$ \tcp*[l]{refine events}
@@ -172,8 +172,8 @@ If the event $\msg{op}{\phi}$ is generatable, forward synthesis is invoked to in
 \setlength{\textfloatsep}{4pt}
 \begin{algorithm}[t!]
 \Procedure{$\forward(\Delta, \Gamma, \Pi_h, \msg{op_{req}}{\phi}, \Pi_f)$}{
-    $(\eff{op_{req}}, \overline{z{:}b}\garr\overline{y{:}\ort{b_y}{\phi_y}}\sarr\uhat{\Pi_h'}{\msg{op_{req}}{\phi'}\seqA \Pi_f'} )\in \Delta$\tcp*[l]{select \tyName of $\eff{op_{req}}$}
-    $\Gamma \leftarrow \Gamma, \overline{z{:}\urt{b}{\top}}, \overline{y{:}\urt{b_y}{\phi_y}}$ \tcp*[l]{add ghost variables and parameters types to type context}
+    $(\eff{op_{req}}, \overline{z{:}b}\garr\overline{y{:}t_y}\sarr\uhat{\Pi_h'}{\Unit}{\msg{op_{req}}{\phi'}\seqA \Pi_f'} )\in \Delta$\tcp*[l]{select \tyName of $\eff{op_{req}}$}
+    $\Gamma \leftarrow \Gamma, \overline{z{:}\urt{b}{\top}}, \overline{y{:}\widehat{t_y}}$ \tcp*[l]{add ghost variables and parameters types to type context}
     $\msg{op_{req}}{\phi} \leftarrow \msg{op_{req}}{\phi \land \phi'}$ \tcp*[l]{merge current regex}
     $\Pi_h \leftarrow \Pi_h \land \Pi_h'$; $\;\;\Pi_f \leftarrow \Pi_f \land (\Pi_f'\seqA \allA \msgC{op_{rsp}}\allA)$ \tcp*[l]{merge history and future regex}
     \lIf(\tcp*[h]{non-emptiness check}){$\Gamma \vdash \Pi_h \seqA \msg{op_{req}}{\phi} \seqA \Pi_f \not \subseteq \emptyset$}{
@@ -181,8 +181,8 @@ If the event $\msg{op}{\phi}$ is generatable, forward synthesis is invoked to in
     }
 }
 \Procedure{$\backward(\Delta, \Gamma, \Pi_h, \msg{op_{rsp}}{\phi}, \Pi_f)$}{
-  $(\eff{op_{rsp}}, \overline{z{:}b}\garr\overline{y{:}\ort{b_y}{\phi_y}}\sarr\uhat{\Pi_h'}{\msg{op_{rsp}}{\phi'}\seqA \Pi_f'} )\in \Delta$\tcp*[l]{select \tyName of $\eff{op_{rsp}}$}
-  $\Gamma \leftarrow \Gamma, \overline{z{:}\urt{b}{\top}}, \overline{y{:}\urt{b_y}{\phi_y}}$ \tcp*[l]{add ghost variables and parameters types to type context}
+  $(\eff{op_{rsp}}, \overline{z{:}b}\garr\overline{y{:}t_y}\sarr\uhat{\Pi_h'}{x{:}t_x}{\msg{op_{rsp}}{\phi'}\seqA \Pi_f'} )\in \Delta$\tcp*[l]{select \tyName of $\eff{op_{rsp}}$}
+  $\Gamma \leftarrow \Gamma, \overline{z{:}\urt{b}{\top}}, \overline{y{:}\widehat{t_y}}, x{:}t_x$ \tcp*[l]{add ghost variables and parameters types to type context}
   $\msg{op_{rsp}}{\phi} \leftarrow \msg{op_{rsp}}{\phi \land \phi'}$ \tcp*[l]{merge current regex}
   $\Pi_h \leftarrow \Pi_h \land \Pi_h' \land (\allA\msgC{op_{req}}\allA)$; $\;\;\Pi_f \leftarrow \Pi_f \land (\Pi_f'\seqA \allA)$ \tcp*[l]{merge history and future regex}
   \lIf(\tcp*[h]{non-emptiness check}){$\Gamma \vdash \Pi_h \seqA \msg{op_{rsp}}{\phi} \seqA \Pi_f \not \subseteq \emptyset$}{
@@ -230,7 +230,7 @@ We illustrate one iteration of the refinement process for \autoref{prop:global}.
 Assume the first iteration targets the observable event $\msg{readRsp}{v = x}$ (colored blue). The algorithm invokes backward synthesis to locate the corresponding request event (i.e., $\eff{readReq}$) in history. The retrieved type of $\eff{readRsp}$ is shown below, which requires that there is a write response event and read request event that has happened before:
 \vspace{-.4cm} \par\nobreak{\footnotesize %
 \begin{align*}
-  i{:}\Int\sarr x{:}\Int\sarr \uhat{\allA\msg{writeRsp}{i\;x}(\anyA \setminus \msgC{writeRsp})^* \msgA{readReq}{i}\allA}{\msgA{readRsp}{i\;x}}
+  i{:}\Int\sarr x{:}\Int\sarr \uhat{\allA\msg{writeRsp}{i\;x}(\anyA \setminus \msgC{writeRsp})^* \msgA{readReq}{i}\allA}{\Unit}{\msgA{readRsp}{i\;x}}
 \end{align*}}\noindent
 During the merging of abstract traces, the algorithm finds that the $\msg{writeRsp}{i\;x}$ event in the type cannot be aligned with the $\msg{writeRsp}{v \not= x}$ event, nor inserted between it and $\msg{readRsp}{v = x}$ in the abstract trace, since they have conflicting qualifiers, which will be rejected by the non-emptiness check. Then, the algorithm produces the following result, where newly added events are colored in green.
 \vspace{-.4cm} \par\nobreak{\footnotesize %
@@ -243,28 +243,28 @@ During the merging of abstract traces, the algorithm finds that the $\msg{writeR
 \subsection{Synthesis Recursion}
 \label{subsec:synthesis-recursion}
 
-\setlength{\textfloatsep}{4pt}
-\begin{algorithm}[t!]
-\Procedure{$\derive(\Gamma, \Pi)$}{
-  \If(\tcp*[h]{Synthesize sequential program}){$\Code{(*)}$}{
-    \lForEach(\tcp*[h]{remove Kleene star}){$A^* \in \Pi$}{
-      $\Pi \leftarrow \Pi[A^* \mapsto \epsilon]$
-    }
-    \Return{$\compile(\Gamma, \Pi)$} \tcp*[l]{compile term}
-  }
-  \Else(\tcp*[h]{Synthesize recursion}){
-        $T, (\Pi_h, \Pi_{\Code{rec}}, \Pi_f) \leftarrow \mathbf{MatchTemplate}(\Pi)$\;
-        \ForEach{$i$ < bound} {
-          $\_ \leftarrow \refine(\Gamma, \Pi_h \seqA \Pi_{\Code{rec}}^i \seqA \Pi_f)$ \tcp*[l]{unrolling the recursion for $i$ times}
-        }
-        \Return{$T[\derive(\Gamma, \Pi_h), \derive(\Gamma, \Pi_{\Code{rec}}), \derive(\Gamma, \Pi_f)]$}
-  }
-}
-\caption{Synthesis Recursion}
-\label{algo:syn-recursion}
-\end{algorithm}
+% \setlength{\textfloatsep}{4pt}
+% \begin{algorithm}[t!]
+% \Procedure{$\derive(\Gamma, \Pi)$}{
+%   \If(\tcp*[h]{Synthesize sequential program}){$\Code{(*)}$}{
+%     \lForEach(\tcp*[h]{remove Kleene star}){$A^* \in \Pi$}{
+%       $\Pi \leftarrow \Pi[A^* \mapsto \epsilon]$
+%     }
+%     \Return{$\compile(\Gamma, \Pi)$} \tcp*[l]{compile term}
+%   }
+%   \Else(\tcp*[h]{Synthesize recursion}){
+%         $T, (\Pi_h, \Pi_{\Code{rec}}, \Pi_f) \leftarrow \mathbf{MatchTemplate}(\Pi)$\;
+%         \ForEach{$i$ < bound} {
+%           $\_ \leftarrow \refine(\Gamma, \Pi_h \seqA \Pi_{\Code{rec}}^i \seqA \Pi_f)$ \tcp*[l]{unrolling the recursion for $i$ times}
+%         }
+%         \Return{$T[\derive(\Gamma, \Pi_h), \derive(\Gamma, \Pi_{\Code{rec}}), \derive(\Gamma, \Pi_f)]$}
+%   }
+% }
+% \caption{Synthesis Recursion}
+% \label{algo:syn-recursion}
+% \end{algorithm}
 
-Kleene stars ($A^*$) in abstract traces are interpreted as recursion points. As shown in \autoref{algo:syn-recursion}, the synthesis algorithm non-deterministically either (i) generates a sequential program by eliminating the Kleene stars (lines 2--4)\footnote{The definition of $\compile$ is provided in the \techreport{}.}, or (ii) synthesizes a recursive program by expanding the Kleene star using recursion (lines 5--9). We employ a template-based strategy, in which $\S{MatchTemplate}$ produces a template $T$, together with abstract traces for the recursion body ($\Pi_{\Code{rec}}$), as well as its associated history ($\Pi_h$) and future ($\Pi_f$) traces (line 6). According to \textsc{TFixInd}, the algorithm unrolls the recursive body up to a bounded depth (line 7) and invokes $\refine$ to ensure that the unrolled abstract traces are well-typed (line 8). The synthesized programs for these three traces are then composed to instantiate the placeholders in the recursive template (line 9).
+Kleene stars ($A^*$) in abstract traces are interpreted as recursion points. The synthesis algorithm $\derive$ non-deterministically either (i) generates a sequential program by eliminating the Kleene stars (lines 2--4)\footnote{The definition of $\derive$ is provided in the \techreport{}.}, or (ii) synthesizes a recursive program by expanding the Kleene star using recursion. We employ a template-based strategy, in which algorithm match the given abstract trace with a template $T$, together with abstract traces for the recursion body ($\Pi_{\Code{rec}}$), as well as its associated history ($\Pi_h$) and future ($\Pi_f$) traces. According to \textsc{TFixInd}, the algorithm unrolls the recursive body up to a bounded depth and invokes $\refine$ to ensure that the unrolled abstract traces are well-typed. The synthesized programs for these three traces are then composed to instantiate the placeholders in the recursive template.
 
 \begin{example}[Recursion Template]
 A representative template is a non-deterministic loop, whose form is $T = \boxed{e_\Code{h}};\zlet{f}{\mykw{fix}\ f.\lambda ().\ \boxed{e_\Code{rec}};\ (()\oplus f())}{f\;()};\boxed{e_\Code{f}}$, allowing $A^*$ in the abstract trace to be matched. For instance, consider the refinement of the abstract trace $\Pi_\Code{RA}$:
