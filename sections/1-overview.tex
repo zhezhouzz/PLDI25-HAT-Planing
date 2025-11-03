@@ -58,7 +58,7 @@ $\mykw{obs}$ primitives, the former being used to initiate an effect
 and the latter used to observe its result.  For example,
 $\sgen{ReadReq}{}$ asynchronously generates a read request to the SUT,
 whose result can be subsequently observed via an
-$\zobs{x}{readRsp}{e}$ event, that binds the result of the read
+$\zobs{x}{readRsp}{\!\!}{e}$ event, that binds the result of the read
 operation to to $x$ in the $\mykw{let}$-body $e$. This style of trace
 generation enables concise expression of interactive test generators
 for systems such as database transactions and distributed protocols
@@ -252,8 +252,8 @@ updated.
   let push_gen () =
     let (x: int) = assume (isArr x) in
     let (y: int) = assume (isArr y) in
-    (assume (x = y); ?$\eff{push}$? L \langle x, y\rangle) ?$\oplus$? (assume (x != y); ?$\eff{push}$? H \langle x, y\rangle)
-  in push_gen x; push_gen y; ?$\eff{store}$?;
+    (assume (x = y); ?$\eff{push}$? L ?$\langle \Code{x, y}\rangle$?) ?$\oplus$? (assume (x != y); ?$\eff{push}$? H ?$\langle \Code{x, y}\rangle$?)
+  in push_gen (); push_gen (); ?$\eff{store}$?;
 \end{minted}
 
 \end{example}
@@ -299,10 +299,6 @@ updated.
     provided in the supplementary material. }; as we describe in the
   following sections, ghost events carry a payload whose dependencies
   can still be efficiently tracked and checked using off-the-shelf solvers.
-  
-  % {\small\begin{align*}
-  %   \effLR{\Code{LAST}(\msgAGray{depth}{d}) \msgA{token}{\boxed{(\lambda t.}\;} \msgAGray{depth}{d + 1} \allA \msgA{token}{\boxed{[n]}\;} \allA }\; \eff{token}\;\boxed{)}\;\effLR{\msgA{token}{\boxed{)}\;} \msgAGray{depth}{d}}
-  % \end{align*}}\noindent
   {\begin{align*}
     \effLR{\Code{LAST}(\msgAGray{depth}{d}) \msgA{token}{\boxed{(\lambda t.}\;} \msgAGray{depth}{d + 1} \allA }\; \eff{token}\;\boxed{)}\;\effLR{\msgA{token}{\boxed{)}\;} \msgAGray{depth}{d}}
   \end{align*}}\noindent

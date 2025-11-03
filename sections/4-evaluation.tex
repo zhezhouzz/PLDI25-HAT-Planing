@@ -321,41 +321,41 @@ program because \name{} may need to backtrack when a wrong type or
 message interleaving is selected, which future iterations cannot
 resolve.
 
-% \paragraph{Case study}
-% To demonstrate that \name{} can be effective in real-world scenarios,
-% we have applied it to \textsf{Anon2PCModel}, a model of a
-% two-phase commit (2PC) protocol that is currently in use at a major
-% cloud provider.  The original P model checks a standard consistency
-% property for 2PC transactions, specifically that if there exists a key
-% $\Code{k}$ updated within an active transaction $\Code{i}$, any
-% successful read response asking its value should return the value last
-% written to $\Code{k}$ made by that transaction. We can express a
-% violation of this property in LTL$_f$ as: %
-% {\small
-%   % \vspace*{-.1in}
-%   \begin{align*}
-%     \finalA (&\msg{updateRsp}{tid = \Code{i} \land key = \Code{k}
-%                \land v = \Code{x} \land st = \Code{OK}} \land \\
-%              &\nextA \neg
-%                \msg{updateRsp}{tid = \Code{i} \land key = \Code{k} \land st =
-%                \Code{OK}} \untilA \msg{readRsp}{tid = \Code{i} \land key =
-%                  \Code{k} \land v \not= \Code{x} \land st = \Code{OK}})
-% \end{align*}}%
-% \noindent where the field $\mathit{tid}$ represents the transaction id, while
-% other fields have the same meanings as in the example from
-% \autoref{sec:intro}.  Generating a fault-inducing scenario requires
-% (a) initiating a new transaction with transaction id $\Code{i}$, (b)
-% successfully performing a write within that transaction, and then (c)
-% subsequently performing a read within $\Code{i}$ that yields a
-% different value than the one last written.  This is an extremely
-% challenging sequence of steps for a controller to automatically
-% generate absent guidance from the property it is trying to violate.
-% In contrast, since the \PAT for $\eff{readReq}$ includes a history
-% automaton $\finalA \msg{startTxnRsp}{tid = \Code{i}}$ that requires
-% the user to have previously received a valid transaction id
-% $\Code{i}$, \name{} can directly synthesize a controller program that
-% strategically requests a new transaction to initiate triggering the
-% intended violation.  A version of the benchmark in which this sequence
-% structure is enforced by a manually crafted environment can discover
-% the violation in 53 executions, but at the cost of more
-% user effort and a less concise model definition.
+\paragraph{Case study}
+To demonstrate that \name{} can be effective in real-world scenarios,
+we have applied it to \textsf{Anon2PCModel}, a model of a
+two-phase commit (2PC) protocol that is currently in use at a major
+cloud provider.  The original P model checks a standard consistency
+property for 2PC transactions, specifically that if there exists a key
+$\Code{k}$ updated within an active transaction $\Code{i}$, any
+successful read response asking its value should return the value last
+written to $\Code{k}$ made by that transaction. We can express a
+violation of this property in LTL$_f$ as: %
+{\small
+  % \vspace*{-.1in}
+  \begin{align*}
+    \finalA (&\msg{updateRsp}{tid = \Code{i} \land key = \Code{k}
+               \land v = \Code{x} \land st = \Code{OK}} \land \\
+             &\nextA \neg
+               \msg{updateRsp}{tid = \Code{i} \land key = \Code{k} \land st =
+               \Code{OK}} \untilA \msg{readRsp}{tid = \Code{i} \land key =
+                 \Code{k} \land v \not= \Code{x} \land st = \Code{OK}})
+\end{align*}}%
+\noindent where the field $\mathit{tid}$ represents the transaction id, while
+other fields have the same meanings as in the example from
+\autoref{sec:intro}.  Generating a fault-inducing scenario requires
+(a) initiating a new transaction with transaction id $\Code{i}$, (b)
+successfully performing a write within that transaction, and then (c)
+subsequently performing a read within $\Code{i}$ that yields a
+different value than the one last written.  This is an extremely
+challenging sequence of steps for a controller to automatically
+generate absent guidance from the property it is trying to violate.
+In contrast, since the \PAT for $\eff{readReq}$ includes a history
+automaton $\finalA \msg{startTxnRsp}{tid = \Code{i}}$ that requires
+the user to have previously received a valid transaction id
+$\Code{i}$, \name{} can directly synthesize a controller program that
+strategically requests a new transaction to initiate triggering the
+intended violation.  A version of the benchmark in which this sequence
+structure is enforced by a manually crafted environment can discover
+the violation in 53 executions, but at the cost of more
+user effort and a less concise model definition.
