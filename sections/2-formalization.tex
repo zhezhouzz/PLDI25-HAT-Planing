@@ -41,7 +41,8 @@ probe the behaviors of a black-box system under test via a set of
 a type system that characterizes the set of traces that a program
 \emph{must} be able to produce, \emph{if} the system under test
 produces appropriate responses. The syntax of \DSL{} is shown in
-\autoref{fig:term-syntax}; programs are written in A-normal form and
+\autoref{fig:term-syntax}; programs are written in A-normal form\SJ{Not
+  necessary} and
 have access to both pure and effectful operations ($\primop$ and
 $\eff{op}$), can include nondeterministic choices ($\oplus$), and
 supports $\mykw{assume}$ and $\mykw{assert}$ statements in the style
@@ -58,7 +59,7 @@ use the bound variable, i.e., $\zlet{\_}{e_1}{e_2}$.
 semantics, which \autoref{sec:metatheory} describes in more
 detail. \BD{If we drop the capability contexts, we should be able to
   say we use the same semantics as the calculus in HAT, simplifying
-  this further.} Similar to other calculi for trace-based type
+  this further.} \ Similar to other calculi for trace-based type
 systems, the reduction relation defining this semantics,
 $\steptr{\alpha}{(\beta, e)}{~\alpha'}{(\beta', e')}$, includes a
 \textit{history trace} $\alpha$, i.e., a sequence of effectful
@@ -186,6 +187,7 @@ $1 \oplus 2 \oplus 3$, in contrast, does have this underapproximate
 type, as it can evaluate to both $1$ and $2$.
 
 \paragraph{Underapproximate Hoare Automata Types}
+
 Similar to other recent trace-based type systems~\cite{ZYDJ24}, \DSL{}
 uses \emph{Symbolic Finite Automata} (SFAs)~\cite{Vea13,
   SFA-minimization, SFA-Transducers} to qualify the traces generated
@@ -225,6 +227,8 @@ variables, ghost operators are used exclusively for specification and
 verification purposes--= they do not appear in expressions and do not
 impact the evaluation of a program.
 
+\SJ{This example is too detailed.  We should use something simpler -
+  maybe a stack example that counts pushes and pops?}
 \begin{example}[Ghost Events]\label{ex:stlc-types}
   The \tyName{} specification of the %
   $\eff{token}{:}\Code{str} \sarr \Unit$ %
@@ -437,6 +441,7 @@ type under the current type context.
 The \textsc{TRet} rule requires the future regex of a pure term
 ($\epsilon$) to only accept the empty trace (i.e., $[]$).
 
+\SJ{Why isn't the type given in Sec. 2 sufficient?}
 \begin{example}[Operator Type Context] The type of effect operator
   $\eff{readRsp}$ in Example~\ref{ex:read-atomicity} can provided by
   the following operator context $\Delta$: %
@@ -469,7 +474,9 @@ the operation is being performed in:%
     \;\;\underbrace{F }_\texttt{ghost events appended to $\eff{op}$}
     \;\;\underbrace{F'}_\texttt{trace produced by $e$}
     }
-  \end{align*}}%
+\end{align*}}%
+\SJ{I don't follow what it means to append a ghost event to a normal
+  event.}
 \noindent For simplicity, we only allow the ghost events to be
 appended to a normal event.  Same as prior work~\cite{CoverageType},
 the arguments should be well-typed against the parameter types fliped
@@ -494,7 +501,9 @@ $\uhat{H}{\urt{b}{\bot}}{\emptyset}$). In contrast, the
 \textsc{FixInd} rule permits typing a recursive function with type
 $t'$ by requiring it to have another type $t$, and by checking that
 its body can be assigned type $t'$ under the assumption that the
-function itself has type $t$.
+function itself has type $t$.  \SJ{This description is confusing -
+  what is the intuition used in the IL treatment of recursion that
+  we can refer to and apply here?}
 
 % The nondeterministic loop aligns with the Kleene star in SRE, and thus can be straightforwardly typed by the \textsc{TLoop} rule.
 % Since the loop body $e$ may be executed an unbounded number of times, the typing judgment for $e$ requires that an unbounded number of iterations may have already been performed ($H \seqA \textcolor{orange}{A^*}$) and may occur in the future ($\textcolor{orange}{A^*} \seqA A' \seqA F$). Additionally, the input and output capability contexts must be identical, ensuring that $e$ replenishes any capabilities it consumes.
