@@ -131,19 +131,32 @@ processing of a trace only if formula $\phi$ holds.
   which satisfies this this specification.  The specification uses
   \Code{LAST}($\eff{evt}$) as an alias for the following regex:
   \begin{align*}
-    \Code{LAST}(\eff{evt})   \equiv \allA; \eff{evt}; (\anyA \setminus \eff{evt})^*
+    \Code{LAST}(\eff{evt})   \equiv \allA;\; \eff{evt};\; (\anyA \setminus \eff{evt})^*
   \end{align*}
-  Thus, any trace that does not satisfy this type, i.e, a trace in
-  which a response to a request yields a different value than
-  previously seen by the transaction, exposes a read atomicity
-  violation.
+  Thus, any implementation of $\eff{read}$ that does not satisfy this
+  type would yield a trace in which a response to a request yields a
+  different value than previously seen by the transaction, thus
+  exposing a read atomicity violation.   We can specify an SRE that represents all traces
+  that satisfies read atomicity as a safety property:
+  \begin{align*}
+    &\Code{LAST}(\respEvt{write}{$v$});\Code{LAST}(\reqEvt{read}{});\Code{FIRST}\respEvt{read}{$v$}
+  \end{align*}
+  \noindent where 
+  \Code{FIRST}($\eff{evt}$) as an alias for the following regex:
+  \begin{align*}
+    \Code{FIRST}(\eff{evt})   \equiv (\anyA \setminus \eff{evt})^*;\; \eff{evt};\; \allA;
+  \end{align*}
+  A violation of this property can be manifested by a test generator that
+  generates sequences of asynchronous $\eff{read}$ and $\eff{write}$ events
+  in search of producing an offending trace similar to the one given above.
   
   As mentioned above, our DSL supports \emph{interactive} test
   generation by allowing asynchronous effects to be generated and observed;
   this enables constructing tests that can
   dynamically observe the effects of the SUT and control subsequent
   generation behavior. For instance, the following test generator is
-  automatically synthesized from the above specification\footnote{We have
+  automatically synthesized from the above specification and safety
+  condition\footnote{We have
     elided the tags used to align asynchronous request and response pairs
     to simplify the exposition.}:
   \begin{minted}[fontsize = \footnotesize, escapeinside=??, xleftmargin=18pt, linenos]{ocaml}
@@ -152,7 +165,7 @@ processing of a trace only if formula $\phi$ holds.
       ?\reqOp{write}{x}?; let _ = ?\respOp{write}? in
       ?\req($\eff{read}$)? ; 
       ?\reqOp{write}{x + 1}?; let _ = ?\respOp{write}? in
-      let y = ?\req($\eff{read}$)? in assert x == y; (() ?$\oplus$? transaction_gen ())
+      let y = ?\resp($\eff{read}$)? in assert x == y; (() ?$\oplus$? transaction_gen ())
   \end{minted}
   \noindent In each iteration, the program initiates two distinct
   asynchronous write operations (lines 3 and 5), with an asynchronous read
@@ -236,8 +249,8 @@ construct executions with uninteresting secrets
 (e.g., $\zevent{push}{\Code{H}, \langle 1, 1\rangle}$,
 we employ the following \tyName{} specifications to guide generation:
 \begin{align*}
-  &\effLR{\allA}\; \eff{push}\; \I{lvl}\;\langle x,\;y\rangle\; \effLR{\msg{push}{\I{lvl} = \Code{L} \iff x = y}}
-  \\& \effLR{\allA\msgB{push}{\I{lvl}\;x_1\;y_1}(\anyA \setminus \msgC{store})^* \msgB{push}{\I{lvl}\;x_2\;y_2}{\I{isAddr}(x_2) \land \I{isAddr}(y_2)}}\;  \eff{store} \; \effLR{\eff{store}}
+  &\effLR{\allA}\; \eff{push}(\I{lvl},\langle x,\;y\rangle)\; \effLR{\msgB{push}{(\I{lvl},\langle x,\;y\rangle)}{\I{lvl} = \Code{L} \iff x = y}}
+  \\& \effLR{\allA\msgA{push}{(\I{lvl},\langle x_1,\;y_1\rangle)};(\anyA \setminus \msgC{store})^* \msgB{push}{(\I{lvl},\langle x_2,\;y_2\rangle}{\I{isAddr}(x_2) \land \I{isAddr}(y_2)}}\;\eff{store} \; \effLR{\eff{store}}
 \end{align*}\noindent  
 The post-condition trace for $\eff{push}$ enforces that its arguments
 must only be equal if they are intended to be public, while the
@@ -245,8 +258,14 @@ pre-condition trace of a $\eff{store}$ event requires that the stack
 contain at least two elements (i.e., there be at least two
 $\eff{push}$ operations with no intervening $\eff{store}$), with the
 top element of the stack referencing the memory location to be
-updated.
-
+updated.   The desired safety property
+that a generator needs to test can be expressed as the following SRE:
+\begin{align*}
+  &\footnotesize\msgB{push}{(\I{lvl},\langle x,\;y\rangle)}{\I{lvl}=\Code{L}\iff x = y}
+    (\anyA \setminus \msgC{store})^* \msgB{push}{(\I{lvl},\langle x_2,\;y_2\rangle)}{\I{isAddr}(x_2) \land
+    \I{isAddr}(y_2)};\; \eff{store}
+\end{align*}\noindent  The following test generator generates effect sequences consistent with
+this property and the \tyName{} specifications for $\eff{push}$ and $\eff{store}$ given above:
 \begin{minted}[fontsize = \footnotesize, escapeinside=??, xleftmargin=18pt, linenos]{ocaml}
   let push_gen () =
     let (x: int) = assume (?$\mbox{\textit{isAddr}}$? x) in
@@ -301,8 +320,8 @@ updated.
   tracked and checked using off-the-shelf solvers.  Here,
   $\eff{token}$ is an effect that appends its argument to the
   serialized string being constructed that serves as input to the
-  interpreter being tested.
-  
+  interpreter being tested.  A \tyName{} specification to track
+  depth can be given as follows:
   % {\small\begin{align*}
   %   \effLR{\Code{LAST}(\msgAGray{depth}{d}) \msgA{token}{\boxed{(\lambda t.}\;} \msgAGray{depth}{d + 1} \allA \msgA{token}{\boxed{[n]}\;} \allA }\; \eff{token}\;\boxed{)}\;\effLR{\msgA{token}{\boxed{)}\;} \msgAGray{depth}{d}}
   % \end{align*}}\noindent
@@ -313,14 +332,15 @@ updated.
   the last tagged depth (assumed to be initialized to $0$), increment it at the
   start of the body, and restore it upon exiting. Leveraging
   $\effGray{depth}$, we can specify a correct de Bruijn index 
-  constraint as follows:
+  safety property as the following SRE:
   \begin{align*}
-    \effLR{\Code{LAST}(\msgBGray{depth}{d}{n < d})}\; \eff{token}\;\boxed{[\widehat{n}]}\;\effLR{\msgA{token}{\boxed{[\widehat{n}]}\;}}
+    \Code{LAST}(\msgBGray{depth}{d}{n < d});\; \Code{FIRST}(\eff{token}\;\boxed{[\widehat{n}]})
   \end{align*}\noindent
   The bound variable index $n$ is required to be less than the
   current depth $d$; the notation $\widehat{n}$ substitutes $n$'s value
   in the string output by $\eff{token}$.  The following code snippet shows a test generator
-  for nested abstractions that adheres to this constraint:
+  for nested abstractions synthesized by \name{} based on the above specification
+  and safety property:
   % \begin{minted}[fontsize = \footnotesize, escapeinside=??, xleftmargin=18pt, linenos]{ocaml}
   %   let rec abs_gen (d: depth) =
   %     (let (i: int) = assume (0 <= i && i < d) in ?$\eff{token}\; \boxed{[i]}$?) ?$\oplus$?
@@ -331,20 +351,21 @@ updated.
       (let (i: int) = assume (0 <= i && i < d) in ?$\eff{token}\; \boxed{[\widehat{i}]}$?) ?$\oplus$?
       (let t = random_stlc_ty () in ?$\eff{token}\;\boxed{(\lambda t.};$? abs_gen (d + 1); ?$\eff{token}\;\boxed{)}$?
   \end{minted}
-
-  \noindent Although the ghost event is not present in the code, it
+  \noindent Although the ghost event used in the safety property and specification
+  for $\eff{token}\;\boxed{)}$ is not present in the code, it
   serves as a hint to the synthesis procedure to construct a recursive
   function $\Code{abs\_gen}$ parameterized by the current depth $d$,
   ensuring correct tracking of abstraction nesting.
 \end{example}
 
-In the following section, we will show how to guide a synthesizer to
-only generate traces consistent with \tyName{}-based specifications.
-We emphasize that because these specifications are used primarily to
-constrain the search space of terms used to synthesis a test
-generator, they give developers significant leeway on the level of
-precision captured: less precise underapproximations simply lead to
-potentially less effective generators.
+In the following section, we show how to guide a synthesizer to only
+generate traces consistent with \tyName{}-based specifications and
+SRE-given safety properties.  We emphasize that because these
+specifications are used primarily to constrain the search space of
+terms used to synthesis a test generator, they give developers
+significant leeway on the level of precision captured: less precise
+underapproximations simply lead to potentially less effective
+generators.
 
 
 % ZZ: Current spec of STLC to too weak, people won't believe we do better than well-typed STLC generator. I suggest to move this part to the evaluation section.
