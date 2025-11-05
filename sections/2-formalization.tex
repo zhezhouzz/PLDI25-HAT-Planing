@@ -15,148 +15,53 @@
     \\ \text{\textbf{Values }}& \quad  & v ::= \quad & c ~|~ x ~|~ \zlam{x}{s}{e} ~|~ \zfix{f}{s}{x}{s}{e}
     \\ \text{\textbf{Expressions}}& \quad & e ::=\quad & v ~|~ \zlet{x{:}b}{e}{e} ~|~ \zlet{x{:}b}{\primop\ \overline{v}}{e} ~|~ \zgen{op}{\overline{v}}{e} ~|~ \zobs{x{:}b}{op}{\overline{v}}{e}
     \\ & & \quad & |~  \zassume{\overline{x{:}b}}{\phi}{e} ~|~ \zassert{\phi}{e} ~|~ \zlet{x{:}b}{v\;v}{e}  ~|~ e \oplus e
-  \end{alignat*}}
+  \end{alignat*}
+
+  \begin{flalign*}
+    \text{\textbf{Events}} \ m ::= \  \zevent{op}{\overline{c}} &
+    \parbox{7cm}{\centering$\text{\textbf{capability}}\  \beta \in \mathcal{P}(m)$}  &
+    \text{\textbf{Traces}} \ \alpha ::= \ \emptr ~|~ m \;{::}\; \alpha ~|~ \alpha \listconcat \alpha &
+  \end{flalign*}
+}
 % \vspace*{-.15in}
 %   {\footnotesize\begin{flalign*}
 %     \text{\textbf{Syntax Sugar}}& \quad \mykw{let}\;\eff{op}\;\overline{v}\;\mykw{in}\;e \doteq \zgen{op}{\overline{v}}{e} \qquad\qquad  e_1;e_2 \doteq \zlet{\_}{e_1}{e_2}
 %   \end{flalign*}}
 \vspace*{-.25in}
-\caption{$\DSL$ syntax }
+\caption{Syntax of $\DSL$ expressions and traces}
 \label{fig:term-syntax}
 \vspace*{-.1in}
 \end{figure}
 
 We formalize our approach using a core language, $\DSL$, for
-expressing test sequence generator programs that interact with a system under test via effectful operations. This language is an (asynchronous) event-driven calculus in A-normal form (ANF)\cite{FSDF93} that abstracts away the
-implementation details of the system that the generator interacts
-with, focusing only on the structure of the generator program
-itself. The syntax of $\DSL$ is shown in \autoref{fig:term-syntax};
-it includes both pure and effectful operations ($\primop$ and
-$\eff{op}$), non-deterministic choice ($\oplus$), assumptions and assertions. Effectful operations has an unit return type, are categorized as either \emph{generable} ($\mykw{gen}$) or \emph{observable} ($\mykw{obs}$). We omit the key words $\mykw{gen}$ and use $e_1;e_2$ to simplify the $\mykw{let}$-expression $\zlet{\_}{e_1}{e_2}$ when the bound variable is not be used in body term $e_2$.
+expressing \textit{trace generators}-- nondeterministic programs that
+probe the behaviors of a black-box system under test via a set of
+(effectful) operators that it provides. This calculus is equipped with
+a type system that characterizes the set of traces that a program
+\emph{must} be able to produce, \emph{if} the system under test
+produces appropriate responses. The syntax of $\DSL$ is shown in
+\autoref{fig:term-syntax}; programs are written in A-normal form and
+have access to both pure and effectful operations ($\primop$ and
+$\eff{op}$), can include nondeterministic choices ($\oplus$), and
+supports $\mykw{assume}$ and $\mykw{assert}$ statements in the style
+of solver-aided languages~\cite{Rosette}.\BD{Is this the right
+  intuition for assert/assume?} Every effectful operation provided by
+the system under test consists of a pair of a generable ($\mykw{gen}$)
+and observable ($\mykw{obs}$) event. \BD{Might need to update this
+  based on new intro.} \autoref{fig:term-notations} defines some
+shorthand notations used by our examples, e.g., we use $e_1;e_2$ to
+simplify $\mykw{let}$-expressions when the remaining program does not
+use the bound variable, i.e., $\zlet{\_}{e_1}{e_2}$.
 
-\begin{figure}[t!]
-\vspace*{-0.1in}
-{\footnotesize
-{\small
-\begin{flalign*}
-\text{\textbf{Events}} \ m ::= \  \zevent{op}{\overline{c}} &
-\parbox{7cm}{\centering$\text{\textbf{capability}}\  \beta \in \mathcal{P}(m)$}  &
-\text{\textbf{Traces}} \ \alpha ::= \ \emptr ~|~ m \;{::}\; \alpha ~|~ \alpha \listconcat \alpha &
-\end{flalign*}
-\vspace*{-.2in}
-\begin{flalign*}
-  &\text{\textbf{Operator Semantics }}\
-  \fbox{$\alpha \vDash m \Downarrow m$} &
-  \text{\textbf{Operational Semantics }}\
-  \fbox{$
-  % \phi \Downarrow c \quad
-  \steptr{\alpha}{(\buf, e)}{\alpha}{(\buf, e)}$}
-\end{flalign*}}
-\begin{prooftree}
-  \hypo{\beta' = \buf \cup \{\zevent{op}{\overline{c}}\}}
-  \infer1[\textsc{\small StGen}]{
-    \steptr{\alpha}{(\buf, \zgen{op}{\overline{c}}{e})}{[\zevent{op}{\overline{c}}]}{(\beta', e)}
-  }
-\end{prooftree}
-\quad
-\begin{prooftree}
-  \mhypo{50mm}
-  {$\buf = \{ m \} \cup \buf' $ \quad
-    $\alpha \vDash m \Downarrow \zevent{op}{\overline{c},c'} $
-  }
-    \infer1[\textsc{\small StObs}]{
-      \steptr{\alpha}{(\buf,
-        \zobs{x}{op}{\overline{c}}{e})}{[\zevent{op}{\overline{c},c'}]}{(\buf', e[x \mapsto c'])}
-    }
-  \end{prooftree}
-% \\[0.8em]
-% \mprooftr{58mm}{
-% $\phi\msubst{x}{c}\Downarrow \top$
-% }{StAssume}{
-% $\steptr{\alpha}{(\buf, \zassume{\overline{x}}{\phi}{e})}{[]}{(\buf, e\msubst{x}{c})}$
-% }
-% \quad
-% \mprooftr{44mm}{$\phi \Downarrow \top$}{StAssert}{
-% $\steptr{\alpha}{(\buf, \zassert{\phi}{e})}{[]}{(\buf, e)}$
-% }
-}
-\vspace*{-.05in}
-  \caption{Selected Operational Semantics.}
-  \label{fig:selected-semantics}
-\vspace*{-.2in}
-\end{figure}
-
-\paragraph{Operational Semantics} Events in $\DSL$ are operations
-applied to concrete values $(\zevent{op}{\overline{c}})$. Evaluating a
-$\DSL$ program depends on an context \emph{trace}, i.e., a sequence of
-events, and an \emph{observation capability}, i.e., a multiset of
-generable events that are waiting to be handled by observable operators. Each evaluation step produces an output trace and an updated
-capability. Traces are equipped with the standard list operations (i.e.,
-cons ${::}$ and concatenation $\listconcat{}$).  The operational
-semantics of $\DSL$ are defined by the small-step reduction relation:
-$\steptr{\alpha}{(\beta, e)}{~\alpha'}{(\beta', e')}$.  This judgment
-is read as: ``under the history trace $\alpha$ and observation capability
-$\beta$, $e$ steps to $e'$, emitting the trace $\alpha'$ and remaining
-the capability $\beta'$.'' Intuitively, the history trace $\alpha$
-represents the sequence of events visible to a operator, thereby
-determining its response; the capability $\beta$ contains events that
-are able to be observed in the future. The semantics uses an auxiliary judgement,
-$\alpha \vDash m \Downarrow m'$, that
-specifies the observable event $m'$ that will be generated after handling a generative event $m$.
-
-\autoref{fig:selected-semantics} presents the key rules of $\DSL$'s
-semantics,\footnote{The remaining rules are completely standard and
-  provided in the supplemental material.} which reflect the ``consume-and-produce'' semantics of
-observation capability.
-The rule for observable
-events (\textsc{StObs}) removes
-an event $m$ from the capability that can produce the observable operation $\eff{op}$,
-evaluates it under the current context, and substitutes the observed value $c'$ (last payload of $m$) for binding variable $x$ in $e$, the
-body of the $\mykw{let}$ expression. 
-In contrast, the rule for generable events (\textsc{StGen}) makes no assumptions on the observation capability, since these events can be directly
-performed by the generator. It simply add itself to the
-resulting observation capability for future handling.
-
-\begin{example}[Auxiliary Operator Semantics]\label{ex:aux-semantics}
-  The auxiliary semantics of the $\eff{read}$ and $\eff{write}$ operators in Example~\ref{ex:read-atomicity} can be defined as follows:
-  
-  {\footnotesize
-    \mprooftr{44mm}{}{OpWrite}{
-    $\alpha \vDash \zevent{writeReq}{\iota,v} \Downarrow \zevent{writeRsp}{\iota,v}$
-    }
-    \quad
-    \mprooftr{62mm}{$\alpha_1 = \alpha_{11} \listconcat \zevent{writeRsp}{\iota',v} \listconcat \alpha_{12}$ \quad $\eff{readRsp}\not\in \alpha_{12}$}{OpRead}{
-    $\alpha_1\listconcat\zevent{readReq}{\iota}\listconcat\alpha_2\vDash \zevent{readReq}{\iota} \Downarrow \zevent{readRsp}{\iota,v}$
-    }
-    \\[-0.1em]
-    }\noindent
-  
-  \noindent 
-  The database responds to a $\eff{writeReq}$ event by emitting a $\eff{writeRsp}$ event containing the identical payload. To ensure read atomicity, handling a $\eff{readReq}$ event requires identifying the corresponding history prefix $\alpha_1$ at the point of the read request happens, and producing a $\eff{readRsp}$ event whose value $v$ matches the most recently written value for that key in $\alpha_1$.
-\end{example}
-
-\begin{example}[Read Atomicity]\label{ex:semantics-async}
-  The following derivation illustrates the execution of a single iteration of the program from Example~\ref{ex:read-atomicity}, evaluated under the auxiliary semantics for $\eff{writeReq}$ and $\eff{readReq}$ specified in Example~\ref{ex:aux-semantics}, which enforce read atomicity. For this iteration, we assign transaction identifiers $\Code{tid1}=1$ and $\Code{tid2}=2$, and two random generated integers are $7$ and $8$:
-    {\footnotesize
-      \begin{flalign*}
-        &[] \vDash
-        (\emptyset, \eff{writeReq}\;1\;7;\zobs{\_}{writeRsp}{1}{\eff{readReq}\;2; \textit{line 5 - 6 of code in Example~\ref{ex:read-atomicity}}}) && 
-        \\[-0.2em]
-        &\;\;\xhookrightarrow{[\zevent{writeReq}{1,7}]}{(\{ \zevent{writeReq}{1,7} \}, \zobs{\_}{writeRsp}{1}{\eff{readReq}\;2; \textit{line 5 - 6 of code in Example~\ref{ex:read-atomicity}}})}  \tag{\textsc{StGen}} &&
-        \\[-0.4em]
-        &\;\;\xhookrightarrow{[\textcolor{blue}{\zevent{writeRsp}{1,8}}]}{(\emptyset, \eff{readReq}\;2; \eff{writeReq}\;1\;7;\zobs{\_}{writeRsp}{1}{\textit{line 6 of code in Example~\ref{ex:read-atomicity}}})}  \tag{\textsc{StObs}} &&
-        \\[-0.4em]
-        &\;\;\xhookrightarrow{[\textcolor{orange}{\zevent{readReq}{2}]}}{(\{\zevent{readReq}{2}\}, \eff{writeReq}\;1\;8;\zobs{\_}{writeRsp}{1}{\textit{line 6 of code in Example~\ref{ex:read-atomicity}}})}  \tag{\textsc{StGen}} &&
-        \\[-0.4em]
-        &\;\;\xhookrightarrow{[\zevent{writeReq}{1,8}]}{(\{\zevent{readReq}{2}, \zevent{writeRsp}{1,8}\}, \zobs{\_}{writeRsp}{1}{\textit{line 6 of code in Example~\ref{ex:read-atomicity}}})}  \tag{\textsc{StGen}} &&
-        \\[-0.4em]
-        &\;\;\xhookrightarrow{[\zevent{writeRsp}{1,8}]}{(\{\zevent{readReq}{2}\}, \zobs{y}{readRsp}{2}{\sassert{y == 7}; () \oplus \Code{transaction\_gen\;1\;2}})}  \tag{\textsc{StObs}} &&
-        \\[-0.4em]
-        &\;\;\xhookrightarrow{[\zevent{readRsp}{2,7}]}{(\emptyset, \sassert{7 == 7}; () \oplus \Code{transaction\_gen\;1\;2})}  \tag{\textsc{StObs}} &&
-      \end{flalign*}
-    }\noindent
-  In the final step, the program executes $\mykw{obs}\;\eff{readRsp}\;2$, producing a read value $y=7$, which matches the value of the most recent $\eff{writeRsp}$ (blue) at the point where the $\eff{readReq}$ event (orange) occurred. Thus, read atomicity is preserved and execution can continue to generate further transactions.
-\end{example}
+$\DSL$ is equipped with a fairly standard small-step operational
+semantics, which \autoref{sec:metatheory} describes in more
+detail. Similar to other calculi for trace-based type systems, the
+reduction relation defining this semantics,
+$\steptr{\alpha}{(\beta, e)}{~\alpha'}{(\beta', e')}$, includes a
+\textit{history trace} $\alpha$, i.e., a sequence of effectful
+operations invoked prior to the current evaluation step. Intuitively,
+his history constrains the result of an operation, e.g., the result of
+$\eff{get}$ depends on the $\eff{put}$ operations that preceded it.
 
 % \begin{example}[Auxiliary Operator Semantics]\label{ex:aux-semantics}
 % The auxiliary semantics of the $\eff{put}$ and $\eff{get}$ operators in Example~\ref{ex:sc} can be defined as follows:
@@ -172,7 +77,7 @@ resulting observation capability for future handling.
 %   \\[-0.1em]
 %   }\noindent
 
-% \noindent 
+% \noindent
 % The database handles the $\eff{putReq}$ event by simply adding a $\eff{putRsp}$ event with the same payload to the capability. To guarantee the EC, handling a $\eff{getReq}$ adds a $\eff{getRsp}$ event where the read value is the one previously written value $v$ at the time the $\eff{getReq}$ occurs.
 % \end{example}
 
@@ -196,7 +101,7 @@ resulting observation capability for future handling.
 %     {\footnotesize
 %       \begin{flalign*}
 %         &[\zevent{putReq}{``\Code{k}", 1};\zevent{putRsp}{``\Code{k}", 1}] \vDash
-%         (\emptyset, \eff{putReq}\;``\Code{k}"\;2;\eff{getReq}\;``\Code{k}";\sobs{putRsp};\zobs{k, v}{getRsp}{\sassert{v \not= 2}}) 
+%         (\emptyset, \eff{putReq}\;``\Code{k}"\;2;\eff{getReq}\;``\Code{k}";\sobs{putRsp};\zobs{k, v}{getRsp}{\sassert{v \not= 2}})
 %         \\[-0.2em]
 %         &\;\;\xhookrightarrow{[\zevent{putReq}{``\Code{k}", 2}]} (\{ \zevent{putRsp}{``\Code{k}", 2} \}, \eff{getReq}\;``\Code{k}";\sobs{putRsp};\zobs{k, v}{getRsp}{\sassert{v \not= 2}})  \tag{\textsc{StGen}} &&
 %         \\[-0.4em]
@@ -230,7 +135,7 @@ resulting observation capability for future handling.
 %   The fourth step consumes the $\zevent{getTy}{\Int}$ event and substitutes $y$ with $\Int$ in the remaining program. The rest of the program is then executed, which ends the lambda abstraction and records the type of the generated STLC term as $\Code{Arr}(\Int, \Int)$.
 
 
-\subsection{Types}
+\subsection{Type System}
 
 \begin{figure}[t!]
 {\small
@@ -240,48 +145,101 @@ resulting observation capability for future handling.
     % \\& \quad &  \quad & \text{\textcolor{gray}{in Symbolic LTL$_f$ }}  se ~|~ A \lorA A ~|~ \nextA A ~|~ A \untilA A ~|~ \negA A ~|~ A \landA A
     \\\text{\textbf{Pure Refinement Types}}& \quad & t  ::= \quad & \ort{b}{\phi} ~|~ \urt{b}{\phi} ~|~  x{:}t\sarr t ~|~ x{:}t\sarr \tau
     \\ \text{\textbf{Underapproximate HATs}}& \quad & \tau  ::= \quad & \uhat{H}{x{:}t}{F} ~|~ \tau \interty \tau ~
-    |~ x{:}b \garr \tau ~|~ \effGray{op}{:}s \sarr \tau 
+    |~ x{:}b \garr \tau ~|~ \effGray{op}{:}s \sarr \tau
     \\\text{\textbf{Type Contexts}}& \quad &\Gamma ::= \quad  &\emptyset ~|~ x{:}t, \Gamma
   \end{alignat*}
   \vspace*{-.15in}
   {\footnotesize\begin{flalign*}
-    {\small\text{\textbf{Type Alias}}}& \;\; \msg{op}{\phi} \doteq \msgB{op}{\overline{x}}{\phi} \;\; \msgA{op}{\overline{v}} \doteq \msgB{op}{\overline{x}}{\overline{x = v}} \;\; \msgC{op} \doteq \msgB{op}{\overline{x}}{\top} \;\; A_1 A_2 \doteq A_1 \seqA A_2 \;\; b \doteq \rawnuot{b}{\top}
+    {\small\text{\textbf{Type Aliases}}} & \;\; \msg{op}{\phi} \doteq \msgB{op}{\overline{x}}{\phi} \;\; \msgA{op}{\overline{v}} \doteq \msgB{op}{\overline{x}}{\overline{x = v}} \;\; \msgC{op} \doteq \msgB{op}{\overline{x}}{\top} \;\; A_1 A_2 \doteq A_1 \seqA A_2 \;\; b \doteq \rawnuot{b}{\top}
     % \;\; \tau \doteq x{:}b\garr\tau
-    \\& \widehat{\ort{b}{\phi}} \doteq \urt{b}{\phi} \;\; \widehat{\urt{b}{\phi}} \doteq \ort{b}{\phi} \;\; \widehat{x{:}t\sarr t'} \doteq x{:}t\sarr t' \;\; \widehat{x{:}t\sarr \tau} \doteq x{:}t\sarr \tau
+    \\
+    & \widehat{\ort{b}{\phi}} \doteq \urt{b}{\phi} \;\; \widehat{\urt{b}{\phi}} \doteq \ort{b}{\phi} \;\; \widehat{x{:}t\sarr t'} \doteq x{:}t\sarr t' \;\; \widehat{x{:}t\sarr \tau} \doteq x{:}t\sarr \tau
   \end{flalign*}}
 }
 \vspace*{-.15in}
-\caption{$\DSL{}$ types.}
+\caption{$\DSL{}$ types}
 \label{fig:type-syntax}
 \vspace*{-.15in}
 \end{figure}
 
-
 The syntax of types in $\DSL{}$ is shown in \autoref{fig:type-syntax}.
 Types include \emph{pure} refinement types, which describe pure
-computations, and underapproximate Hoare Automata Types (\tyName{}s), which describe incorrectness triple $\effLR{H}\;e\;\effLR{F}$ as a type $\uhat{H}{\Unit}{F}$ of term $e$. Pure refinement types are similar to those
-found in prior underapproximate refinement type systems~\cite{CoverageType}, and allow base
-types (e.g., {\Code{int}}) to be further constrained by a logical
-formula or qualifier. The pure refinement types at positive position is underapproximated (i.e., $\urt{b}{\phi}$) and at negative position (function's parameter type) is overapproximated (i.e., $\ort{b}{\phi}$). 
-For example, the constant value $1$ can have overapproximate type $\ort{\Int}{\vnu = 1}$ and $\ort{\Int}{\top}$; however, it cannot have underapproximate type $\urt{\Int}{\top}$ which can only has inhabitant such as $\Code{int\_gen ()}$. We use $\widehat{t}$ to denote the flip a base type from underapproximate to overapproximate and vice versa; the function type does not change.
-Verification conditions generated by our
-type-checker can be encoded as effectively propositional (EPR)
-sentences~\cite{Ramsey1987}, which can be efficiently handled by an
-off-the-shelf theorem prover such as Z3~\cite{de2008z3}.
+computations, and underapproximate Hoare Automata Types (\tyName{}s),
+which describe effectful computations.
+% which describe incorrectness triple $\effLR{H}\;e\;\effLR{F}$ as a
+% type $\uhat{H}{\Unit}{F}$ of term $e$.
+Pure refinement types are similar to those found in prior
+underapproximate refinement type systems~\cite{CoverageType}, and
+allow base types (e.g., {\Code{int}}) to be further constrained by a
+logical formula or qualifier. In contrast to traditional type systems,
+pure type qualifiers have two modalities: $\ort{b}{\phi}$ which
+constrains every value a pure expresion \emph{may} evaluate to, and
+$\urt{b}{\phi}$, which constrains a subset of the values it
+\emph{must} evaluate to. The constant value $1$ can be assigned the
+types $\ort{\Int}{\vnu = 1}$ and $\ort{\Int}{0 < \vnu}$-- it always
+evaluates to a value either \emph{overapproximate} qualifier-- but not
+$\urt{\Int}{\vnu = 1 \lor \vnu 2}$, since it cannot evaluate to both
+values satisfying this \emph{underapproximate} qualifier. The term
+$1 \oplus 2 \oplus 3$, in contrast, does have this underapproximate
+type, as it can evaluate to both $1$ and $2$.
 
-\paragraph{Symbolic Regular Expression} Following other recent
-trace-based type systems\cite{ZYDJ24}, $\DSL{}$ uses \emph{Symbolic
-  Finite Automata} (SFAs)~\cite{Vea13,SFA-minimization,
-  SFA-Transducers} to qualify traces, similar to how standard
-refinement types use formulae to qualify the types of pure terms.
-We represent SFAs using a symbolic version of regular expressions (SRE); symbolic LTL$_f$ is also supported and can be translated to regex as needed.
-A \emph{symbolic event} $\msgB{op}{\overline{x}}{\phi}$ is an atomic predicate that
-describes an effectful operation {$\eff{op}$} whose inputs
-$\overline{x}$ must satisfy the qualifier $\phi$.
-When the fields of an event are clear from context, we omit its parameters
-  $\overline{x}$, e.g., $\msg{writeReq}{v > 0}$ means
-  $\msgB{writeReq}{\I{tid}\;v}{v > 0}$. We omit the quantifiers with equality constraints, e.g., $\msg{writeReq}{\I{tid} = 1 \land v = 3}$, as $\msgA{writeReq}{1\;3}$; we also omit the top quantifiers in symbolic events and types.
-  The standard regex operators (i.e., empty set of traces $\emptyset$, empty trace $\epsilon$, union $A \lorA A$, sequence $A \seqA A$, and kleene star $A^*$) and various set operators (i.e., complement $\neg$, intersection $\land$, and an union of all symbolic events $\anyA$) are defined normally.
+\paragraph{Underapproximate Hoare Automata Types}
+Similar to other recent trace-based type systems~\cite{ZYDJ24},
+$\DSL{}$ uses \emph{Symbolic Finite Automata} (SFAs)~\cite{Vea13,
+  SFA-minimization, SFA-Transducers} to qualify the traces generated
+by effectful computations; in contrast to those prior works, the
+\tyName{}s in $\DSL{}$ use SFAs to underapproximate the set of effects
+that a program must produce. A \tyName{} $\uhat{H}{x{:}t}{F}$ consists
+of a pure refinement type $t$ and two SFAs: a \emph{history} SFA $H$
+that constrain the history trace under which a term is executed, and a
+\emph{future} SFA $A$ that describes a subset of the events that it
+must generate as a result. \tyName{} represents SFAs using symbolic
+regular expressions (SREs), but in principle could support any
+encoding of SFAs, e.g., Symbolic LTL$_f$~\cite{LTLf}. SREs support
+\emph{symbolic events}, $\msgB{op}{\overline{x}}{\phi}$, atomic
+predicates that describes an effectful operation {$\eff{op}$} whose
+arguments $\overline{x}$ satisfy the qualifier $\phi$. SREs provide a
+convenient language for writing SFAs, supporting versions of the
+standard regex operators shown in \autoref{fig:type-syntax}, including
+the union $A \lorA A$, sequence $A \seqA A$, and kleene star $A^*$
+operators.
+
+\subsubsection{\tyName{}, by example}
+\BD{TODO: provide denotations of the type signatures from the
+  overview, formalizing the intuitions the reader has built up from
+  those sections.}
+
+% \paragraph{Ghost variables and ghost operators}
+\tyName{}s can only appear in the result type of a function, where
+they describe the effects performed when the function is evaluated.
+Following prior work, our type system includes \emph{ghost variables}
+($x{:}b \garr \tau$), allowing it to explicitly capture data
+dependencies between symbolic events in \tyName{}s. It also includes
+the analogous \emph{ghost events} ($\effGray{op}{:}s \sarr \tau$,
+which are written in $\effGray{gray}$ to distinguish them from regular
+effect operators), enabling \tyName{}s to describe non-regular
+patterns of effects, e.g., \BD{point to an example}.  Like ghost
+variables, ghost operators are used exclusively for specification and
+verification purposes--= they do not appear in expressions and do not
+impact the evaluation of a program.
+
+\begin{example}[Ghost Events]\label{ex:stlc-types}
+  The \tyName{} specification of the %
+  $\eff{token}{:}\Code{str} \sarr \Unit$ %
+  operator from ~\autoref{ex:de-bruijn-index} is:%
+  \vspace{-.4cm} \par\nobreak {\footnotesize
+    \begin{align*}
+      & \effGray{depth}{:}(\Int\sarr\Unit) \garr d{:}\Int \garr
+      \\&\;\;(t{:}\Code{stlcTy}\garr x{:}\ort{\Code{str}}{\vnu = \boxed{)}} \sarr \uhat{\Code{LAST}(\msgAGray{depth}{d}) \msgA{token}{\boxed{(\lambda t.}\;} \msgAGray{depth}{d + 1} \allA }{\Unit}{\msgA{token}{x} \msgAGray{depth}{d}}) \interty
+      \\&\;\;(n{:}\Int\garr x{:}\ort{\Code{str}}{\vnu = \boxed{[n]} \land 0 \leq n < d} \sarr \uhat{\Code{LAST}(\msgAGray{depth}{d})}{\Unit}{\msgA{token}{x}})
+    \end{align*}}\noindent
+  This \tyName{} consists of two intersected \tyName{} for function
+  abstraction and bound variable (parameter $x$ is constrained to be
+  $\boxed{)}$ and $\boxed{[n]}$ respectively), which share the same
+  ghost operator $\effGray{depth}$ and ghost variable $d$.
+  \BD{This example needs to be gentler...}
+\end{example}
+
 
 % The standard temporal operators
 % (e.g., test $\evparenth{\phi}$, next $\nextA A$, until $\untilA$) and
@@ -296,33 +254,6 @@ When the fields of an event are clear from context, we omit its parameters
 % \(\empTL\); these are analogous to the regular expressions \( .^* \),
 % \(\epsilon\), and \(\emptyset\), resp.
 
-
-
-\paragraph{Underapproximate Hoare Automata Types} A \tyName{} $\uhat{H}{x{:}t}{F}$ is
-pure refinement type $t$ equipped with two SREs: a \emph{history} SRE $H$ that captures the
-history traces (i.e., a sequence of visible, already handled events) in which a term can be executed, a \emph{future} SRE $A$ that
-describes newly handled events that arise from executing a term.
-Function types use \tyName{}s in their result types
-to describe the effects they perform, when combined with intersection
-types ($\interty$), this allows users to express complex control
-flows. 
-
-\paragraph{Ghost variables and ghost operators}
-Following prior work, we incorporate \emph{ghost variables} ($x{:}b \garr \tau$) in function types to explicitly capture data dependencies between symbolic events.
-Additionally, we introduce \emph{ghost operators} ($\effGray{op}{:}s \sarr \tau$, displayed in $\effGray{gray}$ to distinguish them from regular effect operators), enabling our \tyName to specify non-regular properties, such as counting.
-Both ghost variables and ghost operators are not manifested in program terms and are independent of the operational semantics; they serve exclusively as bookkeeping annotations within the type system.
-
-\begin{example}[IHATs for STLC]\label{ex:stlc-types}
-  The two hoare-style specifications of the $\eff{token}{:}\Code{str} \sarr \Unit$ operator in our motivating example~\ref{ex:de-bruijn-index} are shown as the following:
-  {\footnotesize
-    \begin{align*}
-      & \effGray{depth}{:}(\Int\sarr\Unit) \garr d{:}\Int \garr
-      \\&\;\;(t{:}\Code{stlcTy}\garr x{:}\ort{\Code{str}}{\vnu = \boxed{)}} \sarr \uhat{\Code{LAST}(\msgAGray{depth}{d}) \msgA{token}{\boxed{(\lambda t.}\;} \msgAGray{depth}{d + 1} \allA }{\Unit}{\msgA{token}{x} \msgAGray{depth}{d}}) \interty
-      \\&\;\;(n{:}\Int\garr x{:}\ort{\Code{str}}{\vnu = \boxed{[n]} \land 0 \leq n < d} \sarr \uhat{\Code{LAST}(\msgAGray{depth}{d})}{\Unit}{\msgA{token}{x}})
-    \end{align*}}\noindent
-  This \tyName consists of two intersected \tyName{} for function abstraction and bound variable (parameter $x$ is constrained to be $\boxed{)}$ and $\boxed{[n]}$ respectively), which share the same ghost operator $\effGray{depth}$ and ghost variable $d$.
-  \end{example}
-
 % \begin{example}[Queue Library]\label{ex:stack}
 % The precise semantics of $\eff{enqueue}$, $\eff{dequeue}$ operation of an effectful queue library requires \emph{first-in-first-out} (FIFO) property which needs counting. We introduce two ghost event $\effGray{numEnq}$ and $\effGray{numDeq}$ which are counters that records the number of previous added and removed elements. Thus, the FIFO property can be defined as ``the $i^{th}$ dequeued element is exactly the $i^{th}$ enqueued element'', and expressed as the following \tyName{}:
 % {\footnotesize
@@ -330,10 +261,18 @@ Both ghost variables and ghost operators are not manifested in program terms and
 %       \eff{enqueue} :~ & i{:}\Int\garr x{:}\Int\sarr\uhat{\Code{LAST}(\msgAGray{numEnq}{i - 1})}{\msgA{enqueue}{x}\msgAGray{numEnq}{i}}
 %       \\\eff{dequeue} :~ & i{:}\Int\garr x{:}\Int\sarr\uhat{\Code{LAST}(\msgA{enqueue}{x}\msgAGray{numEnq}{i}) \land \Code{LAST}(\msgAGray{numDeq}{i - 1})}{\msgA{dequeue}{x}\msgAGray{numDeq}{i}}
 %     \end{align*}}\noindent
-%   The history regex of $\eff{enqueue}$ operator maintains the counter by get number of previous added elements by match the most last $\effGray{numEnq}$ event in the history (we assume this is number is $0$ when there is no previous $\effGray{numEnq}$) and increase this number by $1$ by appending a new ghost event in future regex. The \tyName of $\eff{dequeue}$ besides maintians the counter $\effGray{numDeq}$ in the same way, also requires the $\eff{dequeue}$ element is exactly the $i^th$ $\eff{enqueue}$ element, i.e., the one update the counter $\effGray{numDeq}$ as $i$. 
+%   The history regex of $\eff{enqueue}$ operator maintains the counter by get number of previous added elements by match the most last $\effGray{numEnq}$ event in the history (we assume this is number is $0$ when there is no previous $\effGray{numEnq}$) and increase this number by $1$ by appending a new ghost event in future regex. The \tyName of $\eff{dequeue}$ besides maintians the counter $\effGray{numDeq}$ in the same way, also requires the $\eff{dequeue}$ element is exactly the $i^th$ $\eff{enqueue}$ element, i.e., the one update the counter $\effGray{numDeq}$ as $i$.
 % \end{example}
 
-\subsection{Typing rules}
+\autoref{fig:type-syntax} gives the definition of the type aliases
+used in \autoref{sec:overview} to limit user annotation
+burden. \BD{Double check we used all of these.} When the fields of an
+effectful operation are clear from context, we omit its arguments
+$\overline{x}$, e.g., $\msg{writeReq}{v > 0}$ means
+$\msgB{writeReq}{\I{tid}\;v}{v > 0}$. We omit the quantifiers with
+equality constraints, e.g., $\msg{writeReq}{\I{tid} = 1 \land v = 3}$,
+as $\msgA{writeReq}{1\;3}$; we also omit the top quantifiers in
+symbolic events and types.
 
 \begin{figure}[!t]
 {\footnotesize
@@ -400,13 +339,13 @@ $\Gamma\vdash e_1 : \tau_1$ \quad $\Gamma\vdash e_2 : \tau_2$}
  $\Gamma, x{:}t_x\vdash e : \tau$
 }{TFun}{
  $\Gamma\vdash \zzlam{x}{e} : x{:}t_x\sarr \tau$}
-\ 
+\
 \mprooftr{47mm}{
 }{TFixBase}{
  $\Gamma\vdash \zzfix{f}{x}{e} : \overline{x{:}s}\sarr\uhat{H}{\urt{b}{\bot}}{\emptyset}$}
-\ 
+\
 \mprooftr{27mm}{
- $\Gamma\vdash \zzfix{f}{x}{e} : t$ \quad 
+ $\Gamma\vdash \zzfix{f}{x}{e} : t$ \quad
  $\Gamma, f{:}t\vdash \zzlam{x}{e} : t'$
 }{TFixInd}{
  $\Gamma\vdash \zzfix{f}{x}{e} : t'$}
@@ -424,27 +363,51 @@ $\Gamma\vdash e_1 : \tau_1$ \quad $\Gamma\vdash e_2 : \tau_2$}
 \vspace*{-.15in}
 \end{figure}
 
-Besides standard type judgement on pure values $\Gamma \vdash v : t$, we introduce a typing judgment $\Gamma\vdash e: \uhat{H}{x{:}t}{F}$ enables a Hoare-triple-style ($\effLR{H}\;e\;\effLR{F}$) reasoning in type system. The type context, $\Gamma$ maps from variables to pure refinement types
-(i.e., $t$). As in other trace-based refinement type systems, contexts
-are not allowed to contain \tyName{}s--- doing so breaks several
-structural properties (e.g., weakening) that are used to prove type
-safety.
+Besides standard type judgement on pure values $\Gamma \vdash v : t$,
+we introduce a typing judgment $\Gamma\vdash e: \uhat{H}{x{:}t}{F}$
+enables a Hoare-triple-style ($\effLR{H}\;e\;\effLR{F}$) reasoning in
+type system. The type context, $\Gamma$ maps from variables to pure
+refinement types (i.e., $t$). As in other trace-based refinement type
+systems, contexts are not allowed to contain \tyName{}s--- doing so
+breaks several structural properties (e.g., weakening) that are used
+to prove type safety.
 
 \paragraph{Auxiliary typing relations}
 Our system depends on three auxiliary relations: a well-formedness
-relation $\Gamma \wellfoundedvdash \tau$ which mostly ensures, e.g., that all
-qualifiers appearing in a type $\tau$ are closed under the current
-typing context $\Gamma$; an inclusion relation on SREs
+relation $\Gamma \wellfoundedvdash \tau$ which mostly ensures, e.g.,
+that all qualifiers appearing in a type $\tau$ are closed under the
+current typing context $\Gamma$; an inclusion relation on SREs
 $\Gamma \vdash A \subseteq A$; and a mostly-standard semantic
-subtyping relation.
-\autoref{fig:selected-typing-rules} presents the key subtyping rule for \tyName{}s (\textsc{SubHF}), which establishes subtyping by checking inclusion between their history and future regexes under the current type context $\Gamma$. As in Underapproximate Logic with the reverse principle of consequence, our subtyping relation is covariant in the history regex and contravariant in the future regex, in contrast to prior overapproximated trace-based refinement type systems~\cite{ZYDJ24}. 
+subtyping relation.  \autoref{fig:selected-typing-rules} presents the
+key subtyping rule for \tyName{}s (\textsc{SubHF}), which establishes
+subtyping by checking inclusion between their history and future
+regexes under the current type context $\Gamma$. As in
+Underapproximate Logic with the reverse principle of consequence, our
+subtyping relation is covariant in the history regex and contravariant
+in the future regex, in contrast to prior overapproximated trace-based
+refinement type systems~\cite{ZYDJ24}.
+
+The pure refinement types at positive position is underapproximated
+(i.e., $\urt{b}{\phi}$) and at negative position (function's parameter
+type) is overapproximated (i.e., $\ort{b}{\phi}$).  We use
+$\widehat{t}$ to denote the flip a base type from underapproximate to
+overapproximate and vice versa; the function type does not change.
+Verification conditions generated by our type-checker can be encoded
+as effectively propositional (EPR) sentences~\cite{Ramsey1987}, which
+can be efficiently handled by an off-the-shelf theorem prover such as
+Z3~\cite{de2008z3}.
+
 
 \paragraph{Typing Rules} A subset of our typing rules is shown in
 \autoref{fig:selected-typing-rules}.\footnote{The complete set of
   typing rules is included in the \techreport{}.} All of our terms
 assume any types they use are well-formed, so we elide the
-corresponding well-formedness judgments from their premises.
-In underapproximation reasoning, we cannot apply the subsumption rule (\textsc{TSub}) to arbitrary type contexts. For example, consider the read atomicity property shown in Example~\ref{ex:read-atomicity}, which cannot be detected by the following code that only write the same value:
+corresponding well-formedness judgments from their premises.  In
+underapproximation reasoning, we cannot apply the subsumption rule
+(\textsc{TSub}) to arbitrary type contexts. For example, consider the
+read atomicity property shown in Example~\ref{ex:read-atomicity},
+which cannot be detected by the following code that only write the
+same value:
 \begin{minted}[fontsize = \footnotesize, escapeinside=??, xleftmargin=18pt, linenos]{ocaml}
     let (x: int) = int_gen () in
     ?$\eff{writeReq}$? tid1 x;  // ?$x{:}\urt{\Int}{\top} \vdash x : \urt{\Int}{\vnu = 7} <: \urt{\Int}{\vnu = x} $?
@@ -452,22 +415,36 @@ In underapproximation reasoning, we cannot apply the subsumption rule (\textsc{T
     ?$\eff{writeReq}$? tid1 x;  // ?$x{:}\urt{\Int}{\top} \vdash x : \urt{\Int}{\vnu = 8} <: \urt{\Int}{\vnu = x}$?
 \end{minted}
 
-\noindent However, the subsumption rule may allow the random integer $x$ to be specialized to different values (i.e., $7$ and $8$) at different calling points, which violates the call-by-value semantics.
-Following prior underapproximate refinement type systems~\cite{CoverageType}, the subsumption rule (\textsc{TSub}) is restricted to empty type contexts ($\emptyset$) to ensure the soundness of reachability reasoning.
-In contrast, the equivalence rule (\textsc{TEq}) permits type transformation to an semantically equivalent type under arbitrary contexts.
+\noindent However, the subsumption rule may allow the random integer
+$x$ to be specialized to different values (i.e., $7$ and $8$) at
+different calling points, which violates the call-by-value semantics.
+Following prior underapproximate refinement type
+systems~\cite{CoverageType}, the subsumption rule (\textsc{TSub}) is
+restricted to empty type contexts ($\emptyset$) to ensure the
+soundness of reachability reasoning.  In contrast, the equivalence
+rule (\textsc{TEq}) permits type transformation to an semantically
+equivalent type under arbitrary contexts.
 
 The \textsc{TRet} rule requires the current
 regex of this term ($\epsilon$) to only accept the empty trace (i.e.,
 $[]$). The rule \textsc{TEOp} allows us to extract the operator type from operator context $\Delta$, which provides multiple incomparable types of effect operators with different underapproximation precision.
 
-\begin{example}[Operator Type Context] The type of effect operator $\eff{readRsp}$ in Example~\ref{ex:read-atomicity} can provided by the following operator context $\Delta$:
-{\small\begin{align*}
-    \Delta \equiv \{&(\eff{readRsp}, \iota{:}\Int\sarr \uhat{\msgA{writeRsp}{\iota\;x}\msgA{readReq}{\iota}}{x{:}\urt{\Int}{\top}}{\msgA{readRsp}{\iota\;x}}),\\
-    &(\eff{readRsp}, \iota{:}\Int\sarr \uhat{\msgA{writeRsp}{\iota\;x}\msgA{readReq}{\iota}\msgC{writeRsp}}{x{:}\urt{\Int}{\top}}{\msgA{readRsp}{\iota\;x}}), ... \}
-  \end{align*}}
+\begin{example}[Operator Type Context] The type of effect operator
+  $\eff{readRsp}$ in Example~\ref{ex:read-atomicity} can provided by
+  the following operator context $\Delta$: %
+  \vspace{-.4cm} \par\nobreak {\small %
+    \begin{align*}
+      \Delta \equiv \{&(\eff{readRsp}, \iota{:}\Int\sarr \uhat{\msgA{writeRsp}{\iota\;x}\msgA{readReq}{\iota}}{x{:}\urt{\Int}{\top}}{\msgA{readRsp}{\iota\;x}}),\\
+                      &(\eff{readRsp}, \iota{:}\Int\sarr
+                        \uhat{\msgA{writeRsp}{\iota\;x}\msgA{readReq}{\iota}\msgC{writeRsp}}{x{:}\urt{\Int}{\top}}{\msgA{readRsp}{\iota\;x}}),
+                        ... \}
+    \end{align*}}
 \end{example}
 
-The rules for performing events, \textsc{TGen} and \textsc{TObs}, both extract the operator type $\uhat{H}{t}{\msg{op}{\overline{x}}\seqA F}$ from operator context $\Delta$; and require that it aligns with the \tyName{} of the expression that the operation is being performed in:%
+The rules for performing events, \textsc{TGen} and \textsc{TObs}, both
+extract the operator type $\uhat{H}{t}{\msg{op}{\overline{x}}\seqA F}$
+from operator context $\Delta$; and require that it aligns with the
+\tyName{} of the expression that the operation is being performed in:%
 % The rules for performing events, \textsc{TGen} and \textsc{TObs}, both extract
 % the type of the corresponding operator from $\Delta$,
 % $\rg{H}{\msg{op}{\phi}}{A \seqA F}$, and require that it aligns
@@ -482,14 +459,32 @@ The rules for performing events, \textsc{TGen} and \textsc{TObs}, both extract t
     \;\;\underbrace{F }_\texttt{ghost events appended to $\eff{op}$}
     \;\;\underbrace{F'}_\texttt{trace produced by $e$}
     }
-  \end{align*}}\noindent %
-For simplicity, we only allow the ghost events to be appended to a normal event.
-Same as prior work~\cite{CoverageType}, the arguments should be well-typed against the parameter types fliped from over- to under-approximation (i.e., $\widehat{t_i}$).
-To type the rest of the expression, the assumption of \tyName of operator (i.e., $\msg{op}{\overline{x}}$) should be aligned with the expectation of term's type (i.e., $\msg{op}{\phi}$), then both rules move the symbolic event
-$(\msg{op}{\overline{x}} \land \msg{op}{\phi})\seqA F$ from the future regex to the tail of the history regex. The subsumption rule \textsc{TSub} and the equivalence rule \textsc{TEq} allows us to change the shape of a type that a term is being typed against. 
-The nondeterministic choice operator is typed using the
-\textsc{TChoice} rule which merges \tyName{} of the two branches.
-Although the typing rule for function (\textsc{TFun}) is standard, unlike standard refinement type systems, underapproximate reasoning does not maintain an inductive invariant for recursive functions. Inspired by Underapproximate Logic, we type recursive functions in an inductive manner for instead. The \textsc{FixBase} rule types any recursive function with a \tyName{} lacking reachability constraints (i.e., $\uhat{H}{\urt{b}{\bot}}{\emptyset}$). In contrast, the \textsc{FixInd} rule permits typing a recursive function with type $t'$ by requiring it to have another type $t$, and by checking that its body can be assigned type $t'$ under the assumption that the function itself has type $t$.
+  \end{align*}}%
+\noindent For simplicity, we only allow the ghost events to be
+appended to a normal event.  Same as prior work~\cite{CoverageType},
+the arguments should be well-typed against the parameter types fliped
+from over- to under-approximation (i.e., $\widehat{t_i}$).  To type
+the rest of the expression, the assumption of \tyName of operator
+(i.e., $\msg{op}{\overline{x}}$) should be aligned with the
+expectation of term's type (i.e., $\msg{op}{\phi}$), then both rules
+move the symbolic event
+$(\msg{op}{\overline{x}} \land \msg{op}{\phi})\seqA F$ from the future
+regex to the tail of the history regex. The subsumption rule
+\textsc{TSub} and the equivalence rule \textsc{TEq} allows us to
+change the shape of a type that a term is being typed against.  The
+nondeterministic choice operator is typed using the \textsc{TChoice}
+rule which merges \tyName{} of the two branches.  Although the typing
+rule for function (\textsc{TFun}) is standard, unlike standard
+refinement type systems, underapproximate reasoning does not maintain
+an inductive invariant for recursive functions. Inspired by
+Underapproximate Logic, we type recursive functions in an inductive
+manner for instead. The \textsc{FixBase} rule types any recursive
+function with a \tyName{} lacking reachability constraints (i.e.,
+$\uhat{H}{\urt{b}{\bot}}{\emptyset}$). In contrast, the
+\textsc{FixInd} rule permits typing a recursive function with type
+$t'$ by requiring it to have another type $t$, and by checking that
+its body can be assigned type $t'$ under the assumption that the
+function itself has type $t$.
 
 % The nondeterministic loop aligns with the Kleene star in SRE, and thus can be straightforwardly typed by the \textsc{TLoop} rule.
 % Since the loop body $e$ may be executed an unbounded number of times, the typing judgment for $e$ requires that an unbounded number of iterations may have already been performed ($H \seqA \textcolor{orange}{A^*}$) and may occur in the future ($\textcolor{orange}{A^*} \seqA A' \seqA F$). Additionally, the input and output capability contexts must be identical, ensuring that $e$ replenishes any capabilities it consumes.
@@ -501,30 +496,58 @@ Although the typing rule for function (\textsc{TFun}) is standard, unlike standa
 % rules in standard refinement typing, it additionally
 
 \begin{example}[Generator Typing]
-  We present an informal typing derivation for the generator in \autoref{ex:read-atomicity}, demonstrating that the first iteration satisfies the assertion. By the \textsc{FixBase}, \textsc{TFixBase}, and \textsc{TFun} rules, we need to type check the body of the recursive function against the type:
-  {\footnotesize\begin{align*}
-    &i_1{:}\ort{\Int}{\top}, i_1{:}\ort{\Int}{\top}, x{:}\urt{\Int}{\top}, \Code{transaction\_gen}{:}(\Unit 
-    \sarr \uhat{...}{\Unit}{\emptyset}) \vdash 
-    \\&\;\;\;\;\eff{writeReq}\; i_1\; x; \zobs{\_}{\eff{writeRsp}}{i_1}{\textit{line 3 - 6 of program in 
-    Example~\ref{ex:read-atomicity}}}
-    \\&\;\;:\uhat{\allA}{\Unit}{\underbrace{\msgA{writeReq}{i_1\;x}}_{F_1}\underbrace{\msgA{writeRsp}{i_1\;x}\msgA
-    {readReq}{i_2}\msg{writeReq}{\I{tid} = i_1}\msg{writeRsp}{\I{tid} = i_1}\msgA{readRsp}{i_2\;x}}_{F_2}}
-  \end{align*}}\noindent
-  Here, $i_1$ and $i_2$ are function parameters (overapproximated), $x$ is a random integer (underapproximated), and the recursive reference $\Code{transaction\_gen}$ is assigned the empty type $\uhat{\ldots}{\Unit}{\emptyset}$. This right-hand side type precisely underapproximates the function body, ensuring the read response returns the value written by $x$.
-  By rule \textsc{TGen}, we type check the event $\eff{writeReq}\;i_1\;x$ with the type from $\Delta$:
-  {\small\begin{align*}
-    & i{:}\Int \sarr x{:}\Int \sarr \uhat{\allA}{\Unit}{\msgA{writeReq}{i\;x}}
-  \end{align*}}
-  Since this matches the target type, the subsequent derivation moves the $\eff{writeReq}$ event from the future to the end of the history regex:
-  {\small\begin{align*}
-    &... \vdash \zobs{\_}{\eff{writeRsp}}{i_1}{\textit{line 3 - 6 of program in Example~\ref{ex:read-atomicity}}} 
-    : \uhat{\allA\seqA F_1}{\Unit}{F_2}
-  \end{align*}}\noindent
-  The remainder of the derivation iteratively moves each event in the future regex to the history until typing the non-deterministic branches against the type $\uhat{\allA \seqA F_1 \seqA F_2}{\Unit}{\epsilon}$. By \textsc{TRet}, the first branch contains an unit value and is typed as $\uhat{\allA \seqA F_1 \seqA F_2}{\Unit}{\epsilon}$, permitting the empty trace; the second branch has type $\uhat{\allA \seqA F_1 \seqA F_2}{\Unit}{\emptyset}$, since the recursive function in the type context is assigned empty type. According to rule \textsc{TChoice}, the merge type is the same as our expected type.
+  We present an informal typing derivation for the generator in
+  \autoref{ex:read-atomicity}, demonstrating that the first iteration
+  satisfies the assertion. By the \textsc{FixBase}, \textsc{TFixBase},
+  and \textsc{TFun} rules, we need to type check the body of the
+  recursive function against the type: %
+  \vspace{-.4cm} \par\nobreak {\footnotesize %
+    \begin{align*}
+      &i_1{:}\ort{\Int}{\top}, i_1{:}\ort{\Int}{\top},
+        x{:}\urt{\Int}{\top}, \Code{transaction\_gen}{:}(\Unit \sarr
+        \uhat{...}{\Unit}{\emptyset}) \vdash \\&\;\;\;\;\eff{writeReq}\;
+      i_1\; x; \zobs{\_}{\eff{writeRsp}}{i_1}{\textit{line 3 - 6 of
+      program in Example~\ref{ex:read-atomicity}}}
+      \\&\;\;:\uhat{\allA}{\Unit}{\underbrace{\msgA{writeReq}{i_1\;x}}_{F_1}\underbrace{\msgA{writeRsp}{i_1\;x}\msgA
+      {readReq}{i_2}\msg{writeReq}{\I{tid} =
+      i_1}\msg{writeRsp}{\I{tid} =
+      i_1}\msgA{readRsp}{i_2\;x}}_{F_2}}
+    \end{align*}}%
+  \noindent Here, $i_1$ and $i_2$ are function parameters
+  (overapproximated), $x$ is a random integer (underapproximated), and
+  the recursive reference $\Code{transaction\_gen}$ is assigned the
+  empty type $\uhat{\ldots}{\Unit}{\emptyset}$. This right-hand side
+  type precisely underapproximates the function body, ensuring the
+  read response returns the value written by $x$.  By rule
+  \textsc{TGen}, we type check the event $\eff{writeReq}\;i_1\;x$ with
+  the type from $\Delta$: %
+  \vspace{-.4cm} \par\nobreak {\small %
+    \begin{align*}
+      & i{:}\Int \sarr x{:}\Int \sarr \uhat{\allA}{\Unit}{\msgA{writeReq}{i\;x}}
+    \end{align*}}
+  Since this matches the target type, the subsequent derivation moves
+  the $\eff{writeReq}$ event from the future to the end of the history
+  regex: %
+  \vspace{-.4cm} \par\nobreak {\small %
+    \begin{align*}
+      &... \vdash \zobs{\_}{\eff{writeRsp}}{i_1}{\textit{line 3 - 6 of program in Example~\ref{ex:read-atomicity}}}
+        : \uhat{\allA\seqA F_1}{\Unit}{F_2}
+    \end{align*}}%
+  \noindent The remainder of the derivation iteratively moves each
+  event in the future regex to the history until typing the
+  non-deterministic branches against the type
+  $\uhat{\allA \seqA F_1 \seqA F_2}{\Unit}{\epsilon}$. By
+  \textsc{TRet}, the first branch contains an unit value and is typed
+  as $\uhat{\allA \seqA F_1 \seqA F_2}{\Unit}{\epsilon}$, permitting
+  the empty trace; the second branch has type
+  $\uhat{\allA \seqA F_1 \seqA F_2}{\Unit}{\emptyset}$, since the
+  recursive function in the type context is assigned empty
+  type. According to rule \textsc{TChoice}, the merge type is the same
+  as our expected type.
 \end{example}
 
-\subsection{Type Soundness}
-
+\subsection{Metatheory}
+\label{sec:metatheory}
 % \begin{figure}[h!]
 %   \vspace*{-.15in}
 
@@ -533,6 +556,133 @@ Although the typing rule for function (\textsc{TFun}) is standard, unlike standa
 %   \label{fig:selected-denotation}
 %   \vspace*{-.15in}
 %   \end{figure}
+
+\begin{figure}[t!]
+\vspace*{-0.1in}
+{\footnotesize
+\begin{flalign*}
+  &\text{\textbf{Operator Semantics }}\
+  \fbox{$\alpha \vDash m \Downarrow m$} &
+  \text{\textbf{Operational Semantics }}\
+  \fbox{$
+  % \phi \Downarrow c \quad
+  \steptr{\alpha}{(\buf, e)}{\alpha}{(\buf, e)}$}
+\end{flalign*}
+\begin{prooftree}
+  \hypo{\beta' = \buf \cup \{\zevent{op}{\overline{c}}\}}
+  \infer1[\textsc{\small StGen}]{
+    \steptr{\alpha}{(\buf, \zgen{op}{\overline{c}}{e})}{[\zevent{op}{\overline{c}}]}{(\beta', e)}
+  }
+\end{prooftree}
+\quad
+\begin{prooftree}
+  \mhypo{50mm}
+  {$\buf = \{ m \} \cup \buf' $ \quad
+    $\alpha \vDash m \Downarrow \zevent{op}{\overline{c},c'} $
+  }
+    \infer1[\textsc{\small StObs}]{
+      \steptr{\alpha}{(\buf,
+        \zobs{x}{op}{\overline{c}}{e})}{[\zevent{op}{\overline{c},c'}]}{(\buf', e[x \mapsto c'])}
+    }
+  \end{prooftree}
+% \\[0.8em]
+% \mprooftr{58mm}{
+% $\phi\msubst{x}{c}\Downarrow \top$
+% }{StAssume}{
+% $\steptr{\alpha}{(\buf, \zassume{\overline{x}}{\phi}{e})}{[]}{(\buf, e\msubst{x}{c})}$
+% }
+% \quad
+% \mprooftr{44mm}{$\phi \Downarrow \top$}{StAssert}{
+% $\steptr{\alpha}{(\buf, \zassert{\phi}{e})}{[]}{(\buf, e)}$
+% }
+}
+\vspace*{-.05in}
+  \caption{Selected Operational Semantics.}
+  \label{fig:selected-semantics}
+\vspace*{-.2in}
+\end{figure}
+
+\paragraph{Operational Semantics} Events in $\DSL$ are operations
+applied to concrete values $(\zevent{op}{\overline{c}})$. Evaluating a
+$\DSL$ program depends on an context \emph{trace}, i.e., a sequence of
+events, and an \emph{observation capability}, i.e., a multiset of
+generable events that are waiting to be handled by observable
+operators. Each evaluation step produces an output trace and an
+updated capability. Traces are equipped with the standard list
+operations (i.e., cons ${::}$ and concatenation $\listconcat{}$).  The
+operational semantics of $\DSL$ are defined by the small-step
+reduction relation:
+$\steptr{\alpha}{(\beta, e)}{~\alpha'}{(\beta', e')}$.  This judgment
+is read as: ``under the history trace $\alpha$ and observation
+capability $\beta$, $e$ steps to $e'$, emitting the trace $\alpha'$
+and remaining the capability $\beta'$.'' Intuitively, the history
+trace $\alpha$ represents the sequence of events visible to a
+operator, thereby determining its response; the capability $\beta$
+contains events that are able to be observed in the future. The
+semantics uses an auxiliary judgement,
+$\alpha \vDash m \Downarrow m'$, that specifies the observable event
+$m'$ that will be generated after handling a generative event $m$.
+
+\autoref{fig:selected-semantics} presents the key rules of $\DSL$'s
+semantics,\footnote{The remaining rules are completely standard and
+  provided in the supplemental material.} which reflect the
+``consume-and-produce'' semantics of observation capability.  The rule
+for observable events (\textsc{StObs}) removes an event $m$ from the
+capability that can produce the observable operation $\eff{op}$,
+evaluates it under the current context, and substitutes the observed
+value $c'$ (last payload of $m$) for binding variable $x$ in $e$, the
+body of the $\mykw{let}$ expression.  In contrast, the rule for
+generable events (\textsc{StGen}) makes no assumptions on the
+observation capability, since these events can be directly performed
+by the generator. It simply add itself to the resulting observation
+capability for future handling.
+
+\begin{example}[Auxiliary Operator Semantics]\label{ex:aux-semantics}
+  The auxiliary semantics of the $\eff{read}$ and $\eff{write}$ operators in Example~\ref{ex:read-atomicity} can be defined as follows:
+
+  {\footnotesize
+    \mprooftr{44mm}{}{OpWrite}{
+    $\alpha \vDash \zevent{writeReq}{\iota,v} \Downarrow \zevent{writeRsp}{\iota,v}$
+    }
+    \quad
+    \mprooftr{62mm}{$\alpha_1 = \alpha_{11} \listconcat \zevent{writeRsp}{\iota',v} \listconcat \alpha_{12}$ \quad $\eff{readRsp}\not\in \alpha_{12}$}{OpRead}{
+    $\alpha_1\listconcat\zevent{readReq}{\iota}\listconcat\alpha_2\vDash \zevent{readReq}{\iota} \Downarrow \zevent{readRsp}{\iota,v}$
+    }
+    \\[-0.1em]
+    }\noindent
+
+  \noindent
+  The database responds to a $\eff{writeReq}$ event by emitting a
+  $\eff{writeRsp}$ event containing the identical payload. To ensure
+  read atomicity, handling a $\eff{readReq}$ event requires
+  identifying the corresponding history prefix $\alpha_1$ at the point
+  of the read request happens, and producing a $\eff{readRsp}$ event
+  whose value $v$ matches the most recently written value for that key
+  in $\alpha_1$.
+\end{example}
+
+\begin{example}[Read Atomicity]\label{ex:semantics-async}
+  The following derivation illustrates the execution of a single iteration of the program from Example~\ref{ex:read-atomicity}, evaluated under the auxiliary semantics for $\eff{writeReq}$ and $\eff{readReq}$ specified in Example~\ref{ex:aux-semantics}, which enforce read atomicity. For this iteration, we assign transaction identifiers $\Code{tid1}=1$ and $\Code{tid2}=2$, and two random generated integers are $7$ and $8$:
+    {\footnotesize
+      \begin{flalign*}
+        &[] \vDash
+        (\emptyset, \eff{writeReq}\;1\;7;\zobs{\_}{writeRsp}{1}{\eff{readReq}\;2; \textit{line 5 - 6 of code in Example~\ref{ex:read-atomicity}}}) &&
+        \\[-0.2em]
+        &\;\;\xhookrightarrow{[\zevent{writeReq}{1,7}]}{(\{ \zevent{writeReq}{1,7} \}, \zobs{\_}{writeRsp}{1}{\eff{readReq}\;2; \textit{line 5 - 6 of code in Example~\ref{ex:read-atomicity}}})}  \tag{\textsc{StGen}} &&
+        \\[-0.4em]
+        &\;\;\xhookrightarrow{[\textcolor{blue}{\zevent{writeRsp}{1,8}}]}{(\emptyset, \eff{readReq}\;2; \eff{writeReq}\;1\;7;\zobs{\_}{writeRsp}{1}{\textit{line 6 of code in Example~\ref{ex:read-atomicity}}})}  \tag{\textsc{StObs}} &&
+        \\[-0.4em]
+        &\;\;\xhookrightarrow{[\textcolor{orange}{\zevent{readReq}{2}]}}{(\{\zevent{readReq}{2}\}, \eff{writeReq}\;1\;8;\zobs{\_}{writeRsp}{1}{\textit{line 6 of code in Example~\ref{ex:read-atomicity}}})}  \tag{\textsc{StGen}} &&
+        \\[-0.4em]
+        &\;\;\xhookrightarrow{[\zevent{writeReq}{1,8}]}{(\{\zevent{readReq}{2}, \zevent{writeRsp}{1,8}\}, \zobs{\_}{writeRsp}{1}{\textit{line 6 of code in Example~\ref{ex:read-atomicity}}})}  \tag{\textsc{StGen}} &&
+        \\[-0.4em]
+        &\;\;\xhookrightarrow{[\zevent{writeRsp}{1,8}]}{(\{\zevent{readReq}{2}\}, \zobs{y}{readRsp}{2}{\sassert{y == 7}; () \oplus \Code{transaction\_gen\;1\;2}})}  \tag{\textsc{StObs}} &&
+        \\[-0.4em]
+        &\;\;\xhookrightarrow{[\zevent{readRsp}{2,7}]}{(\emptyset, \sassert{7 == 7}; () \oplus \Code{transaction\_gen\;1\;2})}  \tag{\textsc{StObs}} &&
+      \end{flalign*}
+    }\noindent
+  In the final step, the program executes $\mykw{obs}\;\eff{readRsp}\;2$, producing a read value $y=7$, which matches the value of the most recent $\eff{writeRsp}$ (blue) at the point where the $\eff{readReq}$ event (orange) occurred. Thus, read atomicity is preserved and execution can continue to generate further transactions.
+\end{example}
 
 \paragraph{Type denotations} Similar to other refinement type systems~\cite{JV21},
 types in $\DSL$ are denoted as their inhabitants (i.e., $\denot{t}$ and $\denot{\tau}$).  The capability context is denoted as  observation capabilitys (i.e., $\denot{\Theta}$), while the type context $\Gamma$ is denoted as \emph{substitution} $\sigma$ (i.e., $[x_1\mapsto v_1, x_2\mapsto v_2]$) that provides the assignments for binding variables in $\Gamma$. Moreover, the denotation (denoted language) of SREs is the set of traces. Then, regex
@@ -548,7 +698,7 @@ The type denotation of $\uhat{H}{t}{F}$ is defined as follows:
   &\denot{\uhat{H}{x{:}t}{F}} \doteq \{e ~|~ \emptyset \basicvdash e : s \land \forall v \in \denot{\,\widehat{t}\,}. \forall \alpha_f \in \denot{F[x\mapsto v]}. \exists \alpha_h \in\denot{H[x\mapsto v]}. \exists \beta\;\beta'. \msteptr{\alpha_h}{(\beta, e)}{\alpha_f}{(\beta',  v)} \}
 \end{align*}}\noindent
 A term $e$ inhabits $\uhat{H}{t}{F}$ iff, for trace $\alpha_f$ accepted by $F$, there exists history trace $\alpha_h$ accept by $H$, such that the execution of $e$ under history trace produces the trace $\alpha_f$.
-\footnote{The details of these definition can be found in our \techreport{}.} 
+\footnote{The details of these definition can be found in our \techreport{}.}
 Our formulation constitutes a trace-based analogue of incorrectness logic~\cite{OHP19}, in which effects are modeled as program state transitions:
 \begin{align*}
   [P]\; e\; Q \doteq \forall s_\Code{post} \in \denot{Q}. \exists s_\Code{pre} \in \denot{P}. (s_\Code{pre}, e) \Downarrow s_\Code{post}
@@ -559,8 +709,8 @@ The distinction is that we characterize $F$ as the set of newly produced traces 
 
 % Underapproximating specifications, as in our approach, must exclude unreachable states or unrealizable traces, since $A$ cannot include them. To improve expressiveness and usability, our tool allows users to specify an overapproximated style global property $P$ and verifies that $A \subseteq P$.
 
-%  A term $e$ inhabits $\rg{H}{A}{F}$ iff, for all realizable (i.e., producible by the execution of some program) history traces $\alpha_h$ accept by $H$, the current trace $\alpha$ produced by $e$ is accepted by $A$, and all future traces $\alpha_f$ accepted by $F$ are also realizable.\footnote{The details of these definition can be found in our \techreport{}.} 
- 
+%  A term $e$ inhabits $\rg{H}{A}{F}$ iff, for all realizable (i.e., producible by the execution of some program) history traces $\alpha_h$ accept by $H$, the current trace $\alpha$ produced by $e$ is accepted by $A$, and all future traces $\alpha_f$ accepted by $F$ are also realizable.\footnote{The details of these definition can be found in our \techreport{}.}
+
 % \paragraph{Operator context}
 % We expect the trace produced by our test generator to be consistent with the operator context $\Delta$; i.e., each event in the trace must be consistent with corresponding $\tyName$ in $\Delta$.
 
@@ -577,7 +727,7 @@ The distinction is that we characterize $F$ as the set of newly produced traces 
 %     \alpha_h \in \denot{H\msubst{x_i}{c_i}} \land \alpha_f \in \denot{F\msubst{x_i}{c_i}} \land \Theta \subseteq \{ \eff{op} ~|~ \zevent{op}{\overline{c}} \in \alpha_f\} \land \phi\msubst{x_i}{c_i} \land \forall i. c_i \in \denotation{t_i}
 % \end{align*}}
 % \end{definition}
- 
+
 \begin{theorem}[Fundamental Theorem]\label{theorem:fundamental}A well-typed term, i.e., \(\Gamma\vdash e : \uhat{H}{t}{F}\), generates traces consistent with the \tyName: $\forall \sigma \in \denotation{\Gamma}. \sigma(e) \in \denotation{\sigma(\uhat{H}{t}{F})}$.\footnote{The proofs of all theorems in this paper are provided in the \techreport{}.}
 \end{theorem}
 
