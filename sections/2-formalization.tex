@@ -1,4 +1,5 @@
-\section{Formalization}\label{sec:formal}
+\section{Language}
+\label{sec:formal}
 
 \begin{figure}[t!]
   \vspace{-.3cm}
@@ -28,18 +29,18 @@
 %     \text{\textbf{Syntax Sugar}}& \quad \mykw{let}\;\eff{op}\;\overline{v}\;\mykw{in}\;e \doteq \zgen{op}{\overline{v}}{e} \qquad\qquad  e_1;e_2 \doteq \zlet{\_}{e_1}{e_2}
 %   \end{flalign*}}
 \vspace*{-.25in}
-\caption{Syntax of $\DSL$ expressions and traces}
+\caption{Syntax of \DSL{} expressions and traces}
 \label{fig:term-syntax}
 \vspace*{-.1in}
 \end{figure}
 
-We formalize our approach using a core language, $\DSL$, for
+We formalize our approach using a core language, \DSL{}, for
 expressing \textit{trace generators}-- nondeterministic programs that
 probe the behaviors of a black-box system under test via a set of
 (effectful) operators that it provides. This calculus is equipped with
 a type system that characterizes the set of traces that a program
 \emph{must} be able to produce, \emph{if} the system under test
-produces appropriate responses. The syntax of $\DSL$ is shown in
+produces appropriate responses. The syntax of \DSL{} is shown in
 \autoref{fig:term-syntax}; programs are written in A-normal form and
 have access to both pure and effectful operations ($\primop$ and
 $\eff{op}$), can include nondeterministic choices ($\oplus$), and
@@ -53,10 +54,12 @@ shorthand notations used by our examples, e.g., we use $e_1;e_2$ to
 simplify $\mykw{let}$-expressions when the remaining program does not
 use the bound variable, i.e., $\zlet{\_}{e_1}{e_2}$.
 
-$\DSL$ is equipped with a fairly standard small-step operational
+\DSL{} is equipped with a fairly standard small-step operational
 semantics, which \autoref{sec:metatheory} describes in more
-detail. Similar to other calculi for trace-based type systems, the
-reduction relation defining this semantics,
+detail. \BD{If we drop the capability contexts, we should be able to
+  say we use the same semantics as the calculus in HAT, simplifying
+  this further.} Similar to other calculi for trace-based type
+systems, the reduction relation defining this semantics,
 $\steptr{\alpha}{(\beta, e)}{~\alpha'}{(\beta', e')}$, includes a
 \textit{history trace} $\alpha$, i.e., a sequence of effectful
 operations invoked prior to the current evaluation step. Intuitively,
@@ -134,7 +137,6 @@ $\eff{get}$ depends on the $\eff{put}$ operations that preceded it.
 %   The first step substitutes $x$ with an arbitrary STLC type (e.g., $\Int$). In the next steps, the program performs the generative operator $\eff{abs}$, which generates a new capability $\eff{endAbs}$ to be handled in the future. Similarly, the program performs $\eff{var}$, $\eff{putTy}$, and $\eff{ayncGetTy}$, where only the last operator generates a new capability, $\zevent{getTy}{\Int}$, whose payload is the last $\eff{put}$ type.
 %   The fourth step consumes the $\zevent{getTy}{\Int}$ event and substitutes $y$ with $\Int$ in the remaining program. The rest of the program is then executed, which ends the lambda abstraction and records the type of the generated STLC term as $\Code{Arr}(\Int, \Int)$.
 
-
 \subsection{Type System}
 
 \begin{figure}[t!]
@@ -157,12 +159,12 @@ $\eff{get}$ depends on the $\eff{put}$ operations that preceded it.
   \end{flalign*}}
 }
 \vspace*{-.15in}
-\caption{$\DSL{}$ types}
+\caption{\DSL{} types}
 \label{fig:type-syntax}
 \vspace*{-.15in}
 \end{figure}
 
-The syntax of types in $\DSL{}$ is shown in \autoref{fig:type-syntax}.
+The syntax of types in \DSL{} is shown in \autoref{fig:type-syntax}.
 Types include \emph{pure} refinement types, which describe pure
 computations, and underapproximate Hoare Automata Types (\tyName{}s),
 which describe effectful computations.
@@ -184,8 +186,8 @@ $1 \oplus 2 \oplus 3$, in contrast, does have this underapproximate
 type, as it can evaluate to both $1$ and $2$.
 
 \paragraph{Underapproximate Hoare Automata Types}
-Similar to other recent trace-based type systems~\cite{ZYDJ24},
-$\DSL{}$ uses \emph{Symbolic Finite Automata} (SFAs)~\cite{Vea13,
+Similar to other recent trace-based type systems~\cite{ZYDJ24}, \DSL{}
+uses \emph{Symbolic Finite Automata} (SFAs)~\cite{Vea13,
   SFA-minimization, SFA-Transducers} to qualify the traces generated
 by effectful computations; in contrast to those prior works, the
 \tyName{}s in $\DSL{}$ use SFAs to underapproximate the set of effects
@@ -273,6 +275,8 @@ $\msgB{writeReq}{\I{tid}\;v}{v > 0}$. We omit the quantifiers with
 equality constraints, e.g., $\msg{writeReq}{\I{tid} = 1 \land v = 3}$,
 as $\msgA{writeReq}{1\;3}$; we also omit the top quantifiers in
 symbolic events and types.
+
+\subsection{Typing Rules}
 
 \begin{figure}[!t]
 {\footnotesize
@@ -363,71 +367,75 @@ $\Gamma\vdash e_1 : \tau_1$ \quad $\Gamma\vdash e_2 : \tau_2$}
 \vspace*{-.15in}
 \end{figure}
 
-Besides standard type judgement on pure values $\Gamma \vdash v : t$,
-we introduce a typing judgment $\Gamma\vdash e: \uhat{H}{x{:}t}{F}$
-enables a Hoare-triple-style ($\effLR{H}\;e\;\effLR{F}$) reasoning in
-type system. The type context, $\Gamma$ maps from variables to pure
-refinement types (i.e., $t$). As in other trace-based refinement type
-systems, contexts are not allowed to contain \tyName{}s--- doing so
-breaks several structural properties (e.g., weakening) that are used
-to prove type safety.
+$\DSL{}$ is equipped with a pair of typing judgments on pure and
+effectful expressions, $\Gamma \vdash v : t$ and
+$\Gamma\vdash e: \uhat{H}{x{:}t}{F}$, respectively. Both judgments
+rely on a type context, $\Gamma$, that maps from variables to pure
+refinement types (i.e., $t$). As in prior work, typing contexts are
+not allowed to contain \tyName{}s--- doing so breaks several
+structural properties (e.g., weakening) that are used to prove type
+safety. Both rules are parameterized over an additional context
+$\Delta$, which provides types for pure and effectful operators.
 
 \paragraph{Auxiliary typing relations}
-Our system depends on three auxiliary relations: a well-formedness
-relation $\Gamma \wellfoundedvdash \tau$ which mostly ensures, e.g.,
+Our type system also relies on three additional auxiliary
+relations.\footnote{The full definition of these relations is included
+  in the appendix.} The first is a well-formedness relation
+$\Gamma \wellfoundedvdash \tau$ which ensures, among other things,
 that all qualifiers appearing in a type $\tau$ are closed under the
-current typing context $\Gamma$; an inclusion relation on SREs
-$\Gamma \vdash A \subseteq A$; and a mostly-standard semantic
-subtyping relation.  \autoref{fig:selected-typing-rules} presents the
-key subtyping rule for \tyName{}s (\textsc{SubHF}), which establishes
-subtyping by checking inclusion between their history and future
-regexes under the current type context $\Gamma$. As in
-Underapproximate Logic with the reverse principle of consequence, our
-subtyping relation is covariant in the history regex and contravariant
-in the future regex, in contrast to prior overapproximated trace-based
-refinement type systems~\cite{ZYDJ24}.
+current typing context $\Gamma$; the return and argument types of
+functions are only refined with an under- and overapproximate
+qualifiers, respectively; and that the verification conditions
+generated by our type-checker \BD{We don't have a type checker
+  though!} can be encoded as effectively propositional (EPR)
+sentences~\cite{Ramsey1987}, which can be efficiently handled by an
+off-the-shelf theorem prover such as Z3~\cite{de2008z3}.  The type
+system also uses a mostly standard semantic subtyping relation;
+\autoref{fig:selected-typing-rules} presents the key subtyping rule
+for \tyName{}s, \textsc{SubHF}.  This rule uses on an auxiliary
+inclusion relation on SREs $\Gamma \vdash A \subseteq A$ to check
+relate the history and future regexes of two \tyName{}s under the
+current type context $\Gamma$. In contrast to prior
+(overapproximating) trace-based refinement type systems~\cite{ZYDJ24},
+this subtyping relation is covariant in the history regex and
+contravariant in the future regex, similar to Underapproximate Logic
+with the reverse principle of consequence~\BD{We should cite a source
+  for this logic?  I'm not familiar with it}. Since the future
+automata in a \tyName{} can refer to the pure value it returns, the
+inclusion check between the future automata extends the typing context
+with a binding for the return value. When doing so, \textsc{SubHF}
+uses an auxiliary function, $\widehat{t}$, that switches the modality
+of the qualifier on the return value. \BD{Why?}
 
-The pure refinement types at positive position is underapproximated
-(i.e., $\urt{b}{\phi}$) and at negative position (function's parameter
-type) is overapproximated (i.e., $\ort{b}{\phi}$).  We use
-$\widehat{t}$ to denote the flip a base type from underapproximate to
-overapproximate and vice versa; the function type does not change.
-Verification conditions generated by our type-checker can be encoded
-as effectively propositional (EPR) sentences~\cite{Ramsey1987}, which
-can be efficiently handled by an off-the-shelf theorem prover such as
-Z3~\cite{de2008z3}.
-
-
-\paragraph{Typing Rules} A subset of our typing rules is shown in
+A subset of our typing rules is shown in
 \autoref{fig:selected-typing-rules}.\footnote{The complete set of
-  typing rules is included in the \techreport{}.} All of our terms
+  typing rules is included in the \techreport{}.}  All our rules
 assume any types they use are well-formed, so we elide the
-corresponding well-formedness judgments from their premises.  In
-underapproximation reasoning, we cannot apply the subsumption rule
-(\textsc{TSub}) to arbitrary type contexts. For example, consider the
-read atomicity property shown in Example~\ref{ex:read-atomicity},
-which cannot be detected by the following code that only write the
-same value:
+corresponding well-formedness judgments from their premises.
+
+When working with underapproximate refinement types, it is unsound to
+freely apply certain type conversion rules. To see why, consider the
+read atomicity property from Example~\ref{ex:read-atomicity}, which
+cannot be evinced by test generator that always writes the same value
+to a key:
 \begin{minted}[fontsize = \footnotesize, escapeinside=??, xleftmargin=18pt, linenos]{ocaml}
     let (x: int) = int_gen () in
     ?$\eff{writeReq}$? tid1 x;  // ?$x{:}\urt{\Int}{\top} \vdash x : \urt{\Int}{\vnu = 7} <: \urt{\Int}{\vnu = x} $?
     ...
     ?$\eff{writeReq}$? tid1 x;  // ?$x{:}\urt{\Int}{\top} \vdash x : \urt{\Int}{\vnu = 8} <: \urt{\Int}{\vnu = x}$?
 \end{minted}
+Allowing the subsumption rule to be freely applied would allow the
+second argument of the two uses of $\eff{writeReq}$ $x$ to be
+specialized to different values (e.g., $7$ and $8$), which violates
+the call-by-value semantics of \DSL{}. Thus, following prior
+work~\cite{CoverageType}, the subsumption rule (\textsc{TSub}) can
+only be applied when the subtyping relation holds under an empty type
+context ($\emptyset$). The equivalence rule (\textsc{TEq}), in
+contrast, permits a type to be freely exchanged with any equivalent
+type under the current type context.
 
-\noindent However, the subsumption rule may allow the random integer
-$x$ to be specialized to different values (i.e., $7$ and $8$) at
-different calling points, which violates the call-by-value semantics.
-Following prior underapproximate refinement type
-systems~\cite{CoverageType}, the subsumption rule (\textsc{TSub}) is
-restricted to empty type contexts ($\emptyset$) to ensure the
-soundness of reachability reasoning.  In contrast, the equivalence
-rule (\textsc{TEq}) permits type transformation to an semantically
-equivalent type under arbitrary contexts.
-
-The \textsc{TRet} rule requires the current
-regex of this term ($\epsilon$) to only accept the empty trace (i.e.,
-$[]$). The rule \textsc{TEOp} allows us to extract the operator type from operator context $\Delta$, which provides multiple incomparable types of effect operators with different underapproximation precision.
+The \textsc{TRet} rule requires the future regex of a pure term
+($\epsilon$) to only accept the empty trace (i.e., $[]$).
 
 \begin{example}[Operator Type Context] The type of effect operator
   $\eff{readRsp}$ in Example~\ref{ex:read-atomicity} can provided by
@@ -441,10 +449,12 @@ $[]$). The rule \textsc{TEOp} allows us to extract the operator type from operat
     \end{align*}}
 \end{example}
 
-The rules for performing events, \textsc{TGen} and \textsc{TObs}, both
-extract the operator type $\uhat{H}{t}{\msg{op}{\overline{x}}\seqA F}$
-from operator context $\Delta$; and require that it aligns with the
-\tyName{} of the expression that the operation is being performed in:%
+The typing rules effectful operations, \textsc{TGen} and
+\textsc{TObs}, both extract the operator type
+$\uhat{H}{t}{\msg{op}{\overline{x}}\seqA F}$ from operator context
+$\Delta$ \BD{The current rules do not mention $\Delta$, need to fix};
+and require that it aligns with the \tyName{} of the expression that
+the operation is being performed in:%
 % The rules for performing events, \textsc{TGen} and \textsc{TObs}, both extract
 % the type of the corresponding operator from $\Delta$,
 % $\rg{H}{\msg{op}{\phi}}{A \seqA F}$, and require that it aligns
@@ -497,10 +507,10 @@ function itself has type $t$.
 
 \begin{example}[Generator Typing]
   We present an informal typing derivation for the generator in
-  \autoref{ex:read-atomicity}, demonstrating that the first iteration
-  satisfies the assertion. By the \textsc{FixBase}, \textsc{TFixBase},
-  and \textsc{TFun} rules, we need to type check the body of the
-  recursive function against the type: %
+  Example~\ref{ex:read-atomicity}, demonstrating that the first
+  iteration satisfies the assertion. By the \textsc{FixBase},
+  \textsc{TFixBase}, and \textsc{TFun} rules, we need to type check
+  the body of the recursive function against the type: %
   \vspace{-.4cm} \par\nobreak {\footnotesize %
     \begin{align*}
       &i_1{:}\ort{\Int}{\top}, i_1{:}\ort{\Int}{\top},
