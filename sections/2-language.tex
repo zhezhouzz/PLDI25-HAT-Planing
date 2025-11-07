@@ -139,17 +139,17 @@ depends on the $\eff{put}$ operations that preceded it.
     % \\\text{\textbf{Symbolic Event}}& \quad &se  ::= \quad & \msgB{op}{\overline{x}}{\phi}
     \text{\textbf{Symbolic Regex}}& \quad &H,F,A  ::= \quad & \emptyset ~|~ \epsilon ~|~ \msgB{op}{\overline{x}}{\phi} ~|~ A \lorA A ~|~ A \seqA A ~|~ A^* ~|~ A \setminus A ~|~ A \landA A ~|~ \anyA
     % \\& \quad &  \quad & \text{\textcolor{gray}{in Symbolic LTL$_f$ }}  se ~|~ A \lorA A ~|~ \nextA A ~|~ A \untilA A ~|~ \negA A ~|~ A \landA A
-    \\\text{\textbf{Pure Refinement Types}}& \quad & t  ::= \quad & \ort{b}{\phi} ~|~ \urt{b}{\phi} ~|~  x{:}t\sarr t ~|~ x{:}t\sarr \tau
+    \\\text{\textbf{Pure Refinement Types}}& \quad & t  ::= \quad & \urt{b}{\phi} ~|~  x{:}t\sarr t ~|~ x{:}t\sarr \tau
     \\ \text{\textbf{Underapproximate HATs}}& \quad & \tau  ::= \quad & \uhat{H}{x{:}t}{F} ~|~ \tau \interty \tau ~
     |~ x{:}b \garr \tau ~|~ \effGray{op}{:}s \sarr \tau
     \\\text{\textbf{Type Contexts}}& \quad &\Gamma ::= \quad  &\emptyset ~|~ x{:}t, \Gamma
   \end{alignat*}
   \vspace*{-.15in}
   {\footnotesize\begin{flalign*}
-    {\small\text{\textbf{Type Aliases}}} & \;\; \msg{op}{\phi} \doteq \msgB{op}{\overline{x}}{\phi} \;\; \msgA{op}{\overline{v}} \doteq \msgB{op}{\overline{x}}{\overline{x = v}} \;\; \msgC{op} \doteq \msgB{op}{\overline{x}}{\top} \;\; A_1 A_2 \doteq A_1 \seqA A_2 \;\; b \doteq \rawnuot{b}{\top}
+    {\small\text{\textbf{Type Aliases}}} & \;\; \msg{op}{\phi} \doteq \msgB{op}{\overline{x}}{\phi} \;\; \msgA{op}{\overline{v}} \doteq \msgB{op}{\overline{x}}{\overline{x = v}} \;\; \msgC{op} \doteq \msgB{op}{\overline{x}}{\top} \;\; A_1 A_2 \doteq A_1 \seqA A_2 \;\; b \doteq \urt{b}{\top}
     % \;\; \tau \doteq x{:}b\garr\tau
-    \\
-    & \widehat{\ort{b}{\phi}} \doteq \urt{b}{\phi} \;\; \widehat{\urt{b}{\phi}} \doteq \ort{b}{\phi} \;\; \widehat{x{:}t\sarr t'} \doteq x{:}t\sarr t' \;\; \widehat{x{:}t\sarr \tau} \doteq x{:}t\sarr \tau
+    % \\
+    % & \widehat{\ort{b}{\phi}} \doteq \urt{b}{\phi} \;\; \widehat{\urt{b}{\phi}} \doteq \ort{b}{\phi} \;\; \widehat{x{:}t\sarr t'} \doteq x{:}t\sarr t' \;\; \widehat{x{:}t\sarr \tau} \doteq x{:}t\sarr \tau
   \end{flalign*}}
 }
 \vspace*{-.15in}
@@ -167,15 +167,16 @@ which describe effectful computations.
 Pure refinement types are similar to those found in prior
 underapproximate refinement type systems~\cite{CoverageType}, and
 allow base types (e.g., {\Code{int}}) to be further constrained by a
-logical formula or qualifier. In contrast to traditional type systems,
-pure type qualifiers have two modalities: $\ort{b}{\phi}$ which
-constrains every value a pure expresion \emph{may} evaluate to, and
-$\urt{b}{\phi}$, which constrains a subset of the values it
-\emph{must} evaluate to.  For example, the constant value $1$ can be
+logical formula or qualifier. 
+
+In contrast to traditional type systems where pure type qualifier $\ort{b}{\phi}$ 
+constrains every value a pure expresion \emph{may} evaluate to; 
+the type qualifier $\urt{b}{\phi}$ constrains a subset of the values it
+\emph{must} evaluate to.  
+For example, the constant value $1$ can be
 assigned the types $\ort{\Int}{\vnu = 1}$ and $\ort{\Int}{0 < \vnu}$
 -- it satisfies constraint in both \emph{overapproximate} qualifiers
--- but, it cannot be assigned the type, $\urt{\Int}{\vnu = 1 \lor \vnu
-  2}$, since the value 1 cannot evaluate to both 1 or 2 as required
+-- but, it cannot be assigned the type, $\urt{\Int}{\vnu = 1 \lor \vnu = 2}$, since the value 1 cannot evaluate to both 1 or 2 as required
 by this \emph{underapproximate} qualifier. The term $1 \oplus 2 \oplus
 3$, in contrast, does have this underapproximate type.
 
@@ -201,13 +202,13 @@ standard regex operators shown in \autoref{fig:type-syntax}, including
 union $A \lorA A$, sequence $A \seqA A$, and kleene star $A^*$
 operators.
 
-\subsubsection{Example}
+\subsubsection{Example}\label{ex:stack-example}
   Consider an effectful stack library implemented as a fixed-size
   array whose elements grow monotonically.  An incorrect implementation
   that fails to grow the array when the stack is full may cause
   $\eff{push}$ operations to be dropped.  To detect this violation, we
   need to explore traces of the following form, where the last pop
-  operation raises an ``empty stack’' exception:
+  operation raises an ``empty stack'' exception:
   \begin{align*}
     \zevent{push}{1};\zevent{push}{2}; \zevent{push}{3}; \zevent{pop}{3}; \zevent{pop}{2};\textcolor{red}{\zevent{pop}{1}}
   \end{align*}\noindent
@@ -218,7 +219,7 @@ operators.
   by the following \tyName{} specifications, using ghost events
   $\effGray{pushI}$ and $\effGray{popI}$ as shown below:
   {\small\begin{align*} &\eff{push} :~ y{:}\Int \garr
-    x{:}\ort{\Int}{\vnu < y} \sarr
+    x{:}\urt{\Int}{y < \vnu} \sarr
     \uhat{\Code{Last}(\msgAGray{pushI}{n\;y})}{\Unit}{\msgA{push}{x}\msgAGray{pushI}{n{+}1\;x}}
     \\&\eff{pop} :~ \uhat{\Code{Last}(\msgAGray{popI}{m\;\_}) \land
       \Code{Last}(\msgAGray{pushI}{n\;\_}) \land
@@ -316,52 +317,56 @@ $\reqOp{write}{1\;3}$; we also omit the top ($\top$) qualifier
 {\footnotesize
 {\footnotesize
 \begin{flalign*}
- &\text{\textbf{Auxiliary Typing}} & & \fbox{$\Gamma \vdash A \subseteq A \quad \Gamma \vdash \tau <: \tau$} &\text{\textbf{Typing}} &  & \fbox{$\Gamma\vdash \eff{op}: t \quad \Gamma\vdash v : t \quad \Gamma \vdash e: \tau$}
+ &\text{\textbf{Auxiliary Typing}} & & \fbox{$\Gamma \vdash \phi \quad \Gamma \vdash A \subseteq A \quad \Gamma \vdash \tau <: \tau$} &\text{\textbf{Typing}} &  & \fbox{$\Gamma\vdash \eff{op}: t \quad \Gamma\vdash v : t \quad \Gamma \vdash e: \tau$}
 \end{flalign*}
 }
 \\ \
-\mprooftr{43mm}
-{$\Gamma \vdash t_2 <: t_1$ \quad
-$\Gamma,x{:}\widehat{t_1} \vdash F_2 \subseteq F_1$ \quad
-$\Gamma,x{:}\widehat{t_1} \vdash H_1 \subseteq H_2$
+\mprooftr{30mm}
+{$\Gamma\wfvdash \tau[x\mapsto v]$}
+{SubG}
+{$\Gamma \vdash x{:}b\garr \tau <: \tau[x\mapsto v]$}
+\;
+\mprooftr{41mm}
+{$\Gamma \vdash t_1 <: t_2$ \quad
+$\Gamma,x{:}t_1 \vdash F_2 \subseteq F_1$ \quad
+$\Gamma,x{:}t_1 \vdash H_1 \subseteq H_2$
  }
 {SubHF}
 {$\Gamma \vdash \uhat{H_1}{x{:}t_1}{F_1} <: \uhat{H_2}{x{:}t_2}{F_2}$}
-\quad
-\mprooftr{18mm}
-{$\emptyset\vdash e: \tau$ \quad
-$\emptyset \vdash \tau <: \tau'$}
-{TSub}
-{$\Gamma\vdash e: \tau'$}
-\quad
+\;
 \mprooftr{30mm}
-{$\Gamma\vdash e: \tau$ \quad
-$\Gamma \vdash \tau <: \tau'$\quad $\Gamma \vdash \tau' <: \tau$}
-{TEq}
-{$\Gamma\vdash e: \tau'$}
+{$\Gamma \vdash \eff{op} : \overline{x{:}t_x}\sarr\uhat{H}{t}{F}$ \quad
+$\Gamma,\overline{x{:}t_x} \vdash H' \subseteq H$}
+{TOpHis}
+{$\Gamma\vdash \eff{op} : \overline{x{:}t_x}\sarr\uhat{H'}{t}{F}$}
+% \quad
+% \mprooftr{30mm}
+% {$\Gamma\vdash e: \tau$ \quad
+% $\Gamma \vdash \tau <: \tau'$\quad $\Gamma \vdash \tau' <: \tau$}
+% {TEq}
+% {$\Gamma\vdash e: \tau'$}
 \\[.8em]
 \mprooftr{20mm}
 {$\Gamma\vdash v : t$}
 {TRet}
 {$\Gamma\vdash v : \uhat{H}{t}{\epsilon}$}
 \quad
-% \mprooftr{20mm}
-% {$(\eff{op}, t) \in \Delta$}
-% {TEOp}
-% {$\Gamma\vdash \eff{op} : t$}
-% \quad
-\mprooftr{62mm}
+\mprooftr{15mm}
+{$\Delta(\eff{op}) = t$}
+{TOpCtx}
+{$\Gamma\vdash \eff{op} : t$}
+\quad
+\mprooftr{58mm}
 {
-$\overline{x_i{:}t_i}\sarr \uhat{H}{t}{\msgA{op}{\overline{x_i}} \seqA F} \in \Delta(\eff{op})$ \quad
-$\forall i. \;\Gamma \vdash v_i : \widehat{t_i}$}
+$\Gamma \vdash \eff{op} : \overline{x_i{:}t_i}\sarr \uhat{H}{t}{\msgA{op}{\overline{x_i}} \seqA F}$ \quad
+$\forall i. \;\Gamma \vdash v_i : t_i$}
 {TEffOp}
 {$\Gamma\vdash \eff{op}{\;\overline{v_i}} : \uhat{H}{t}{\msgA{op}{\overline{v_i}} \seqA F}$}
 \\[.8em]
-\quad
-\mprooftr{62mm}
+\mprooftr{56mm}
 {
-$\overline{x_i{:}t_i}\sarr \uhat{H}{t}{\msgA{op}{\overline{x_i}} \seqA F} \in \Delta(\eff{op})$ \quad
-$\forall i. \;\Gamma \vdash v_i : \widehat{t_i}$}
+$\Gamma \vdash \eff{op} : \overline{x_i{:}t_i}\sarr \uhat{H}{t}{\msgA{op}{\overline{x_i}} \seqA F}$ \;
+$\forall i. \;\Gamma \vdash v_i : t_i$}
 {TReqOp}
 {$\Gamma\vdash \reqOp{op}{\;\ensuremath{\overline{v_i}}} : \uhat{H}{\Code{id}}{\reqEvt{op}{\ensuremath{\overline{v_i}}} \seqA F}$}
 % \mprooftr{62mm}
@@ -371,13 +376,12 @@ $\forall i. \;\Gamma \vdash v_i : \widehat{t_i}$}
 % $\Gamma\vdash e : \uhat{H \seqA (\msgA{op}{\overline{v_i}} \land \msg{op}{\phi}) \seqA F}{t}{F'}$}
 % {TGen}
 % {$\Gamma\vdash \zgen{op}{\overline{v_i}}{e} : \uhat{H}{t}{\msg{op}{\phi} \seqA F \seqA F'}$}
-\\[.8em]
-\quad
-\mprooftr{62mm}
+\;
+\mprooftr{51mm}
 {
-$\overline{x_i{:}t_i}\sarr \uhat{H}{t}{\msgA{op}{\overline{x_i}} \seqA F} \in \Delta(\eff{op})$ \quad
+$\Gamma \vdash \eff{op} : \overline{x_i{:}t_i}\sarr \uhat{H}{t}{\msgA{op}{\overline{x_i}} \seqA F}$ \;
 $\Gamma \vdash v : \Code{id}$}
-{TRespOp}
+{TRspOp}
 {$\Gamma\vdash \respOpAlt{op}{\ensuremath{v}} : \uhat{H}{t}{\respEvt{op}{\ensuremath{\overline{v_i}}} \seqA F}$}
 \\[.8em]
 \mprooftr{35mm}
@@ -418,7 +422,7 @@ $\Gamma\vdash e_1 : \tau_1$ \quad $\Gamma\vdash e_2 : \tau_2$}
 }
 \vspace*{-.1in}
 \caption{Selected typing rules. \BD{Does it make sense to not tag the
-    future automata in \textsc{TRespOp} with a response tag? I think
+    future automata in \textsc{TRspOp} with a response tag? I think
     that should let history automata treat 'completed' asynchronous
     effects and synchronous effects uniformly; otherwise we might need
     to duplicate signatures.}}
@@ -453,49 +457,93 @@ contains a matching $\req$ with the same id.
 
 The type system also uses a mostly standard semantic subtyping
 relation; \autoref{fig:selected-typing-rules} presents the key
-subtyping rule for \tyName{}s, \textsc{SubHF}.  This rule uses on an
-auxiliary inclusion relation on SREs $\Gamma \vdash A \subseteq A$ to
-check relate the history and future regexes of two \tyName{}s under
-the current type context $\Gamma$. Notably, unlike (overapproximating)
+subtyping rule for \tyName{}s.
+The rule \textsc{SubG} allows to instantiate the ghost varaible in a \tyName{} into well-formed types. The rule \textsc{SubHF} uses on an
+auxiliary inclusion relation on SREs $\Gamma \vdash A \subseteq A$ to check relate the history and future regexes of two \tyName{}s under the current type context $\Gamma$.
+Notably, unlike (overapproximating)
 trace-based refinement type systems~\cite{ZYDJ24}, this subtyping
 relation is covariant in the history regex and contravariant in the
 future regex, yielding behavior similar to Incorrectness Logic with
 the reverse principle of consequence~\cite{OHP19}.  Since the future
 automata in a \tyName{} can refer to the pure value it returns, the
 inclusion check between the future automata extends the typing context
-with a binding for the return value. When doing so, \textsc{SubHF}
-uses an auxiliary function, $\widehat{t}$, that switches the modality
-of the qualifier on the return value. \BD{Why?}
+with a binding for the return value.
 
 A subset of our typing rules is shown in
 \autoref{fig:selected-typing-rules}.\footnote{The complete set of
   typing rules is included in the supplemental material.}  All our
 rules assume any types they use are well-formed, so we elide the
 corresponding well-formedness judgments from their premises.
-
-% When working with underapproximate refinement types, it is unsound to
-% freely apply certain type conversion rules. To see why, consider the
-% read atomicity property from Example~\ref{ex:read-atomicity}, which
-% cannot be evinced by test generator that always writes the same value
-% to a key:
-% \begin{minted}[fontsize = \footnotesize, escapeinside=??, xleftmargin=18pt, linenos]{ocaml}
-%     let (x: int) = int_gen () in
-%     ?$\eff{writeReq}$? tid1 x;  // ?$x{:}\urt{\Int}{\top} \vdash x : \urt{\Int}{\vnu = 7} <: \urt{\Int}{\vnu = x} $?
-%     ...
-%     ?$\eff{writeReq}$? tid1 x;  // ?$x{:}\urt{\Int}{\top} \vdash x : \urt{\Int}{\vnu = 8} <: \urt{\Int}{\vnu = x}$?
-% \end{minted}
-% Allowing the subsumption rule to be freely applied would allow the
-% second argument of the two uses of $\eff{writeReq}$ $x$ to be
-% specialized to different values (e.g., $7$ and $8$), which violates
-% the call-by-value semantics of \DSL{}. Thus, following prior
-% work~\cite{CoverageType}, the subsumption rule (\textsc{TSub}) can
-% only be applied when the subtyping relation holds under an empty type
-% context ($\emptyset$). The equivalence rule (\textsc{TEq}), in
-% contrast, permits a type to be freely exchanged with any equivalent
-% type under the current type context.
-
 The \textsc{TRet} rule requires the future regex of a pure term
-($\epsilon$) to only accept the empty trace (i.e., $[]$).
+($\epsilon$) to only accept the empty trace (i.e., $[]$). 
+The operator type is retrieved from the operator context $\Delta$ using the \textsc{TOpCtx} rule.
+For a given event, there may be multiple reachable history traces (underapproximate preconditions) that can be allowed by an operator, which cannot be determined by the operator type alone.
+Therefore, we expect that the type provided by the operator context is the most general one, i.e., it includes all reachable history traces.
+The rule \textsc{TOpHis} can then freely choose a subset of the reachable history traces to align with the actual calling context.
+The application rule \textsc{TEffOp} requires the arguments of an effectful operator to be well-typed against the parameter types, and the \textsc{TRspOp} rule requires the response of an effectful operator to be well-typed against the return type.
+
+\begin{example}[Operator Application Typing]
+  We present a typing derivation for a simple generator that performs the $\eff{push}$ and $\eff{pop}$ operators in
+  Example~\ref{ex:stack-example}. That is, we need to type check the following expression:
+  \vspace{-.4cm} \par\nobreak {\small %
+    \begin{align*}
+      &\emptyset \vdash \zlet{x}{\mykw{assume}\;0 < x}{\eff{push}\;x; \eff{pop}} 
+      \\&\qquad : \uhat{\msgAGray{pushI}{0\;0}\msgAGray{popI}{0\;0}}{x{:}\urt{\Int}{0 < \vnu}}{\msgA{push}{x}\msgAGray{pushI}{1\;x}\msgA{pop}{x}\msgAGray{popI}{1\;x}}
+    \end{align*}}%
+  \noindent 
+  The generator assume the stask is empty (i.e., the history regex contains $\effGray{pushI}$ and $\effGray{popI}$ events with $0$ index and dummy value $0$) and push a postive number $y$ and expect to pop the same value.
+  The $\mykw{assume}\;\true$ can guarantee generates all positive integers, thus we can type check two effectful operation applications via the following judgements:
+  \vspace{-.4cm} \par\nobreak {\small %
+    \begin{flalign*}
+      &x{:}\urt{\Int}{0 < \vnu} \vdash \eff{push}\;x; \eff{pop} :  \uhat{\msgAGray{pushI}{0\;0}\msgAGray{popI}{0\;0}}{x{:}\urt{\Int}{0 < \vnu}}{\msgA{push}{x}\msgAGray{pushI}{1\;x}\msgA{pop}{x}\msgAGray{popI}{1\;x}}
+    \end{flalign*}}%
+  \noindent
+  According to the \textsc{TEffOp} rule, we first retrieve the type of the $\eff{push}$ operators from the operator context $\Delta$:
+  \vspace{-.4cm} \par\nobreak {\small %
+    \begin{flalign*}
+      &... \vdash \eff{push} : x{:}\urt{\Int}{y < \vnu} \sarr
+      \uhat{\Code{Last}(\msgAGray{pushI}{n\;y})}{\Unit}{\msgA{push}{x}\msgAGray{pushI}{n{+}1\;x}}  &&\text{(by \textsc{TOpCtx})}
+      \\&... \vdash \eff{push} : x{:}\urt{\Int}{0 < \vnu} \sarr
+      \uhat{\Code{Last}(\msgAGray{pushI}{0\;0})}{\Unit}{\msgA{push}{x}\msgAGray{pushI}{1\;x}} &&\text{(by \textsc{SubG})}
+      \\&... \vdash \eff{push} : x{:}\urt{\Int}{0 < \vnu} \sarr
+      \uhat{\msgAGray{pushI}{0\;0}\msgAGray{popI}{0\;0}}{\Unit}{\msgA{push}{x}\msgAGray{pushI}{1\;x}} &&\text{(by \textsc{TOpHis})}
+    \end{flalign*}}%
+  \noindent 
+  The subtyping rule allow us to instantiate the ghost varaible (e.g., $n \mapsto 0$ and $y \mapsto 0$), moreover, the rule \textsc{TOpHis} choose one reachable history trace ($\msgAGray{pushI}{0\;0}\msgAGray{popI}{0\;0}$) to align with the actual calling context. Then, the future regex $\msgA{push}{x}\msgAGray{pushI}{1\;x}$ is exactly aligned with the prefix of the prefix of the future regex of the target type.
+  The rest of program should be typed via the following judgements:
+  \vspace{-.4cm} \par\nobreak {\small %
+    \begin{align*}
+      &x{:}\urt{\Int}{0 < \vnu}\vdash \eff{pop} : \uhat{\msgAGray{pushI}{0\;0}\msgAGray{popI}{0\;0}\msgA{push}{x}\msgAGray{pushI}{1\;x}}{x{:}\urt{\Int}{0 < \vnu}}{\msgA{pop}{x}\msgAGray{popI}{1\;x}} &&
+    \end{align*}}%
+  \noindent
+  Similarly, we can instantiate the ghost varaible $m$ as $0$ and $n$ as $1$ via rule \textsc{SubG}, align the return type via rule \textsc{SubHF} and refine the history regex via the rule \textsc{TOpHis}.
+  \vspace{-.4cm} \par\nobreak {\footnotesize %
+    \begin{flalign*}
+      &... \vdash \eff{pop} : \uhat{\Code{Last}(\msgAGray{popI}{m\;\_}) \land
+      \Code{Last}(\msgAGray{pushI}{n\;\_}) \land
+      (\allA\msgAGray{pushI}{(n{-}m)\;x}\allA)}{x{:}\Int}{\msgA{pop}{x}\msgAGray{popI}{m{+}1\;x}} &&\text{(\textsc{TOpCtx})}
+      \\&... \vdash \eff{pop} : \uhat{\Code{Last}(\msgAGray{popI}{0\;\_}) \land
+      \Code{Last}(\msgAGray{pushI}{1\;\_}) \land
+      (\allA\msgAGray{pushI}{1\;x}\allA)}{x{:}\Int}{\msgA{pop}{x}\msgAGray{popI}{1\;x}} &&\text{(\textsc{SubG})}
+      \\&... \vdash \eff{pop} : \uhat{\Code{Last}(\msgAGray{popI}{0\;\_}) \land
+      \Code{Last}(\msgAGray{pushI}{1\;\_}) \land
+      (\allA\msgAGray{pushI}{1\;x}\allA)}{x{:}\urt{\Int}{0 < \vnu}}{\msgA{pop}{x}\msgAGray{popI}{1\;x}} &&\text{(\textsc{SubHF})}
+      \\&... \vdash \eff{pop} : \uhat{\msgAGray{pushI}{0\;0}\msgAGray{popI}{0\;0}\msgA{push}{x}\msgAGray{pushI}{1\;x}}{x{:}\urt{\Int}{0 < \vnu}}{\msgA{pop}{x}\msgAGray{popI}{1\;x}} &&\text{(\textsc{TOpHis})}
+    \end{flalign*}}%
+  \noindent
+\end{example}
+
+% \begin{example}[Operator Type Context] The type of effect operator
+%   $\eff{readRsp}$ in Example~\ref{ex:read-atomicity} can provided by
+%   the following operator context $\Delta$: %
+%   \vspace{-.4cm} \par\nobreak {\small %
+%     \begin{align*}
+%       \Delta \equiv \{&(\eff{readRsp}, \iota{:}\Int\sarr \uhat{\msgA{writeRsp}{\iota\;x}\msgA{readReq}{\iota}}{x{:}\urt{\Int}{\top}}{\msgA{readRsp}{\iota\;x}}),\\
+%                       &(\eff{readRsp}, \iota{:}\Int\sarr
+%                         \uhat{\msgA{writeRsp}{\iota\;x}\msgA{readReq}{\iota}\msgC{writeRsp}}{x{:}\urt{\Int}{\top}}{\msgA{readRsp}{\iota\;x}}),
+%                         ... \}
+%     \end{align*}}
+% \end{example}
 
 \BD{I think we need a couple of examples of how we use the subtyping
   rules to specialize / unify the history automata of a effectful
@@ -509,54 +557,44 @@ The \textsc{TRet} rule requires the future regex of a pure term
   one execution?}
 
 \SJ{Why isn't the type given in Sec. 2 sufficient?}
-\begin{example}[Operator Type Context] The type of effect operator
-  $\eff{readRsp}$ in Example~\ref{ex:read-atomicity} can provided by
-  the following operator context $\Delta$: %
-  \vspace{-.4cm} \par\nobreak {\small %
-    \begin{align*}
-      \Delta \equiv \{&(\eff{readRsp}, \iota{:}\Int\sarr \uhat{\msgA{writeRsp}{\iota\;x}\msgA{readReq}{\iota}}{x{:}\urt{\Int}{\top}}{\msgA{readRsp}{\iota\;x}}),\\
-                      &(\eff{readRsp}, \iota{:}\Int\sarr
-                        \uhat{\msgA{writeRsp}{\iota\;x}\msgA{readReq}{\iota}\msgC{writeRsp}}{x{:}\urt{\Int}{\top}}{\msgA{readRsp}{\iota\;x}}),
-                        ... \}
-    \end{align*}}
-\end{example}
 
-The typing rules effectful operations, \textsc{TGen} and
-\textsc{TObs}, both extract the operator type
-$\uhat{H}{t}{\msg{op}{\overline{x}}\seqA F}$ from operator context
-$\Delta$ \BD{The current rules do not mention $\Delta$, need to fix};
-and require that it aligns with the \tyName{} of the expression that
-the operation is being performed in:%
+% The typing rules effectful operations, \textsc{TGen} and
+% \textsc{TObs}, both extract the operator type
+% $\uhat{H}{t}{\msg{op}{\overline{x}}\seqA F}$ from operator context
+% $\Delta$ \BD{The current rules do not mention $\Delta$, need to fix};
+% and require that it aligns with the \tyName{} of the expression that
+% the operation is being performed in:%
 % The rules for performing events, \textsc{TGen} and \textsc{TObs}, both extract
 % the type of the corresponding operator from $\Delta$,
 % $\rg{H}{\msg{op}{\phi}}{A \seqA F}$, and require that it aligns
 % with the \tyName{} of the expression that the operation is being
 % performed in:%
-\vspace{-.4cm} \par\nobreak {\footnotesize %
-  \begin{align*}
-    \text{\textcolor{gray}{(term's \tyName)}} \qquad
-    \effLR{\underbrace{ H}_\texttt{history}}\;t\;
-    \effLR{
-    \;\;\underbrace{\msg{op}{\overline{x}}}_\texttt{trace produced by $\eff{op}$}
-    \;\;\underbrace{F }_\texttt{ghost events appended to $\eff{op}$}
-    \;\;\underbrace{F'}_\texttt{trace produced by $e$}
-    }
-\end{align*}}%
-\SJ{I don't follow what it means to append a ghost event to a normal
-  event.}
-\noindent For simplicity, we only allow the ghost events to be
-appended to a normal event.  Same as prior work~\cite{CoverageType},
-the arguments should be well-typed against the parameter types fliped
-from over- to under-approximation (i.e., $\widehat{t_i}$).  To type
-the rest of the expression, the assumption of \tyName of operator
-(i.e., $\msg{op}{\overline{x}}$) should be aligned with the
-expectation of term's type (i.e., $\msg{op}{\phi}$), then both rules
-move the symbolic event
-$(\msg{op}{\overline{x}} \land \msg{op}{\phi})\seqA F$ from the future
-regex to the tail of the history regex. The subsumption rule
-\textsc{TSub} and the equivalence rule \textsc{TEq} allows us to
-change the shape of a type that a term is being typed against.  The
-nondeterministic choice operator is typed using the \textsc{TChoice}
+% \vspace{-.4cm} \par\nobreak {\footnotesize %
+%   \begin{align*}
+%     \text{\textcolor{gray}{(term's \tyName)}} \qquad
+%     \effLR{\underbrace{ H}_\texttt{history}}\;t\;
+%     \effLR{
+%     \;\;\underbrace{\msg{op}{\overline{x}}}_\texttt{trace produced by $\eff{op}$}
+%     \;\;\underbrace{F }_\texttt{ghost events appended to $\eff{op}$}
+%     \;\;\underbrace{F'}_\texttt{trace produced by $e$}
+%     }
+% \end{align*}}%
+% \SJ{I don't follow what it means to append a ghost event to a normal
+%   event.}
+% \noindent For simplicity, we only allow the ghost events to be
+% appended to a normal event.  Same as prior work~\cite{CoverageType},
+% the arguments should be well-typed against the parameter types fliped
+% from over- to under-approximation (i.e., $\widehat{t_i}$).  To type
+% the rest of the expression, the assumption of \tyName of operator
+% (i.e., $\msg{op}{\overline{x}}$) should be aligned with the
+% expectation of term's type (i.e., $\msg{op}{\phi}$), then both rules
+% move the symbolic event
+% $(\msg{op}{\overline{x}} \land \msg{op}{\phi})\seqA F$ from the future
+% regex to the tail of the history regex. The subsumption rule
+% \textsc{TSub} and the equivalence rule \textsc{TEq} allows us to
+% change the shape of a type that a term is being typed against.  
+
+The nondeterministic choice operator is typed using the \textsc{TChoice}
 rule which merges \tyName{} of the two branches.  Although the typing
 rule for function (\textsc{TFun}) is standard, unlike standard
 refinement type systems, underapproximate reasoning does not maintain
@@ -580,57 +618,6 @@ function itself has type $t$.  \SJ{This description is confusing -
 % $\textsc{TEOp}$. Besides requiring the arguments ($\overline{v_i}$) is
 % well-typed against parameter types ($\overline{t_i}$) as application
 % rules in standard refinement typing, it additionally
-
-\begin{example}[Generator Typing]
-  We present an informal typing derivation for the generator in
-  Example~\ref{ex:read-atomicity}, demonstrating that the first
-  iteration satisfies the assertion. By the \textsc{FixBase},
-  \textsc{TFixBase}, and \textsc{TFun} rules, we need to type check
-  the body of the recursive function against the type: %
-  \vspace{-.4cm} \par\nobreak {\footnotesize %
-    \begin{align*}
-      &i_1{:}\ort{\Int}{\top}, i_1{:}\ort{\Int}{\top},
-        x{:}\urt{\Int}{\top}, \Code{transaction\_gen}{:}(\Unit \sarr
-        \uhat{...}{\Unit}{\emptyset}) \vdash \\&\;\;\;\;\eff{writeReq}\;
-      i_1\; x; \zobs{\_}{\eff{writeRsp}}{i_1}{\textit{line 3 - 6 of
-      program in Example~\ref{ex:read-atomicity}}}
-      \\&\;\;:\uhat{\allA}{\Unit}{\underbrace{\msgA{writeReq}{i_1\;x}}_{F_1}\underbrace{\msgA{writeRsp}{i_1\;x}\msgA
-      {readReq}{i_2}\msg{writeReq}{\I{tid} =
-      i_1}\msg{writeRsp}{\I{tid} =
-      i_1}\msgA{readRsp}{i_2\;x}}_{F_2}}
-    \end{align*}}%
-  \noindent Here, $i_1$ and $i_2$ are function parameters
-  (overapproximated), $x$ is a random integer (underapproximated), and
-  the recursive reference $\Code{transaction\_gen}$ is assigned the
-  empty type $\uhat{\ldots}{\Unit}{\emptyset}$. This right-hand side
-  type precisely underapproximates the function body, ensuring the
-  read response returns the value written by $x$.  By rule
-  \textsc{TGen}, we type check the event $\eff{writeReq}\;i_1\;x$ with
-  the type from $\Delta$: %
-  \vspace{-.4cm} \par\nobreak {\small %
-    \begin{align*}
-      & i{:}\Int \sarr x{:}\Int \sarr \uhat{\allA}{\Unit}{\msgA{writeReq}{i\;x}}
-    \end{align*}}
-  Since this matches the target type, the subsequent derivation moves
-  the $\eff{writeReq}$ event from the future to the end of the history
-  regex: %
-  \vspace{-.4cm} \par\nobreak {\small %
-    \begin{align*}
-      &... \vdash \zobs{\_}{\eff{writeRsp}}{i_1}{\textit{line 3 - 6 of program in Example~\ref{ex:read-atomicity}}}
-        : \uhat{\allA\seqA F_1}{\Unit}{F_2}
-    \end{align*}}%
-  \noindent The remainder of the derivation iteratively moves each
-  event in the future regex to the history until typing the
-  non-deterministic branches against the type
-  $\uhat{\allA \seqA F_1 \seqA F_2}{\Unit}{\epsilon}$. By
-  \textsc{TRet}, the first branch contains an unit value and is typed
-  as $\uhat{\allA \seqA F_1 \seqA F_2}{\Unit}{\epsilon}$, permitting
-  the empty trace; the second branch has type
-  $\uhat{\allA \seqA F_1 \seqA F_2}{\Unit}{\emptyset}$, since the
-  recursive function in the type context is assigned empty
-  type. According to rule \textsc{TChoice}, the merge type is the same
-  as our expected type.
-\end{example}
 
 \subsection{Metatheory}
 \label{sec:metatheory}
@@ -775,19 +762,21 @@ types in $\DSL$ are denoted as their inhabitants (i.e., $\denot{t}$ and $\denot{
 inclusion under a type context is defined as $\Gamma \vdash A \subseteq
 A' \doteq \forall \sigma \in \denot{\Gamma}. \denot{\sigma(A)}
 \subseteq \denot{\sigma(B)}$.
-The type denotation of $\uhat{H}{t}{F}$ is defined as follows:
+The type denotation of $\uhat{H}{x{:}\urt{b}{\phi}}{F}$ is defined as follows:
 % {\small\begin{align*}
 %   &\denot{\rg{H}{A}{F}}_{(\Theta, \Theta')} \doteq \{(e,  e_f) ~|~ \emptyset \basicvdash e : \Code{unit} \land
 %   \\&\qquad \forall \alpha \in \denot{A}. \exists \alpha_h \in\denot{H}.\exists \alpha_f \in \denot{F}. \exists \beta \in \denot{\Theta}. \exists \beta' \in \denot{\Theta'}. \msteptr{\alpha_h}{(\beta, e;e_f)}{\alpha}{(\beta',  e_f)}\mharr{\alpha_f}{(\emptyset, ())} \}
 % \end{align*}}\noindent
 {\small\begin{align*}
-  &\denot{\uhat{H}{x{:}t}{F}} \doteq \{e ~|~ \emptyset \basicvdash e : s \land \forall v \in \denot{\,\widehat{t}\,}. \forall \alpha_f \in \denot{F[x\mapsto v]}. \exists \alpha_h \in\denot{H[x\mapsto v]}. \exists \beta\;\beta'. \msteptr{\alpha_h}{(\beta, e)}{\alpha_f}{(\beta',  v)} \}
+  % &\denot{\uhat{H}{x{:}\urt{b}{\phi}}{F}} \doteq 
+  % \\[-0.4em]& \quad 
+  \{e ~|~ \emptyset \basicvdash e : s \land \forall v{:}b. \phi[v\mapsto v] \impl \forall \alpha_f \in \denot{F[x\mapsto v]}. \exists \alpha_h \in\denot{H[x\mapsto v]}. \exists \beta\;\beta'. \msteptr{\alpha_h}{(\beta, e)}{\alpha_f}{(\beta',  v)} \}
 \end{align*}}\noindent
-A term $e$ inhabits $\uhat{H}{t}{F}$ iff, for trace $\alpha_f$ accepted by $F$, there exists history trace $\alpha_h$ accept by $H$, such that the execution of $e$ under history trace produces the trace $\alpha_f$.
+A term $e$ inhabits $\uhat{H}{x{:}\urt{b}{\phi}}{F}$ iff, for trace $\alpha_f$ accepted by $F$, there exists history trace $\alpha_h$ accept by $H$, such that the execution of $e$ under history trace produces the trace $\alpha_f$.
 \footnote{The details of these definition can be found in our \techreport{}.}
 Our formulation constitutes a trace-based analogue of incorrectness logic~\cite{OHP19}, in which effects are modeled as program state transitions:
 \begin{align*}
-  [P]\; e\; Q \doteq \forall s_\Code{post} \in \denot{Q}. \exists s_\Code{pre} \in \denot{P}. (s_\Code{pre}, e) \Downarrow s_\Code{post}
+  [P]\; e\; [Q] \doteq \forall s_\Code{post} \in \denot{Q}. \exists s_\Code{pre} \in \denot{P}. (s_\Code{pre}, e) \Downarrow s_\Code{post}
 \end{align*}
 The distinction is that we characterize $F$ as the set of newly produced traces rather than the full post-execution trace, reflecting our trace-based semantics. This avoids redundant prefixes inherited from the execution history.
 

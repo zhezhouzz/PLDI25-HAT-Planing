@@ -248,10 +248,10 @@ $\zevent{push}{\Code{L},\langle -1, -1\rangle}$), or
 construct executions with uninteresting secrets
 (e.g., $\zevent{push}{\Code{H}, \langle 1, 1\rangle}$,
 we employ the following \tyName{} specifications to guide generation:
-\begin{align*}
-  &\effLR{\allA}\; \eff{push}(\I{lvl},\langle x,\;y\rangle)\; \effLR{\msgB{push}{(\I{lvl},\langle x,\;y\rangle)}{\I{lvl} = \Code{L} \iff x = y}}
+{\small\begin{align*}
+  &\effLR{\allA}\; \eff{push}(\I{lvl},\langle x,\;y\rangle)\; \effLR{\msgB{push}{(\I{lvl},\langle x,\;y\rangle)}{\I{lvl} = \Code{L} {\iff} x = y}}
   \\& \effLR{\allA\msgA{push}{(\I{lvl},\langle x_1,\;y_1\rangle)};(\anyA \setminus \msgC{store})^* \msgB{push}{(\I{lvl},\langle x_2,\;y_2\rangle}{\I{isAddr}(x_2) \land \I{isAddr}(y_2)}}\;\eff{store} \; \effLR{\eff{store}}
-\end{align*}\noindent  
+\end{align*}}\noindent  
 The post-condition trace for $\eff{push}$ enforces that its arguments
 must only be equal if they are intended to be public, while the
 pre-condition trace of a $\eff{store}$ event requires that the stack
@@ -261,7 +261,7 @@ top element of the stack referencing the memory location to be
 updated.   The desired safety property
 that a generator needs to test can be expressed as the following SRE:
 \begin{align*}
-  &\footnotesize\msgB{push}{(\I{lvl},\langle x,\;y\rangle)}{\I{lvl}=\Code{L}\iff x = y}
+  &\small\msgB{push}{(\I{lvl},\langle x,\;y\rangle)}{\I{lvl}=\Code{L}{\iff} x = y}
     (\anyA \setminus \msgC{store})^* \msgB{push}{(\I{lvl},\langle x_2,\;y_2\rangle)}{\I{isAddr}(x_2) \land
     \I{isAddr}(y_2)};\; \eff{store}
 \end{align*}\noindent  The following test generator generates effect sequences consistent with
