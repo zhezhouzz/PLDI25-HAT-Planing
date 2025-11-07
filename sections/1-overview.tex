@@ -23,13 +23,13 @@ to a type system.
 
 Concretely, we model these local specifications as a collection of
 operation signatures: parameter types constrain the payloads of
-events, while the return type captures relationships between
-events. We employ symbolic regular expressions (SREs) to qualify
-trace-based properties within a type, following prior work on
-trace-based type systems~\cite{KT+14,ZYDJ24,NUKT+18}. However, our
-formulation generalizes beyond history-sensitive specifications of
-effects or state, allowing types to express latent dependencies among
-all events, including those that may occur in the future.
+events, while return types capture relationships between events. We
+employ symbolic regular expressions (SREs) to qualify trace-based
+properties within a type, following prior work on trace-based type
+systems~\cite{KT+14,ZYDJ24,NUKT+18}. However, our formulation is
+distinguished from these other efforts insofar as it generalizes
+beyond history-sensitive specifications of effects or state, allowing
+types to express latent dependencies among arbitrary events.
 
 %% The incorrectness using a triple $[P]\;e\;[Q]$ to represent an
 %% underapproximation of program $e$, i.e., for all post states in $Q$,
@@ -52,7 +52,7 @@ $\resp$), to serve as a basis for writing (and, in our case,
 synthesizing) input test sequences.  As we show below, asynchrony
 enables the generation of events that separate the initiation of an
 effect (modeled as a \emph{request} event) from its completion
-(modeled as a \emph{response} event).  For example, $\reqOp{read}{()}$
+(modeled as a \emph{response} event).  For example, $\reqOpNoArgs{read}$
 asynchronously generates a read request to the SUT, returning
 a tag $\iota$ that can be subsequenty used to
 observed its result via an $\textsf{Resp}(\eff{read},\iota)$ operation.  This style of
@@ -106,7 +106,7 @@ processing of a trace only if formula $\phi$ holds.
   subsequent $\eff{read}$ events (\reqEvtName{read}): {\small
   \begin{align*}
     &\text{\textcolor{gray}{Client 1:}} \respEvt{write}{3} & \reqEvt{write}{4};\respEvt{write}{4};&
-    \\& \text{\textcolor{gray}{Client 2:}} \quad \quad \quad \quad \quad \quad \reqEvt{read}{};\respEvt{read}{3};\reqEvt{read}{};& &\textcolor{red}{\respEvt{read}{4}}
+    \\& \text{\textcolor{gray}{Client 2:}} \quad \quad \quad \quad \quad \quad \reqEvtNoArgs{read};\respEvt{read}{3};\reqEvtNoArgs{read};& &\textcolor{red}{\respEvt{read}{4}}
   \end{align*}}\noindent
   Here, \textcolor{gray}{Client 2} issues two consecutive asynchronous
   read operations.  A $\reqEvtName{read}$ event initiates a request to the
@@ -117,9 +117,10 @@ processing of a trace only if formula $\phi$ holds.
   concurrently-executing transaction that occurs after the request.
   We are interested in surfacing executions like these from \tyName{}
   specifications.  The following \tyName{} type on $\eff{read}$ response
-  operations admits executions that satisfy read atomicity:
+  operations admits executions that satisfy read atomicity\footnote{We omit
+    request/response tags in the specification for perspicuity.}:
   \begin{align*}
-    &\effLR{\Code{LAST}(\respEvt{write}{$v$});\Code{LAST}(\reqEvt{read}{})}\; \respOp{read}\; \effLR{\respEvt{read}{$v$}}
+    &\effLR{\Code{LAST}(\respEvt{write}{$v$});\Code{LAST}(\reqEvtNoArgs{read})}\; \respOp{read}\; \effLR{\respEvt{read}{$v$}}
   \end{align*}\noindent
   This type specifies that if the response to a previously issued
   asynchronous $\eff{read}$ operation returns value $v$, then the last
@@ -139,7 +140,7 @@ processing of a trace only if formula $\phi$ holds.
   exposing a read atomicity violation.   We can specify an SRE that represents all traces
   that satisfies read atomicity as a safety property:
   \begin{align*}
-    &\Code{LAST}(\respEvt{write}{$v$});\Code{LAST}(\reqEvt{read}{});\Code{FIRST}\respEvt{read}{$v$}
+    &\Code{LAST}(\respEvt{write}{$v$});\Code{LAST}(\reqEvtNoArgs{read});\Code{FIRST}\respEvt{read}{$v$}
   \end{align*}
   \noindent where 
   \Code{FIRST}($\eff{evt}$) as an alias for the following regex:
@@ -163,7 +164,7 @@ processing of a trace only if formula $\phi$ holds.
     let rec transaction_gen () =
       let x = int_gen () in
       ?\reqOp{write}{x}?; let _ = ?\respOp{write}? in
-      ?\req($\eff{read}$)? ; 
+      ?\req($\eff{read}$)?; 
       ?\reqOp{write}{x + 1}?; let _ = ?\respOp{write}? in
       let y = ?\resp($\eff{read}$)? in assert x == y; (() ?$\oplus$? transaction_gen ())
   \end{minted}
@@ -337,8 +338,8 @@ this property and the \tyName{} specifications for $\eff{push}$ and $\eff{store}
     \Code{LAST}(\msgBGray{depth}{d}{n < d});\; \Code{FIRST}(\eff{token}\;\boxed{[\widehat{n}]})
   \end{align*}\noindent
   The bound variable index $n$ is required to be less than the
-  current depth $d$; the notation $\widehat{n}$ substitutes $n$'s value
-  in the string output by $\eff{token}$.  The following code snippet shows a test generator
+  current depth $d$; the notation $\widehat{n}$ signifies that $n$'s value must
+  be substituted in the string output produced by $\eff{token}$.  The following code snippet shows a test generator
   for nested abstractions synthesized by \name{} based on the above specification
   and safety property:
   % \begin{minted}[fontsize = \footnotesize, escapeinside=??, xleftmargin=18pt, linenos]{ocaml}

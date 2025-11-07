@@ -38,18 +38,18 @@ limitation, this paper introduces \tyName{}, \emph{Underapproximate
   Hoare Automata Types}, a type abstraction for \emph{underapproximate
   effectful computations}.  A \tyName{} type judgement takes the form:
 \[\vdash e\, :\, [H]\,t\,[F]\]
-\noindent where $H$ and $F$ qualify type $t$ with pre- ($H$) and post-
-($F$) conditions.  In our setting, these conditions are expressed
-using the language of symbolic regular expressions (SREs), an
-algebraic representation of the symbolic finite automata used
-in~\cite{ZYDJ24}, to specify effect traces.  Unlike the
+\noindent where $H$ and $F$ qualify type $t$ with
+pre- ($H$) and post- ($F$) conditions.  In our setting, these
+conditions are expressed using the language of symbolic regular
+expressions (SREs) to specify effect traces.  Unlike the
 overapproximate interpretation given for \textsc{hat}s in earlier
-work, however, a \tyName{} expresses underapproximate behavior: the
-judgement above states that for every possible sequence of traces $F$
-producible by $e$ and consistent with type $t$, there exists a trace
-accepted by $H$.  Intuitively, a \tyName{} expresses the conditions
-(i.e., $H$) that \emph{must} hold prior to executing an expression $e$
-to guarantee the effects it produces (i.e., $F$) are realizable.
+work~\cite{ZYDJ24}, however, a \tyName{} expresses \emph{underapproximate}
+behavior: the judgement above states that for every possible sequence
+of traces $F$ producible by $e$ and consistent with type $t$, there
+exists a trace accepted by $H$.  Intuitively, a \tyName{} expresses
+the conditions (i.e., $H$) that \emph{must} hold prior to executing an
+expression $e$ to guarantee the effects it produces (i.e., $F$) are
+realizable.
 
 To illustrate, the following \tyName{} captures the underapproximate
 behavior that constrains the set of values visible to a $\eff{get}$
@@ -65,16 +65,18 @@ produce a trace consisting of a single event, $\msgA{get}{k\; v}$,
 provided that some $\eff{put}$ operation binding $k$ to $v$ ($\allA
 \msgA{put}{k\;v} \allA$) was executed before.  The underapproximate
 interpretation of \tyName{} encodes a form of reachability and data
-dependence - the execution of a $\eff{get}$ operation on a key $k$ is
-dependent on the execution of a previous $\eff{put}$ operation on
-$k$.\footnote{Note that an overapproximate interpretation of this
-  judgement is not sensible since it would require that for all traces
-  containing a $\eff{put}$ operation on a key $k$ with value $v$, the
-  effect of a $\eff{get}$ operation on $k$ is to observe $v$.  This
-  would mean that subsequent $\eff{put}$ operations on $k$ which store
-  values other than $v$ that occur after the first, but before the
-  $\eff{get}$ would be ignored, a clearly incorrect characterization of
-  a key-value store.}
+dependence between the effects that have occurred prior to executing
+an operation, and the effect produced by the operation - thus, the
+execution of a $\eff{get}$ operation on a key $k$ is dependent on the
+execution of a previous $\eff{put}$ operation on $k$.\footnote{Note
+  that there is not a sensible overapproximate interpretation of this
+  judgement since such any such interpretation would require that for all
+  traces containing a $\eff{put}$ operation on a key $k$ with value
+  $v$, the effect of a $\eff{get}$ operation on $k$ is to observe $v$.
+  This would mean that subsequent $\eff{put}$ operations on $k$ which
+  store values other than $v$ that occur after the first, but before
+  the $\eff{get}$, would be ignored, a clearly incorrect
+  characterization of a key-value store.}
 
 In this paper, we use \tyName{}s as a specification mechanism to guide
 a property-based test (PBT) generation synthesis procedure.  PBT has
@@ -84,11 +86,11 @@ the system-under-test (SUT) are a central component of a PBT system,
 but manually writing generators is a well-known pain
 point~\cite{HC+24} to their wider adoption.  To be effective, a
 generator should only produce inputs that satisfy the SUT's
-precondition because input that don't are meant to be simply
-discarded.  While generators can be automatically derived for inputs
-that have simple types, writing generators for SUTs whose inputs have
-deep structural or semantic constraints remains a publication-worthy
-exercise~\cite{pbt-ifc,PCRH+11,BeginnerLuck,FQL24}.
+precondition because inputs that don't are simply discarded.  While
+generators can be automatically derived if the inputs to the SUT it
+produces have simple types, writing generators for SUTs whose inputs
+have deep structural or semantic constraints remains a
+publication-worthy exercise~\cite{pbt-ifc,PCRH+11,BeginnerLuck,FQL24}.
 
 The challenges with writing PBT generators are further exacerbated
 when the SUT is effectful and whose components may be opaque, e.g.,
@@ -139,30 +141,31 @@ a well-typed program written in our DSL would only generate test
 sequences in which every $\eff{get}$ operation is proceeded by at
 least one $\eff{put}$ on the same key, with no other constraints on
 operations that might be interspersed between them.  While \tyName{}s
-used in this way help check that a generator is effective, the burden
-of writing the generator still remains.  To alleviate this overhead,
-we connect these two elements by defining a program synthesis
-technique to automatically construct DSL generator programs from
-\tyName{} specifications.  Test generators that use \tyName{}s to
+used in this way help check that a manually-written generator is
+effective, i.e., it never produces inputs that will be discarded, the
+burden of writing the generator still remains.  To alleviate this
+overhead, we connect these two elements by defining a program
+synthesis technique to automatically construct DSL generator programs
+from \tyName{} specifications.  Test generators that use \tyName{}s to
 guide the search for interesting inputs thus implement a novel form of
 angelic non-determinism~\cite{BC+10} where underapproximation is used
-to intelligently inform input generation.
+to intelligently inform SUT input generation.
 
 \autoref{fig:workflow} depicts the workflow of our system, named
 \name.  Relevant APIs of the SUT are specified using \tyName{}s.
 These specifications, along with the property of interest drive the
 \name{} synthesis procedure whose output is a test generator that can
-be transpiled into different target languages; thus far, we have
-implemented Quickcheck (OCaml) and P targets.  The test generator
-program is guaranteed to produce (effectful) test sequences that
-respect the underapproximate interpretation of input \tyName{}
-specifications.
 \begin{wrapfigure}{l}{.65\textwidth}
   \centering
   \includegraphics[width=0.98\linewidth]{figures/workflow.pdf}
   \caption{\name\ workflow.}
   \label{fig:workflow}
 \end{wrapfigure}
+be transpiled into different target languages; thus far, we have
+implemented Quickcheck~\cite{CH00} (OCaml) and P~\cite{DGJ+13}
+targets.  The test generator program is guaranteed to produce
+(effectful) test sequences that respect the underapproximate
+interpretation of input \tyName{} specifications.
 The rest of the paper is organized as follows. In
 Section~\ref{sec:overview}, we provide additional motivation for the
 problem along with a series of examples to illustrate our approach.
