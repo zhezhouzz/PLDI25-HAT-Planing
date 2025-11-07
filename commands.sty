@@ -8,21 +8,17 @@
 \definecolor{DarkPurple}{RGB}{79,21,95}
 \definecolor{Amber}{rgb}{1.0, 0.75, 0.0}
 \definecolor{DarkGolden}{rgb}{0.72, 0.53, 0.04}
-\newcommand\BD[1]{  % Ben's Comments
-\textcolor{DarkOrange}{[\texttt{BD: #1}]}}
 
-\newcommand\SJ[1]{  % Suresh's Comments
-\textcolor{red}{[\texttt{SJ: #1}]}
-}
+\newcommand\BD[1]{ % Ben's Comments
+  \textcolor{DarkPurple}{[\texttt{BD: #1}]}}
+\newcommand\SJ[1]{ % Suresh's Comments
+  \textcolor{red}{[\texttt{SJ: #1}]} }
 \newcommand\ZZ[1]{ % Zhe's Comments
-\textcolor{orange}{[\textit{ZZ: #1}]}
-}
+  \textcolor{orange}{[\textit{ZZ: #1}]} }
 \newcommand\OL[1]{ % Zhe's Comments
-\textcolor{DeepGreen}{\# \textit{outline: #1}}
-}
+  \textcolor{DeepGreen}{\# \textit{outline: #1}} }
 \newcommand\AM[1]{ % Ashish's Comments
-\textcolor{blue}{[\texttt{AM: #1}]}
-}
+  \textcolor{blue}{[\texttt{AM: #1}]} }
 
 % hyper-references
 % So autoref capitalizes 'Section' and 'Algorithm'
@@ -157,3 +153,15 @@
 \newcommand{\JB}[1]{}
 
 \newcommand{\specRealizable}{A_\Code{realizable}}
+
+\newcommand{\req}{\mbox{\textsf{Req}}}
+\newcommand{\resp}{\mbox{\textsf{Resp}}}
+\newcommand{\reqOp}[2]{\mbox{\req(\textbf{#1}, #2)}}
+\newcommand{\respOpAlt}[2]{\mbox{\resp(\textbf{#1}, #2)}}
+\newcommand{\respOp}[1]{\mbox{\resp(\textbf{#1)}}}
+
+\newcommand{\reqEvt}[2]{\mbox{\textbf{#1}$_{\mbox{\textsf{Req}}}$(#2)}}
+\newcommand{\respEvt}[2]{\mbox{\textbf{#1}$_{\mbox{\textsf{Rsp}}}$(#2)}}
+
+\newcommand{\reqEvtName}[1]{\mbox{\textbf{#1}$_{\mbox{\textsf{Req}}}$}}
+\newcommand{\respEvtName}[1]{\mbox{\textbf{#1}$_{\mbox{\textsf{Rsp}}}$}}

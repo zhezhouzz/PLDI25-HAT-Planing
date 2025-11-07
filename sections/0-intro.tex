@@ -148,11 +148,10 @@ guide the search for interesting inputs thus implement a novel form of
 angelic non-determinism~\cite{BC+10} where underapproximation is used
 to intelligently inform input generation.
 
-Figure~\ref{fig:workflow} depicts the workflow of our system, named
+\autoref{fig:workflow} depicts the workflow of our system, named
 \name.  Relevant APIs of the SUT are specified using \tyName{}s.
-These specifications, along with the property of interest, are
-type-checked.  If type-checking is successful, these types then drive
-the \name{} synthesis procedure which yields a test generator that can
+These specifications, along with the property of interest drive the
+\name{} synthesis procedure whose output is a test generator that can
 be transpiled into different target languages; thus far, we have
 implemented Quickcheck (OCaml) and P targets.  The test generator
 program is guaranteed to produce (effectful) test sequences that
