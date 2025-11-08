@@ -55,7 +55,7 @@ effect (modeled as a \emph{request} event) from its completion
 (modeled as a \emph{response} event).  For example, $\reqOpNoArgs{read}$
 asynchronously generates a read request to the SUT, returning
 a tag $\iota$ that can be subsequenty used to
-observed its result via an $\textsf{Resp}(\eff{read},\iota)$ operation.  This style of
+observed its result via an \respOpAlt{read}{$\iota$} operation.  This style of
 trace generation enables concise expression of interactive test
 generators for systems such as database transactions and distributed
 protocols that are inherently concurrent.  The DSL further allows
@@ -128,7 +128,7 @@ processing of a trace only if formula $\phi$ holds.
   Note that because this specification is interpreted as an
   underapproximation of the possible behaviors of the SUT, it
   establishes a clear dependence between $\respEvtName{write}$ and
-  $\respEvtName{read}$ events that must be respecetd by any trace
+  $\respEvtName{read}$ events that must be respected by any trace
   which satisfies this this specification.  The specification uses
   \Code{LAST}($\eff{evt}$) as an alias for the following regex:
   \begin{align*}
@@ -140,7 +140,7 @@ processing of a trace only if formula $\phi$ holds.
   exposing a read atomicity violation.   We can specify an SRE that represents all traces
   that satisfies read atomicity as a safety property:
   \begin{align*}
-    &\Code{LAST}(\respEvt{write}{$v$});\Code{LAST}(\reqEvtNoArgs{read});\Code{FIRST}\respEvt{read}{$v$}
+    &\Code{LAST}(\respEvt{write}{$v$});\Code{LAST}(\reqEvtNoArgs{read});\Code{FIRST}(\respEvt{read}{$v$})
   \end{align*}
   \noindent where 
   \Code{FIRST}($\eff{evt}$) as an alias for the following regex:
@@ -149,13 +149,12 @@ processing of a trace only if formula $\phi$ holds.
   \end{align*}
   A violation of this property can be manifested by a test generator that
   generates sequences of asynchronous $\eff{read}$ and $\eff{write}$ events
-  in search of producing an offending trace similar to the one given above.
+  in search of an offending trace similar to the one given above.
   
-  As mentioned above, our DSL supports \emph{interactive} test
-  generation by allowing asynchronous effects to be generated and observed;
-  this enables constructing tests that can
-  dynamically observe the effects of the SUT and control subsequent
-  generation behavior. For instance, the following test generator is
+  Asynchronous effects allow our DSL to support a form of
+  \emph{interactive} test generation, instructing the SUT to
+  perform effects via \textsf{Req}, and later observing the results via
+  \textsf{Resp}.  For instance, the following test generator is
   automatically synthesized from the above specification and safety
   condition\footnote{We have
     elided the tags used to align asynchronous request and response pairs
@@ -250,8 +249,8 @@ construct executions with uninteresting secrets
 (e.g., $\zevent{push}{\Code{H}, \langle 1, 1\rangle}$,
 we employ the following \tyName{} specifications to guide generation:
 {\small\begin{align*}
-  &\effLR{\allA}\; \eff{push}(\I{lvl},\langle x,\;y\rangle)\; \effLR{\msgB{push}{(\I{lvl},\langle x,\;y\rangle)}{\I{lvl} = \Code{L} {\iff} x = y}}
-  \\& \effLR{\allA\msgA{push}{(\I{lvl},\langle x_1,\;y_1\rangle)};(\anyA \setminus \msgC{store})^* \msgB{push}{(\I{lvl},\langle x_2,\;y_2\rangle}{\I{isAddr}(x_2) \land \I{isAddr}(y_2)}}\;\eff{store} \; \effLR{\eff{store}}
+  &\effLR{\allA}\; \langle\eff{push}\,\I{lvl}\;x\;y\rangle\; \effLR{\msgB{push}{\I{lvl}\;x\;y}{\I{lvl} = \Code{L} {\iff} x = y}}
+  \\& \effLR{\allA\msgA{push}{\I{lvl}\;x_1\;y_1\rangle};(\anyA \setminus \msgC{store})^* \msgB{push}{\I{lvl}\;x_2\;y_2}{\I{isAddr}(x_2) \land \I{isAddr}(y_2)}}\;\eff{store} \; \effLR{\eff{store}}
 \end{align*}}\noindent  
 The post-condition trace for $\eff{push}$ enforces that its arguments
 must only be equal if they are intended to be public, while the
@@ -262,8 +261,8 @@ top element of the stack referencing the memory location to be
 updated.   The desired safety property
 that a generator needs to test can be expressed as the following SRE:
 \begin{align*}
-  &\small\msgB{push}{(\I{lvl},\langle x,\;y\rangle)}{\I{lvl}=\Code{L}{\iff} x = y}
-    (\anyA \setminus \msgC{store})^* \msgB{push}{(\I{lvl},\langle x_2,\;y_2\rangle)}{\I{isAddr}(x_2) \land
+  &\small\msgB{push}{\I{lvl}\;x\;y}{\I{lvl}=\Code{L}{\iff} x = y}
+    (\anyA \setminus \msgC{store})^* \msgB{push}{\I{lvl}\;x_2\;y_2}{\I{isAddr}(x_2) \land
     \I{isAddr}(y_2)};\; \eff{store}
 \end{align*}\noindent  The following test generator generates effect sequences consistent with
 this property and the \tyName{} specifications for $\eff{push}$ and $\eff{store}$ given above:

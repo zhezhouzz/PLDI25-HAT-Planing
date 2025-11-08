@@ -156,7 +156,7 @@
 % \newcommand{\utparenthL}{ \textcolor{CobaltBlue}{\mbox{\rm\textbf{[}}} }
 % \newcommand{\utparenthR}{ \textcolor{CobaltBlue}{\mbox{\rm\textbf{]}}} }
 \newcommand{\utparenthL}{ \textcolor{DeepGreen}{\mbox{\rm\textbf{\{}}} }
-\newcommand{\utparenthR}{ \textcolor{DeepGreen}{\mbox{\rm\textbf{\}}}} }
+\newcommand{\utparenthR}{ \textcolor{DeepGreen}{\mbox{\rm\textbf{\}}}^{u}} }
 \newcommand{\etparenthL}{ \textcolor{CobaltBlue}{{\text{\textbf{\textlquill}}} }}
 \newcommand{\etparenthR}{ \textcolor{CobaltBlue}{{\text{\textbf{\textrquill}}} }}
 
@@ -165,7 +165,7 @@
 \newcommand{\otparenth}[1]{
 \textcolor{magenta}{\mbox{\rm\textbf{\{}}}
 {#1}
-\textcolor{magenta}{\mbox{\rm\textbf{\}}}}}
+\textcolor{magenta}{\mbox{\rm\textbf{\}}}^{o}}}
 \newcommand{\effprenth}[1]{\effprenthL {#1} \effprenthR }
 %% base type
 \newcommand{\nut}[2]{\{ \vnu{:}{\Code{#1}}\, |\, {#2} \}}
@@ -238,6 +238,7 @@
 \newcommand{\rdenotation}{\rrbracket}
 \newcommand{\denotation}[1]{\ldenotation {#1} \rdenotation}
 \newcommand{\eraserf}[1]{\lfloor {#1} \rfloor}
+\newcommand{\eraseGhost}[1]{\lceil {#1} \rceil}
 \newcommand{\FV}{\textcolor{CobaltBlue}{\S{FV}}}
 \newcommand{\predicate}{\textcolor{CobaltBlue}{\S{Predicate}}}
 \newcommand{\getlits}{\textcolor{CobaltBlue}{\Code{GetLits}}}
@@ -649,6 +650,7 @@
 \newcommand{\forward}{\textcolor{CobaltBlue}{\Code{Forward}}}
 \newcommand{\backward}{\textcolor{CobaltBlue}{\Code{Backward}}}
 \newcommand{\refine}{\textcolor{CobaltBlue}{\Code{Refine}}}
+\newcommand{\refineLoop}{\textcolor{CobaltBlue}{\Code{RefineLoop}}}
 \newcommand{\synRec}{\textcolor{CobaltBlue}{\Code{SynRecursion}}}
 \newcommand{\derive}{\textcolor{CobaltBlue}{\Code{DeriveTerm}}}
 \newcommand{\compile}{\textcolor{CobaltBlue}{\Code{Compile}}}
