@@ -52,7 +52,7 @@ $\resp$), to serve as a basis for writing (and, in our case,
 synthesizing) input test sequences.  As we show below, asynchrony
 enables the generation of events that separate the initiation of an
 effect (modeled as a \emph{request} event) from its completion
-(modeled as a \emph{response} event).  For example, $\reqOpNoArgs{read}$
+(modeled as a \emph{response} event).  For example, $\reqEvtName{read}$
 asynchronously generates a read request to the SUT, returning
 a tag $\iota$ that can be subsequenty used to
 observed its result via an \respOpAlt{read}{$\iota$} operation.  This style of
@@ -106,7 +106,7 @@ processing of a trace only if formula $\phi$ holds.
   subsequent $\eff{read}$ events (\reqEvtName{read}): {\small
   \begin{align*}
     &\text{\textcolor{gray}{Client 1:}} \respEvt{write}{3} & \reqEvt{write}{4};\respEvt{write}{4};&
-    \\& \text{\textcolor{gray}{Client 2:}} \quad \quad \quad \quad \quad \quad \reqEvtNoArgs{read};\respEvt{read}{3};\reqEvtNoArgs{read};& &\textcolor{red}{\respEvt{read}{4}}
+    \\& \text{\textcolor{gray}{Client 2:}} \quad \quad \quad \quad \quad \quad \reqEvtName{read};\respEvt{read}{3};\reqEvtName{read};& &\textcolor{red}{\respEvt{read}{4}}
   \end{align*}}\noindent
   Here, \textcolor{gray}{Client 2} issues two consecutive asynchronous
   read operations.  A $\reqEvtName{read}$ event initiates a request to the
@@ -120,7 +120,7 @@ processing of a trace only if formula $\phi$ holds.
   operations admits executions that satisfy read atomicity\footnote{We omit
     request/response tags in the specification for perspicuity.}:
   \begin{align*}
-    &\effLR{\Code{LAST}(\respEvt{write}{$v$});\Code{LAST}(\reqEvtNoArgs{read})}\; \respOp{read}\; \effLR{\respEvt{read}{$v$}}
+    &\effLR{\Code{LAST}(\respEvt{write}{$v$});\Code{LAST}(\reqEvtName{read})}\; \respOp{read}\; \effLR{\respEvt{read}{$v$}}
   \end{align*}\noindent
   This type specifies that if the response to a previously issued
   asynchronous $\eff{read}$ operation returns value $v$, then the last
@@ -140,7 +140,7 @@ processing of a trace only if formula $\phi$ holds.
   exposing a read atomicity violation.   We can specify an SRE that represents all traces
   that satisfies read atomicity as a safety property:
   \begin{align*}
-    &\Code{LAST}(\respEvt{write}{$v$});\Code{LAST}(\reqEvtNoArgs{read});\Code{FIRST}(\respEvt{read}{$v$})
+    &\Code{LAST}(\respEvt{write}{$v$});\Code{LAST}(\reqEvtName{read});\Code{FIRST}(\respEvt{read}{$v$})
   \end{align*}
   \noindent where 
   \Code{FIRST}($\eff{evt}$) as an alias for the following regex:

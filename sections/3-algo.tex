@@ -4,49 +4,64 @@
 \begin{figure}[ht!]
   \centering
   \includegraphics[width=0.84\linewidth]{figures/syn-gen.drawio.png}
-  \caption{The intuition of test generator synthesis.}
+  \caption{\name{}'s high-level test generator synthesis algorithm}
   \label{fig:syn-gen}
 \end{figure}
 
-When typing a program using our declarative typing rules, we can
-freely apply the subsumption rule to align the (ordered) set of events
-performed by the program with a \tyName{} that describes a user's desired
-high-level property. Any \emph{synthesis} procedure based on such a
-high-level specification must devise a similar ordering alongside the
-events in the program it generates. At the same time, each event needs
-to align with the specification of its operator in $\Delta$, i.e., its
-temporal and data-dependency constraints must be satisfied. Our
-solution to this problem is a refinement loop, depicted in
-\autoref{fig:syn-gen}, that iteratively refines the high-level
-specification into one that is consistent with these constraints. Each
-iteration of this loop targets a single event, adding events before
-and after that event so that its dependences are satisfied, i.e., so
+Given an SRE $A$ describing some property of a black box test system
+under test, \autoref{theorem:sound} ensures that a well-typed test
+generator program $\emptyset \vdash e : \uhat{\epsilon}{\Unit}{F}$
+must be able to produce \emph{every} trace $\alpha$ that is consistent
+with both $F$ and $A$, i.e. $\alpha \in F \land A$. Thus, the
+high-level goal of our synthesis procedure is to find a generator that
+a) uses effectful operators in a way that is consistent with the
+temporal and data-dependency constraints captured by their
+specifications in $\Delta$, and b) has a future automata has a
+meaningful overlap with $A$. Our synthesis algorithm simultaneously
+solves both problems by first using a loop, depicted in
+\autoref{fig:syn-gen}, to iteratively \emph{refine} a target SRE into
+one that satisfies all the constraints of the operators appearing in
+it. Each iteration of this loop targets a single event, adding events
+before and after that event so that its dependences are satisfied, so
 that the corresponding operator at that point in the synthesized
 program is well-typed. Our loop also employs an regex non-emptiness
 check to ensure it represents a generator that produces at least one
 feasible trace. After the refinement loop has finished, a
 corresponding well-typed generator program can be mechanically
-extracted from the refined property.
+extracted using the refined property as a template.
 
-\subsection{Abstract trace}
+\subsection{Abstract Traces}
 
-Our algorithm normalizes the SRE within global property and all operator \tyName into a set of \emph{abstract traces}, a sequence of events
-$\msg{op}{\phi}$ and kleene stars. This normal form makes it easy to identify
-the traces that must precede and follow each event $\msg{op}{\phi}$ in
-an SRE.
+Our refinement loops operates over SREs that have been normalized into
+sets of sequences of abstract events $\msg{op}{\phi}$ and Kleene
+stars. This normal form makes it easy for our algorithm to identify
+the events that must precede and follow each event $\msg{op}{\phi}$ in
+an SRE. \BD{There's a mismatch here-- our algorithms operate over a
+  \emph{single} abstract trace, but our normalization procedure
+  produces sets of traces? }
 
-\begin{definition}[Abstract Trace] An abstract trace $\Pi$ is a SRE without union and top-level Kleene star, defined by the following grammar: %
+\begin{definition}[Abstract Trace] An abstract trace $\Pi$ is a SRE
+  without union and top-level Kleene star, defined by the following
+  grammar \BD{Why is it $A*$ and not $\Pi*$? An example of a
+    non-normalized SRE and its normalized form would be very
+    helpful}: %
   {
     \begin{alignat*}{2}
-      \text{\textbf{Abstract Trace}} \quad \Pi  ::= \quad & \epsilon ~|~ se ~|~ \Pi \seqA \Pi ~|~  A^*
-    \end{alignat*}} \noindent
-Every SRE can be normalized into a finite set of abstract traces.\footnote{The definition of both the SRE normalization procedure is provided in the \techreport{}.}
+      \text{\textbf{Abstract Trace}} \quad \Pi ::= \quad & \epsilon
+      ~|~ \msg{op}{\phi} ~|~ \Pi \seqA \Pi ~|~ A^*
+    \end{alignat*}} \noindent Every SRE can be normalized into a
+  finite set of abstract traces.\footnote{The definition of our SRE
+    normalization procedure is provided in the \techreport{}.}
 \end{definition}
 
 \begin{example}[Potential Violation of Read Atomicity]
-Assume the user want to test if the read atomicity property is violated by the suituation that the last state of database is not consistent with the last observed state from client via a read response. This property can be expressed as the following abstract trace with a ghost variable $x$:
+  Assume we want to probe whether a system that provides asynchronous
+  $\eff{read}$ and $\eff{write}$ operations ensures read
+  atomicity. Using the variable $x$ as a stand-in for a concrete value
+  returned by $\eff{read}$, we can capture this property is captured
+  with the following abstract trace:
 \begin{align*}
-  \allA \msg{writeRsp}{v \not= x}(\anyA \setminus \msgC{writeRsp})^* \msg{readRsp}{v = x} \tag{$\Pi_\Code{RA}$}\label{prop:global}
+  \allA \msg{\respEvtName{writeRsp}}{v \not= x}(\anyA \setminus \msgC{\respEvtName{writeRsp}})^* \msg{\respEvtName{read}}{v = x} \tag{$\Pi_\Code{RA}$}\label{prop:global}
 \end{align*}
 \end{example}
 
@@ -57,12 +72,14 @@ Assume the user want to test if the read atomicity property is violated by the s
   \Params{Ghost variables $\overline{x{:}b}$, operator context
     $\Delta$, and abstract trace $\Pi$}%
   \Output{Generator $e$, such that
-    $\Gamma \vdash e : \uhat{\epsilon}{\Unit}{\Pi'} \land \Gamma \vdash \Pi' \subseteq \Pi$} %
-  $\Gamma \leftarrow \overline{x{:}\urt{b}{\top}}$
-  \tcp*[l]{initialize type context}
-  \While(\tcp*[h]{an event that needs to be refined}){exists $\msg{op}{\phi}$ s.t. $\Pi = \Pi_h \seqA \msg{op}{\phi} \seqA \Pi_f$}{
-        $(\Gamma, \Pi) \leftarrow \refine(\Delta, \Gamma, \Pi_h, \msg{op}{\phi}, \Pi_f)$
-  }
+    $\Gamma \vdash e : \uhat{\epsilon}{\Unit}{\Pi'} \land \Gamma
+    \vdash \Pi' \subseteq \Pi$} %
+  $\Gamma \leftarrow \overline{x{:}\urt{b}{\top}}$ \tcp*[l]{initialize
+    type context} \While(\tcp*[h]{an event that needs to be
+    refined}){exists $\msg{op}{\phi}$ s.t.
+    $\Pi = \Pi_h \seqA \msg{op}{\phi} \seqA \Pi_f$}{
+    $(\Gamma, \Pi) \leftarrow \refine(\Delta, \Gamma, \Pi_h,
+    \msg{op}{\phi}, \Pi_f)$ }
 % $(\Gamma, \Pi) \leftarrow \synRec(\Gamma, M, \Pi)$ \tcp*[l]{synthesize loop}
 \Return{$\derive(\Gamma, \Pi)$} \tcp*[l]{synthesize recursions and derive generator program}
 \caption{Synthesis}
@@ -70,20 +87,28 @@ Assume the user want to test if the read atomicity property is violated by the s
 \end{algorithm}
 
 Our top-level synthesis algorithm is shown in \autoref{algo:top-syn}.
-Given an abstract trace $\Pi$ and corresponding ghost
-variables as input, this nondeterministic algorithm synthesizes a well-typed
-$\DSL{}$ generator.
-The type context is initialized with a set of ghost variables whose underapproximated qualifiers are $\top$ (line $1$).
-The algorithm follows the structure given in
-\autoref{fig:syn-gen}, using a refinement loop (lines $2$ -
-$3$) to refine the input abstract trace $\Pi$, and then deriving the final (recursive) generator from the refined property (line $4$). Each iteration of this loop nondeterministically chooses
-a target event that is used to refine the current abstract trace (line $2$) to preform abstract trace refinement until all events are resolved.
-The trace $\Pi$ is partitioned into history ($\Pi_h$) and future ($\Pi_f$) traces surrounding the target event, which help the refinement algorithm $\refine$ to add necessary dependencies events before and after the target event.
-Different choices may result in different event orders, and some of
-these choices may cause the algorithm to fail.  Our implementation
-resolves this nondeterminism in the algorithm via an efficient
-backtracking search procedure that takes the union of all successful
-runs in order to capture different orderings.
+Given an abstract trace $\Pi$ that uses a set of ghost variables
+$\overline{x{:}b}$, this algorithm synthesizes a well-typed $\DSL{}$
+generator. The algorithm maintains a typing context $\Gamma$ that
+includes all variables appearing in the $\Pi$ \BD{Why?}; this
+initially consists of $\overline{x{:}b}$ (line $1$).  The algorithm
+first uses a refinement loop (lines $2$ - $3$) to refine the input
+abstract trace $\Pi$ into one consistent with the operator context
+$\Delta$, and then uses the resulting trace to derive the final
+(recursive) generator (line $4$). Each iteration of this loop
+nondeterministically chooses a target event in the current abstract
+trace (line $2$) whose dependencies are not satisfied \BD{The current
+  loop guard does not discuss consistency at all-- need to fix} and
+then uses the $\refine$ subroutine to insert the required operations
+before and after the target event \BD{Are we still doing anything
+  after}.  Different choices may result in different event orders, and
+some of these choices may cause the algorithm to fail. Our
+implementation resolves this nondeterminism in the algorithm via an
+efficient backtracking search procedure that takes the union of all
+successful runs in order to capture different orderings. \BD{How does
+  backtracking work, what happens when refine fails, how do we build a
+  union -- $\Pi$ is a single event, and what constitutes a
+  'successful' run? }
 
 % \paragraph{Event dependencies}
 % The refined abstract trace produced by our loop must be consistent with the operator context.
@@ -169,22 +194,39 @@ runs in order to capture different orderings.
   $\overline{z{:}b}\garr\overline{y{:}t_y}\sarr\uhat{\Pi_h'}{x{:}t_x}{\msg{op}{\phi'}\seqA \Pi_f'} \leftarrow \Delta(\eff{op})$\tcp*[l]{select \tyName of $\eff{op}$}
   $\Gamma \leftarrow \Gamma, \overline{z{:}\urt{b}{\top}}, \overline{y{:}t_y}, x{:}t_x$ \tcp*[l]{add ghost variables and parameters types to type context}
   $\msg{op}{\phi} \leftarrow \msg{op}{\phi \land \phi'}$ \tcp*[l]{merge current regex}
-  $\Pi_h \leftarrow \Pi_h \land \Pi_h'$ \tcp*[l]{merge history regex} 
+  $\Pi_h \leftarrow \Pi_h \land \Pi_h'$ \tcp*[l]{merge history regex}
   $\Pi_f \leftarrow \Pi_f \land (\Pi_f'\seqA \allA)$ \tcp*[l]{merge future regex}
   \lIf(\tcp*[h]{non-emptiness check}){$\Gamma \vdash \Pi_h \seqA \msg{op}{\phi} \seqA \Pi_f \not \subseteq \emptyset$}{
       \Return{$(\Gamma, \Pi_h \seqA \msg{op}{\phi} \seqA \Pi_f)$}
   }
 }
-\caption{Abstract Trace Refinement}
+\caption{Abstract Trace Refinement. \BD{What are the inputs and
+    outputs of this algorithm? What happens when the condition on line
+    7 fails? What does 'merging' mean here -- based on the syntax of
+    abstract traces, $\land$ is not allowed.}}
 \label{algo:refine}
 \end{algorithm}
 
 \paragraph{Abstract trace refinement} The abstract trace refinement
-subroutine is shown in \autoref{algo:refine}. It first retrieves the \tyName{} of the target operation $\eff{op}$ from $\Delta$ (line $2$), and add the ghost variable and parameters as underapproximated to the type context (line $3$).
-The algorithm then merges the selected \tyName
-into the global property piecewise by aligning the target operation (line $4$) and merging the corresponding history and future abstract traces (line $5$ and $6$), where the future abstract trace $\Pi_f'$ is extended with an appending $\allA$ to allowing the any future effectful computation.
-Note that, the intersection of current event and future abstract traces is an analogue to performing \textsc{SubHF} rule that droping reachable states from postcondition; the intersection of history abstract trace is an analogue to performing \textsc{TOpHis} rule that chooses reachable history traces that aligning with the calling context.
-Before returned the refined result, the algorithm checks for non-emptiness to ensure that the refined abstract trace can derive a generator program (line $7$).
+subroutine is shown in \autoref{algo:refine}. It first retrieves the
+\tyName{} of the target operation $\eff{op}$ from $\Delta$ (line $2$),
+and adds its parameters to the type context (line $3$) \BD{What does
+  it mean to add $\overline{y{:}t}$ to $\Gamma$? Is the idea that
+  we'll figure out how to instantiate these arguments in the next
+  phase?}. The algorithm then merges the selected \tyName{} with the
+current target trace (lines $4-6$), where the future abstract trace
+$\Pi_f'$ is extended with $\allA$ to allow any future effectful
+computation \BD{This is a bit out of alignment with the idea of the
+  future automata as an underapproximation -- why is it safe to do
+  this?}.  Line 6 is effectively applying the \textsc{SubHF} rule to
+drop any states that are unreachable after the target operation; while
+line 4 effectively applies \textsc{TOpHis} to ensure the trace that
+precedes the target operation satisfies its specification \BD{The
+  careful reader will notice we're using the overapproximate
+  specification of an operator here... Do we need to argue why that's
+  okay?}.  Before returning the refined trace, \refine{} checks that
+it corresponds to a meaningful test generator by ensuring it is
+non-empty (line $7$).
 % The backward synthesis subroutine is similar, but intersects a abstract trace $\allA \msgC{op_{req}}\allA$ with the history abstract trace $\Pi_h$ to make sure the corresponding $\eff{op_{req}}$ in history (line $11$).
 %  insert preceding events into $\Pi_h$ to resolve parent
 % dependencies.
@@ -222,8 +264,8 @@ During the merging of abstract traces, the algorithm finds that the $\msg{writeR
 \end{align*}}\noindent
 \end{example}
 
-\subsection{Synthesis Recursion}
-\label{subsec:synthesis-recursion}
+\paragraph{Deriving a Program}
+% \label{subsec:synthesis-recursion}
 
 % \setlength{\textfloatsep}{4pt}
 % \begin{algorithm}[t!]
@@ -246,14 +288,52 @@ During the merging of abstract traces, the algorithm finds that the $\msg{writeR
 % \label{algo:syn-recursion}
 % \end{algorithm}
 
-Kleene stars ($A^*$) in abstract traces are interpreted as recursion points. The synthesis algorithm $\derive$ non-deterministically either (i) generates a sequential program by eliminating all ghost events and the Kleene stars \footnote{The definition of $\derive$ is provided in the \techreport{}.}, or (ii) synthesizes a recursive program by expanding the Kleene star using recursion. We employ a template-based strategy, in which algorithm match the given abstract trace with a template $T$, together with abstract traces for the recursion body ($\Pi_{\Code{rec}}$), as well as its associated history ($\Pi_h$) and future ($\Pi_f$) traces. According to \textsc{TFixInd}, the algorithm unrolls the recursive body up to a bounded depth and invokes refinement loop (lines 2-3 in \autoref{algo:top-syn}) to ensure that the unrolled abstract traces are well-typed. The synthesized programs for these three traces are then composed to instantiate the placeholders in the recursive template.
+\BD{This section is too high level to understand what is going on --
+  how does it decide how to insert \mykw{assume}s and \mykw{assert}s
+  statements, and how to bind variables? How does the algorithm pick
+  between options (i) and (ii)? Why do we do this unrolling? }
+
+Kleene stars ($A^*$) in abstract traces are interpreted as recursion
+points. The synthesis algorithm $\derive$ non-deterministically either
+(i) generates a sequential program by eliminating all ghost events and
+the Kleene stars \footnote{The definition of $\derive$ is provided in
+  the \techreport{}.}, or (ii) synthesizes a recursive program by
+expanding the Kleene star using recursion. We employ a template-based
+strategy, in which algorithm match the given abstract trace with a
+template $T$, together with abstract traces for the recursion body
+($\Pi_{\Code{rec}}$), as well as its associated history ($\Pi_h$) and
+future ($\Pi_f$) traces. According to \textsc{TFixInd}, the algorithm
+unrolls the recursive body up to a bounded depth and invokes
+refinement loop (lines 2-3 in \autoref{algo:top-syn}) to ensure that
+the unrolled abstract traces are well-typed. The synthesized programs
+for these three traces are then composed to instantiate the
+placeholders in the recursive template.
 
 \begin{example}[Recursion Template]
-A representative template is a non-deterministic loop, whose form is $T = \boxed{e_\Code{h}};\zlet{f}{\mykw{fix}\ f.\lambda ().\ \boxed{e_\Code{rec}};\ (()\oplus f())}{f\;()};\boxed{e_\Code{f}}$, allowing $A^*$ in the abstract trace to be matched. For instance, consider the refinement of the abstract trace $\Pi_\Code{RA}$:
-{\small\begin{align*}
-  &\Pi_\Code{refined} \equiv\; \underbrace{\epsilon}_\text{history trace} \underbrace{\allA}_\text{placeholder of previous iterations} \underbrace{\msgA{writeReq}{i\;x}\allA\msgA{writeRsp}{i\;x} ... \msgA{readRsp}{i\;x}}_\text{one iteration of recursion} \underbrace{\epsilon}_\text{future trace}
-\end{align*}}\noindent
-Here, $\Pi_\Code{refined}$ corresponds to the traces generated by a single recursion iteration in Example~\ref{ex:read-atomicity}. The template thus assigns $\Pi_{\Code{rec}} = \Pi_\Code{refined}$, with $\Pi_h$ and $\Pi_f$ as empty traces (i.e., $\epsilon$). The synthesizer refines the abstract trace for $i$-fold recursion unrolling (i.e., $\Pi_h\Pi_{\Code{rec}} \ldots \Pi_{\Code{rec}}\Pi_f$) to guarantee that multiple unfoldings remain well-typed. The final recursive program is assembled by composing synthesized programs from these traces to populate the template placeholders, thereby yielding exactly the recursive function in Example~\ref{ex:read-atomicity}.
+  A representative template is a non-deterministic loop, whose form is
+  $T = \boxed{e_\Code{h}};\zlet{f}{\mykw{fix}\ f.\lambda ().\
+    \boxed{e_\Code{rec}};\ (()\oplus f())}{f\;()};\boxed{e_\Code{f}}$,
+  allowing $A^*$ in the abstract trace to be matched. For instance,
+  consider the refinement of the abstract trace $\Pi_\Code{RA}$:
+  \vspace{-.4cm} \par\nobreak {\small %
+    \begin{align*} &\Pi_\Code{refined} \equiv\;
+                     \underbrace{\epsilon}_\text{history trace}
+                     \underbrace{\allA}_\text{placeholder of previous iterations}
+                     \underbrace{\msgA{writeReq}{i\;x}\allA\msgA{writeRsp}{i\;x}
+                     ... \msgA{readRsp}{i\;x}}_\text{one iteration of recursion}
+                     \underbrace{\epsilon}_\text{future trace}
+    \end{align*}} %
+  \noindent
+  Here, $\Pi_\Code{refined}$ corresponds to the traces generated by a
+  single iteration of Example~\ref{ex:read-atomicity}. The template
+  thus assigns $\Pi_{\Code{rec}} = \Pi_\Code{refined}$, with $\Pi_h$
+  and $\Pi_f$ as empty traces (i.e., $\epsilon$). The synthesizer
+  refines the abstract trace for $i$-fold recursion unrolling (i.e.,
+  $\Pi_h\Pi_{\Code{rec}} \ldots \Pi_{\Code{rec}}\Pi_f$) to guarantee
+  that multiple unfoldings remain well-typed. The final recursive
+  program is assembled by composing synthesized programs from these
+  traces to populate the template placeholders, thereby yielding
+  exactly the recursive function in Example~\ref{ex:read-atomicity}.
 \end{example}
 
 \begin{theorem}[Synthesis is Sound]
