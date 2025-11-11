@@ -539,12 +539,12 @@ $e_1$ to generate the first part of its future trace $F_1$, with the
 rest of trace produced by the body expression $e_2$ under a new
 history that includes $F_1$.
 
-\begin{example}[Operator Application Typing]
+\begin{example}[Operator Application Typing]\label{ex:operator-application-typing}
   We present a typing derivation for a simple generator that generates $\eff{push}$ and $\eff{pop}$ operations using their signatures given in
   Example~\ref{ex:stack-example}. Consider how we might type check the following expression:
   \vspace{-.4cm} \par\nobreak {\small %
     \begin{align*}
-      &\emptyset \vdash \zlet{x}{\mykw{pos_gen}}{\eff{push}\;x; \eff{pop}} :
+      &\emptyset \vdash \zlet{x}{\Code{pos\_gen\;()}}{\eff{push}\;x; \eff{pop}} : 
       \\&\qquad \uhat{\msgAGray{pushI}{0\;0}\msgAGray{popI}{0\;0}}{x{:}\urt{\Int}{0 < \vnu}}{\msgA{push}{x}\msgAGray{pushI}{1\;x}\msgA{pop}{x}\msgAGray{popI}{1\;x}}
     \end{align*}}%
   \noindent
@@ -581,7 +581,7 @@ history that includes $F_1$.
   prefix of the future trace of the target type:
   \vspace{-.4cm} \par\nobreak {\small %
     \begin{flalign*}
-      \\&... \vdash \eff{push} : x{:}\urt{\Int}{0 < \vnu} \sarr
+      &... \vdash \eff{push} : x{:}\urt{\Int}{0 < \vnu} \sarr
       \uhat{\Code{Last}(\msgAGray{pushI}{0\;0})}{\Unit}{\msgA{push}{x}\msgAGray{pushI}{1\;x}} &&\text{(by \textsc{SubG})}
       \\&... \vdash \eff{push} : x{:}\urt{\Int}{0 < \vnu} \sarr
       \uhat{\msgAGray{pushI}{0\;0}\msgAGray{popI}{0\;0}}{\Unit}{\msgA{push}{x}\msgAGray{pushI}{1\;x}} &&\text{(by \textsc{TOpHis})}
@@ -593,7 +593,7 @@ history that includes $F_1$.
       &x{:}\urt{\Int}{0 < \vnu}\vdash \eff{pop} : \uhat{\msgAGray{pushI}{0\;0}\msgAGray{popI}{0\;0}\msgA{push}{x}\msgAGray{pushI}{1\;x}}{x{:}\urt{\Int}{0 < \vnu}}{\msgA{pop}{x}\msgAGray{popI}{1\;x}} &&
     \end{align*}}%
   \noindent
-  As before, we can instantiate the ghost variable $n$ as $0$ and $m$ as $0$ via rule \textsc{SubG}, align the return type via rule \textsc{SubHF} and refine the history regex via the rule \textsc{TOpHis} as shown below:
+  As before, we can instantiate the ghost variable $n$ as $1$ and $m$ as $0$ via rule \textsc{SubG}, align the return type via rule \textsc{SubHF} and refine the history regex via the rule \textsc{TOpHis} as shown below:
   \vspace{-.4cm} \par\nobreak {\footnotesize %
     \begin{flalign*}
       &... \vdash \eff{pop} : n{:}\Int \garr m{:}\Int \garr
