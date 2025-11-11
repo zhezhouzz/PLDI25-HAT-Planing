@@ -51,7 +51,7 @@
 \SetKwProg{Match}{match}{\string:}{}
 \SetKwInOut{All}{all}
 \SetKwInOut{Params}{Inputs}
-\SetKwInOut{Hyperparams}{Hyperparameters}
+%\SetKwInOut{Hyperparams}{Hyperparameters}
 \SetKwInOut{Output}{Output}
 \SetKwProg{Procedure}{Procedure}{}{}
 \SetKwFor{RepTimes}{repeat}{times}{end}
@@ -157,16 +157,16 @@
 \newcommand{\req}{\mbox{\textsf{Req}}}
 \newcommand{\resp}{\mbox{\textsf{Resp}}}
 
-\newcommand{\reqOp}[2]{\mbox{\req($\langle\textbf{#1}$\,#2$\rangle$) }}
-\newcommand{\reqOpNoArgs}[1]{\mbox{\req($\langle$\textbf{#1}$\rangle$}}
+\newcommand{\reqOp}[2]{\mbox{\req($\langle\eff{#1}$\,#2$\rangle$) }}
+\newcommand{\reqOpNoArgs}[1]{\mbox{\req($\langle\eff{#1}\rangle$}}
 
-\newcommand{\respOpAlt}[2]{\mbox{\resp($\langle$\textbf{#1}\;#2$\rangle$)}}
-\newcommand{\respOp}[1]{\mbox{\resp(\textbf{#1)}}}
+\newcommand{\respOpAlt}[2]{\mbox{\resp($\langle\eff{#1}$\;#2$\rangle$)}}
+\newcommand{\respOp}[1]{\mbox{\resp(\ensuremath{\eff{#1})}}}
 
 
-\newcommand{\reqEvt}[2]{\mbox{$\langle$\textbf{#1}$_{\mbox{\textsf{Req}}}$\;#2$\rangle$}}
-\newcommand{\reqEvtNoArgs}[1]{\mbox{$\langle$\textbf{#1}$_{\mbox{\textsf{Req}}}\rangle$}}
-\newcommand{\respEvt}[2]{\mbox{$\langle$\textbf{#1}$_{\mbox{\textsf{Rsp}}}$\;#2$\rangle$}}
+\newcommand{\reqEvt}[2]{\mbox{$\langle\eff{#1}_{\mbox{\textsf{Req}}}$\;#2$\rangle$}}
+\newcommand{\reqEvtNoArgs}[1]{\mbox{$\langle\eff{#1}_{\mbox{\textsf{Req}}}\rangle$}}
+\newcommand{\respEvt}[2]{\mbox{$\langle\eff{#1}_{\mbox{\textsf{Rsp}}}$\;#2$\rangle$}}
 
-\newcommand{\reqEvtName}[1]{\mbox{\textbf{#1}$_{\mbox{\textsf{Req}}}$}}
-\newcommand{\respEvtName}[1]{\mbox{\textbf{#1}$_{\mbox{\textsf{Rsp}}}$}}
+\newcommand{\reqEvtName}[1]{\mbox{\ensuremath{\eff{#1}}$_{\mbox{\textsf{Req}}}$}}
+\newcommand{\respEvtName}[1]{\mbox{\ensuremath{\eff{#1}}$_{\mbox{\textsf{Rsp}}}$}}
