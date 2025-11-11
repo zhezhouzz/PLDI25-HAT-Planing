@@ -1,97 +1,142 @@
 \section{Related Work}
 \label{sec:related}
 
-\paragraph{{\it Verification}} Formally proving the correctness of
-distributed protocols and models has long been a topic of significant
-interest~\cite{KA+07,HH+15,SWT18}.  These approaches provide strong
-correctness guarantees at the cost of significant investment on the
-part of the proof engineer, who is responsible for, e.g., defining
-suitable inductive invariants for the verification
-task~\cite{PM+16,YR+21,MG+19}.  In contrast, our focus in this work is
-to improve the effectiveness of falsification techniques--- validating
-the presence of bugs in a distributed protocol design, rather than
-their absence. In this sense, we are more closely related to recently
-proposed approaches for formally reasoning about
-incorrectness~\cite{OHP19, LR+22, RBD+20, casl}.  While
-\name{} cannot verify the correctness of a model, the burden we impose
-on test engineers, i.e., providing handler specifications as PAT{}s,
-as well as a global safety/liveness property in LTL$_f$, is
-significantly less than what is required to verify full functional
-correctness of these designs.
+\paragraph{\it Underapproximate Reasoning} A number of recently
+proposed logical frameworks provide program reasoning principles based
+on under-, rather than over-, approximate abstractions.  Incorrectness
+Logic~\cite{OHP19} and related variants~\cite{LR+22,RBD+20,ZDS23}
+present compositional proof rules that enable verification of
+reachability (aka incorrectness) properties of first-order imperative
+programs; their primary motivation is to enable formal reasoning of
+program analysis tools such as Infer~\cite{DFLO19}.  Ideas related to
+these notions have also been incorporated into type
+systems~\cite{RW24,ZMD+23,JY15,LPR26} for functional languages, but
+none of these efforts have considered their application to the
+synthesis of effectful test generators of the kind proposed in this
+paper.  In our setting, we show how interpreting type specifications
+from the lens of underapproximation can guide a synthesis procedure to
+construct bespoke test generators tailored to the property of
+interest, and cognizant of the behavior of the operators provided by
+the SUT.  As a mechanism to characterize underapproximate behavior,
+types identify \emph{sufficient} constraints that any test input
+sequence produced by the generator \emph{must} satisfy based on these
+specifications.
 
-\paragraph{{\it Testing}} Outside of the aforementioned P
-language~\cite{DGJ+13,ModP}, several other efforts have considered how
-to improve the capabilities of testing frameworks for distributed
-systems.  Jepsen~\cite{Jepsen} is a randomized testing system that
-seeks to reveal bugs when an application is deployed on a
-weakly-consistent storage system; \citet{OM+18} defines a randomized
-testing procedure for message-passing distributed systems with
-guaranteed lower bounds on the probability of finding a depth-$d$ bug,
-where $d$ is the minimum length of the sequence of events sufficent to
-witness the error.  Morpheus~\cite{YY20} uses partial order sampling
-and conflict analysis to control scheduling
-decisions. MonkeyDB~\cite{RK+19} uses a demonic scheduling mechanism
-to expose safety violations in SQL applications that interact with a
-weakly-isolated storage backend.  Clotho~\cite{RK+19} combines static
-analysis with a bounded model-checker to generate tests that expose
-serializability violations in weakly-consistent database systems.
-While these efforts are all agnostic to the property under test,
-\name{}'s property-guided synthesis procedure derives a controller
-specialized to the target property and handler specifications that
-capture temporal dependencies between actors. In this sense, our
-approach can be seen as a form of property-based testing
-(PBT)~\cite{CH00, HC+24} applied to open reactive systems.  Broadly
-related to our approach is Mocket~\cite{WD+23}, a PBT-style testing
-framework that uses the state space graph extracted from
-model-checking TLA+ specifications~\cite{Lam02} to force executions to
-follow specific paths in the graph.  Unlike \name{}, Mocket requires
-manual instrumentation of implementations to align actions defined in
-the specification with the corresponding code in the implementation,
-and relies on the TLC model-checker to produce the state space graph.
-In constrast, \name{} uses a compositional refinement type system to
-drive synthesis, and requires no instrumentation or \emph{a priori}
-enumeration of the state space to synthesize its controllers.
+\paragraph{{\it Specializing PBT Generators}}
+There has been significant prior work to make PBT implementations more
+effective, by providing tools that enable reasoning and customization
+of effect traces produced by test generator.  For example,
+~\citet{CP+09} describes a customizable user-level scheduler that uses
+Quviq QuickCheck's support for state machine models to implement
+deterministic replayable test inputs to an Erlang SUT.
+Concuerror~\cite{CGS13} systematically explores process interleavings
+in a concurrent Erlang program via program instrumentation and
+preemption bounding.  Quickstrom~\cite{Quickstrom} uses specifications
+of possible actions expressed in its Specstrom specification language,
+a dialect of LTL, to dynamically choose the next input that the
+generator should provide for interactive applications.  In contrast to
+these systems, \name's type-guided synthesis strategy yields
+generators influenced by both the global property of interest and the
+local \tyName{} specifications of the operations used by the SUT.
+Importantly, the synthesis procedure is guided by the history and
+future SREs of provided specifications to determine an ordering of
+effectful actions likely to manifest a violation of the target
+property.
 
-\paragraph{{\it Specifications}}
-TLA+~\cite{Lam02} is a specification language based on LTL for
-modeling finite-state distributed systems; the correctness of these
-specifications are verified using the TLC explicit-state model
-checker. TLA+ and its associated tooling has had notable real-world
-impact~\cite{NR+15}.  While \name{}'s use of LTL$_f$ specifications in
-\PAT{}s is a point of commonality with TLA+, the integration of these
-specifications within a refinement type system, their role in driving
-a component-based synthesis procedure, and the top-down (TLA) vs.
-bottom-up (\name{}) exploration mechanism, differentiates \name{}'s
-motivation and design from TLA+ and TLC in obvious ways.  Type and
-effect systems that target \emph{temporal} properties on the sequences
-of effects that a program may \emph{produce} is a well-studied subject. For
-example, \citet{SS+04} presents a type and effect system for reasoning
-about the shape of histories (i.e., finite traces) of events embedded
-in a program.  \citet{KT+14} present a type and effect system that
-additionally supports verification properties of infinite traces,
-specified as B\"{u}chi automata.  More recently,
+%% TLA+~\cite{Lam02} is a specification language based on LTL for
+%% modeling finite-state distributed systems; the correctness of these
+%% specifications are verified using the TLC explicit-state model
+%% checker. TLA+ and its associated tooling has had notable real-world
+%% impact~\cite{NR+15}.  While \name{}'s use of LTL$_f$ specifications in
+%% \PAT{}s is a point of commonality with TLA+, the integration of these
+%% specifications within a refinement type system, their role in driving
+%% a component-based synthesis procedure, and the top-down (TLA) vs.
+%% bottom-up (\name{}) exploration mechanism, differentiates \name{}'s
+%% motivation and design from TLA+ and TLC in obvious ways.
+
+
+\paragraph{Type and Effect Systems}
+Type and effect systems that target \emph{temporal} properties on the
+sequences of effects that a program may \emph{produce} is a
+well-studied subject. For example, \citet{SS+04} presents a type and
+effect system for reasoning about the shape of histories (i.e., finite
+traces) of events embedded in a program.  \citet{KT+14} present a type
+and effect system that additionally supports verification properties
+of infinite traces, specified as B\"{u}chi automata.  More recently,
 \citet{Temporal-Verification} have considered how to support richer
 control flow structures, e.g., delimited continuations, in such an
-effect system.  Closest to our work are the recently proposed
-\emph{Hoare Automata Types} (\textsc{HAT}s)~\cite{ZYDJ24}, which
-integrate of symbolic finite automata into a refinement type
-system. \textsc{HAT}s enable reasoning about stateful sequential
-programs structured as a functional core interacting with opaque
-effectful libraries.  \PAT{}s extend \textsc{HAT}s in important ways,
-most notably their use of prophecy automata, which enables their use
-in a distributed setting in which constraints on the history of
-previous messages as well as requirements of future messages that have
-yet to be handled.
+effect system.  Closest to our work are \emph{Hoare Automata Types}
+(\textsc{HAT}s)~\cite{ZYDJ24}, which integrate symbolic finite
+automata into a refinement type system. \textsc{HAT}s enable reasoning
+about stateful sequential programs structured as a functional core
+interacting with opaque effectful libraries.  \tyName{} revises
+\textsc{HAT}s by viewing them as underapproximate specifications -
+every trace of effects accepted by the future regex in a \tyName{} is
+justified by a trace accepted by the history regex.
+
+
+%% \paragraph{{\it Verification}} Formally proving the correctness of
+%% distributed protocols and models has long been a topic of significant
+%% interest~\cite{KA+07,HH+15,SWT18}.  These approaches provide strong
+%% correctness guarantees at the cost of significant investment on the
+%% part of the proof engineer, who is responsible for, e.g., defining
+%% suitable inductive invariants for the verification
+%% task~\cite{PM+16,YR+21,MG+19}.  In contrast, our focus in this work is
+%% to improve the effectiveness of falsification techniques--- validating
+%% the presence of bugs in a distributed protocol design, rather than
+%% their absence. In this sense, we are more closely related to recently
+%% proposed approaches for formally reasoning about
+%% incorrectness~\cite{OHP19, LR+22, RBD+20, casl}.  While
+%% \name{} cannot verify the correctness of a model, the burden we impose
+%% on test engineers, i.e., providing handler specifications as PAT{}s,
+%% as well as a global safety/liveness property in LTL$_f$, is
+%% significantly less than what is required to verify full functional
+%% correctness of these designs.
+
+%% \paragraph{{\it Testing}} Outside of the aforementioned P
+%% language~\cite{DGJ+13,ModP}, several other efforts have considered how
+%% to improve the capabilities of testing frameworks for distributed
+%% systems.  Jepsen~\cite{Jepsen} is a randomized testing system that
+%% seeks to reveal bugs when an application is deployed on a
+%% weakly-consistent storage system; \citet{OM+18} defines a randomized
+%% testing procedure for message-passing distributed systems with
+%% guaranteed lower bounds on the probability of finding a depth-$d$ bug,
+%% where $d$ is the minimum length of the sequence of events sufficent to
+%% witness the error.  Morpheus~\cite{YY20} uses partial order sampling
+%% and conflict analysis to control scheduling
+%% decisions. MonkeyDB~\cite{RK+19} uses a demonic scheduling mechanism
+%% to expose safety violations in SQL applications that interact with a
+%% weakly-isolated storage backend.  Clotho~\cite{RK+19} combines static
+%% analysis with a bounded model-checker to generate tests that expose
+%% serializability violations in weakly-consistent database systems.
+%% While these efforts are all agnostic to the property under test,
+%% \name{}'s property-guided synthesis procedure derives a controller
+%% specialized to the target property and handler specifications that
+%% capture temporal dependencies between actors. In this sense, our
+%% approach can be seen as a form of property-based testing
+%% (PBT)~\cite{CH00, HC+24} applied to open reactive systems.  Broadly
+%% related to our approach is Mocket~\cite{WD+23}, a PBT-style testing
+%% framework that uses the state space graph extracted from
+%% model-checking TLA+ specifications~\cite{Lam02} to force executions to
+%% follow specific paths in the graph.  Unlike \name{}, Mocket requires
+%% manual instrumentation of implementations to align actions defined in
+%% the specification with the corresponding code in the implementation,
+%% and relies on the TLC model-checker to produce the state space graph.
+%% In constrast, \name{} uses a compositional refinement type system to
+%% drive synthesis, and requires no instrumentation or \emph{a priori}
+%% enumeration of the state space to synthesize its controllers.
+
 
 \section{Conclusions}\label{sec:conc}
 
-This paper proposes a property-guided testing framework for open
-reactive distributed system models.  Our key innovation is the use of
-prophecy automata types (\PAT{}s) to enable the specification of
-message handlers in terms of history and future traces.  Our
-component-based synthesis procedure leverages \PAT{}s to output
-bespoke test controllers specialized to generate executions that
-violate a given property.  Experimental results on a wide range of
-benchmarks, including real-world models used in production, show that
-\name\ is significantly more effective in uncovering design bugs than
-the existing state-of-the-art.
+This paper proposes trace-guided synthesis of effectful PBT
+generators.  Our key innovations are (i) the adaption of symbolic
+regular expressions, expressed as types, that define traces of
+effectful actions that occur before and after the execution of an
+expression, as underapproximate specifications, and (ii) the synthesis
+of bespoke generators, specialized to generate test input sequences,
+derived from these specifications.  Experimental results on a wide
+range of sequential, concurrent, and distributed applications,
+including real-world system models used in production, show that
+\name\ is significantly more effective in identifying test input
+sequences that falsify a property than existing state-of-the-art.

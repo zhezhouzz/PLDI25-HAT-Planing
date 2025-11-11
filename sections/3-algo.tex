@@ -35,49 +35,40 @@ template.
 The main refinement loop in our synthesis algorithm operates over
 \emph{abstract traces} --- sequences of symbolic events
 $\msg{op}{\phi}$ plus Kleene stars defined by the following grammar: %
-\vspace{-.4cm} \par\nobreak { %
-  \begin{alignat*}{2}
-    \text{\textbf{Abstract Trace}} \quad \pi ::= \quad & \epsilon ~|~
-    \msg{op}{\phi}^b ~|~ \pi \seqA \pi ~|~ \pi^*
-  \end{alignat*}}
-\noindent
-Each symbolic event $\msg{op}{\phi}^b$ in an abstract trace is tagged
-with a Boolean $b$ indicating whether the surrounding context
+\vspace{-.4cm} \par\nobreak {\small
+  \begin{flalign*}
+    &\text{\textbf{Abstract Trace}} \quad \pi ::=  \epsilon ~|~
+    \msg{op}{\phi}^b ~|~ \pi \seqA \pi ~|~ \Pi^*   &&
+    \text{\textbf{Abstract Trace Set}} \quad \Pi ::= \emptyset ~|~
+    \pi ~|~ \Pi \cup \Pi
+  \end{flalign*}}\noindent
+Each symbolic events $\msg{op}{\phi}^b$ in an abstract trace is tagged
+with a boolean $b$ indicating whether the surrounding context
 satisfies its constraints. Every SRE can be transformed into a set of
 abstract traces;\footnote{The definition of our SRE normalization
   procedure is provided in the \techreport{}.} operating over abstract
 traces helps our synthesizer identify events with unresolved
 dependencies.
 
-% \begin{definition}[Abstract Trace] An abstract trace $\Pi$ is a
-%   sequence of abstract without union or intersection top-level Kleene
-%   star, defined by the following grammar \BD{An example of a
-%     non-normalized SRE and its normalized form would be very
-%     helpful}: %
-%   \vspace{-.4cm} \par\nobreak { %
-%     \begin{alignat*}{2}
-%       \text{\textbf{Abstract Trace}} \quad \Pi ::= \quad & \epsilon
-%       ~|~ \msg{op}{\phi}^b ~|~ \Pi \seqA \Pi ~|~ \Pi^*
-%     \end{alignat*}}
-%   \noindent \footnote{The definition of our SRE normalization procedure
-%     is provided in the \techreport{}.}
-% \end{definition}
-
-\begin{example}[Potential Violation of Read Atomicity]
-  Assume we want to probe whether a system that provides asynchronous
-  $\eff{read}$ and $\eff{write}$ operations ensures read
-  atomicity. Using the variable $x$ as a stand-in for a concrete value
-  returned by $\eff{read}$, we can capture this property with the
-  following abstract trace\BD{An example of a non-normalized SRE and
-    its normalized form would be more helpful, IMO. Also, this trace
-    uses difference, which is not allowed by our grammar...}:
-  \vspace{-.4cm} \par\nobreak {\footnotesize %
+\begin{example}[SRE Normalization]\label{ex:sre-norm}
+  We normalize the history regex of $\eff{pop}$ in Example~\ref{ex:stack-example} to illustrate how our SRE normalization procedure works.
+\vspace{-.4cm} \par\nobreak {\small %
 \begin{align*}
-  \allA \msg{\respEvtName{write}}{v \not= x}^\bot(\anyA \setminus
-  \msgC{\respEvtName{write}})^* \msg{\respEvtName{read}}{v = x}^\bot %
-  \tag{$\Pi_\Code{RA}$}\label{prop:global}
-\end{align*}
-}
+\text{Original SRE:} \quad&  \Code{Last}(\msgAGray{popI}{m\;\_}) \land \Code{Last}(\msgAGray{pushI}{n\;\_}) \land (\allA\msgAGray{pushI}{(n{-}m)\;x}\allA)
+\\
+\text{One normalized trace:} \quad& \Pi_\Code{any}^* \msgAGray{popI}{m\;\_}^\bot \Pi_\Code{noPopI}^* \msgAGray{pushI}{(n-m)\;x}^\bot \Pi_\Code{noPopI}^* \msgAGray{pushI}{n\;\_}^\bot \Pi_\Code{noI}^* \tag{$\pi_\Code{pop1}$}\label{prop:popHis1}
+\\[-0.2em]
+\text{where} \quad& \Pi_\Code{any} \equiv \msgCGray{pushI}^\bot \cup \msgCGray{popI}^\bot \cup \msgC{push}^\bot \cup \msgC{pop}^\bot
+\\[-0.2em]
+\text{where} \quad& \Pi_\Code{noPopI} \equiv \msgCGray{pushI}^\bot \cup \msgC{push}^\bot \cup \msgC{pop}^\bot \qquad\quad \Pi_\Code{noI} \equiv \msgC{push}^\bot \cup \msgC{pop}^\bot
+\end{align*}}\noindent
+As shown above, the normalized trace assumes that the three conjuncted symbolic events in the original SRE occur in the order $\msgAGray{popI}{m\;\_}$, $\msgAGray{pushI}{(n-m)\;x}$, and $\msgAGray{pushI}{n\;\_}$. The Kleene stars after $\msgAGray{popI}{m\;\_}$ and $\msgAGray{pushI}{(n-m)\;x}$ in the trace are needed to disallow the $\msgCGray{popI}$ event and $\msgCGray{pushI}$ event, respectively. 
+The trace shown above is one possible normalized result. 
+By assuming $m = 0$, we can make two $\effGray{pushI}$ events to be the same event, resulting in the another normalized trace:
+\vspace{-.4cm} \par\nobreak {\small %
+\begin{align*}
+  \Pi_\Code{any}^* \msgAGray{popI}{0\;\_}^\bot \Pi_\Code{noPopI}^* \msgAGray{pushI}{n\;x}^\bot \Pi_\Code{noI}^* \tag{$\pi_\Code{pop2}$}\label{prop:popHis2}
+\end{align*}}\noindent
 \end{example}
 
 \setlength{\textfloatsep}{4pt}
@@ -90,16 +81,15 @@ dependencies.
     \overline{x{:}\urt{b}{\top}} \vdash A' \subseteq A$} %
   $\Gamma \leftarrow \overline{x{:}\urt{b}{\top}}$ \tcp*[l]{initial
     type context} %
-  $\Pi \leftarrow \{(\Gamma, \pi) ~\mid~ \pi \in \normPlan(A)\}$
+  $C \leftarrow \{(\Gamma, \pi) ~\mid~ \pi \in \normPlan(A)\}$
   \tcp*[l]{initialize set of abstract traces} %
   \While(\tcp*[h]{events still need to be refined}) %
   { %
-    $\exists (\Gamma', \pi) \in\Pi. %
+    $\exists (\Gamma', \pi) \in C.\; %
     \pi = \pi_h \seqA \msg{op}{\phi}^\bot \seqA \pi_f$ } {
     $\Pi \leftarrow \refine(\Delta, \Gamma, \pi_h,
-    \msg{op}{\phi}^\bot, \pi_f) \cup \Pi - \{(\Gamma', \pi)\}$ }
-% $(\Gamma, \Pi) \leftarrow \synRec(\Gamma, M, \Pi)$ \tcp*[l]{synthesize loop}
-\Return{$\derive(\Gamma, \Pi)$} \tcp*[l]{synthesize recursions and derive generator program}
+    \msg{op}{\phi}^\bot, \pi_f) \cup c - \{(\Gamma', \pi)\}$ }
+\Return{$\derive(C)$} \tcp*[l]{synthesize recursions and derive generator program}
 \caption{Test Generator Synthesis}
 \label{algo:top-syn}
 \end{algorithm}
@@ -107,12 +97,12 @@ dependencies.
 Our top-level synthesis algorithm is shown in \autoref{algo:top-syn}.
 Given a target trace property $A$ whose qualifiers only contain the
 variables $\overline{x{:}b}$, this algorithm synthesizes a well-typed
-$\DSL{}$ generator. The algorithm maintains a set of abstract traces,
-$\Pi$, each of which is a refinement of $A$; this set is initialized
-directly from $A$ (line 2). Each trace in $\Pi$ is paired with a
+$\DSL{}$ generator. The algorithm maintains a set of candidate abstract traces,
+$C$, each of which is a refinement of $A$; this set is initialized
+directly from $A$ (line 2). Each trace in $C$ is paired with a
 typing context that the synthesizer uses to filter out refinements
 that do not correspond to well-typed programs. The algorithm first
-uses a loop (lines $3-4$) to refine $\Pi$ until it only contains
+uses a loop (lines $3-4$) to refine $C$ until it only contains
 abstract traces that are consistent with the operator context
 $\Delta$, and then uses the resulting set of traces to derive the final
 (recursive) generator (line $5$). Each iteration of this loop
@@ -120,93 +110,6 @@ nondeterministically chooses a target event in the current abstract
 trace (line $2$) whose tag indicates its dependencies are not
 satisfied and then uses the $\refine$ subroutine to insert the
 required operations before and/or after the target event.
-
-% Different
-% choices may result in different event orders, and some of these
-% choices may cause the algorithm to fail. Our implementation resolves
-% this nondeterminism in the algorithm via an efficient backtracking
-% search procedure that takes the union of all successful runs in order
-% to capture different orderings. \BD{How does backtracking work, what
-%   happens when refine fails, how do we build a union -- $\Pi$ is a
-%   single event, and what constitutes a 'successful' run? }
-
-% \paragraph{Event dependencies}
-% The refined abstract trace produced by our loop must be consistent with the operator context.
-% The events that will
-% precede and follow each event are not known until the loop is finished, e.g., a $\eff{readReq}$ event means that is a $\eff{readRsp}$ event that follows it, vice versa.
-% Thus, we cannot simply parse the abstract trace from left to right to find the dependencies.
-% Instead, each iteration of
-% the loop detects the unresolved dependencies of a target event in the
-% current abstract trace and repairs them by inserting appropriate
-% events before and after it. Intuitively, each observable event
-% $\eff{op_{rsp}}$ must follow an operation $\eff{op_{req}}$, whose operator semantics produces it.\footnote{ To enable $M$ to distinguish distinct
-% occurrences of events with the same effect operator in the abstract
-% trace, we tag each occurence of an operator with a unique
-% identifier.
-% }
-% The algorithm maintains a dependency map $M$ that records the associated child events for each resolved parent event; i.e., $M[\eff{op_{req}}] = \eff{op_{rsp}}$, refining the candidate
-% abstract trace into one that satisfies this dependency map.
-
-% The refinement loop
-% reconstructs these trees from the target node,
-% forming a tree-like dependency structure.
-% similar to that described by \citet{MessageChain}.
-
-% reconstructs these trees from the target node, refining the candidate
-% abstract trace into one that satisfies these dependencies.
-
-% \begin{example}[Event dependency] The refined abstract trace
-%   \ref{eqn:autoEx2} contains three distinct sets of events,
-%   comprised of pairs of requests and corresponding responses: %
-%   {\footnotesize
-%     \begin{align*}
-%       & \msg{writeReq}{v = \Code{x}} \seqA
-%          \msg{writeReq}{v =\Code{y} \land v \not=\Code{x}}
-%          \msg{writeRsp}{v = \Code{y}} \seqA \\
-%       &\seqA  \msg{readReq}{\top} \seqA
-%          \msg{writeRsp}{v = \Code{x}} \seqA
-%          \msg{readRsp}{v = \Code{y} \land st = \true \land v \not=
-%         \Code{x}}
-%     \end{align*}
-%   }\noindent In contrast, the original trace \ref{eqn:abstraceEx} only
-%   contains the last two events in \ref{eqn:autoEx2}.
-% \end{example}
-
-% \paragraph{Trace refinement loop} The type context is initialized with a set of ghost variables whose underapproximated qualifiers are $\top$ (line $1$).
-% At each iteration of $\refineLoop$, the algorithm selects a symbolic event $\msg{op}{\phi}$ from the current abstract trace $\Pi$ for refinement. The trace $\Pi$ is partitioned into history ($\Pi_h$) and future ($\Pi_f$) traces surrounding the target event.
-% % Resolving the dependencies of $\msg{op}{\phi}$ requires us to insert events that must precede it and
-% % events that must follow it; the former treats it as a child operation and constitutes the \emph{backward}
-% % synthesis phase, while the latter treats it as a parent and is subsumed by a
-% % \emph{forward} synthesis pass.
-% If the event $\msg{op}{\phi}$ is generatable, forward synthesis is invoked to introduce necessary response events following it (line $6$). Conversely, backward synthesis is applied on the observable event to introduce its request event preceding it (line $8$). Both synthesis procedures return an updated pair $(\Gamma, \Pi)$, reflecting the revised type context and abstract trace. The refinement loop terminates when all events are refined.
-
-% The two phases are symmetric: if the
-% future regex of the event operator for the operation
-% $\eff{op_{req}}$ includes the operation $\eff{op_{child}}$,
-% performing forward synthesis on $\eff{op_{req}}$ is the same as
-% performing backward synthesis on $\eff{op_{child}}$.
-% To avoid repeatedly targeting the same event, the algorithm maintains a dependency map $M$ that records the associated child events for each resolved parent event; i.e., $M[\eff{op_{req}}] = \{\overline{\eff{op_{child}}}\}$.
-
-% The abstract trace corresponds to a well-typed generator program requires all its events are in the domain of $M$, and all \emph{observable} events are in $M$'s codomain, ensuring that no observable event lacks a parent.
-
-% The intersection of these two sets ($\Mfw \cap \Mbw$) contains those events that correspond to well-typed operators in a generator program.
-
-
-
-% ; the algorithm terminates once the dependencies of all symbolic events in $\Pi$ are resolved.
-% $\Pi$ is partitioned into the history and future
-% traces, $\Pi_f$ and $\Pi_f$, that surround the target event. The
-% algorithm tries to perform forward (resp., backward) synthesis on
-% these traces, if the event is not in $\Mfw$ (resp., $\Mbw$).  If the
-% target operation is generable ($\GEN(\eff{op})$ on line $7$), it is
-% the root of a dependency chain, so no additional backward synthesis is
-% required and the event is simply added to $\Mbw$ (line $8$). Both the
-% forward and backward synthesis routines yield a 6-tuple
-% $(\Gamma, \Mfw, \Mbw, \Pi_h, \msgA{op}{\overline{x}}, \Pi_f)$
-% that contains updated history and future traces; the refined abstract
-% trace at the end of an iteration (line $9$) is simply the
-% concatenation of the refined history trace, target event, and refined
-% future trace.
 
 \setlength{\textfloatsep}{4pt}
 \begin{algorithm}[t!]
@@ -241,10 +144,6 @@ and adds its parameters to the type context (line $3$). \refine{} then
 merges the selected \tyName{} with the current abstract trace (lines
 $4-6$) and normalizes the result to produce a set of refinements of
 the input trace that are consistent with $\eff{op}$ (line $7$).
-% where the future abstract trace $\Pi_f'$ is extended with
-% $\allA$ to allow any future effectful computation \BD{This is a bit
-%   out of alignment with the idea of the future automata as an
-%   underapproximation -- why is it safe to do this?}.
 Intuitively, line $6$ is effectively applying the \textsc{SubHF} rule
 to drop any states that are unreachable after the target operation;
 while line 4 effectively applies \textsc{TOpHis} to ensure the trace
@@ -254,92 +153,45 @@ that precedes the target operation satisfies its specification \BD{The
 Before returning the refined trace, \refine{} checks that it
 corresponds to a meaningful test generator by filtering out
 any empty traces (line $7$).
-% The backward synthesis subroutine is similar, but intersects a abstract trace $\allA \msgC{op_{req}}\allA$ with the history abstract trace $\Pi_h$ to make sure the corresponding $\eff{op_{req}}$ in history (line $11$).
-%  insert preceding events into $\Pi_h$ to resolve parent
-% dependencies.
-% The change in direction results in several differences
-% with its forward counterpart. The procedure now selects a parent
-% operator $\eff{op_{req}}$ whose capability includes the target operator $\eff{op}$, so does its future regex (line $9$). The abstract trace needs to align the target operator $\eff{op}$
-% with its counterpart in the future regex of $\eff{op_{req}}$:
-% \vspace{-.4cm} \par\nobreak {\footnotesize %
-%   \begin{align*} \underbrace{ \effL \Pi_h \effR \effL
-%     \msg{op_{req}}{\phi_\Code{req}} \effR \effL \Pi_{f_1}'
-%     }_\texttt{actual history} \seqA \underbrace{
-%     \msg{op}{\phi'} }_\texttt{actual current } \seqA \underbrace{
-%     \Pi_{f_2}' \effR }_\texttt{actual future}
-%   \end{align*}}\noindent
-% This is reflected in how the two are merged (line $11$ - $12$). Finally, $\eff{op_{req}} \mapsto \Theta$ is added to the dependency map (line $14$).
 
-\begin{example}
-  We illustrate one iteration of the refinement process for
-  \autoref{prop:global}. The refinement loop begins with the following
-  (singleton) set of abstract traces: %
-  \vspace{-.4cm} \par\nobreak {\footnotesize %
-    \begin{align*}
-      \{ (x{:}\urt{\Int}{\top}, \allA \seqA %
-      \msg{\respEvtName{write}}{v \not= x}^\bot \seqA (\anyA \setminus \msgC{\respEvtName{write}})^* \seqA
-      \textcolor{blue}{\msgA{\respEvtName{read}}{x}^\bot}) \}
-    \end{align*}} %
-  \noindent
-  Suppose the first iteration targets the final symbolic event
-  $\msg{\respEvtName{read}}{v = x}^\bot$ (colored blue) for refinement
-  using \refine{}. A generator that produces a trace with this event
-  must first perform a corresponding $\reqEvtName{read}$ effect, a
-  requirement that is reflected in its signature in that is reflected
-  by the signature of $\respEvtName{read}$ in $\Delta$: %
-  \vspace{-.4cm} \par\nobreak{\footnotesize %
-    \begin{align*}
-      \Delta(\respEvtName{read}) \equiv
-      v{:}\Int\garr i{:}\Code{id} \garr
-      \uhat{\allA \msgA{\respEvtName{write}}{v}(\anyA \setminus
-      \msgC{\respEvtName{write}})^*
-      \msgA{\reqEvtName{read}}{i}\allA}{y {:} \urt{\Int}{\nu =
-      v}}{\msgA{\respEvtName{read}}{i~y}}
-    \end{align*}}%
-  \noindent This signature also stipulates that if $\reqEvtName{read}$
-  is preceded by a $\respEvtName{write}$ event, it must be able to
-  return the value that was written. After merging the automata of
-  this \tyName{} with the current abstract trace and normalizing,
-  \refine{} uses its non-emptiness check to filter, e.g., any abstract
-  traces in which ${\respEvtName{write}}{v}$ follows
-  $\msg{\respEvtName{write}}{v \not= x}$ \BD{We may want to add a
-    sentence explaining this a bit more.} \refine{} produces the
-  following new abstract traces, where the newly added events are
-  colored green.%
-  \vspace{-.4cm} \par\nobreak{\footnotesize %
-    \begin{align*}
-      \{ & (x{:}\urt{\Int}{\top}, i{:}\urt{\Int}{\top}, \\%
-      & \allA\textcolor{DeepGreen}{\msgA{\respEvtName{write}}{x}^\bot} (\anyA
-      \setminus \msgC{\respEvtName{write}})^*
-      \textcolor{DeepGreen}{\msgA{\reqEvtName{read}}{i}^\bot} \allA \msg{\respEvtName{write}}{v
-      \not= x}^\bot(\anyA \setminus \msgC{\respEvtName{write}})^*
-      \msgA{\respEvtName{read}}{i\;x}^\top) \}%
-    \end{align*}}\noindent
+\begin{example}[Refinement Process]\label{ex:refinement-process}
+We illustrate the refinement process by showing how it derive to a trace consistent with the program shown in Example~\ref{ex:operator-application-typing}. Assume the refinement loop begins with the following (singleton) set of abstract traces:
+\vspace{-.4cm} \par\nobreak {\small %
+  \begin{align*}
+    \Pi_\Code{any}^* \msg{pop}{\top} \Pi_\Code{any}^*
+  \end{align*}}\noindent
+where the user requires that the test generator performs at least one $\eff{pop}$ operation.
+In the first iteration, the symbolic event $\msg{pop}{\top}$ is selected for refinement using \refine{}. The algorithm first retrieves the \tyName{} of $\eff{pop}$ from $\Delta$:
+\vspace{-.4cm} \par\nobreak{\small %
+  \begin{align*}
+    &\Delta(\eff{pop}) \equiv
+    n{:}\Int \garr m{:}\Int \garr \uhat{\pi_\Code{pop1} \cup \pi_\Code{pop2} \cup ...}{x{:}\Int}{\msgA{pop}{x}\msgAGray{popI}{m{+}1\;x}}\Pi_\Code{any}^*
+  \end{align*}}%
+\noindent As shown in Example~\ref{ex:sre-norm}, we represent the history regex as a set of abstract traces, making it clear that merging this \tyName{} with the current abstract trace and normalizing can result in multiple new abstract traces.
+For example, property~\ref{prop:popHis2} in the history regex can yield the following trace:
+\vspace{-.4cm} \par\nobreak{\small %
+  \begin{align*}
+    &(m{:}\urt{\Int}{\vnu = 0}, n{:}\urt{\Int}{\top},y{:}\urt{\Int}{\top},x{:}\urt{\Int}{\top}, \\
+    &\qquad\qquad \Pi_\Code{any}^* \msgAGray{popI}{m\;y}^\bot \Pi_\Code{noPopI}^* \msgAGray{pushI}{n\;x}^\bot \Pi_\Code{noI}^* \msgA{pop}{x}^\top\msgAGray{popI}{m\;x}^\bot)
+  \end{align*}}\noindent
+The new variables in the type context require $m = 0$, as mentioned in Example~\ref{ex:sre-norm}.
+Although the \tyName{} of $\eff{pop}$ does not explicitly add any new $\eff{push}$ or $\eff{pop}$ events to the abstract trace, it does require multiple ghost events, which will recover corresponding concrete events during further refinement.
+For example, the \tyName{} of $\effGray{pushI}$ is given below; it requires that a $\eff{pushI}$ event always occurs after a $\eff{push}$ event, unless it is an initialization event (i.e., $i = 0$):
+\vspace{-.4cm} \par\nobreak{\footnotesize %
+  \begin{align*}
+    \Delta(\effGray{pushI}) \equiv &\; i{:}\Int\sarr x{:}\Int \sarr \uhat{\allA\msgC{push}}{\Unit}{\msgBGray{pushI}{i\;x}{i > 0}} \interty \uhat{(\anyA\setminus\msgCGray{pushI})^*}{\Unit}{\msgBGray{pushI}{i\;x}{i = 0}} \\
+    \Delta(\effGray{popI}) \equiv &\; i{:}\Int\sarr x{:}\Int \sarr \uhat{\allA\msgC{pop}}{\Unit}{\msgBGray{popI}{i\;x}{i > 0}} \interty \uhat{(\anyA\setminus\msgCGray{popI})^*}{\Unit}{\msgBGray{popI}{i\;x}{i = 0}} 
+  \end{align*}}\noindent
+On the other hand, the $\msgAGray{popI}{m\;y}$ event in the abstract trace has index $m = 0$, and the algorithm can smartly determine that there is no previous $\eff{pop}$ event in this case. It is because the merge result of the first intersected type of $\effGray{popI}$ fails the non-emptiness check, where $m > 0 \land m = 0$ is unsatisfiable. Finally, this trace will be refined to one that consistent with the program shown in Example~\ref{ex:operator-application-typing}:
+\vspace{-.4cm} \par\nobreak{\small %
+  \begin{align*}
+    &(m{:}\urt{\Int}{\vnu = 0}, n{:}\urt{\Int}{\vnu = m{+}1}, y{:}\urt{\Int}{\top}, x{:}\urt{\Int}{\vnu > y},
+    \\&\qquad\qquad\Pi_\Code{noI}^*\msgAGray{pushI}{m\;y}\msgAGray{popI}{m\;y}\Pi_\Code{noI}^*\msgA{push}{x}\msgAGray{pushI}{n\;x}\Pi_\Code{noI}^*\msgA{pop}{x}\msgAGray{popI}{n\;x}\Pi_\Code{any}^*) \tag{$\pi_\Code{stack}$}\label{prop:stackTrace}
+  \end{align*}}\noindent
 \end{example}
 
 \paragraph{Deriving a Program}
-% \label{subsec:synthesis-recursion}
 
-% \setlength{\textfloatsep}{4pt}
-% \begin{algorithm}[t!]
-% \Procedure{$\derive(\Gamma, \Pi)$}{
-%   \If(\tcp*[h]{Synthesize sequential program}){$\Code{(*)}$}{
-%     \lForEach(\tcp*[h]{remove Kleene star}){$A^* \in \Pi$}{
-%       $\Pi \leftarrow \Pi[A^* \mapsto \epsilon]$
-%     }
-%     \Return{$\compile(\Gamma, \Pi)$} \tcp*[l]{compile term}
-%   }
-%   \Else(\tcp*[h]{Synthesize recursion}){
-%         $T, (\Pi_h, \Pi_{\Code{rec}}, \Pi_f) \leftarrow \mathbf{MatchTemplate}(\Pi)$\;
-%         \ForEach{$i$ < bound} {
-%           $\_ \leftarrow \refineLoop(\Gamma, \Pi_h \seqA \Pi_{\Code{rec}}^i \seqA \Pi_f)$ \tcp*[l]{unrolling the recursion for $i$ times}
-%         }
-%         \Return{$T[\derive(\Gamma, \Pi_h), \derive(\Gamma, \Pi_{\Code{rec}}), \derive(\Gamma, \Pi_f)]$}
-%   }
-% }
-% \caption{Synthesis Recursion}
-% \label{algo:syn-recursion}
-% \end{algorithm}
 
 \BD{I need to revisit this section once the definition of $\derive$ in
   the appendix is update. As it stands, this section is too high level
@@ -349,7 +201,7 @@ any empty traces (line $7$).
   % Why do we do this unrolling?
 }
 
-Kleene stars ($A^*$) in abstract traces are interpreted as recursion
+Kleene stars ($\Pi^*$) in abstract traces are interpreted as recursion
 points. The synthesis algorithm $\derive$ non-deterministically either
 (i) generates a sequential program by eliminating all ghost events and
 the Kleene stars \footnote{The definition of $\derive$ is provided in
@@ -367,29 +219,44 @@ placeholders in the recursive template.
 
 \begin{example}[Recursion Template]
   A representative template is a non-deterministic loop, whose form is
-  $T = \boxed{e_\Code{h}};\zlet{f}{\mykw{fix}\ f.\lambda ().\
-    \boxed{e_\Code{rec}};\ (()\oplus f())}{f\;()};\boxed{e_\Code{f}}$,
-  allowing $A^*$ in the abstract trace to be matched. For instance,
-  consider the refinement of the abstract trace $\Pi_\Code{RA}$:
+  $T \doteq \zlet{f}{\mykw{fix}\ f.\lambda ().\
+  () \oplus \boxed{e_1}; f\;(); \boxed{e_2}}{\boxed{e_3};f\;();\boxed{e_4}}$,
+  allowing $\Pi^*$ in the abstract trace to be matched. For instance,
+  consider the abstract trace $\pi_\Code{stack}$ shown in Example~\ref{ex:refinement-process}:
   \vspace{-.4cm} \par\nobreak {\small %
-    \begin{align*} &\Pi_\Code{refined} \equiv\;
-                     \underbrace{\epsilon}_\text{history trace}
-                     \underbrace{\allA}_\text{placeholder of previous iterations}
-                     \underbrace{\msgA{writeReq}{i\;x}\allA\msgA{writeRsp}{i\;x}
-                     ... \msgA{readRsp}{i\;x}}_\text{one iteration of recursion}
-                     \underbrace{\epsilon}_\text{future trace}
-    \end{align*}} %
-  \noindent
-  Here, $\Pi_\Code{refined}$ corresponds to the traces generated by a
-  single iteration of Example~\ref{ex:read-atomicity}. The template
-  thus assigns $\Pi_{\Code{rec}} = \Pi_\Code{refined}$, with $\Pi_h$
-  and $\Pi_f$ as empty traces (i.e., $\epsilon$). The synthesizer
-  refines the abstract trace for $i$-fold recursion unrolling (i.e.,
-  $\Pi_h\Pi_{\Code{rec}} \ldots \Pi_{\Code{rec}}\Pi_f$) to guarantee
-  that multiple unfoldings remain well-typed. The final recursive
+    \begin{align*} &
+                     \underbrace{\Pi_\Code{noI}^*\msgAGray{pushI}{m\;y}\msgAGray{popI}{m\;y}\Pi_\Code{noI}^*}_{e_3}\;\;
+                     \underbrace{\msgA{push}{x}\msgAGray{pushI}{n\;x}}_{e_1}\;\;
+                     \underbrace{\Pi_\Code{noI}^*}_\text{recursion}\;\;
+                     \underbrace{\msgA{pop}{x}\msgAGray{popI}{n\;x}}_{e_2}\;\;
+                     \underbrace{\Pi_\Code{noI}^*}_{e_4}
+    \end{align*}}\noindent
+  Here, $\pi_\Code{stack}$ is divided into five parts, corresponding to the four placeholders and the self-recursive call (i.e., $f\;()$) in the template.
+  The synthesizer then re-refines the abstract trace for $i$-fold recursion unrolling after erasing all qualifiers from the abstract trace:
+  \vspace{-.4cm} \par\nobreak {\small %
+  \begin{align*}
+    \Pi_\Code{anyA}^*\msgCGray{pushI}\msgCGray{popI}&\;\underline{\epsilon}\;\Pi_\Code{anyA}^* \tag{0-fold unrolling}
+    \\\Pi_\Code{anyA}^*\msgCGray{pushI}\msgCGray{popI}\Pi_\Code{anyA}^*\;\underline{\msgCGray{pushI}\msgC{push}}&\underline{\msgCGray{popI}\msgC{pop}}\;\Pi_\Code{anyA}^* \tag{1-fold unrolling}
+    \\\Pi_\Code{anyA}^*\msgCGray{pushI}\msgCGray{popI}\Pi_\Code{anyA}^*\;\underline{\msgCGray{pushI}\msgC{push}\msgCGray{pushI}\msgC{push}}&\underline{\msgCGray{popI}\msgC{pop}\msgCGray{popI}\msgC{pop}}\;\Pi_\Code{anyA}^* \tag{2-fold unrolling}
+  \end{align*}}\noindent
+  This refinement ensures that multiple unfoldings remain well-typed, which disallows an incorrect recursion template instantiation, as shown below:
+  \vspace{-.4cm} \par\nobreak {\small %
+    \begin{align*} &
+                     \underbrace{\Pi_\Code{noI}^*\msgAGray{pushI}{m\;y}\msgAGray{popI}{m\;y}\Pi_\Code{noI}^*\msgA{push}{x}\msgAGray{pushI}{n\;x}}_{e_3}\;\;
+                     \underbrace{\Pi_\Code{noI}^*}_{e_1}\;\;
+                     \underbrace{\Pi_\Code{noI}^*}_\text{recursion}\;\;
+                     \underbrace{\msgA{pop}{x}\msgAGray{popI}{n\;x}}_{e_2}\;\;
+                     \underbrace{\Pi_\Code{noI}^*}_{e_4}
+  \end{align*}}\noindent
+  This instantiation will repeatedly perform $\eff{pop}$ events without any $\eff{push}$ events; its two-fold recursion unrolling will therefore be rejected.
+  The final recursive
   program is assembled by composing synthesized programs from these
-  traces to populate the template placeholders, thereby yielding
-  exactly the recursive function in Example~\ref{ex:read-atomicity}.
+  traces to populate the template placeholders, thereby yielding the following program:
+  \begin{minted}[fontsize = \footnotesize, escapeinside=??, xleftmargin=18pt, linenos]{ocaml}
+let rec f () =
+    () ?$\oplus$? let (x: int) = int_gen () in push x; f (); let (y: int) = pop () in assert (x == y)
+in f ()
+  \end{minted}
 \end{example}
 
 \begin{theorem}[Synthesis is Sound]
@@ -397,20 +264,3 @@ placeholders in the recursive template.
   The generator synthesized by the algorithm is type-safe with
   respect to our declarative typing rules.
 \end{theorem}
-
-% \begin{figure}[t!]
-%   \centering
-%   {\footnotesize
-%     \begin{align*}
-%       f :~ &  i{:}\ort{\Int}{\vnu \geq 0} \sarr \rg{\underbrace{(\allA\msgA{abs}{\Int}\msgAGray{depth}{d}\msgCT{\neg}{black}{endAbs}^*) \land (\allA\msgAGray{depth}{d + i}\msgCT{\neg}{gray}{depth}^*)}_\text{$\eff{var}$'s history regex} }{\allA \msgA{var}{i} \allA \msgAGray{ascribe}{\Int}  }{\allA}
-%     \end{align*}
-%   }
-% \vspace*{-.2in}
-%   \caption{Type of recursive function $f$. } %
-%   \label{fig:spec}
-% \vspace*{-.15in}
-% \end{figure}
-
-% \begin{align*}
-%   \eff{getRsp}: x{:}\Code{Value.t} \garr k{:}\Code{Key.t} \sarr \effLR{\allA \msgA{putReq}{k\;x} \allA } \urt{\Code{Value.t}}{\vnu = x} \effLR{\msgA{getRsp}{k\; x}}
-% \end{align*}
