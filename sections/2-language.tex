@@ -176,7 +176,7 @@ which describe effectful computations.
 Pure refinement types are similar to those found in prior
 underapproximate refinement type systems~\cite{CoverageType}, and
 allow base types (e.g., {\Code{int}}) to be further constrained by a
-logical formula or qualifier. 
+logical formula or qualifier.
 
 In contrast to traditional type systems where a pure type qualifier
 $\ort{b}{\phi}$ constrains every value a pure expresion \emph{may}
@@ -268,7 +268,7 @@ operators.
   {\small\begin{align*} &\eff{push} :~ n{:}\Int \garr y{:}\Int \garr
     x{:}\urt{\Int}{y < \vnu} \sarr
     \uhat{\Code{Last}(\msgAGray{pushI}{n\;y})}{\Unit}{\msgA{push}{x}\msgAGray{pushI}{n{+}1\;x}}
-    \\&\eff{pop} :~ n{:}\Int \garr m{:}\Int \garr 
+    \\&\eff{pop} :~ n{:}\Int \garr m{:}\Int \garr
     \\[-0.4em]& \quad \uhat{\Code{Last}(\msgAGray{popI}{m\;\_}) \land
       \Code{Last}(\msgAGray{pushI}{n\;\_}) \land
       (\allA\msgAGray{pushI}{(n{-}m)\;x}\allA)}{x{:}\Int}{\msgA{pop}{x}\msgAGray{popI}{m{+}1\;
@@ -547,7 +547,7 @@ history that includes $F_1$.
       &\emptyset \vdash \zlet{x}{\Code{pos\_gen\;()}}{\eff{push}\;x; \eff{pop}} : 
       \\&\qquad \uhat{\msgAGray{pushI}{0\;0}\msgAGray{popI}{0\;0}}{x{:}\urt{\Int}{0 < \vnu}}{\msgA{push}{x}\msgAGray{pushI}{1\;x}\msgA{pop}{x}\msgAGray{popI}{1\;x}}
     \end{align*}}%
-  \noindent 
+  \noindent
   The signature of the generator is a \tyName{} that assumes a history
   trace in which the stack is empty (i.e., ghost events
   $\effGray{pushI}$ and $\effGray{popI}$ are recorded with a $0$ index
@@ -560,7 +560,7 @@ history that includes $F_1$.
   applications using the following judgement:
   \vspace{-.4cm} \par\nobreak {\small %
     \begin{flalign*}
-      &x{:}\urt{\Int}{0 < \vnu} \vdash \eff{push}\;x; \eff{pop} :  
+      &x{:}\urt{\Int}{0 < \vnu} \vdash \eff{push}\;x; \eff{pop} :
       \\&\qquad\qquad\ \uhat{\msgAGray{pushI}{0\;0}\msgAGray{popI}{0\;0}}{x{:}\urt{\Int}{0 < \vnu}}{\msgA{push}{x}\msgAGray{pushI}{1\;x}\msgA{pop}{x}\msgAGray{popI}{1\;x}}
     \end{flalign*}}%
   \noindent
@@ -573,7 +573,7 @@ history that includes $F_1$.
       \uhat{\Code{Last}(\msgAGray{pushI}{n\;y})}{\Unit}{\msgA{push}{x}\msgAGray{pushI}{n{+}1\;x}}  &&\text{(by \textsc{TOpCtx})}
     \end{flalign*}}\noindent
   We can then apply the subtyping rule (\textsc{SubG}) to allow us to instantiate the
-  ghost variable (e.g., $n \mapsto 0$ and $y \mapsto 0$). 
+  ghost variable (e.g., $n \mapsto 0$ and $y \mapsto 0$).
   The rule \textsc{TOpHis} can then be used to specialize a reachable history trace
   ($\msgAGray{pushI}{0\;0}\msgAGray{popI}{0\;0}$) to align with the
   actual calling context. Now, the future regex
@@ -586,7 +586,7 @@ history that includes $F_1$.
       \\&... \vdash \eff{push} : x{:}\urt{\Int}{0 < \vnu} \sarr
       \uhat{\msgAGray{pushI}{0\;0}\msgAGray{popI}{0\;0}}{\Unit}{\msgA{push}{x}\msgAGray{pushI}{1\;x}} &&\text{(by \textsc{TOpHis})}
     \end{flalign*}}%
-  \noindent 
+  \noindent
   The rest of program is now typed via the following judgement:
   \vspace{-.4cm} \par\nobreak {\small %
     \begin{align*}
@@ -596,7 +596,7 @@ history that includes $F_1$.
   As before, we can instantiate the ghost variable $n$ as $0$ and $m$ as $0$ via rule \textsc{SubG}, align the return type via rule \textsc{SubHF} and refine the history regex via the rule \textsc{TOpHis} as shown below:
   \vspace{-.4cm} \par\nobreak {\footnotesize %
     \begin{flalign*}
-      &... \vdash \eff{pop} : n{:}\Int \garr m{:}\Int \garr 
+      &... \vdash \eff{pop} : n{:}\Int \garr m{:}\Int \garr
       \\[-0.2em]& \qquad\qquad\  \uhat{\Code{Last}(\msgAGray{popI}{m\;\_}) \land
       \Code{Last}(\msgAGray{pushI}{n\;\_}) \land
       (\allA\msgAGray{pushI}{(n{-}m)\;x}\allA)}{x{:}\Int}{\msgA{pop}{x}\msgAGray{popI}{m{+}1\;x}} &&\text{(\textsc{TOpCtx})}
@@ -657,7 +657,7 @@ history that includes $F_1$.
 % $(\msg{op}{\overline{x}} \land \msg{op}{\phi})\seqA F$ from the future
 % regex to the tail of the history regex. The subsumption rule
 % \textsc{TSub} and the equivalence rule \textsc{TEq} allows us to
-% change the shape of a type that a term is being typed against.  
+% change the shape of a type that a term is being typed against.
 
 Finally, the nondeterministic choice operator is typed using the
 \textsc{TChoice} rule which merges the \tyName{}s of the two branches.
@@ -669,7 +669,7 @@ constraints (i.e., $\uhat{H}{\urt{b}{\bot}}{\emptyset}$). In contrast,
 the \textsc{FixInd} rule permits typing a recursive function with type
 $t'$ by requiring it to have another type $t$, and by checking that
 its body can be assigned type $t'$ under the assumption that the
-function itself has type $t$. 
+function itself has type $t$.
 
 % The nondeterministic loop aligns with the Kleene star in SRE, and thus can be straightforwardly typed by the \textsc{TLoop} rule.
 % Since the loop body $e$ may be executed an unbounded number of times, the typing judgment for $e$ requires that an unbounded number of iterations may have already been performed ($H \seqA \textcolor{orange}{A^*}$) and may occur in the future ($\textcolor{orange}{A^*} \seqA A' \seqA F$). Additionally, the input and output capability contexts must be identical, ensuring that $e$ replenishes any capabilities it consumes.
@@ -787,12 +787,12 @@ follows:
 %   \\&\qquad \forall \alpha \in \denot{A}. \exists \alpha_h \in\denot{H}.\exists \alpha_f \in \denot{F}. \exists \beta \in \denot{\Theta}. \exists \beta' \in \denot{\Theta'}. \msteptr{\alpha_h}{(\beta, e;e_f)}{\alpha}{(\beta',  e_f)}\mharr{\alpha_f}{(\emptyset, ())} \}
 % \end{align*}}\noindent
 {\small\begin{align*}
-  % &\denot{\uhat{H}{x{:}\urt{b}{\phi}}{F}} \doteq 
-  % \\[-0.4em]& \quad 
+  % &\denot{\uhat{H}{x{:}\urt{b}{\phi}}{F}} \doteq
+  % \\[-0.4em]& \quad
   \{e ~|~ \emptyset \basicvdash e : s \land \forall v{:}b. \phi[v\mapsto v] \impl \forall \alpha_f \in \denot{F[x\mapsto v]}. \exists \alpha_h \in\denot{H[x\mapsto v]}. \msteptr{\eraseGhost{\alpha_h}}{e}{\eraseGhost{\alpha_f}}{v} \}
 \end{align*}}\noindent
 A term $e$ inhabits $\uhat{H}{x{:}\urt{b}{\phi}}{F}$ iff, for trace $\alpha_f$ accepted by $F$, there exists history trace $\alpha_h$ accepted by $H$, such that the execution of $e$ under
-$\alpha_h$ produces $\alpha_f$. 
+$\alpha_h$ produces $\alpha_f$.
 \footnote{The details of these definition can be found in our \techreport{}.}
 Our formulation constitutes a trace-based analogue of IL~\cite{OHP19}, in which effects are modeled as program state transitions:
 {\small\begin{align*}
@@ -843,8 +843,19 @@ semantics:
   \end{align*}
 \end{definition}
 
-\begin{theorem}[Fundamental Theorem]\label{theorem:fundamental}A well-typed term, i.e., \(\Gamma\vdash e : \uhat{H}{t}{F}\), generates traces consistent with the \tyName: $\forall \sigma \in \denotation{\Gamma}. \sigma(e) \in \denotation{\sigma(\uhat{H}{t}{F})}$.\footnote{The proofs of all theorems in this paper are provided in the \techreport{}.}
+\begin{theorem}[Fundamental Theorem]
+  \label{theorem:fundamental} A well-typed term, i.e.,
+  \(\Gamma\vdash e : \uhat{H}{t}{F}\), generates traces consistent
+  with its \tyName:
+  $\forall \sigma \in \denotation{\Gamma}. \sigma(e) \in
+  \denotation{\sigma(\uhat{H}{t}{F})}$.\footnote{The proofs of all
+    theorems in this paper are provided in the \techreport{}.}
 \end{theorem}
 
-\begin{corollary}[Type Soundness]\label{theorem:sound} A generator \(e\) that satisfies \(\emptyset \vdash e : \uhat{\epsilon}{\Unit}{F}\) must produce all traces accepted by $F$, i.e., $\forall \alpha \in \denot{F}. \msteptr{[]}{e}{\eraseGhost{\alpha}}{()}$.
+\begin{corollary}[Type Soundness]
+  \label{theorem:sound} A generator \(e\) that satisfies
+  \(\emptyset \vdash e : \uhat{\epsilon}{\Unit}{F}\) must produce all
+  traces accepted by $F$, i.e.,
+  $\forall \alpha \in
+  \denot{F}. \msteptr{[]}{e}{\eraseGhost{\alpha}}{()}$.
 \end{corollary}
