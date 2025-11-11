@@ -544,7 +544,7 @@ history that includes $F_1$.
   Example~\ref{ex:stack-example}. Consider how we might type check the following expression:
   \vspace{-.4cm} \par\nobreak {\small %
     \begin{align*}
-      &\emptyset \vdash \zlet{x}{\mykw{pos_gen}}{\eff{push}\;x; \eff{pop}} :
+      &\emptyset \vdash \zlet{x}{\mykw{pos\_gen}}{\eff{push}\;x; \eff{pop}} :
       \\&\qquad \uhat{\msgAGray{pushI}{0\;0}\msgAGray{popI}{0\;0}}{x{:}\urt{\Int}{0 < \vnu}}{\msgA{push}{x}\msgAGray{pushI}{1\;x}\msgA{pop}{x}\msgAGray{popI}{1\;x}}
     \end{align*}}%
   \noindent
