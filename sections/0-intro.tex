@@ -62,121 +62,128 @@ respect to a context of previously performed $\eff{put}$s:
 \end{align*}
 This \tyName{} asserts that a $\eff{get}$ operation is guaranteed to
 produce a trace consisting of a single event, $\msgA{get}{k\; v}$,
-provided that some $\eff{put}$ operation binding $k$ to $v$ ($\allA
-\msgA{put}{k\;v} \allA$) was executed before.  The underapproximate
-interpretation of \tyName{} encodes a form of reachability and data
-dependence between the effects that have occurred prior to executing
-an operation, and the effect produced by the operation - thus, the
-execution of a $\eff{get}$ operation on a key $k$ is dependent on the
-execution of a previous $\eff{put}$ operation on $k$.\footnote{Note
-  that there is not a sensible overapproximate interpretation of this
-  judgement since such any such interpretation would require that for all
-  traces containing a $\eff{put}$ operation on a key $k$ with value
-  $v$, the effect of a $\eff{get}$ operation on $k$ is to observe $v$.
-  This would mean that subsequent $\eff{put}$ operations on $k$ which
-  store values other than $v$ that occur after the first, but before
-  the $\eff{get}$, would be ignored, a clearly incorrect
-  characterization of a key-value store.}
+provided that some $\eff{put}$ operation binding $k$ to $v$
+($\allA \msgA{put}{k\;v} \allA$) was executed before.  The
+underapproximate interpretation of \tyName{} encodes a form of
+reachability and data dependence between the effects that have
+occurred prior to executing an operation, and the effect produced by
+the operation --- in this case, the execution of a $\eff{get}$
+operation on a key $k$ depends on the execution of a previous
+$\eff{put}$ operation on $k$.\footnote{Note that an overapproximate
+  interpretation of this judgement is not sensible, as it would
+  require that a $\eff{get}$ operation on $k$ be able simultaneously
+  observe every value $v$ previously $\eff{put}$ into $k$. This would
+  mean that after performing $\eff{put}~1~2$ and $\eff{put}~1~3$, the
+  result of $\eff{get}~1$ would be both \emph{both} $2$ and $3$, which
+  is obviously impossible.}
 
-In this paper, we use \tyName{}s as a specification mechanism to guide
-a property-based test (PBT) generation synthesis procedure.  PBT has
-become an increasingly popular framework that allows automated testing
-of user-specified properties.  Generators that produce input values to
-the system-under-test (SUT) are a central component of a PBT system,
-but manually writing generators is a well-known pain
-point~\cite{HC+24} to their wider adoption.  To be effective, a
-generator should only produce inputs that satisfy the SUT's
-precondition because inputs that don't are simply discarded.  While
-generators can be automatically derived if the inputs to the SUT it
-produces have simple types, writing generators for SUTs whose inputs
-have deep structural or semantic constraints remains a
-publication-worthy exercise~\cite{pbt-ifc,PCRH+11,BeginnerLuck,FQL24}.
+In this paper, we show how \tyName{}s can be used to guide a synthesis
+procedure for the property-based testing (PBT) domain. PBT is an
+increasingly popular framework for automated testing of user-specified
+properties. A key component of PBT frameworks are \emph{test
+  generators}, nondeterministic functions that supply input values to
+the system under test (SUT). To be effective, a generator needs to
+produce inputs that are relevant to the property of interest, e.g.,
+they should satisfy the preconditions of the SUT. The need to manually
+writing effective generators is a well-known pain point~\cite{HC+24}
+to wider adoption of PBT, and developing generators for properties
+that impose deep structural or semantic constraints on inputs remains
+a publication-worthy exercise~\cite{pbt-ifc, PCRH+11, FQL24}.
 
 The challenges with writing PBT generators are further exacerbated
-when the SUT is effectful and whose components may be opaque, e.g.,
-libraries whose source code may not be available for inspection.  In
+when the SUT is effectful and includes components may be opaque, e.g.,
+libraries whose source code may not be available for inspection. In
 this setting, tests are typically comprised of \emph{sequences} of
 inputs that induce effects in a particular order to expose latent data
-and control dependencies relevant to the property being checked.
-Examples of applications in which tests are naturally crafted in this
-fashion include:
+and control dependencies relevant to the property being checked.  Some
+examples of scenarios where tests are naturally expressed this way
+include:
 \begin{enumerate}
 
 \item \textbf{Library API invocations:} The SUT is a library
-  implementing an effectful abstract data type (ADT) with a set of
-  APIs.  A test consists of a sequence of API calls that are
-  expected to lead the implementation to an error state (e.g., a
-  violation of a representation invariant~\cite{MP+20,ZYDJ24}).
+  implementing an effectful abstract data type (ADT) equipped with a
+  set of APIs.  A test consists of a sequence of API calls that could
+  lead the implementation to an error state (e.g., a violation of a
+  representation invariant~\cite{MP+20,ZYDJ24}).
 
 \item \textbf{Serialized inputs:} The SUT is a procedure that
   processes serialized input data, reconstructs an AST from this
-  input, and operates over the resulting structure.  The inputs
-  produced by the test generator are expected to establish semantic
-  dependencies among nodes in the corresponding AST that do not
-  satisfy a property of interest (e.g., evaluation errors due to
-  incorrect treatment of variable scoping or binding).
+  input, and operates over the resulting structure. The test generator
+  creates (serialized) inputs that produce semantic dependencies among
+  nodes in the corresponding AST that could violate a property of
+  interest (e.g., evaluation errors due to incorrect treatment of
+  variable scoping or binding).
 
 \item \textbf{Database transactions:} The SUT is a database supporting
   transactional read and write operations under various isolation
   levels.  A test consists of a sequence of transaction operations
-  whose interleaved order is chosen to expose violations of isolation
-  or consistency guarantees the database is supposed to provide.
+  whose interleaved order is chosen to expose potential violations of
+  isolation or consistency guarantees the database is supposed to
+  provide.
 
 \item \textbf{Distributed protocols:} The SUT is a distributed system
   whose components are expected to adhere to protocol invariants.  A
-  test is a sequence of message invocations that lead the system to a
-  global state in which these invariants are not maintained.
+  test is a sequence of message invocations that can lead the system
+  to a global state in which these invariants are not maintained.
 \end{enumerate}
 
-A common feature shared by these examples, despite being drawn from
-diverse domains, is the requirement that the test generator be
-cognizant of how event dependencies in traces are (or are not)
+Despite being drawn from diverse domains, all these examples share the
+requirement that an effective test generator needs to be cognizant of
+how dependencies between the events in traces are (or are not)
 meaningful to manifesting a property violation.  To capture this
-information succintly, we use \tyName{}s as a formal specification
+information succinctly, we use \tyName{}s as a formal specification
 language to precisely describe latent dependencies among effectful
-operations, and expose these dependencies in a domain-specific
-language tailored for writing generators that produce sequences
-conforming to these dependencies.  For the specification given above,
-a well-typed program written in our DSL would only generate test
-sequences in which every $\eff{get}$ operation is proceeded by at
-least one $\eff{put}$ on the same key, with no other constraints on
-operations that might be interspersed between them.  While \tyName{}s
-used in this way help check that a manually-written generator is
-effective, i.e., it never produces inputs that will be discarded, the
-burden of writing the generator still remains.  To alleviate this
-overhead, we connect these two elements by defining a program
-synthesis technique to automatically construct DSL generator programs
-from \tyName{} specifications.  Test generators that use \tyName{}s to
-guide the search for interesting inputs thus implement a novel form of
-angelic non-determinism~\cite{BC+10} where underapproximation is used
-to intelligently inform SUT input generation.
+operations, and to ensure that programs in a domain-specific language
+for writing effectful generators perform sequences of effects
+conforming to those dependencies.  Using the specification given
+above, a well-typed program written in our DSL would only generate
+test sequences in which every $\eff{get}$ operation is preceded by at
+least one $\eff{put}$ on the same key, while placing no other
+constraints on the operations that might be occur between the two.
+While this use of \tyName{}s enables us to check whether a
+manually-written generator explores traces relevant to a target
+property, the burden of writing such a generator still remains.  To
+alleviate this overhead, we connect these two elements by defining a
+type-guided program synthesis technique that automatically construct
+DSL generator programs using \tyName{} specifications. The resulting
+generators are guaranteed to produce traces that violate a target
+property when executed angelically~\cite{BC+10}, and can thus evince a
+concrete bug assuming the SUT provides similar responses when
+performing effects.
+
+% Test generators that use \tyName{}s to guide the search for
+% interesting inputs thus implement a novel form of angelic
+% non-determinism~\cite{BC+10} where underapproximation is used to
+% intelligently inform SUT input generation.
 \begin{wrapfigure}{l}{.65\textwidth}
   \centering
   \includegraphics[width=0.98\linewidth]{figures/workflow.pdf}
-  \caption{\name\ workflow.}
+  \caption{\name\ workflow}
   \label{fig:workflow}
 \end{wrapfigure}
 
 \autoref{fig:workflow} depicts the workflow of our system, named
-\name.  Relevant APIs of the SUT are specified using \tyName{}s.
-These specifications, along with the property of interest drive the
-\name{} synthesis procedure whose output is a test generator that can
-be transpiled into different target languages; thus far, we have
+\name.  The relevant APIs of the SUT are specified using \tyName{}s.
+Along with the property of interest, these specifications drive the
+synthesis of a test generator in \name{}'s DSL, which it then
+transpiles into different target languages; thus far, we have
 implemented Quickcheck~\cite{CH00} (OCaml) and P~\cite{DGJ+13}
-targets.  The test generator program is guaranteed to produce
-(effectful) test sequences that respect the underapproximate
-interpretation of input \tyName{} specifications.
-The rest of the paper is organized as follows. In
-Section~\ref{sec:overview}, we provide additional motivation for the
-problem along with a series of examples to illustrate our approach.
-Section~\ref{sec:formal} presents the operational semantics and type
-system for our DSL that exposes the underapproximate structure of
-\tyName{}s.  The synthesis algorithm that translates these types into
-\name{} programs is given in Section~\ref{sec:synthesis}.  We provide
-a detailed evaluation over a broad range of diverse benchmarks drawn
-from the domains given above to demonstrate the utility of our
-approach; these include generating tests for semantically complex data
-structure properties such as well-typed simply-typed lambda calculus
-terms using de Brujin indices, as well as real-world distibuted
-protocols deployed in industry.  Secs.~\ref{sec:related}
-and~\ref{sec:conc} present related work and conclusions.
+targets.  Synthesized test generator programs are guaranteed to
+produce (effectful) test sequences that respect the underapproximate
+interpretation of the \tyName{} API specifications.  The rest of the
+paper is organized as follows. In Section~\ref{sec:overview}, we
+provide additional motivation for the problem along with a series of
+examples to illustrate our approach.  Section~\ref{sec:formal}
+presents the operational semantics and type system for our DSL that
+exposes the underapproximate structure of \tyName{}s.
+Section~\ref{sec:synthesis} describes the synthesis algorithm that
+translates these types into \name{} programs.  To demonstrate the
+utility of our approach, we provide a detailed evaluation over a broad
+range of diverse benchmarks drawn from the domains given above; these
+include generating tests for semantically complex data structure
+properties such as well-typed simply-typed lambda calculus terms using
+de Brujin indices, as well as real-world distibuted protocols deployed
+in industry.  Sections~\ref{sec:related} and~\ref{sec:conc} present
+related work and conclusions.
+
+% \BD{Do we want an explicit set of contributions?}
