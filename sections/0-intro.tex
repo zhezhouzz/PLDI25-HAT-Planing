@@ -1,61 +1,61 @@
-\section{Introduction}\label{sec:intro}
+\section{Introduction}
+\label{sec:intro}
 
 Unlike program verifiers, symbolic execution~\cite{CD11,DFLO19},
 bounded model checking~\cite{CKL04,DGJ+13,DQ17}, or property-based
 testing~\cite{CH00,QuickStrom,BeginnerLuck,HC+24} frameworks
-\emph{underapproximate} a program's behavior, aiming to generate no
-false positives (i.e., every reported bug is a real bug), but
-admitting false negatives (i.e., not all real bugs may be reported).
-To help place such tools on a more formal footing, new
-underapproximate program logics have been recently
-proposed~\cite{casl,OHP19,LR+22,ZDS23} that allow reasoning over
+\emph{underapproximate} a program's behavior, with a goal of
+generating only true positives (i.e., every reported bug is a real
+bug), but admitting false negatives (i.e., not all real bugs may be
+reported). To place such tools on a more formal footing, several new
+underapproximate program logics have recently been
+proposed~\cite{casl,OHP19,LR+22,ZDS23} for reasoning about
 \emph{incorrectness} properties of a program, i.e., a characterization
 of the conditions under which a particular error state is guaranteed
-to be reached.  For example, incorrectness triples of the form,
-$[P]\texttt{c}[Q]$ proposed by O'Hearn~\cite{OHP19} assert that for
-any post-state of a command \texttt{c} satisfying assertion $Q$ there
-\emph{must} exist a pre-state satisfying $P$.  This interpretation
-defines an underapproximation of \texttt{c}'s behavior because it
-requires producing a witness pre-state to justify every valid
-post-state assertion.
+to be reached.  As one example, O'Hearn defined~\cite{OHP19}
+incorrectness triples of the form $[P]\texttt{c}[Q]$, which assert
+that for any post-state of a command \texttt{c} satisfying assertion
+$Q$ there \emph{must} exist a pre-state satisfying $P$.  This
+interpretation underapproximates \texttt{c}'s behavior because it
+requires a witness pre-state to justify every valid post-state.
 
-While these proposals define underapproximate axiomatic proof rules
-for imperative first-order state-based specifications, there have also
-been contemporary efforts that frame notions of incorrectness and
-underapproximation in the language of types~\cite{RW24,WGJ24,ZMD+23}.
-For example, ~\cite{RW24} introduces a two-sided type system that
+While these underapproximate axiomatic proof systems have focused on
+imperative first-order state-based specifications, other recent
+efforts have instead explored notions of incorrectness and
+underapproximation in the language of
+types~\cite{RW24,WGJ24,ZMD+23}.  % Would like to state
+% these works consider different applications.
+\citet{RW24}, for example, introduced a two-sided type system that
 allows for the refutation of typing formulas, guaranteeing that not
 only do well-typed programs not go wrong, but also that ill-typed
-programs don't evaluate; ~\cite{ZMD+23} leverages notions of
+programs don't evaluate. \citet{ZMD+23} leveraged notions of
 underapproximation in the form of \emph{coverage} types to represent
 the set of values guaranteed to be produced by a test generator.
 
-These type systems provide compositional reasoning about
-underapproximations in a purely functional setting, but cannot be
-directly applied to impure functional programs, for example those that
-interact with effectful libraries.  To address this important
-limitation, this paper introduces \tyName{}, \emph{Underapproximate
-  Hoare Automata Types}, a type abstraction for \emph{underapproximate
-  effectful computations}.  A \tyName{} type judgement takes the form:
+These type systems consider compositional underapproximate reasoning
+techniques for pure functional programs, and thus cannot be directly
+applied to impure functional programs that, e.g., interact with
+effectful libraries.  To address this important limitation, this paper
+introduces \emph{Underapproximate Hoare Automata Types}, or
+\tyName{}s, a type abstraction for \emph{underapproximating effectful
+  computations}.  A \tyName{} type judgement has the form:
 \[\vdash e\, :\, [H]\,t\,[F]\]
-\noindent where $H$ and $F$ qualify type $t$ with
-pre- ($H$) and post- ($F$) conditions.  In our setting, these
-conditions are expressed using the language of symbolic regular
-expressions (SREs) to specify effect traces.  Unlike the
-overapproximate interpretation given for \textsc{hat}s in earlier
-work~\cite{ZYDJ24}, however, a \tyName{} expresses \emph{underapproximate}
-behavior: the judgement above states that for every possible sequence
-of traces $F$ producible by $e$ and consistent with type $t$, there
-exists a trace accepted by $H$.  Intuitively, a \tyName{} expresses
-the conditions (i.e., $H$) that \emph{must} hold prior to executing an
-expression $e$ to guarantee the effects it produces (i.e., $F$) are
-realizable.
+\noindent where $H$ and $F$ qualify type $t$ with pre- ($H$) and post-
+($F$) conditions. Both conditions are expressed as symbolic regular
+expressions (SREs) that capture the trace of effects performed before
+and by $e$, similar to the \textsc{Hat}s proposed by
+\citet{ZYDJ24}. Unlike their overapproximate predecessors, however,
+\tyName{}s \emph{underapproximate} program behaviors: the judgement
+above states that for every trace of effects $\alpha$ accepted by $F$,
+there exists a trace accepted by $H$ under which $e$ \emph{must}
+produce $\alpha$.  Intuitively, a \tyName{} captures sufficient
+conditions (i.e., $H$) that guarantee a set of effects (i.e., $F$) can
+be realized by executing $e$.
 
-To illustrate, the following \tyName{} captures the underapproximate
-behavior that constrains the set of values visible to a $\eff{get}$
-operation in the context of previously executed $\eff{put}$s in a
-setting where a program interacts with a key-value store using these
-operations:
+To illustrate, consider a program that interacts with a key-value
+store that provides $\eff{get}$ and $\eff{put}$ operations. The
+following \tyName{} underapproximates the behavior of $\eff{get}$ with
+respect to a context of previously performed $\eff{put}$s:
 \begin{align*}
   \eff{get}: k{:}\Code{Key.t} \sarr \effLR{\allA\ \msgA{put}{k\;v}\ \allA }
   \{\vnu:\Code{Value.t}\,|\,\vnu = v\} \effLR{\msgA{get}{k\; v}}
@@ -180,4 +180,3 @@ structure properties such as well-typed simply-typed lambda calculus
 terms using de Brujin indices, as well as real-world distibuted
 protocols deployed in industry.  Secs.~\ref{sec:related}
 and~\ref{sec:conc} present related work and conclusions.
-
