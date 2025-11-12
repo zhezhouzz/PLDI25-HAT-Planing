@@ -79,8 +79,10 @@ Our experimental evaluation addresses three research questions:
   of time?
 \end{itemize} %
 
+\newcolumntype{P}[1]{>{\centering\arraybackslash}p{#1}}
+
 \begin{table}[t!]
-  \renewcommand{\arraystretch}{0.8}
+  \renewcommand{\arraystretch}{1.0}
   % \vspace*{-.1in}
   \caption{\small Experimental results of using \name{} to synthesize
   effectful test generators in OCaml. Benchmarks from prior
@@ -101,12 +103,38 @@ Our experimental evaluation addresses three research questions:
 \vspace*{-.1in}
 \footnotesize
 \setlength{\tabcolsep}{1.3pt}
-\begin{tabular}{c|c||ccc||cc||c|ccc}
+\begin{tabular}{c|P{4.7cm}||ccc||cc||c|ccc}
   \toprule
   \multicolumn{2}{c||}{Benchmark} & \#$\eff{op}$ & \multicolumn{2}{c||}{\#qualifier} & \multicolumn{2}{c||}{\# Num. Executions} & t$_\text{total}$(s) & \#evt & \#refine & \#SMT \\
   \multicolumn{2}{c||}{} &  &uHAT &goal & Clouseau & Baseline &  &  \\
 \midrule
-\textsf{TreiberStack} & stack & - & - & - & - & - & - & - & - & - \\
+\textsf{Stack}$^{\dagger}$ & {\scriptsize All pushed values should be popped.} & $6$ & $12$ & $3$ & $1.0$ & $31.9$ & $0.60$ & $15$ & $4$ & $98$\\
+\midrule
+\textsf{HashTable}$^{\square}$ & {\scriptsize Updates must be visible to all threads.} & $13$ & $29$ & $15$ & $1.0$ & $64.8$ & $0.58$ & $5$ & $5$ & $45$\\
+\midrule
+\textsf{Filesystem}$^{\dagger}$ & {\scriptsize No access allowed after parent path deletion.} & $7$ & $67$ & $4$ & $1.3$ & $425.0$ & $6.02$ & $13$ & $14$ & $853$\\
+\midrule
+\textsf{Graph}$^{\dagger}$ & {\scriptsize A connected graph with at least $3$ nodes.} & $6$ & $24$ & $4$ & $1.0$ & $inf$ & $16.61$ & $16$ & $16$ & $2114$\\
+\midrule
+\textsf{NFA}$^{\dagger}$ & {\scriptsize A NFA with at least $3$ edges.} & $8$ & $50$ & $4$ & $1.0$ & $inf$ & $21.85$ & $26$ & $6$ & $5080$\\
+\midrule
+\textsf{IFCAdd}$^{\star}$ & {\scriptsize A IFC program that contains $\Code{Add}$ command.} & $8$ & $37$ & $2$ & $1.6$ & $inf$ & $0.96$ & $8$ & $8$ & $154$\\
+\midrule
+\textsf{IFCStore}$^{\star}$ & {\scriptsize A IFC program that contains $\Code{Store}$ command.} & $8$ & $37$ & $2$ & $2.8$ & $inf$ & $1.02$ & $8$ & $8$ & $160$\\
+\midrule
+\textsf{IFCLoad}$^{\star}$ & {\scriptsize A IFC program that contains $\Code{Load}$ command.} & $8$ & $37$ & $2$ & $15.4$ & $inf$ & $5.76$ & $16$ & $18$ & $930$\\
+\midrule
+\textsf{DeBruijn1}$^{\diamond}$ & {\scriptsize A $\Int$ typed De Bruijn STLC program.} & $10$ & $117$ & $4$ & $1.5$ & $634.0$ & $40.38$ & $18$ & $26$ & $4765$\\
+\midrule
+\textsf{DeBruijn2}$^{\diamond}$ & {\scriptsize A $\Int$ typed De Bruijn STLC program and all lambda variables should be used.} & $10$ & $118$ & $4$ & $1.4$ & {\tiny Timeout} & $91.73$ & $18$ & $31$ & $9034$\\
+\midrule
+\textsf{Shopping} & {\scriptsize Added items should be visible in the cart.} & $10$ & $60$ & $3$ & $1.0$ & $20.0$ & $22.10$ & $17$ & $30$ & $1269$\\
+\midrule
+\textsf{Courseware} & {\scriptsize Courses enrolled by students should be visible.} & $16$ & $106$ & $3$ & $1.0$ & $57.5$ & $27.71$ & $18$ & $33$ & $1479$\\
+\midrule
+\textsf{Twitter} & {\scriptsize Posted tweets are visible to all followers.} & $16$ & $99$ & $3$ & $1.0$ & $6.3$ & $61.96$ & $24$ & $24$ & $2339$\\
+\midrule
+\textsf{Smallbank} & {\scriptsize Updated balance should be visible.} & $22$ & $162$ & $3$ & $1.9$ & $2.7$ & $163.55$ & $28$ & $29$ & $10263$\\
 \bottomrule
 \end{tabular}                                
 \label{tab:evaluation}
