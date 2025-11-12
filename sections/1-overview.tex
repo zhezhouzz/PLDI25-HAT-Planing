@@ -131,6 +131,11 @@ halts program execution if the formula $\phi$ fails to hold.
       \effLR{\Code{LAST}(\respOp{write}{$v$})\seqA\Code{LAST}(\reqOpNoArgs{read})}
       \urt{\Code{int}}{\vnu = v}\effLR{\respOp{read}{$v$}}
   \end{align*}}\noindent
+  \begin{align*}
+    &\respOpNoArgs{read}:
+      \effLR{\Code{LAST}(\respOp{write}{$v$})\reqOpNoArgs{read}\allA}
+      \urt{\Code{int}}{\vnu = v}\effLR{\respOp{read}{$v$}}
+  \end{align*}\noindent
 This type specifies that the response to a previously issued
 asynchronous $\eff{read}$ operation can return a value $v$, if the last
 committed write prior to the request wrote the value $v$.
@@ -175,11 +180,11 @@ safety condition:\footnote{We have elided the tags used to align
   asynchronous request and response pairs to simplify the exposition.}
   \begin{minted}[fontsize = \footnotesize, escapeinside=??, xleftmargin=18pt, linenos]{ocaml}
     let rec transaction_gen () =
-      let x = int_gen () in
-      ?\reqOp{write}{x}?; let _ = ?\respOp{write}? in
-      ?\req($\eff{read}$)?;
-      ?\reqOp{write}{x + 1}?; let _ = ?\respOp{write}? in
-      let y = ?\resp($\eff{read}$)? in assert x == y; (() ?$\oplus$? transaction_gen ())
+      () ?$\oplus$? let x = int_gen () in
+           let i1 = ?\reqOp{write}{x}? in let _ = ?\respOp{write}? i1 in
+           let i2 = ?\req($\eff{read}$)? in
+           transaction_gen ();
+           let y = ?\resp($\eff{read}$)? i2 in assert x == y
   \end{minted}
   \noindent In each iteration, the program initiates two distinct
   asynchronous write operations (lines 3 and 5), with an asynchronous
