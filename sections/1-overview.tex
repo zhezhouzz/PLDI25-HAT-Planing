@@ -181,10 +181,10 @@ safety condition:\footnote{We have elided the tags used to align
   \begin{minted}[fontsize = \footnotesize, escapeinside=??, xleftmargin=18pt, linenos]{ocaml}
     let rec transaction_gen () =
       () ?$\oplus$? let x = int_gen () in
-           let i1 = ?\reqOp{write}{x}? in let _ = ?\respOp{write}? i1 in
-           let i2 = ?\req($\eff{read}$)? in
+           let i1 = ?$\req(\eff{write})$? x in let _ = ?$\resp(\eff{write})$? i1 in
+           let i2 = ?$\req(\eff{read})$? in
            transaction_gen ();
-           let y = ?\resp($\eff{read}$)? i2 in assert x == y
+           let y = ?$\resp(\eff{read})$? i2 in ?$\mykw{assert}$? (x == y)
   \end{minted}
   \noindent In each iteration, the program initiates two distinct
   asynchronous write operations (lines 3 and 5), with an asynchronous
