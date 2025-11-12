@@ -13,13 +13,18 @@ these notions have also been incorporated into type
 systems~\cite{RW24,ZMD+23,JY15,LPR26} for functional languages, but
 none of these efforts have considered their application to the
 synthesis of effectful test generators of the kind proposed in this
-paper.  In our setting, we show how interpreting type specifications
-from the lens of underapproximation can guide a synthesis procedure to
-construct bespoke test generators tailored to the property of
-interest, and cognizant of the behavior of the operators provided by
-the SUT.  As a mechanism to characterize underapproximate behavior,
-types identify \emph{sufficient} constraints that any test input
-sequence produced by the generator \emph{must} satisfy based on these
+paper.  For example~\cite{ZMD+23} uses underapproximation to typecheck
+that a PBT generator is \emph{complete} with respect to the functional
+inputs it generates to the SUT; ~\cite{LZ+25} considers an enumerative
+repair strategy to patch incomplete generators so that they become
+complete.  In our setting, we show how interpreting type
+specifications from the lens of underapproximation can guide a
+type-driven synthesis procedure to construct bespoke effectful test
+generators tailored to the property of interest, and cognizant of the
+behavior of the operators provided by the SUT.  As a mechanism to
+characterize underapproximate behavior, types identify
+\emph{sufficient} effectful constraints that any test input sequence
+produced by the generator \emph{must} satisfy based on these
 specifications.
 
 \paragraph{{\it Specializing PBT Generators}}
