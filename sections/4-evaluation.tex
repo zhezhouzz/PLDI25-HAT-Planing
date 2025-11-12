@@ -82,64 +82,62 @@ Our experimental evaluation addresses three research questions:
 \newcolumntype{P}[1]{>{\centering\arraybackslash}p{#1}}
 
 \begin{table}[t!]
-  \renewcommand{\arraystretch}{1.0}
+  \renewcommand{\arraystretch}{0.8}
   % \vspace*{-.1in}
   \caption{\small Experimental results of using \name{} to synthesize
   effectful test generators in OCaml. Benchmarks from prior
   work are annotated with their source:
-  HAT~\cite{ZYDJ24}($^{\dagger}$), ModP~\cite{ModP}($^{\diamond}$) an
-  extension of P with support for modules, and
-  MessageChain~\cite{MessageChain}($^{\star}$), an automated verification tool for P.  We also include
-  a real-world model of a two-phase commit protocol
-  (\textsf{Anon2PCModel}$^{\square}$) used by a major cloud vendor.
-  The components under test are written in P, and handler
-  specifications are given as \PAT{}s.  \name{} can synthesize a set
-  of controllers, each of which specifies a distinct scheduling
-  order for messages, all consistent with provided specifications.
-  We set a $2$ minute time bound for the synthesis procedure
-  (t$_\text{total}$ is the average time to find a single
-  controller.)  We set a bound of 10K executions for the P
-  baselines.}
+  HAT~\cite{ZYDJ24}, the OCaml multicore PBT framework~\cite{OcamlMulticorePBT},
+  QuickCheck on IFC machines~\cite{pbt-ifc} and well-typed De Bruijn STLC programs~\cite{CoverageType}; as well as OLTP-Bench~\cite{OLTPBench}, an extensible testbed for benchmarking relational databases, and  MonkeyDB~\cite{MonkeyDB}, a mock storage system for testing weak isolation levels.
+  The baselines drawn from the original sources are labeled with $^{\dagger}$ if exists, otherwise we add a random generator.
+  \name{} can synthesize test generators consistent with provided specifications within a 3-minute time bound, we also terminate early if it finds 3 generators (t$_\text{total}$ is the average time to find a single
+  controller). We set a 30-minute bound for the baselines, although all cases that can find a bug do so within 10 seconds.}
 \vspace*{-.1in}
 \footnotesize
 \setlength{\tabcolsep}{1.3pt}
 \begin{tabular}{c|P{4.7cm}||ccc||cc||c|ccc}
   \toprule
-  \multicolumn{2}{c||}{Benchmark} & \#$\eff{op}$ & \multicolumn{2}{c||}{\#qualifier} & \multicolumn{2}{c||}{\# Num. Executions} & t$_\text{total}$(s) & \#evt & \#refine & \#SMT \\
-  \multicolumn{2}{c||}{} &  &uHAT &goal & Clouseau & Baseline &  &  \\
+  \multicolumn{2}{c||}{Benchmark} & \#$\eff{op}$ & \multicolumn{2}{c||}{\#qualifier} & \multicolumn{2}{c||}{\scriptsize \# Num. Executions} & t$_\text{total}$(s) & \#evt & \#refine & \#SMT \\
+  \multicolumn{2}{c||}{} &  &uHAT &goal & {\scriptsize Clouseau} & {\scriptsize Baseline} &  &  \\
 \midrule
-\textsf{Stack}$^{\dagger}$ & {\scriptsize All pushed values should be popped.} & $6$ & $12$ & $3$ & $1.0$ & $31.9$ & $0.60$ & $15$ & $4$ & $98$\\
+\textsf{Stack}\cite{ZYDJ24} & {\scriptsize A pushed value cannot be popped.} & $6$ & $12$ & $3$ & $1.0$ & $31.9$ & $0.60$ & $15$ & $4$ & $98$\\
 \midrule
-\textsf{HashTable}$^{\square}$ & {\scriptsize Updates must be visible to all threads.} & $13$ & $29$ & $15$ & $1.0$ & $64.8$ & $0.58$ & $5$ & $5$ & $45$\\
+\textsf{HashTable}\cite{OcamlMulticorePBT} & {\scriptsize Updates are not visible to all threads.} & $13$ & $29$ & $15$ & $1.0$ & $2.5^{\dagger}$ & $0.58$ & $5$ & $5$ & $45$\\
 \midrule
-\textsf{Filesystem}$^{\dagger}$ & {\scriptsize No access allowed after parent path deletion.} & $7$ & $67$ & $4$ & $1.3$ & $425.0$ & $6.02$ & $13$ & $14$ & $853$\\
+\textsf{Filesystem}\cite{ZYDJ24} & {\scriptsize Access is allowed after parent path deletion.} & $7$ & $67$ & $4$ & $1.3$ & $2812.1$ & $6.02$ & $13$ & $14$ & $853$\\
 \midrule
-\textsf{Graph}$^{\dagger}$ & {\scriptsize A connected graph with at least $3$ nodes.} & $6$ & $24$ & $4$ & $1.0$ & $inf$ & $16.61$ & $16$ & $16$ & $2114$\\
+\textsf{Graph}\cite{ZYDJ24} & {\scriptsize A connected graph with at least $3$ nodes.} & $6$ & $24$ & $4$ & $1.0$ & {\tiny Timeout} & $16.61$ & $16$ & $16$ & $2114$\\
 \midrule
-\textsf{NFA}$^{\dagger}$ & {\scriptsize A NFA with at least $3$ edges.} & $8$ & $50$ & $4$ & $1.0$ & $inf$ & $21.85$ & $26$ & $6$ & $5080$\\
+\textsf{NFA}\cite{ZYDJ24} & {\scriptsize A NFA with at least $3$ edges.} & $8$ & $50$ & $4$ & $1.0$ & {\tiny Timeout} & $21.85$ & $26$ & $6$ & $5080$\\
 \midrule
-\textsf{IFCAdd}$^{\star}$ & {\scriptsize A IFC program that contains $\Code{Add}$ command.} & $8$ & $37$ & $2$ & $1.6$ & $inf$ & $0.96$ & $8$ & $8$ & $154$\\
 \midrule
-\textsf{IFCStore}$^{\star}$ & {\scriptsize A IFC program that contains $\Code{Store}$ command.} & $8$ & $37$ & $2$ & $2.8$ & $inf$ & $1.02$ & $8$ & $8$ & $160$\\
+\textsf{IFCAdd}\cite{pbt-ifc} & {\scriptsize A IFC program that contains $\Code{Add}$ command.} & $8$ & $37$ & $2$ & $1.6$ & {\tiny Timeout}$^{\dagger}$ & $0.96$ & $8$ & $8$ & $154$\\
 \midrule
-\textsf{IFCLoad}$^{\star}$ & {\scriptsize A IFC program that contains $\Code{Load}$ command.} & $8$ & $37$ & $2$ & $15.4$ & $inf$ & $5.76$ & $16$ & $18$ & $930$\\
+\textsf{IFCStore}\cite{pbt-ifc} & {\scriptsize A IFC program that contains $\Code{Store}$ command.} & $8$ & $37$ & $2$ & $2.8$ & {\tiny Timeout}$^{\dagger}$ & $1.02$ & $8$ & $8$ & $160$\\
 \midrule
-\textsf{DeBruijn1}$^{\diamond}$ & {\scriptsize A $\Int$ typed De Bruijn STLC program.} & $10$ & $117$ & $4$ & $1.5$ & $634.0$ & $40.38$ & $18$ & $26$ & $4765$\\
+\textsf{IFCLoad}\cite{pbt-ifc} & {\scriptsize A IFC program that contains $\Code{Load}$ command.} & $8$ & $37$ & $2$ & $15.4$ & {\tiny Timeout}$^{\dagger}$ & $5.76$ & $16$ & $18$ & $930$\\
 \midrule
-\textsf{DeBruijn2}$^{\diamond}$ & {\scriptsize A $\Int$ typed De Bruijn STLC program and all lambda variables should be used.} & $10$ & $118$ & $4$ & $1.4$ & {\tiny Timeout} & $91.73$ & $18$ & $31$ & $9034$\\
+\textsf{DeBruijn1}\cite{CoverageType} & {\scriptsize A $\Int$ typed De Bruijn STLC program.} & $10$ & $117$ & $4$ & $1.5$ & $634.0^{\dagger}$ & $40.38$ & $18$ & $26$ & $4765$\\
 \midrule
-\textsf{Shopping} & {\scriptsize Added items should be visible in the cart.} & $10$ & $60$ & $3$ & $1.0$ & $20.0$ & $22.10$ & $17$ & $30$ & $1269$\\
+\textsf{DeBruijn2}\cite{CoverageType} & {\scriptsize A $\Int$ typed De Bruijn STLC program and all lambda variables should be used.} & $10$ & $118$ & $4$ & $1.4$ & {\tiny Timeout}$^{\dagger}$ & $91.73$ & $18$ & $31$ & $9034$\\
 \midrule
-\textsf{Courseware} & {\scriptsize Courses enrolled by students should be visible.} & $16$ & $106$ & $3$ & $1.0$ & $57.5$ & $27.71$ & $18$ & $33$ & $1479$\\
 \midrule
-\textsf{Twitter} & {\scriptsize Posted tweets are visible to all followers.} & $16$ & $99$ & $3$ & $1.0$ & $6.3$ & $61.96$ & $24$ & $24$ & $2339$\\
+\textsf{ReadAtomicity} & {\scriptsize Read atomicity property violation.} & $?$ & $?$ & $?$ & $1.0$ & $?$ & $?$ & $?$ & $?$\\
 \midrule
-\textsf{Smallbank} & {\scriptsize Updated balance should be visible.} & $22$ & $162$ & $3$ & $1.9$ & $2.7$ & $163.55$ & $28$ & $29$ & $10263$\\
+\textsf{Shopping}\cite{MonkeyDB} & {\scriptsize Added items is not visible in the cart.} & $10$ & $60$ & $3$ & $1.0$ & $20.0^{\dagger}$ & $22.10$ & $17$ & $30$ & $1269$\\
+\midrule
+\textsf{Courseware}\cite{MonkeyDB} & {\scriptsize Courses enrolled by students is not visible.} & $16$ & $106$ & $3$ & $1.0$ & $57.5^{\dagger}$ & $27.71$ & $18$ & $33$ & $1479$\\
+\midrule
+\textsf{Twitter}\cite{MonkeyDB} & {\scriptsize Posted tweets are not visible to all followers.} & $16$ & $99$ & $3$ & $1.0$ & $6.3^{\dagger}$ & $61.96$ & $24$ & $24$ & $2339$\\
+\midrule
+\textsf{Smallbank}\cite{OLTPBench} & {\scriptsize Updated balance is not visible.} & $22$ & $162$ & $3$ & $1.9$ & {\tiny Timeout} & $163.55$ & $28$ & $29$ & $10263$\\
 \bottomrule
 \end{tabular}                                
 \label{tab:evaluation}
 % \vspace*{-.15in}
 \end{table}
+
+
 
 \begin{table}[t!]
   \renewcommand{\arraystretch}{0.8}
@@ -162,34 +160,34 @@ Our experimental evaluation addresses three research questions:
     baselines.}
 \vspace*{-.1in}
 \footnotesize
-\setlength{\tabcolsep}{2.3pt}
-\begin{tabular}{c||cc||cccc||ccc||c|cc}
+\setlength{\tabcolsep}{1.3pt}
+\begin{tabular}{c|P{4.0cm}||ccc||cc||c|ccc}
   \toprule
-  Benchmark & \#$\eff{op}$ & \#sevt & \#var &\#$\mykw{gen}$ & \#$\mykw{obs}$ & \#$\mykw{assert}$ & \multicolumn{3}{c||}{\# Num. Executions} & t$_\text{total}$(s) & \#SMT & \#refine \\
-  & & & & & & &  Clouseau & P+Rand & P+M   &  \\
+  \multicolumn{2}{c||}{Benchmark} & \#$\eff{op}$ & \multicolumn{2}{c||}{\#qualifier} & \multicolumn{2}{c||}{\scriptsize \# Num. Executions} & t$_\text{total}$(s) & \#evt & \#refine & \#SMT \\
+\multicolumn{2}{c||}{} &  &uHAT &goal & {\scriptsize Clouseau} & {\scriptsize Baseline} &  &  \\
   \midrule
-  \textsf{Database} & $4$ & $19$ & $6$ & $3$ & $3$ & $4$ & $1$ & $6$ & - & $0.32$ & $49$ & $6$\\
+  {\scriptsize\textsf{Database}} & {\scriptsize Read-Your-Writes policy.} & $4$ & $15$ & $3$ & $1$ & $6$ & $0.32$ & $6$ & $6$ & $49$\\
   \midrule
-  \textsf{Firewall}$^{\star}$ & $5$ & $30$ & $12$ & $2$ & $8$ & $9$ & $1$ & $10$ & - & $0.59$ & $222$ & $10$\\
+  {\scriptsize\textsf{Firewall}}\cite{MessageChain} & {\scriptsize Internal requests in firewall eventually receive external responses.} & $5$ & $26$ & $4$ & $1$ & $10$ & $0.59$ & $10$ & $10$ & $222$\\
   \midrule
-  \textsf{RingLeaderElection}$^{\star}$ & $3$ & $16$ & $12$ & $2$ & $6$ & $7$ & $1$ & $18$ & - & $0.83$ & $100$ & $8$\\
+  {\scriptsize\textsf{RingLeaderElection}}\cite{MessageChain} & {\scriptsize Unique leader policy.} & $3$ & $14$ & $2$ & $1$ & $18$ & $0.83$ & $8$ & $8$ & $100$\\
   \midrule
-  \textsf{EspressoMachine}$^{\dagger}$ & $13$ & $46$ & $1$ & $2$ & $8$ & $1$ & $4$ & $39$ & $4$ & $0.44$ & $70$ & $10$\\
+  {\scriptsize\textsf{EspressoMachine}}\cite{DGJ+13} & {\scriptsize Error states of coffee machine should be notified to user.} & $13$ & $30$ & $1$ & $4$ & $4^{\dagger}$ & $0.44$ & $10$ & $10$ & $70$\\
   \midrule
-  \textsf{BankServer}$^{\dagger}$ & $6$ & $37$ & $15$ & $2$ & $3$ & $5$ & $1$ & $40$ & $2$ & $0.17$ & $27$ & $5$\\
+  {\scriptsize\textsf{BankServer}}\cite{DGJ+13} & {\scriptsize Prevents withdrawals exceeding balance.} & $6$ & $42$ & $1$ & $1$ & $2^{\dagger}$ & $0.17$ & $5$ & $5$ & $27$\\
   \midrule
-  \textsf{Simplified2PC}$^{\dagger}$ & $9$ & $38$ & $7$ & $2$ & $6$ & $5$ & $2$ & $125$ & $6$ & $1.03$ & $88$ & $8$\\
+  {\scriptsize\textsf{Simplified2PC}}\cite{DGJ+13} & {\scriptsize Read-Your-Writes policy.} & $9$ & $32$ & $5$ & $2$ & $6^{\dagger}$ & $1.03$ & $8$ & $8$ & $88$\\
   \midrule
-  \textsf{HeartBeat}$^{\dagger}$ & $7$ & $38$ & $9$ & $4$ & $10$ & $9$ & $1$ & $71$ & $6$ & $1.10$ & $145$ & $14$\\
+  {\scriptsize\textsf{HeartBeat}}\cite{DGJ+13} & {\scriptsize If the node is alive, the detector will not report a false positive error.} & $7$ & $31$ & $3$ & $1$ & $6^{\dagger}$ & $1.10$ & $14$ & $14$ & $145$\\
   \midrule
-  \textsf{ChainReplication}$^{\diamond}$ & $7$ & $73$ & $24$ & $4$ & $8$ & $9$ & $1$ & $588$ & $500$ & $19.24$ & $2054$ & $169$\\
+  {\scriptsize\textsf{ChainReplication}}\cite{ModP} & {\scriptsize Read-Your-Writes policy.} & $7$ & $72$ & $4$ & $1$ & $500^{\dagger}$ & $19.24$ & $12$ & $169$ & $2054$\\
   \midrule
-  \textsf{Paxos}$^{\diamond}$ & $10$ & $86$ & $36$ & $4$ & $10$ & $13$ & $1$ & {\tiny Timeout} & $667$ & $23.70$ & $1763$ & $77$\\
+  {\scriptsize\textsf{Paxos}}\cite{ModP} & {\scriptsize Unique leader policy.} & $10$ & $110$ & $2$ & $1$ & $667^{\dagger}$ & $23.70$ & $14$ & $77$ & $1763$\\
   \midrule
-  \textsf{Raft} & $9$ & $39$ & $21$ & $2$ & $10$ & $10$ & $1$ & {\tiny Timeout} & - & $26.84$ & $1262$ & $78$\\
+  {\scriptsize\textsf{Raft}} & {\scriptsize The leader’s view should align with committed data.} & $9$ & $39$ & $6$ & $1$ & {\tiny Timeout} & $26.84$ & $12$ & $78$ & $1262$\\
   \midrule
-  \textsf{Kermit2PCModel}$^{\square}$ & $17$ & $98$ & $37$ & $5$ & $11$ & $12$ & $1$ & {\tiny Timeout} & - & $18.35$ & $1909$ & $16$\\
-  \bottomrule
+  {\scriptsize\textsf{Kermit2PCModel}} & {\scriptsize The user and the database should have the same will view of stored data.} & $17$ & $113$ & $3$ & $1$ & $53^{\dagger}$ & $18.35$ & $16$ & $16$ & $1909$\\
+\bottomrule
   \end{tabular}
 \label{tab:evaluation}
 % \vspace*{-.15in}

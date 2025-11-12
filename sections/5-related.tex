@@ -10,10 +10,10 @@ reachability (aka incorrectness) properties of first-order imperative
 programs; their primary motivation is to enable formal reasoning of
 program analysis tools such as Infer~\cite{DFLO19}.  Ideas related to
 these notions have also been incorporated into type
-systems~\cite{RW24,ZMD+23,JY15,LPR26} for functional languages, but
+systems~\cite{RW24,CoverageType,JY15,LPR26} for functional languages, but
 none of these efforts have considered their application to the
 synthesis of effectful test generators of the kind proposed in this
-paper.  For example~\cite{ZMD+23} uses underapproximation to typecheck
+paper.  For example~\cite{CoverageType} uses underapproximation to typecheck
 that a PBT generator is \emph{complete} with respect to the functional
 inputs it generates to the SUT; ~\cite{LZ+25} considers an enumerative
 repair strategy to patch incomplete generators so that they become

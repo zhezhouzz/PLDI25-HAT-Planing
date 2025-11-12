@@ -739,23 +739,23 @@
   abstract = {In ordinary lambda calculus the occurrences of a bound variable are made recognizable by the use of one and the same (otherwise irrelevant) name at all occurrences. This convention is known to cause considerable trouble in cases of substitution. In the present paper a different notational system is developed, where occurrences of variables are indicated by integers giving the “distance” to the binding λ instead of a name attached to that λ. The system is claimed to be efficient for automatic formula manipulation as well as for metalingual discussion. As an example the most essential part of a proof of the Church-Rosser theorem is presented in this namefree calculus.}
 }
 
-@article{ZMD+23,
-  author     = {Zhou, Zhe and Mishra, Ashish and Delaware, Benjamin and Jagannathan, Suresh},
-  title      = {Covering All the Bases: Type-Based Verification of Test Input Generators},
-  year       = {2023},
-  issue_date = {June 2023},
+@article{MonkeyDB,
+  author     = {Biswas, Ranadeep and Kakwani, Diptanshu and Vedurada, Jyothi and Enea, Constantin and Lal, Akash},
+  title      = {MonkeyDB: effectively testing correctness under weak isolation levels},
+  year       = {2021},
+  issue_date = {October 2021},
   publisher  = {Association for Computing Machinery},
   address    = {New York, NY, USA},
-  volume     = {7},
-  number     = {PLDI},
-  url        = {https://doi.org/10.1145/3591271},
-  doi        = {10.1145/3591271},
-  abstract   = {Test input generators are an important part of property-based testing (PBT) frameworks. Because PBT is intended to test deep semantic and structural properties of a program, the outputs produced by these generators can be complex data structures, constrained to satisfy properties the developer believes is most relevant to testing the function of interest. An important feature expected of these generators is that they be capable of producing all acceptable elements that satisfy the function’s input type and generator-provided constraints. However, it is not readily apparent how we might validate whether a particular generator’s output satisfies this coverage requirement. Typically, developers must rely on manual inspection and post-mortem analysis of test runs to determine if the generator is providing sufficient coverage; these approaches are error-prone and difficult to scale as generators become more complex. To address this important concern, we present a new refinement type-based verification procedure for validating the coverage provided by input test generators, based on a novel interpretation of types that embeds “must-style” underapproximate reasoning principles as a fundamental part of the type system. The types associated with expressions now capture the set of values guaranteed to be produced by the expression, rather than the typical formulation that uses types to represent the set of values an expression may produce. Beyond formalizing the notion of coverage types in the context of a rich core language with higher-order procedures and inductive datatypes, we also present a detailed evaluation study to justify the utility of our ideas.},
+  volume     = {5},
+  number     = {OOPSLA},
+  url        = {https://doi.org/10.1145/3485546},
+  doi        = {10.1145/3485546},
+  abstract   = {Modern applications, such as social networking systems and e-commerce platforms are centered around using large-scale storage systems for storing and retrieving data. In the presence of concurrent accesses, these storage systems trade off isolation for performance. The weaker the isolation level, the more behaviors a storage system is allowed to exhibit and it is up to the developer to ensure that their application can tolerate those behaviors. However, these weak behaviors only occur rarely in practice and outside the control of the application, making it difficult for developers to test the robustness of their code against weak isolation levels.  This paper presents MonkeyDB, a mock storage system for testing storage-backed applications. MonkeyDB supports a key-value interface as well as SQL queries under multiple isolation levels. It uses a logical specification of the isolation level to compute, on a read operation, the set of all possible return values. MonkeyDB then returns a value randomly from this set. We show that MonkeyDB provides good coverage of weak behaviors, which is complete in the limit. We test a variety of applications for assertions that fail only under weak isolation. MonkeyDB is able to break each of those assertions in a small number of attempts.},
   journal    = {Proc. ACM Program. Lang.},
-  month      = jun,
-  articleno  = {157},
-  numpages   = {24},
-  keywords   = {property-based testing, refinement types, underapproximate reasoning}
+  month      = oct,
+  articleno  = {132},
+  numpages   = {27},
+  keywords   = {Weak Isolation Levels, Transactional Databases, Testing, Applications of Storage Systems}
 }
 
 @inproceedings{Eff,
@@ -1738,21 +1738,40 @@
   address   = {Berkeley, CA, USA}
 }
 
-@article{BK+21,
-  author     = {Biswas, Ranadeep and Kakwani, Diptanshu and Vedurada, Jyothi and Enea, Constantin and Lal, Akash},
-  title      = {{MonkeyDB: Effectively Testing Correctness under Weak Isolation Levels}},
-  year       = {2021},
-  issue_date = {October 2021},
-  publisher  = {Association for Computing Machinery},
-  address    = {New York, NY, USA},
-  volume     = {5},
-  number     = {OOPSLA},
-  url        = {https://doi.org/10.1145/3485546},
-  doi        = {10.1145/3485546},
-  journal    = {Proc. ACM Program. Lang.},
-  month      = oct,
-  articleno  = {132},
-  numpages   = {27}
+@article{OLTPBench,
+author = {Difallah, Djellel Eddine and Pavlo, Andrew and Curino, Carlo and Cudre-Mauroux, Philippe},
+title = {OLTP-Bench: an extensible testbed for benchmarking relational databases},
+year = {2013},
+issue_date = {December 2013},
+publisher = {VLDB Endowment},
+volume = {7},
+number = {4},
+issn = {2150-8097},
+url = {https://doi.org/10.14778/2732240.2732246},
+doi = {10.14778/2732240.2732246},
+abstract = {Benchmarking is an essential aspect of any database management system (DBMS) effort. Despite several recent advancements, such as pre-configured cloud database images and database-as-a-service (DBaaS) offerings, the deployment of a comprehensive testing platform with a diverse set of datasets and workloads is still far from being trivial. In many cases, researchers and developers are limited to a small number of workloads to evaluate the performance characteristics of their work. This is due to the lack of a universal benchmarking infrastructure, and to the difficulty of gaining access to real data and workloads. This results in lots of unnecessary engineering efforts and makes the performance evaluation results difficult to compare. To remedy these problems, we present OLTP-Bench, an extensible "batteries included" DBMS benchmarking testbed. The key contributions of OLTP-Bench are its ease of use and extensibility, support for tight control of transaction mixtures, request rates, and access distributions over time, as well as the ability to support all major DBMSs and DBaaS platforms. Moreover, it is bundled with fifteen workloads that all differ in complexity and system demands, including four synthetic workloads, eight workloads from popular benchmarks, and three workloads that are derived from real-world applications. We demonstrate through a comprehensive set of experiments conducted on popular DBMS and DBaaS offerings the different features provided by OLTP-Bench and the effectiveness of our testbed in characterizing the performance of database services.},
+journal = {Proc. VLDB Endow.},
+month = dec,
+pages = {277–288},
+numpages = {12}
+}
+
+@inproceedings{OcamlMulticorePBT,
+  author    = {Midtgaard, Jan},
+  title     = {Property-Based Testing of OCaml 5’s Runtime System: Fun and Segfaults with Interpreters and State Transition Functions},
+  year      = {2025},
+  isbn      = {9798400721502},
+  publisher = {Association for Computing Machinery},
+  address   = {New York, NY, USA},
+  url       = {https://doi.org/10.1145/3759427.3760378},
+  doi       = {10.1145/3759427.3760378},
+  abstract  = {We describe our effort on using property-based testing to test the OCaml 5 multicore runtime system. In particular, we cover three case studies of increasing complexity that utilize a model-based state machine framework: (a) Testing the Array module, (b) testing weak hash sets, and (c) testing the garbage collector, with the latter two behaving non-deterministically from the point of view of the   black-box testing process. We evaluate the approach empirically by analyzing the bugs found, and discuss both limitations of the approach and challenges we have met underway.},
+  booktitle = {Proceedings of the Workshop Dedicated to Olivier Danvy on the Occasion of His 64th Birthday},
+  pages     = {180–193},
+  numpages  = {14},
+  keywords  = {garbage collection, model-based testing, property-based testing, run- time system},
+  location  = {Singapore, Singapore},
+  series    = {OLIVIERFEST '25}
 }
 
 @article{RK+19,
@@ -2113,81 +2132,89 @@
 }
 
 @inproceedings{BC+10,
-  author = {Bodik, Rastislav and Chandra, Satish and Galenson, Joel and Kimelman, Doug and Tung, Nicholas and Barman, Shaon and Rodarmor, Casey},
-  title = {{Programming with Angelic Nondeterminism}},
-  year = {2010},
-  isbn = {9781605584799},
+  author    = {Bodik, Rastislav and Chandra, Satish and Galenson, Joel and Kimelman, Doug and Tung, Nicholas and Barman, Shaon and Rodarmor, Casey},
+  title     = {{Programming with Angelic Nondeterminism}},
+  year      = {2010},
+  isbn      = {9781605584799},
   publisher = {Association for Computing Machinery},
-  address = {New York, NY, USA},
+  address   = {New York, NY, USA},
   booktitle = {Proceedings of the 37th Annual ACM Symposium on Principles of Programming Languages},
-  pages = {339–352},
-  numpages = {14},
-  series = {POPL '10} }
-
-@inproceedings{CKL04,
-  AUTHOR    = { Clarke, Edmund
-                and Kroening, Daniel
-                and Lerda, Flavio },
-  TITLE     = { A Tool for Checking {ANSI-C} Programs },
-  BOOKTITLE = { Tools and Algorithms for the Construction and Analysis of Systems (TACAS 2004) },
-  YEAR      = { 2004 },
-  PUBLISHER = { Springer },
-  PAGES     = { 168--176 },
-  ISBN      = { 3-540-21299-X },
-  SERIES    = { Lecture Notes in Computer Science },
-  VOLUME    = { 2988 },
-  EDITOR    = { Kurt Jensen and Andreas Podelski },
+  pages     = {339–352},
+  numpages  = {14},
+  series    = {POPL '10}
 }
 
-@inproceedings(LPR26,
-  author = {Celia Mengyue Li and Sophie Pull and Steven Ramsay},
-  title = {{ A Complementary Approach to Incorrectness Typing}},
-  booktitle = {ACM Symposium on Principles of Programming Languages (POPL)},
-  year = 2026)
+@inproceedings{CKL04,
+  author    = { Clarke, Edmund
+               and Kroening, Daniel
+               and Lerda, Flavio },
+  title     = { A Tool for Checking {ANSI-C} Programs },
+  booktitle = { Tools and Algorithms for the Construction and Analysis of Systems (TACAS 2004) },
+  year      = { 2004 },
+  publisher = { Springer },
+  pages     = { 168--176 },
+  isbn      = { 3-540-21299-X },
+  series    = { Lecture Notes in Computer Science },
+  volume    = { 2988 },
+  editor    = { Kurt Jensen and Andreas Podelski }
+}
 
-@InProceedings{JY15,
-author="Jakob, Robert and Thiemann, Peter",
-editor="Havelund, Klaus and Holzmann, Gerard and Joshi, Rajeev",
-title={{A Falsification View of Success Typing}},
-booktitle="NASA Formal Methods",
-year="2015",
-publisher="Springer International Publishing",
-address="Cham",
-pages="234--247",
-isbn="978-3-319-17524-9"
+@inproceedings{LPR26,
+  author    = {Celia Mengyue Li and Sophie Pull and Steven Ramsay},
+  title     = {{ A Complementary Approach to Incorrectness Typing}},
+  booktitle = {ACM Symposium on Principles of Programming Languages (POPL)},
+  year      = 2026
+}
+
+@inproceedings{JY15,
+  author    = {Jakob, Robert and Thiemann, Peter},
+  editor    = {Havelund, Klaus and Holzmann, Gerard and Joshi, Rajeev},
+  title     = {{A Falsification View of Success Typing}},
+  booktitle = {NASA Formal Methods},
+  year      = {2015},
+  publisher = {Springer International Publishing},
+  address   = {Cham},
+  pages     = {234--247},
+  isbn      = {978-3-319-17524-9}
 }
 
 @inproceedings{CP+09,
-author = {Claessen, Koen and Palka, Michal and Smallbone, Nicholas and Hughes, John and Svensson, Hans and Arts, Thomas and Wiger, Ulf},
-title = {{Finding Race Conditions in Erlang with QuickCheck and PULSE}},
-year = {2009},
-publisher = {Association for Computing Machinery},
-booktitle = {Proceedings of the 14th ACM SIGPLAN International Conference on Functional Programming},
-pages = {149–160},
-numpages = {12}}
+  author    = {Claessen, Koen and Palka, Michal and Smallbone, Nicholas and Hughes, John and Svensson, Hans and Arts, Thomas and Wiger, Ulf},
+  title     = {{Finding Race Conditions in Erlang with QuickCheck and PULSE}},
+  year      = {2009},
+  publisher = {Association for Computing Machinery},
+  booktitle = {Proceedings of the 14th ACM SIGPLAN International Conference on Functional Programming},
+  pages     = {149–160},
+  numpages  = {12}
+}
  
  
 @inproceedings{CGS13,
-  author={Christakis, Maria and Gotovos, Alkis and Sagonas, Konstantinos},
-  booktitle={2013 IEEE Sixth International Conference on Software Testing, Verification and Validation}, 
-  title={{Systematic Testing for Detecting Concurrency Errors in Erlang Programs}}, 
-  year={2013},
-  volume={},
-  number={},
-  pages={154-163},
-  keywords={Concurrent computing;Instruments;Testing;Space exploration;Runtime;Systematics;Context},
-  doi={10.1109/ICST.2013.50}}
+  author    = {Christakis, Maria and Gotovos, Alkis and Sagonas, Konstantinos},
+  booktitle = {2013 IEEE Sixth International Conference on Software Testing, Verification and Validation},
+  title     = {{Systematic Testing for Detecting Concurrency Errors in Erlang Programs}},
+  year      = {2013},
+  volume    = {},
+  number    = {},
+  pages     = {154-163},
+  keywords  = {Concurrent computing;Instruments;Testing;Space exploration;Runtime;Systematics;Context},
+  doi       = {10.1109/ICST.2013.50}
+}
 
 
 @article{LZ+25,
- author = {LaFontaine, Patrick and Zhou, Zhe and Mishra, Ashish and Jagannathan, Suresh and Delaware, Benjamin},
- title = {{We’ve Got You Covered: Type-Guided Repair of Incomplete Input Generators}},
- year = {2025},
- issue_date = {October 2025},
- publisher = {Association for Computing Machinery},
- address = {New York, NY, USA},
- volume = {9},
- number = {OOPSLA2},
- journal = {Proc. ACM Program. Lang.}, month = oct, articleno = {380}, numpages = {29}}
+  author     = {LaFontaine, Patrick and Zhou, Zhe and Mishra, Ashish and Jagannathan, Suresh and Delaware, Benjamin},
+  title      = {{We’ve Got You Covered: Type-Guided Repair of Incomplete Input Generators}},
+  year       = {2025},
+  issue_date = {October 2025},
+  publisher  = {Association for Computing Machinery},
+  address    = {New York, NY, USA},
+  volume     = {9},
+  number     = {OOPSLA2},
+  journal    = {Proc. ACM Program. Lang.},
+  month      = oct,
+  articleno  = {380},
+  numpages   = {29}
+}
  
  
