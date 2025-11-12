@@ -8,27 +8,27 @@
   \label{fig:syn-gen}
 \end{figure}
 
-Given an SRE $A$ describing some property of a black box test system
-under test, \autoref{theorem:sound} ensures that a well-typed test
-generator program $\emptyset \vdash e : \uhat{\epsilon}{\Unit}{F}$
-must be able to produce \emph{every} trace $\alpha$ that is consistent
-with both $F$ and $A$, i.e. $\alpha \in F \land A$. Thus, the
-high-level goal of our synthesis procedure is to find a generator that
-a) uses effectful operators in a way that is consistent with the
-temporal and data-dependency constraints captured by their
-specifications in $\Delta$, and b) has a future regex has a
-meaningful overlap with $A$. Our synthesis algorithm simultaneously
-solves both problems by first using a loop, depicted in
-\autoref{fig:syn-gen}, to iteratively \emph{refine} a target SRE into
-one that satisfies all the constraints of the operators appearing in
-it. Each iteration of this loop targets a single event, adding events
-before and after that event so that its dependences are satisfied, so
-that the corresponding operator at that point in the synthesized
-program is well-typed. Our loop also employs an regex non-emptiness
-check to ensure it represents a generator that produces at least one
-feasible trace. After the refinement loop has finished, a
-corresponding well-typed generator program can be mechanically
-extracted using the refined property as a template.
+Given an SRE $A$ describing some property of a black-box system under
+test, \autoref{theorem:sound} ensures that a well-typed test generator
+program $\emptyset \vdash e : \uhat{\epsilon}{\Unit}{F}$ \emph{must}
+be able to produce \emph{every} trace $\alpha$ that is consistent with
+both $F$ and $A$, i.e. $\alpha \in F \land A$. Thus, the high-level
+goal of our synthesis procedure is to find a generator a) that uses
+effectful operators in a way that is consistent with the temporal and
+data-dependency constraints captured by their specifications in
+$\Delta$, and b) whose future automata in its type has a meaningful
+overlap with $A$. Our synthesis algorithm simultaneously solves both
+problems by first using a loop, depicted in \autoref{fig:syn-gen}, to
+iteratively \emph{refine} a target SRE into one that satisfies all the
+constraints of the operators appearing in it. Each iteration of this
+loop targets a single event, adding events before and after that event
+so that its dependences are satisfied, so that the corresponding
+operator at that point in the synthesized program is well-typed. Our
+loop also employs a regex non-emptiness check to ensure it represents
+a generator that produces at least one feasible trace. After the
+refinement loop has finished, a corresponding well-typed generator
+program can be mechanically extracted using the refined property as a
+template.
 
 \subsection{Synthesis Algorithm}
 
@@ -104,12 +104,12 @@ typing context that the synthesizer uses to filter out refinements
 that do not correspond to well-typed programs. The algorithm first
 uses a loop (lines $3-4$) to refine $C$ until it only contains
 abstract traces that are consistent with the operator context
-$\Delta$, and then uses the resulting set of trace to derive the final
+$\Delta$, and then uses the resulting set of traces to derive the final
 (recursive) generator (line $5$). Each iteration of this loop
 nondeterministically chooses a target event in the current abstract
 trace (line $2$) whose tag indicates its dependencies are not
 satisfied and then uses the $\refine$ subroutine to insert the
-required operations before and after the target event.
+required operations before and/or after the target event.
 
 \setlength{\textfloatsep}{4pt}
 \begin{algorithm}[t!]
@@ -151,7 +151,7 @@ that precedes the target operation satisfies its specification \BD{The
   careful reader will notice we're using a very precise specification
   of an operator here... Do we need to argue why that's okay?}.
 Before returning the refined trace, \refine{} checks that it
-corresponds to a meaningful test generator by ensuring filtering out
+corresponds to a meaningful test generator by filtering out
 any empty traces (line $7$).
 
 \begin{example}[Refinement Process]\label{ex:refinement-process}
@@ -207,10 +207,10 @@ points. The synthesis algorithm $\derive$ non-deterministically either
 the Kleene stars \footnote{The definition of $\derive$ is provided in
   the \techreport{}.}, or (ii) synthesizes a recursive program by
 expanding the Kleene star using recursion. We employ a template-based
-strategy, in which algorithm match the given abstract trace with a
+strategy, in which the algorithm matches the given abstract trace with a
 template $T$, together with abstract traces for the recursion body
 ($\Pi_{\Code{rec}}$), as well as its associated history ($\Pi_h$) and
-future ($\Pi_f$) traces. According to \textsc{TFixInd}, the algorithm
+future ($\Pi_f$) traces. As dictated by \textsc{TFixInd}, the algorithm
 unrolls the recursive body up to a bounded depth and invokes
 refinement loop (lines 2-3 in \autoref{algo:top-syn}) to ensure that
 the unrolled abstract traces are well-typed. The synthesized programs
