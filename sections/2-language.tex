@@ -534,7 +534,14 @@ history traces to align with the actual calling context.  The
 application rule \textsc{TEffOp} requires the arguments of an
 effectful operator to be well-typed against its parameter types; it
 rcords the effect as an event in the future trace along with any
-additional ghost events ($F$).  The typing rule for function (\textsc{TFun}) is standard, and the type
+additional ghost events ($F$).
+The nondeterministic choice operator is typed using the
+\textsc{TChoice} rule which merges the \tyName{}s of the two branches.
+The \textsc{TLet} rule requires the binding expression
+$e_1$ to generate the first part of its future trace $F_1$, with the
+rest of trace produced by the body expression $e_2$ under a new
+history that includes $F_1$.
+The typing rule for function (\textsc{TFun}) is standard, and the type
 rule for recursive functions is modeled after the corresponding IL
 rule, unrolling the recursion as needed.  The \textsc{FixBase} rule
 types any recursive function with a \tyName{} lacking reachability
@@ -549,12 +556,6 @@ function itself has type $t$.
 %% well-formedness conditions to ensure that the values carried by a
 %% response are the same as those of a request in the history trace with
 %% the same id.
-The nondeterministic choice operator is typed using the
-\textsc{TChoice} rule which merges the \tyName{}s of the two branches.
-The \textsc{TLet} rule requires the binding expression
-$e_1$ to generate the first part of its future trace $F_1$, with the
-rest of trace produced by the body expression $e_2$ under a new
-history that includes $F_1$.
 
 \begin{example}[Operator Application Typing]\label{ex:operator-application-typing}
   We present a typing derivation for a simple generator that generates $\eff{push}$ and $\eff{pop}$ operations using their signatures given in
