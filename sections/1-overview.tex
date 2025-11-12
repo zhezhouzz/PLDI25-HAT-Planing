@@ -1,4 +1,4 @@
-v\section{Overview}\label{sec:overview}
+\section{Overview}\label{sec:overview}
 
 We propose a trace-based type-guided synthesis framework for
 generating effectful input test sequences in a PBT system interacting
@@ -29,8 +29,8 @@ regular expressions (SREs) to qualify trace-based properties within a
 type, following prior work on trace-based type
 systems~\cite{KT+14,ZYDJ24,NUKT+18}. However, our formulation is
 distinguished from these other efforts by how it generalizes beyond
-history-sensitive specifications of effects or state, allowing types
-to express latent dependencies among arbitrary events.
+history-sensitive specifications of effects or state, additionally
+allowing types to express latent dependencies among arbitrary events.
 
 
 
@@ -48,21 +48,23 @@ to express latent dependencies among arbitrary events.
 \subsection{The \name{} DSL}
 
 To support test generators across diverse application domains, we
-introduce a domain-specific language (DSL) based on the lambda
-calculus, extended with recursion, nondeterministic choice ($\oplus$),
-and effectful operations ($\eff{op}$) that can be treated
-asynchronously ($\req$ and $\resp$), to serve as a basis for writing
-(and, in our case, synthesizing) effectful test generators.  As we
-show below, asynchrony enables the generation of events that separate
-the initiation of an effect (modeled as a \emph{request} event) from
-its completion (modeled as a \emph{response} event).  For example,
-\reqOpNoArgs{read} asynchronously generates a read request to the SUT,
-returning a tag $\iota$ that can be subsequenty used to observed its
-result via an \respOp{read}{$\iota$} operation.  This style of trace
-generation enables concise expression of interactive test generators
-for inherently concurrent systems such as database transactions and
-distributed protocols.  The DSL further allows (angelic) random value
-generation and property checking via $\mykw{assume}$ and
+introduce a domain-specific language (DSL) that extends a typed lambda
+calculus core, with recursion, nondeterministic choice ($\oplus$), and
+effectful operations ($\eff{op}$) that can be treated asynchronously
+($\req$ and $\resp$).  This language serves as the basis for writing
+(and, in our case, synthesizing) effectful test generators.  Beyond
+its ability to express generators for effectful sequential libraries
+(e.g., libraries that implement ADTs, transformers, serializers,
+etc.), its support for asynchrony also enables it to generate events
+that separate the initiation of an effect (modeled as a \emph{request}
+event) from its completion (modeled as a \emph{response} event).  For
+example, \reqOpNoArgs{read} asynchronously generates a read request to
+the SUT, returning a tag $\iota$ that can be subsequenty used to
+observed its result via an \respOp{read}{$\iota$} operation.  This
+style of trace generation facilitates concise expression of
+interactive test generators for inherently concurrent and distributed
+applications (e.g., databases).   The DSL further allows (angelic)
+random value generation and property checking via $\mykw{assume}$ and
 $\mykw{assert}$ statements. Concretely, an $\mykw{assume}(\phi)$
 expression constrains all the program variables at the point at which
 it appears to satisfy the formula $\phi$, while $\mykw{assert}(\phi)$
@@ -108,42 +110,39 @@ halts program execution if the formula $\phi$ fails to hold.
   response event (\respOp{write}{$v$}) is also a commit point that
   makes the value written $v$ available to subsequent $\eff{read}$
   events (\reqOpNoArgs{read}): %
-  \vspace{-.4cm} \par\nobreak {\small %
+  \vspace{-.4cm} \par\nobreak {\scriptsize %
     \begin{align*}
-      &\text{\textcolor{gray}{Client 1:}} \respOp{write}{3};
-      & \reqOp{write}{4};\respOp{write}{4}; & \\
-      & \text{\textcolor{gray}{Client 2:}} \quad \quad \quad \quad \quad \quad \reqOpNoArgs{read};\respOp{read}{3};\reqOpNoArgs{read};& &\textcolor{red}{\respOp{read}{4}}
+      &\text{\textcolor{gray}{Client 1:}} \respOp{write}{$\iota_0$\;3};
+      & \reqOp{write}{$\iota_3$\;4};\respOp{write}{$\iota_3$\;4}; & \\
+      & \text{\textcolor{gray}{Client 2:}} \quad \quad \quad \quad \quad \quad \quad \quad \reqOp{read}{$\iota_1$};\respOp{read}{$\iota_1$\;3};\reqOp{read}{$\iota_2$};& &\textcolor{red}{\respOp{read}{$\iota_2$\;4}}
     \end{align*}}\noindent
   Here, \textcolor{gray}{Client 2} issues two consecutive asynchronous
-  read operations.  A \reqOpNoArgs{read} event requests that
+  read operations.  A \reqOp{read}{$\iota$} event requests that
   database perform a read effect on the single key; the response
   from the database is subsequently observed by a matching
-  \respOpNoArgs{read} event that follows the request.  In this trace, however,
+  \respOp{read}{$\iota$\;v} event that follows the request that carries the
+  value ($v$) read.  In this trace, however,
   the second response witnesses a write performed by another
-  concurrently-executing transaction that was committed after the request.
-  We are interested in surfacing executions like these from \tyName{}
+  concurrently-executing transaction that was committed after the request to
+  which it is matched.   We are interested in surfacing executions like these from \tyName{}
   specifications.  The following \tyName{} type on responses to $\eff{read}$
-  operations admits executions that satisfy read atomicity:\footnote{We omit
-    request and response tags in this specification for perspicuity.}
+  operations admits executions that satisfy read atomicity:
   \vspace{-.4cm} \par\nobreak {\small %
   \begin{align*}
     &\respOpNoArgs{read}:
-      \effLR{\Code{LAST}(\respOp{write}{$v$})\seqA\Code{LAST}(\reqOpNoArgs{read})}
-      \urt{\Code{int}}{\vnu = v}\effLR{\respOp{read}{$v$}}
+      \effLR{\Code{LAST}(\respOp{write}{$\iota_1\;v$});\reqOp{read}{$\iota_2$};\allA}
+      \urt{\Code{int}}{\vnu = v}\effLR{\respOp{read}{$\iota_2\;v$}}
   \end{align*}}\noindent
-  \begin{align*}
-    &\respOpNoArgs{read}:
-      \effLR{\Code{LAST}(\respOp{write}{$v$})\reqOpNoArgs{read}\allA}
-      \urt{\Code{int}}{\vnu = v}\effLR{\respOp{read}{$v$}}
-  \end{align*}\noindent
 This type specifies that the response to a previously issued
-asynchronous $\eff{read}$ operation can return a value $v$, if the last
-committed write prior to the request wrote the value $v$.
-Note that because this specification is interpreted as an
-underapproximation of the possible behaviors of the SUT, it
-establishes a clear dependence between \respOpNoArgs{write} and
-\respOpNoArgs{read} operations that should be respected by any trace
-which contains a \respOpNoArgs{read} event.  This \tyName{} uses
+asynchronous $\eff{read}$ operation can return a value $v$, if the
+last committed write prior to the request wrote the value $v$. (Here,
+$\iota_1, \iota_2$ and $v$ are treated as ghost variables that are
+implicitly quantified over the type; we make this notion precise
+in~\autoref{sec:formal}.)  Note that because this specification is
+interpreted as an underapproximation of the possible behaviors of the
+SUT, it establishes a clear dependence between \respOpNoArgs{write}
+and \respOpNoArgs{read} operations that should be respected by any
+trace which contains a \respOpNoArgs{read} event.  This \tyName{} uses
 \Code{LAST}($\eff{evt}$) as an alias for the following regex:
 \vspace{-.4cm} \par\nobreak {\small %
   \begin{align*}
@@ -153,17 +152,18 @@ which contains a \respOpNoArgs{read} event.  This \tyName{} uses
 An implementation of $\eff{read}$ that does not satisfy this type
 could yield a trace in which a response to a request yields a
 different value than previously seen by the transaction, thus exposing
-a read atomicity violation.  We can capture traces that satisfy this
-read atomicity property via the following SRE:%
+a read atomicity violation.  The safety property we wish to test can
+be thus expressed as the following SRE\footnote{SREs are implicitly
+  universally quantified over the variables they reference.}:%
 \vspace{-.4cm} \par\nobreak {\small %
   \begin{align*}
-    &\Code{LAST}(\respEvt{write}{$v$});\Code{LAST}(\reqEvtName{read});\Code{FIRST}(\respEvt{read}{$v$})
+    &\Code{LAST}(\respOp{write}{$v$});\reqOpNoArgs{read};\Code{FIRST}(\respOp{read}{$v$})
   \end{align*} }
 \noindent where
 \Code{FIRST}($\eff{evt}$) as an alias for the following regex:
 \vspace{-.4cm} \par\nobreak {\small %
   \begin{align*}
-    \Code{FIRST}(\eff{evt})   \equiv (\anyA \setminus \eff{evt})^*;\; \eff{evt};\; \allA;
+    \Code{FIRST}(\eff{evt})   \equiv (\anyA \setminus \eff{evt})^*;\; \eff{evt};\; \allA; 
   \end{align*}
 }\noindent %
 A violation of this property can be manifested by a test generator
@@ -176,23 +176,31 @@ Asynchronous effects allow our DSL to support a form of
 effects via \textsf{Req}, and later observing the results via
 \textsf{Resp}.  For instance, the following test generator is
 automatically synthesized from the above \tyName{} specification and
-safety condition:\footnote{We have elided the tags used to align
-  asynchronous request and response pairs to simplify the exposition.}
+safety condition.
   \begin{minted}[fontsize = \footnotesize, escapeinside=??, xleftmargin=18pt, linenos]{ocaml}
     let rec transaction_gen () =
       () ?$\oplus$? let x = int_gen () in
-           let i1 = ?$\req(\eff{write})$? x in let _ = ?$\resp(\eff{write})$? i1 in
-           let i2 = ?$\req(\eff{read})$? in
+           let i1 = ?$\reqOp{write}{x}$? in let _ = ?$\respOp{write}{i1})$? in
+           let i2 = ?$\reqOpNoArgs{read}$? in
            transaction_gen ();
-           let y = ?$\resp(\eff{read})$? i2 in ?$\mykw{assert}$? (x == y)
+           let y = ?$\respOp{read}{i2}$? in ?$\mykw{assert}$? (x == y)
   \end{minted}
-  \noindent In each iteration, the program initiates two distinct
-  asynchronous write operations (lines 3 and 5), with an asynchronous
-  read operation generated in between (line 4), observing the read
-  response \Code{y} (line 6). Before generating further transactions,
-  it compares \Code{y} with \Code{x} to determine whether to terminate
-  the generation of additional tests and report a violation (i.e., if
-  the read result is different from the first written value).
+  \noindent The presence of the $\respOp{read}{$i2$}$ at line 6
+  reflects the last effect present in the safety property SRE.  The
+  \tyName{} associated with this operation admits arbitrary
+  operations between it and the matching request, captured by the ``$\allA$''
+  following the $\reqOp{read}{$\iota_2$}$ event in the history regex of
+  $\reqOpNoArgs{read}$.  This behavior is
+  subsumed by the recursive call to \Code{transaction\_gen} at line 5.
+  The \reqOpNoArgs{read} operation at line 4 matches the
+  \reqOp{read}{$\iota_2$} event 
+  and the $\eff{write}$ request and response operations on line 3
+  are synthesized from the $\respOpNoArgs{write}$ event that precedes
+  the \respOpNoArgs{read}.  The choice operator at line 2 determines if
+  more recursive calls are required, i.e., if more $\eff{read}$ and $\eff{write}$
+  events are generated.  The assertion comparing \Code{y} with \Code{x} determines if a
+   violation (i.e., if the read result is different from the first
+   written value) occurs.
 \end{example}
 
 % \begin{example}[Strong Consistency]\label{ex:sc}

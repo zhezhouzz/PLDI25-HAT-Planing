@@ -22,7 +22,7 @@ requires a witness pre-state to justify every valid post-state.
 While these underapproximate axiomatic proof systems have focused on
 imperative first-order state-based specifications, other recent
 efforts have instead explored notions of incorrectness and
-underapproximation in the language of
+underapproximation using the language of
 types~\cite{RW24,WGJ24,CoverageType}. \citet{RW24}, for example, introduces
 a two-sided type system that allows for the refutation of typing
 formulas, guaranteeing that not only do well-typed programs not go
@@ -112,8 +112,8 @@ way include:
   representation invariant~\cite{MP+20,ZYDJ24}).
 
 \item \textbf{Serialized inputs:} The SUT is a procedure that
-  processes serialized input data, reconstructs an AST from this
-  input, and operates over the resulting structure. The test generator
+  processes serialized input data whose effects are tokens used to
+  reconstruct an AST which is then evaluated. The test generator
   creates (serialized) inputs that produce semantic dependencies among
   nodes in the corresponding AST that could violate a property of
   interest (e.g., evaluation errors due to incorrect treatment of
