@@ -14,7 +14,7 @@
     \\[-0.2em]\text{\textbf{Effectful Operations}}& \quad & \eff{op} ::= \quad & \eff{read} ~|~ \eff{write} ~|~ ...
     % \\\text{\textbf{Event Kinds}}& \quad & k ::= \quad & \eff{gen}
     % ~|~ \eff{obs}
-    \\[-0.2em]\text{\textbf{Events}} & \quad & m ::= \quad & \langle\eff{op}{\; \overline{v}}\rangle ~|~ \reqOp{op}{\ensuremath{\iota\;\overline{v}}} ~|~ \respOp{op}{\ensuremath{\iota}}
+    \\[-0.2em]\text{\textbf{Events}} & \quad & m ::= \quad & \langle\eff{op}{\; \overline{v}}\rangle ~|~ \reqOp{op}{\ensuremath{\overline{v}}} ~|~ \respOp{op}{\ensuremath{\iota}}
     \\[-0.2em]\text{\textbf{Values }}& \quad & v ::= \quad & c ~|~ x ~|~ \zlam{x}{s}{e} ~|~ \zfix{f}{s}{x}{s}{e}
     \\[-0.2em]\text{\textbf{Expressions}}& \quad & e ::=\quad & v ~|~ e
     \oplus e ~|~ v\; v ~|~ \primop\; \overline{v} ~|~ m
