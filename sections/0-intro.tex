@@ -166,12 +166,12 @@ provided specifications when performing effects.
 \autoref{fig:workflow} depicts the workflow of our system, named
 \name.  The relevant APIs of the SUT are specified using \tyName{}s.
 Along with the property of interest, these specifications drive the
-synthesis of a test generator in \name{}'s DSL, which it then
-transpiles into different target languages; thus far, we have
+synthesis of a test generator in \name{}'s DSL, which is then
+transpiled into different testing frameworks; thus far, we have
 implemented Quickcheck~\cite{CH00} (OCaml) and P~\cite{DGJ+13}
 targets.\footnote{For P, the generator replaces the default (random)
   scheduler.}  Synthesized test generator programs are guaranteed to
-produce (effectful) test sequences that respect the underapproximate
+produce test sequences that respect the underapproximate
 interpretation of the \tyName{} API specifications.
 
 This paper makes the following contributions:
@@ -182,11 +182,11 @@ This paper makes the following contributions:
   underapproximate interpretation to an effect history trace used to
   justify the effects produced by an expression.
 
-\item We develop a DSL for writing test generators that are typed
-  using \tyName{}s.  The DSL, an extension of a typed
-  $\lambda$-calculus with support for asynchronous effects,
-  nondeterministic choice, and recursion, is sufficiently expressive
-  to be applicable in a diverse range of applications,
+\item We develop a DSL for writing test generators typed using
+  \tyName{}s.  The DSL, an extension of a typed $\lambda$-calculus
+  with support for asynchronous effects, nondeterministic choice, and
+  recursion, is sufficiently expressive to be applicable across a diverse
+  range of applications,
 
 \item We describe a trace-guided synthesis procedure that uses
   \tyName{} specifications associated with SUT-provided effectful
@@ -195,26 +195,22 @@ This paper makes the following contributions:
 
 \item We provide a detailed evaluation study, comparing the
   effectiveness of our synthesized generators against state-of-the-art
-  baselines.  Our results support our claim that underapproximate type
-  specifications offer a promising approach to guide the synthesis of test
-  generators that exercise deep semantic and structural properties of a
+  baselines.  We focus on the synthesis of test generators that
+  exercise deep (effectful) semantic and structural properties of the
   target SUT.
 
 \end{enumerate}
 
-The rest of the paper is organized as follows. In
-Section~\ref{sec:overview}, we provide additional motivation for the
-problem along with a series of examples to illustrate our approach.
-Section~\ref{sec:formal} presents the operational semantics and type
-system for our DSL that exposes the underapproximate structure of
-\tyName{}s.  Section~\ref{sec:synthesis} describes the synthesis
-algorithm that translates these types into \name{} programs.  To
-demonstrate the utility of our approach, we provide a detailed
-evaluation over a broad range of diverse benchmarks drawn from the
-domains given above; these include generating tests for semantically
-complex data structure properties such as well-typed simply-typed
-lambda calculus terms using de Brujin indices, as well as real-world
-distibuted protocols deployed in industry.  Sections~\ref{sec:related}
-and~\ref{sec:conc} present related work and conclusions.
+The rest of the paper is organized as follows.  \autoref{sec:overview}
+provides additional motivation and examples.  ~\autoref{sec:formal}
+presents the operational semantics and type system for the \name\  DSL.
+~\autoref{sec:synthesis} describes the synthesis algorithm. A detailed
+evaluation study over a broad range of diverse benchmarks drawn from
+the domains given above is given in ~\autoref{sec:impl}; these include
+generating tests for semantically complex data structure properties
+such as well-typed simply-typed lambda calculus terms using de Brujin
+indices, as well as real-world distributed protocols deployed in
+industry.  Secs.~\ref{sec:related} and~\ref{sec:conc} present
+related work and conclusions.
 
 % \BD{Do we want an explicit set of contributions?}
