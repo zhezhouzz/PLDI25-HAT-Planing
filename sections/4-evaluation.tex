@@ -111,18 +111,18 @@ Our experimental evaluation addresses three research questions:
 \textsf{NFA}\cite{ZYDJ24} & {\scriptsize A NFA with at least $3$ edges.} & $8$ & $50$ & $4$ & $1.0$ & {\tiny Timeout} & $21.85$ & $26$ & $6$ & $5080$\\
 \midrule
 \midrule
-\textsf{IFCAdd}\cite{pbt-ifc} & {\scriptsize A IFC program that contains $\Code{Add}$ command.} & $8$ & $37$ & $2$ & $1.6$ & {\tiny Timeout}$^{\dagger}$ & $0.96$ & $8$ & $8$ & $154$\\
+\textsf{IFCStore}\cite{pbt-ifc} & {\scriptsize A IFC program that contains $\Code{Store}$ command.} & $8$ & $37$ & $2$ & $2.8$ & $4811.7^{\dagger}$ & $1.02$ & $8$ & $8$ & $160$\\
 \midrule
-\textsf{IFCStore}\cite{pbt-ifc} & {\scriptsize A IFC program that contains $\Code{Store}$ command.} & $8$ & $37$ & $2$ & $2.8$ & {\tiny Timeout}$^{\dagger}$ & $1.02$ & $8$ & $8$ & $160$\\
+\textsf{IFCAdd}\cite{pbt-ifc} & {\scriptsize A IFC program that contains $\Code{Add}$ command.} & $8$ & $37$ & $2$ & $1.6$ & $3383.4^{\dagger}$ & $0.96$ & $8$ & $8$ & $154$\\
 \midrule
-\textsf{IFCLoad}\cite{pbt-ifc} & {\scriptsize A IFC program that contains $\Code{Load}$ command.} & $8$ & $37$ & $2$ & $15.4$ & {\tiny Timeout}$^{\dagger}$ & $5.76$ & $16$ & $18$ & $930$\\
+\textsf{IFCLoad}\cite{pbt-ifc} & {\scriptsize A IFC program that contains $\Code{Load}$ command.} & $8$ & $37$ & $2$ & $15.4$ & $11293.7^{\dagger}$ & $5.76$ & $16$ & $18$ & $930$\\
 \midrule
 \textsf{DeBruijn1}\cite{CoverageType} & {\scriptsize A $\Int$ typed De Bruijn STLC program.} & $10$ & $117$ & $4$ & $1.5$ & $634.0^{\dagger}$ & $40.38$ & $18$ & $26$ & $4765$\\
 \midrule
 \textsf{DeBruijn2}\cite{CoverageType} & {\scriptsize A $\Int$ typed De Bruijn STLC program and all lambda variables should be used.} & $10$ & $118$ & $4$ & $1.4$ & {\tiny Timeout}$^{\dagger}$ & $91.73$ & $18$ & $31$ & $9034$\\
 \midrule
 \midrule
-\textsf{ReadAtomicity} & {\scriptsize Read atomicity property violation.} & $?$ & $?$ & $?$ & $1.0$ & $?$ & $?$ & $?$ & $?$\\
+\textsf{ReadAtomicity} & {\scriptsize Read atomicity property violation.} & $?$ & $?$ & $?$ & $?$ & $?$ & $?$ & $?$ & $?$\\
 \midrule
 \textsf{Shopping}\cite{MonkeyDB} & {\scriptsize Added items is not visible in the cart.} & $10$ & $60$ & $3$ & $1.0$ & $20.0^{\dagger}$ & $22.10$ & $17$ & $30$ & $1269$\\
 \midrule
