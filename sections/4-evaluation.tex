@@ -102,14 +102,14 @@ Our experimental evaluation addresses three research questions:
 \midrule
 \textsf{Stack}\cite{ZYDJ24} & {\scriptsize A pushed value cannot be popped.} & $6$ & $12$ & $3$ & $1.0$ & $31.9$ & $0.60$ & $15$ & $4$ & $98$\\
 \midrule
-\textsf{HashTable}\cite{OcamlMulticorePBT} & {\scriptsize Updates are not visible to all threads.} & $13$ & $29$ & $15$ & $1.0$ & $2.5^{\dagger}$ & $0.58$ & $5$ & $5$ & $45$\\
+\textsf{Set}\cite{ZYDJ24} & {\scriptsize Missing inserted value.} & $7$ & $22$ & $3$ & $1.0$ & $22.1$ & $1.28$ & $12$ & $12$ & $255$\\
 \midrule
 \textsf{Filesystem}\cite{ZYDJ24} & {\scriptsize Access is allowed after parent path deletion.} & $7$ & $67$ & $4$ & $1.3$ & $2812.1$ & $6.02$ & $13$ & $14$ & $853$\\
+\midrule
 \midrule
 \textsf{Graph}\cite{ZYDJ24} & {\scriptsize A connected graph with at least $3$ nodes.} & $6$ & $24$ & $4$ & $1.0$ & {\tiny Timeout} & $16.61$ & $16$ & $16$ & $2114$\\
 \midrule
 \textsf{NFA}\cite{ZYDJ24} & {\scriptsize A NFA with at least $3$ edges.} & $8$ & $50$ & $4$ & $1.0$ & {\tiny Timeout} & $21.85$ & $26$ & $6$ & $5080$\\
-\midrule
 \midrule
 \textsf{IFCStore}\cite{pbt-ifc} & {\scriptsize A IFC program that contains $\Code{Store}$ command.} & $8$ & $37$ & $2$ & $2.8$ & $4811.7^{\dagger}$ & $1.02$ & $8$ & $8$ & $160$\\
 \midrule
@@ -122,7 +122,9 @@ Our experimental evaluation addresses three research questions:
 \textsf{DeBruijn2}\cite{CoverageType} & {\scriptsize A $\Int$ typed De Bruijn STLC program and all lambda variables should be used.} & $10$ & $118$ & $4$ & $1.4$ & {\tiny Timeout}$^{\dagger}$ & $91.73$ & $18$ & $31$ & $9034$\\
 \midrule
 \midrule
-\textsf{ReadAtomicity} & {\scriptsize Read atomicity property violation.} & $?$ & $?$ & $?$ & $?$ & $?$ & $?$ & $?$ & $?$\\
+\textsf{HashTable}\cite{OcamlMulticorePBT} & {\scriptsize Updates are not visible to all threads.} & $13$ & $38$ & $4$ & $1.0$ & $2.5^{\dagger}$ & $0.76$ & $6$ & $6$ & $57$\\
+\midrule
+\textsf{ReaderWriter} & {\scriptsize Read atomicity property violation.} & $8$ & $45$ & $3$ & $1.2$ & {\tiny Timeout} & $2.89$ & $15$ & $16$ & $423$\\
 \midrule
 \textsf{Shopping}\cite{MonkeyDB} & {\scriptsize Added items is not visible in the cart.} & $10$ & $60$ & $3$ & $1.0$ & $20.0^{\dagger}$ & $22.10$ & $17$ & $30$ & $1269$\\
 \midrule
