@@ -14,7 +14,7 @@
     \\[-0.2em]\text{\textbf{Effectful Operations}}& \quad & \eff{op} ::= \quad & \eff{read} ~|~ \eff{write} ~|~ ...
     % \\\text{\textbf{Event Kinds}}& \quad & k ::= \quad & \eff{gen}
     % ~|~ \eff{obs}
-    \\[-0.2em]\text{\textbf{Events}} & \quad & m ::= \quad & \langle\eff{op}{\; \overline{v}}\rangle ~|~ \reqOp{op}{\ensuremath{\iota\;\overline{v}}} ~|~ \respOpAlt{op}{\ensuremath{\iota}}
+    \\[-0.2em]\text{\textbf{Events}} & \quad & m ::= \quad & \langle\eff{op}{\; \overline{v}}\rangle ~|~ \reqOp{op}{\ensuremath{\iota\;\overline{v}}} ~|~ \respOp{op}{\ensuremath{\iota}}
     \\[-0.2em]\text{\textbf{Values }}& \quad & v ::= \quad & c ~|~ x ~|~ \zlam{x}{s}{e} ~|~ \zfix{f}{s}{x}{s}{e}
     \\[-0.2em]\text{\textbf{Expressions}}& \quad & e ::=\quad & v ~|~ e
     \oplus e ~|~ v\; v ~|~ \primop\; \overline{v} ~|~ m
@@ -249,6 +249,10 @@ standard regex operators shown in \autoref{fig:type-syntax}, including
 union $A \lorA A$, sequence $A \seqA A$, and kleene star $A^*$
 operators.
 
+\BD{We need to describe ghost variables at some point. If we are not
+  going to use them in the intro+overview, we should explain that we
+  left them are implicit there.}
+
 \subsubsection{Example}\label{ex:stack-example}
   Consider an effectful stack library implemented as a fixed-size
   array whose elements grow monotonically.  An incorrect implementation
@@ -421,7 +425,7 @@ $\forall i. \;\Gamma \vdash v_i : t_i$}
   $\forall i. \;\Gamma \vdash v_i : t_i$
 }
 {TRspOp}
-{$\Gamma\vdash \respOpAlt{op}{\ensuremath{\iota}} : \uhat{H}{t}{\respEvt{op}{\ensuremath{\iota\; \overline{v_i}}} \seqA F}$}
+{$\Gamma\vdash \respOp{op}{\ensuremath{\iota}} : \uhat{H}{t}{\respEvt{op}{\ensuremath{\iota\; \overline{v_i}}} \seqA F}$}
 \\[.8em]
 \mprooftr{35mm}
 {
@@ -544,7 +548,7 @@ history that includes $F_1$.
   Example~\ref{ex:stack-example}. Consider how we might type check the following expression:
   \vspace{-.4cm} \par\nobreak {\small %
     \begin{align*}
-      &\emptyset \vdash \zlet{x}{\Code{pos\_gen\;()}}{\eff{push}\;x; \eff{pop}} : 
+      &\emptyset \vdash \zlet{x}{\Code{pos\_gen\;()}}{\eff{push}\;x; \eff{pop}} :
       \\&\qquad \uhat{\msgAGray{pushI}{0\;0}\msgAGray{popI}{0\;0}}{x{:}\urt{\Int}{0 < \vnu}}{\msgA{push}{x}\msgAGray{pushI}{1\;x}\msgA{pop}{x}\msgAGray{popI}{1\;x}}
     \end{align*}}%
   \noindent

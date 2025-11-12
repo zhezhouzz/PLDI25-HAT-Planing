@@ -54,15 +54,19 @@ be realized by executing $e$.
 To illustrate, consider a program that interacts with a key-value
 store that provides $\eff{get}$ and $\eff{put}$ operations. The
 following \tyName{} underapproximates the behavior of $\eff{get}$ with
-respect to a context (i.e., trace) of previously performed $\eff{put}$s:
+respect to a context (i.e., trace) of previously performed
+$\eff{put}$s:
+\vspace{-.4cm} \par\nobreak {\small %
 \begin{align*}
-  \eff{get}: k{:}\Code{Key.t} \sarr \effLR{\allA\ \msgA{put}{k\;v}\ \allA }
-  \{\vnu:\Code{Value.t}\,|\,\vnu = v\} \effLR{\msgA{get}{k\; v}}
+  \eff{get}: k{:}\Code{Key.t} \sarr
+  \effLR{\allA \seqA \msgA{put}{k\;v}\seqA \allA }
+  \urt{\Code{Value.t}}{\vnu = v} \effLR{\msgA{get}{k\; v}}
 \end{align*}
+}
 This \tyName{} asserts that a $\eff{get}$ operation is guaranteed to
 produce a trace consisting of a single event, $\msgA{get}{k\; v}$,
 provided that some $\eff{put}$ operation binding $k$ to $v$
-($\allA \msgA{put}{k\;v} \allA$) was executed before.  The
+($\allA\seqA\msgA{put}{k\;v}\seqA\allA$) was executed before.  The
 underapproximate interpretation of \tyName{} encodes a form of
 reachability and data dependence between the effects that have
 occurred prior to executing an operation, and the effect produced by
@@ -70,11 +74,11 @@ the operation --- in this case, the execution of a $\eff{get}$
 operation on a key $k$ depends on the execution of a previous
 $\eff{put}$ operation on $k$.\footnote{Note that an overapproximate
   interpretation of this judgement is not sensible, as it would
-  require that a $\eff{get}$ operation on $k$ be able to simultaneously
-  observe every value $v$ previously $\eff{put}$ into $k$. This would
-  mean that after performing $\msgA{put}{k_1\;2}$ and $\msgA{put}{k_1\;3}$, the
-  result of $\msgA{get}{k_1}$ would be both \emph{both} $2$ and $3$, which
-  is obviously impossible.}
+  require that a $\eff{get}$ operation on $k$ be able to
+  simultaneously observe every value $v$ previously $\eff{put}$ into
+  $k$. This would mean that after performing $\msgA{put}{k_1\;2}$ and
+  $\msgA{put}{k_1\;3}$, the result of $\msgA{get}{k_1}$ would be both
+  \emph{both} $2$ and $3$, which is obviously impossible.}
 
 In this paper, we show how \tyName{}s can be used to guide a synthesis
 procedure for the property-based testing (PBT) domain. PBT is an
