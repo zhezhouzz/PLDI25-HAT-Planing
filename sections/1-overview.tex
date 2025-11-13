@@ -97,7 +97,8 @@ halts program execution if the formula $\phi$ fails to hold.
 % \noindent The recursive function $\Code{set\_gen}$ consists of two branches combined with the non-deterministic choice operator $\oplus$. It either terminates, or continues to generate nested $\eff{insert}$ and $\eff{delete}$ event pairs on strictly increasing elements.
 % \end{example}
 
-\begin{example}[Read Atomicity]\label{ex:read-atomicity}
+% \begin{example}[Read Atomicity]\label{ex:read-atomicity}
+\paragraph{Read Atomicity}
   Database transactions allow concurrent transactions to operate on
   database state.  To mask latency, client-issued read
   operations are typically implemented as asynchronous request and
@@ -130,8 +131,8 @@ halts program execution if the formula $\phi$ fails to hold.
   \vspace{-.4cm} \par\nobreak {\small %
   \begin{align*}
     &\eff{readRsp}:
-      \effLR{\Code{LAST}(\msgA{write}{v});\msgA{readReq}{\iota};\allA}
-      \urt{\Code{int}}{\vnu = v}\effLR{\msgA{readRsp}{\iota\;v}}
+      \effLR{\Code{LAST}(\msgA{write}{v})\seqA\msgA{readReq}{\iota}\seqA
+      \allA}\urt{\Code{int}}{\vnu = v}\effLR{\msgA{readRsp}{\iota\;v}}
   \end{align*}}\noindent
 This type specifies that the response to a previously issued
 asynchronous $\eff{readReq}$ operation can return a value $v$, if the
@@ -152,12 +153,12 @@ trace which contains these events.  This \tyName{} uses
 An implementation of $\eff{readResp}$ that does not satisfy this type
 could yield a trace in which a response to a request yields a
 different value than previously seen by the transaction, thus exposing
-a read atomicity violation.  The safety property we wish to test can
-be thus expressed as the following SRE:\footnote{SREs are implicitly
-  universally quantified over any free variables occuring in them.}%
+a read atomicity violation.  This safety property is captured by the
+following SRE:\footnote{SREs are implicitly universally quantified
+  over any free variables occuring in them.}%
 \vspace{-.4cm} \par\nobreak {\small %
   \begin{align}
-    &\Code{LAST}(\msgA{write}{v});\msgA{readReq}{\iota};\Code{FIRST}(\msgA{readRsp}{\iota\;v})
+    &\Code{LAST}(\msgA{write}{v}) \seqA \msgA{readReq}{\iota} \seqA \Code{FIRST}(\msgA{readRsp}{\iota\;v})
       \tag{$A_\text{atomic}$}\label{eqn:ReadAtomicity}
   \end{align}
 }
@@ -165,7 +166,8 @@ be thus expressed as the following SRE:\footnote{SREs are implicitly
 \Code{FIRST}($\eff{evt}$) as an alias for the following regex:
 \vspace{-.4cm} \par\nobreak {\small %
   \begin{align*}
-    \Code{FIRST}(\eff{evt})   \equiv (\anyA \setminus \eff{evt})^*;\; \eff{evt};\; \allA;
+    \Code{FIRST}(\eff{evt})   \equiv (\anyA \setminus \eff{evt})^*
+    \seqA \; \eff{evt}\seqA \; \allA;
   \end{align*}
 }\noindent %
 A violation of this property can be manifested by a test
@@ -177,33 +179,38 @@ Asynchronous effect pairs like $\eff{readReq}$/$\eff{readRsp}$ allow
 our DSL to support a form of \emph{interactive} test generation,
 instructing the SUT to perform effects via $\eff{opReq}$, and later
 observing the results via their $\eff{opResp}$ counterparts.  For
-instance, the following test generator is automatically synthesized
-from the above \tyName{} specification and safety condition.
+instance, the test generator shown to the right is automatically
+\begin{wrapfigure}{r}{.4\textwidth}
+  \vspace{-5pt}
   \begin{minted}[fontsize = \footnotesize, escapeinside=??, xleftmargin=18pt, linenos]{ocaml}
-    let rec transaction_gen () =
-      () ?$\oplus$? let x = int_gen () in
-           let _ = ?$\eff{write}$? x in
-           let i = ?$\eff{readReq}$? in
-           transaction_gen ();
-           let y = ?$\eff{readResp}$? i in ?$\mykw{assert}$? (x == y)
+let rec transaction_gen () =
+  () ?$\oplus$? let x = int_gen () in
+    let _ = ?$\eff{write}$? x in
+    let i = ?$\eff{readReq}$? in
+    transaction_gen ();
+    let y = ?$\eff{readResp}$? i in
+    ?$\mykw{assert}$? (x == y)
   \end{minted}
-  \noindent The presence of the $\eff{readResp}~i$ operation at line 6
-  corresponds to the last effect present in \ref{eqn:ReadAtomicity}.
-  The \tyName{} associated with this operation admits arbitrary
-  operations between it and the matching request, captured by
-  ``$\allA$'' in the specification, following the
-  $\msgA{readReq}{\iota}$ event in the history trace of
-  $\eff{readRsp}$.  This behavior is subsumed by the recursive call to
-  \Code{transaction\_gen} at line 5.  The $\eff{readReq}$ effect at
-  line 4 matches the $\msgA{readResp}{\iota}$ event and the
-  $\eff{write}$ operations on line 3 are synthesized from the
-  $\msgA{write}{v}$ event that precedes the $\EvtNoArgs{readReq}$ in
-  the history trace.  The choice operator at line 2 determines if more
-  recursive calls are required, i.e., if more $\eff{readReq}$ and
-  $\eff{writeResp}$ events are generated.  The assertion comparing
-  \Code{y} with \Code{x} determines if a violation (i.e., if the read
-  result is different from the first written value) occurs.
-\end{example}
+  \vspace{-15pt}
+\end{wrapfigure}
+synthesized from the above \tyName{} specification and
+\ref{eqn:ReadAtomicity}.  The presence of the $\eff{readResp}~i$
+operation at line 6 corresponds to the last effect present in
+\ref{eqn:ReadAtomicity}.  The \tyName{} associated with this operation
+admits arbitrary operations between it and the matching request,
+captured by ``$\allA$'' in the specification, following the
+$\msgA{readReq}{\iota}$ event in the history trace of $\eff{readRsp}$.
+This behavior is subsumed by the recursive call to
+\Code{transaction\_gen} at line 5.  The $\eff{readReq}$ effect at line
+4 matches the $\msgA{readResp}{\iota}$ event and the $\eff{write}$
+operations on line 3 are synthesized from the $\msgA{write}{v}$ event
+that precedes the $\EvtNoArgs{readReq}$ in the history trace.  The
+choice operator at line 2 determines if more recursive calls are
+required, i.e., if more $\eff{readReq}$ and $\eff{writeResp}$ events
+are generated.  The assertion comparing \Code{y} with \Code{x}
+determines if a violation (i.e., if the read result is different from
+the first written value) occurs.
+%\end{example}
 
 % \begin{example}[Strong Consistency]\label{ex:sc}
 % As another concurrency example, we consider how a simple key-value store might respond to a message $\zevent{getReq}{\Code{key}}$ that queries the value of a key $\Code{key}$ under different consistency guarantees.
@@ -227,8 +234,8 @@ from the above \tyName{} specification and safety condition.
 % \end{example}
 
 
-\begin{example}[Information-Flow Control]
-  \label{ex:ifc}
+% \begin{example}[Information-Flow Control] \label{ex:ifc}
+\paragraph{Information-Flow Control}
   \citet{pbt-ifc} applies the PBT methodology to a secure
   information-flow control (IFC) abstract machine meant to enforce
   end-to-end noninterference (EENI).  This property captures the
@@ -281,8 +288,9 @@ synthesizer with the following \tyName{} specifications:%
     \eff{push} ~:~
     & \effLR{\allA} \;\Code{unit}\; \effLR{\msgB{push}{\I{lvl}\;x\;y}{\I{lvl} = \Code{L} {\iff} x = y}}
     \\
-    \eff{store} ~:~&
-                     \effLR{\allA\msgA{push}{\I{lvl}\;x_1\;y_1\rangle};(\anyA \setminus \msgC{store})^* \msgB{push}{\I{lvl}\;x_2\;y_2}{\I{isAddr}(x_2) \land \I{isAddr}(y_2)}}\; \Code{unit} \; \effLR{\eff{store}}
+    \eff{store} ~:~
+    & \effLR{\allA \seqA \msgA{push}{\I{lvl}\;x_1\;y_1\rangle} \seqA
+      (\anyA \setminus \msgC{store})^* \seqA \msgB{push}{\I{lvl}\;x_2\;y_2}{\I{isAddr}(x_2) \land \I{isAddr}(y_2)}}\; \Code{unit} \; \effLR{\eff{store}}
   \end{align*}}\noindent
 The post-condition SRE for $\eff{push}$ enforces that its arguments
 should only be equal if they are intended to be public, while the
@@ -294,9 +302,9 @@ updated.  The desired safety property
 that a generator needs to test can be expressed as the following SRE:
 \vspace{-.4cm} \par\nobreak {\small %
 \begin{align*}
-  &\msgB{push}{\I{lvl}\;x\;y}{\I{lvl}=\Code{L}{\iff} x = y}
-    (\anyA \setminus \msgC{store})^* \msgB{push}{\I{lvl}\;x_2\;y_2}{\I{isAddr}(x_2) \land
-    \I{isAddr}(y_2)};\; \eff{store}
+  &\msgB{push}{\I{lvl}\;x\;y}{\I{lvl}=\Code{L}{\iff} x = y} \seqA
+    (\anyA \setminus \msgC{store})^* \seqA \msgB{push}{\I{lvl}\;x_2\;y_2}{\I{isAddr}(x_2) \land
+    \I{isAddr}(y_2)} \seqA \; \eff{store}
 \end{align*}}\noindent %
 The following test generator generates effect sequences consistent with
 this property and the \tyName{} specifications for $\eff{push}$ and $\eff{store}$ given above:
@@ -308,10 +316,10 @@ this property and the \tyName{} specifications for $\eff{push}$ and $\eff{store}
   in push_gen (); push_gen (); ?$\eff{store}$?;
 \end{minted}
 
-\end{example}
+%\end{example}
 
-\begin{example}[De Bruijn Index]
-  \label{ex:de-bruijn-index}
+%\begin{example}[De Bruijn Index]  \label{ex:de-bruijn-index}
+\paragraph{STLC Terms}
   Our final example applies our approach to the
   well-studied~\cite{BeginnerLuck,CoverageType,FQL24} problem of using PBT
   to test the correctness of an interpreter for simply-typed lambda
@@ -325,8 +333,8 @@ this property and the \tyName{} specifications for $\eff{push}$ and $\eff{store}
     \text{\textsc{Reduction rule}:} \quad & (\lambda t. e)\; v \hookrightarrow e [0 \mapsto v]\\
     \text{\textsc{Incorrect substitution}:} \quad & (\lambda t. e)[n \mapsto v] = \lambda t. (e[\textcolor{red}{n} \mapsto v]) \quad \textcolor{red}{\xmark} \text{ \textcolor{gray}{should be $n + 1$}}
   \end{align*}}\noindent
-The following STLC term can trigger in our SUT, as this well-typed
-term does, in fact, get stuck %:
+The following STLC term will trigger a bug in our SUT, as this well-typed
+term will, in fact, get stuck: %:
 \vspace{-.4cm} \par\nobreak {\small %
     \begin{flalign*}
       & (\lambda \Int. (\lambda (\Int\sarr\Int). [0]\;[1])\; (\lambda \Int. [0]))\; 3 && \tag{$e_\Code{STLC}$}\label{ex:e4} \\
@@ -394,7 +402,7 @@ be given as follows:
   construct a recursive function $\Code{abs\_gen}$ parameterized by
   the current depth $d$, ensuring correct tracking of abstraction
   nesting.
-\end{example}
+%\end{example}
 
 In the following section, we show how to guide a synthesizer to
 construct generators that only produce traces consistent with
