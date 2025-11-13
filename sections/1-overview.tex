@@ -111,12 +111,12 @@ halts program execution if the formula $\phi$ fails to hold.
     simplicity, we assume the database manages a single key that is
     elided from event arguments, and that write operations are synchronous,
     and commit their value to the database immediately.}: %
-  \vspace{-.4cm} \par\nobreak {\scriptsize %
+  \vspace{-.4cm} \par\nobreak {\small %
     \begin{align*}
       & \text{\textcolor{blue}{Client 1:}}\ \msgA{write}{3};
       & \msgA{write}{4} & \\
       & \text{\textcolor{blue}{Client 2:}} \quad \quad \quad \quad \quad \quad \msgA{readReq}{\iota_1};\msgA{readRsp}{\iota_1\;3};\msgA{readReq}{\iota_2};& &\textcolor{red}{\msgA{readRsp}{\iota_2\;4}}
-    \end{align*}}\noindent
+    \end{align*}}\vspace{-.5cm} \par\nobreak\noindent
   Here, \textcolor{blue}{Client 2} issues two consecutive asynchronous
   read operations.  A $\eff{readReq}$ event indicates that an asynchronous
   read request effect has been issued by the client on the single key managed
@@ -133,7 +133,7 @@ halts program execution if the formula $\phi$ fails to hold.
     &\eff{readRsp}:
       \effLR{\Code{LAST}(\msgA{write}{v})\;\seqA\;\msgA{readReq}{\iota}\;\seqA\;
       \allA}\urt{\Code{int}}{\vnu = v}\effLR{\msgA{readRsp}{\iota\;v}}
-  \end{align*}}\noindent
+  \end{align*}}\vspace{-.5cm} \par\nobreak\noindent
 This type specifies that the response to a previously issued
 asynchronous $\eff{readReq}$ operation can return a value $v$, if the
 last committed write prior to the request wrote the value $v$. (Here,
@@ -149,7 +149,7 @@ trace which contains these events.  This \tyName{} uses
   \begin{align*}
     \Code{LAST}(\eff{evt}) \equiv \allA\;\seqA\; \eff{evt}\;\seqA\; (\anyA \setminus \eff{evt})^*
   \end{align*}
-}\noindent %
+}\vspace{-.5cm} \par\nobreak\noindent %
 An implementation of $\eff{readResp}$ that does not satisfy this type
 could yield a trace in which a response to a request yields a
 different value than previously seen by the transaction, thus exposing
@@ -162,14 +162,14 @@ following SRE:\footnote{SREs are implicitly universally quantified
       \tag{$A_\text{atomic}$}\label{eqn:ReadAtomicity}
   \end{align}
 }
-\noindent where
+\vspace{-.5cm} \par\nobreak\noindent where
 \Code{FIRST}($\eff{evt}$) as an alias for the following regex:
-\vspace{-.4cm} \par\nobreak {\small %
+\vspace{-.5cm} \par\nobreak {\small %
   \begin{align*}
     \Code{FIRST}(\eff{evt})   \equiv (\anyA \setminus \eff{evt})^*\;
     \seqA \; \eff{evt}\; \seqA \; \allA;
   \end{align*}
-}\noindent %
+}\vspace{-.5cm} \par\nobreak\noindent %
 A violation of this property can be manifested by a test
 generator that perform sequences of synchronous $\eff{write}$ and
 asynchronous $\eff{read}$ effects in search of an offending trace
@@ -181,7 +181,7 @@ instructing the SUT to perform effects via $\eff{opReq}$, and later
 observing the results via their $\eff{opResp}$ counterparts.  For
 instance, the test generator shown below is automatically
 \begin{wrapfigure}{r}{.4\textwidth}
-  \vspace{-5pt}
+  \vspace{-10pt}
   \begin{minted}[fontsize = \footnotesize, escapeinside=??, xleftmargin=18pt, linenos]{ocaml}
 let rec transaction_gen () =
   () ?$\oplus$? let x = int_gen () in
@@ -191,7 +191,7 @@ let rec transaction_gen () =
     let y = ?$\eff{readResp}$? i in
     ?$\mykw{assert}$? (x == y)
   \end{minted}
-  \vspace{-15pt}
+  \vspace{-10pt}
 \end{wrapfigure}
 synthesized from the above \tyName{} specification and
 \ref{eqn:ReadAtomicity}.  The presence of the $\eff{readResp}~i$
@@ -256,8 +256,7 @@ the first written value) occurs.
   \\
   \text{\textcolor{gray}{Program 1:}} \quad &\zevent{push_1}{\Code{L}, 1};\zevent{push_1}{\Code{H}, 0};\eff{store} \quad \text{\textcolor{gray}{and}} \quad\text{\textcolor{gray}{Program 2:}} \quad \zevent{push_2}{\Code{L}, 1};\zevent{push_2}{\Code{H}, 1};\eff{store}
   \\\text{\textcolor{gray}{Memory 1:}} \quad & [(\Code{L}, 0); (\Code{L}, 0)] \Downarrow \textcolor{red}{[(\Code{L}, 1), (\Code{L}, 0)]} \quad\quad\quad\quad\text{\textcolor{gray}{Memory 2:}} \quad [(\Code{L}, 0); (\Code{L}, 0)] \Downarrow \textcolor{red}{[(\Code{L}, 0), (\Code{L}, 1)]}
-\end{flalign*}}
-\noindent
+\end{flalign*}}\vspace{-.5cm} \par\nobreak\noindent
 Here, $\Code{L}$ and $\Code{H}$ are the low (public) and high (secret)
 security levels, with $\Code{L} \sqsubseteq \Code{H}$.  To ensure
 indistinguishability, public commands (level $\Code{L}$) must use
@@ -293,7 +292,7 @@ synthesizer with the following \tyName{} specifications:%
     \eff{store} ~:~
     & \effLR{\allA\; \seqA\; \msgA{push}{\I{lvl}\;x_1\;y_1\rangle} \seqA\;
       (\anyA \setminus \msgC{store})^* \seqA\; \msgB{push}{\I{lvl}\;x_2\;y_2}{\I{isAddr}(x_2) \land \I{isAddr}(y_2)}}\; \Code{unit} \; \effLR{\eff{store}}
-  \end{align*}}\noindent
+  \end{align*}}\vspace{-.5cm} \par\nobreak\noindent
 The post-condition SRE for $\eff{push}$ enforces that its arguments
 should only be equal if they are intended to be public, while the
 pre-condition SRE of a $\eff{store}$ event describes stacks
@@ -307,15 +306,13 @@ that a generator needs to test can be expressed as the following SRE:
   &\msgB{push}{\I{lvl}\;x\;y}{\I{lvl}=\Code{L}{\iff} x = y}\; \seqA\;
     (\anyA \setminus \msgC{store})^* \seqA\; \msgB{push}{\I{lvl}\;x_2\;y_2}{\I{isAddr}(x_2) \land
     \I{isAddr}(y_2)}\; \seqA \; \eff{store}
-\end{align*}}\noindent %
+\end{align*}}\vspace{-.5cm} \par\nobreak\noindent %
 The following test generator generates effect sequences consistent with
 this property and the \tyName{} specifications for $\eff{push}$ and $\eff{store}$ given above:
 \begin{minted}[fontsize = \footnotesize, escapeinside=??, xleftmargin=18pt, linenos]{ocaml}
   let push_gen () =
-    let (x: int) = ?$\mykw{assume}(\mbox{\textit{isAddr}}$? x) in
-    let (y: int) = ?$\mykw{assume}(\mbox{\textit{isAddr}}$? y) in
-    (?$\mykw{assume}$? (x = y); ?$\eff{push}$? L ?$\langle$?x, y?$\rangle$?) ?$\oplus$?
-    (?$\mykw{assume}$?(x != y); ?$\eff{push}$? H ?$\langle$?x, y?$\rangle$?)
+    let (x: int) = ?$\mykw{assume}(\mbox{\textit{isAddr}}$? x) in let (y: int) = ?$\mykw{assume}(\mbox{\textit{isAddr}}$? y) in
+    (?$\mykw{assume}$? (x = y); ?$\eff{push}$? L ?$\langle$?x, y?$\rangle$?) ?$\oplus$? (?$\mykw{assume}$?(x != y); ?$\eff{push}$? H ?$\langle$?x, y?$\rangle$?)
   in push_gen (); push_gen (); ?$\eff{store}$?;
 \end{minted}
 %\end{example}
@@ -333,7 +330,7 @@ this property and the \tyName{} specifications for $\eff{push}$ and $\eff{store}
   \begin{align*}
     \text{\textsc{Reduction rule}:} \quad & (\lambda t. e)\; v \hookrightarrow e [0 \mapsto v]\\
     \text{\textsc{Incorrect substitution}:} \quad & (\lambda t. e)[n \mapsto v] = \lambda t. (e[\textcolor{red}{n} \mapsto v]) \quad \textcolor{red}{\xmark} \text{ \textcolor{gray}{should be $n + 1$}}
-  \end{align*}}\noindent
+  \end{align*}}\vspace{-.5cm} \par\nobreak\noindent
 The following STLC term will trigger a bug in our SUT, as this well-typed
 term will, in fact, get stuck: %:
 \vspace{-.4cm} \par\nobreak {\small %
@@ -341,7 +338,7 @@ term will, in fact, get stuck: %:
       & (\lambda \Int. (\lambda (\Int\sarr\Int). [0]\;[1])\; (\lambda \Int. [0]))\; 3 && \tag{$e_\Code{STLC}$}\label{ex:e4} \\
       &\hookrightarrow (\lambda (\Int\sarr\Int). \textcolor{red}{3}\;[1])\; (\lambda \Int. \textcolor{red}{3})  \quad &&\text{\textcolor{red}{(wrong substitution ``$[0] \mapsto 3$'')}}
     \\&\hookrightarrow  3\;[1] \quad &&\text{\textcolor{red}{(stuck!)}}
-  \end{flalign*}}\noindent %
+  \end{flalign*}}\vspace{-.5cm} \par\nobreak\noindent %
 Here, our buggy implementation mistakenly substitutes the bound
 variable ``$[0]$'' with the argument value $3$ in the two inner
 abstractions, instead of ``$[1]$''.
@@ -364,15 +361,12 @@ our type system.  Here, $\eff{token}$ is an effect that appends its
 argument to a serialized string that is eventually passed to the
 interpreter being tested.  A \tyName{} specification to track depth can
 be now given as follows:
-  % {\small\begin{align*}
-  %   \effLR{\Code{LAST}(\msgAGray{depth}{d}) \msgA{token}{\boxed{(\lambda t.}\;} \msgAGray{depth}{d + 1} \allA \msgA{token}{\boxed{[n]}\;} \allA }\; \eff{token}\;\boxed{)}\;\effLR{\msgA{token}{\boxed{)}\;} \msgAGray{depth}{d}}
-             %            \end{align*}}\noindent
   \vspace{-.4cm} \par\nobreak {\small %
     \begin{align*}
       \effLR{\Code{LAST}(\msgAGray{depth}{d}) \seqA\;
       \msgA{token}{\boxed{(\lambda t.}\;}\seqA\; \msgAGray{depth}{d +
       1}\seqA\; \allA }\; unit \;\effLR{\msgA{token}{\boxed{)}\;} \seqA\; \msgAGray{depth}{d}}
-    \end{align*}}\noindent
+    \end{align*}}\vspace{-.5cm} \par\nobreak\noindent
   As shown above, upon entering a function abstraction, we retrieve
   the last tagged depth (assumed to be initialized to $0$), increment it at the
   start of the body, and restore it upon exiting. Leveraging
@@ -381,17 +375,12 @@ be now given as follows:
   \vspace{-.4cm} \par\nobreak {\small %
     \begin{align*}
       \Code{LAST}(\msgBGray{depth}{d}{n < d}) \seqA\; \Code{FIRST}(\eff{token}\;\boxed{[\widehat{n}]})
-    \end{align*}}\noindent
+    \end{align*}}\vspace{-.5cm} \par\nobreak\noindent
   The bound variable index $n$ is required to be less than the
   current depth $d$; the notation $\widehat{n}$ signifies that $n$'s value must
   be substituted in the string output produced by $\eff{token}$.  The following code snippet shows a test generator
   for nested abstractions synthesized by \name{} based on the above specification
   and safety property:
-  % \begin{minted}[fontsize = \footnotesize, escapeinside=??, xleftmargin=18pt, linenos]{ocaml}
-  %   let rec abs_gen (d: depth) =
-  %     (let (i: int) = assume (0 <= i && i < d) in ?$\eff{token}\; \boxed{[i]}$?) ?$\oplus$?
-  %     (let t = random_stlc_ty () in ?$\eff{token}\;\boxed{(\lambda t. [0]};$? abs_gen (d + 1); ?$\eff{token}\;\boxed{)\;(\lambda t. [0])}$?
-  % \end{minted}
   \begin{minted}[fontsize = \footnotesize, escapeinside=??, xleftmargin=18pt, linenos]{ocaml}
     let rec abs_gen (d: depth) =
       (let (i: int) = ?$\mykw{assume} $? (0 <= i && i < d) in ?$\eff{token}\; \boxed{[\widehat{i}]}$?) ?$\oplus$?

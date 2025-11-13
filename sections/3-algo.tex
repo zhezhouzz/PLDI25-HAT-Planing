@@ -1,13 +1,6 @@
 \section{Synthesis}
 \label{sec:synthesis}
 
-\begin{figure}[ht!]
-  \centering
-  \includegraphics[width=0.84\linewidth]{figures/syn-gen.drawio.png}
-  \caption{\name{}'s high-level test generator synthesis algorithm}
-  \label{fig:syn-gen}
-\end{figure}
-
 Given an SRE $A$ describing some property of a black-box system under
 test, \autoref{theorem:sound} ensures that a well-typed test generator
 program $\emptyset \vdash e : \uhat{\epsilon}{\Unit}{F}$ \emph{must}
@@ -30,6 +23,16 @@ element of the represents a generator that produces at least one
 feasible trace. After the refinement loop has finished, a well-typed
 generator programs can be mechanically extracted using the refined
 property as a template.
+
+\begin{figure}[h!]
+  \vspace*{-.15in}
+  \centering
+  \includegraphics[width=0.75\linewidth]{figures/syn-gen.drawio.png}
+  \caption{\name{}'s high-level test generator synthesis algorithm}
+  \vspace*{-.15in}
+  \label{fig:syn-gen}
+  \vspace*{-.15in}
+\end{figure}
 
 \subsection{Synthesis Algorithm}
 
@@ -57,7 +60,7 @@ example.\footnote{The full definition of our SRE normalization
   The set of abstract traces corresponding to the history regex of
   $\eff{pop}$ from Example~\ref{ex:stack-example} includes the
   following abstract trace: %
-  \vspace{-.4cm} \par\nobreak {\small %
+  \vspace{-.4cm} \par\nobreak {\footnotesize %
     \begin{align*}
       \text{Original SRE:} \quad&  \Code{Last}(\msgAGray{popI}{m\;\_}) \land \Code{Last}(\msgAGray{pushI}{n\;\_}) \land (\allA\msgAGray{pushI}{(n{-}m)\;x}\allA)
       \\
@@ -107,23 +110,6 @@ example.\footnote{The full definition of our SRE normalization
 \label{algo:top-syn}
 \end{algorithm}
 
-Our top-level synthesis algorithm is shown in \autoref{algo:top-syn}.
-Given a target trace property $A$ whose qualifiers only contain the
-variables $\overline{x{:}b}$, this algorithm synthesizes a well-typed
-$\DSL{}$ generator. The algorithm maintains a set of candidate
-abstract traces, $C$, each of which is a refinement of $A$; this set
-is initialized directly from $A$ (line 2). Each trace in $C$ is paired
-with a typing context that the synthesizer uses to filter out
-refinements that do not correspond to well-typed programs. The
-algorithm first uses a loop (lines $3-4$) to refine $C$ until it only
-contains abstract traces that are consistent with the operator context
-$\Delta$, and then uses the resulting set of traces to derive the
-final (recursive) generator (line $5$). Each iteration of this loop
-nondeterministically chooses a target event in one of the current
-abstract traces (line $2$) whose tag indicates its dependencies are
-not satisfied; it then uses the $\refine$ subroutine to insert the
-required operations before and after the target event.
-
 \setlength{\textfloatsep}{4pt}
 \begin{algorithm}[t!]
     \Params{\quad Operator context $\Delta$, typing context $\Gamma$,
@@ -149,6 +135,23 @@ required operations before and after the target event.
     \caption{Abstract Trace Refinement (\refine{})}
 \label{algo:refine}
 \end{algorithm}
+
+Our top-level synthesis algorithm is shown in \autoref{algo:top-syn}.
+Given a target trace property $A$ whose qualifiers only contain the
+variables $\overline{x{:}b}$, this algorithm synthesizes a well-typed
+$\DSL{}$ generator. The algorithm maintains a set of candidate
+abstract traces, $C$, each of which is a refinement of $A$; this set
+is initialized directly from $A$ (line 2). Each trace in $C$ is paired
+with a typing context that the synthesizer uses to filter out
+refinements that do not correspond to well-typed programs. The
+algorithm first uses a loop (lines $3-4$) to refine $C$ until it only
+contains abstract traces that are consistent with the operator context
+$\Delta$, and then uses the resulting set of traces to derive the
+final (recursive) generator (line $5$). Each iteration of this loop
+nondeterministically chooses a target event in one of the current
+abstract traces (line $2$) whose tag indicates its dependencies are
+not satisfied; it then uses the $\refine$ subroutine to insert the
+required operations before and after the target event.
 
 \paragraph{Abstract trace refinement} The abstract trace refinement
 subroutine, \refine{}, is shown in \autoref{algo:refine}. It first
@@ -196,8 +199,8 @@ traces (line $7$).
   \begin{align*}
     &(m{:}\urt{\Int}{\vnu = 0}, n{:}\urt{\Int}{\top},y{:}\urt{\Int}{\top},x{:}\urt{\Int}{\top}, \\
     &\qquad\qquad \Pi_\Code{any}^* \msgAGray{popI}{m\;y}^\bot \Pi_\Code{noPopI}^* \msgAGray{pushI}{n\;x}^\bot \Pi_\Code{noI}^* \msgA{pop}{x}^\top\msgAGray{popI}{m\;x}^\bot)
-  \end{align*}} %
-\noindent The new variables in the type context require $m = 0$, as
+  \end{align*}} \vspace{-.4cm} \par\nobreak\noindent 
+The new variables in the type context require $m = 0$, as
 mentioned in Example~\ref{ex:sre-norm}.  Although the \tyName{} of
 $\eff{pop}$ does not explicitly add any new $\eff{push}$ or
 $\eff{pop}$ events to the abstract trace, it does require multiple
@@ -210,13 +213,13 @@ after a $\eff{push}$ event, unless it is an initialization event
   \begin{align*}
     \Delta(\effGray{pushI}) \equiv &\; i{:}\Int\sarr x{:}\Int \sarr \uhat{\allA\msgC{push}}{\Unit}{\msgBGray{pushI}{i\;x}{i > 0}} \interty \uhat{(\anyA\setminus\msgCGray{pushI})^*}{\Unit}{\msgBGray{pushI}{i\;x}{i = 0}} \\
     \Delta(\effGray{popI}) \equiv &\; i{:}\Int\sarr x{:}\Int \sarr \uhat{\allA\msgC{pop}}{\Unit}{\msgBGray{popI}{i\;x}{i > 0}} \interty \uhat{(\anyA\setminus\msgCGray{popI})^*}{\Unit}{\msgBGray{popI}{i\;x}{i = 0}}
-  \end{align*}}\noindent
+  \end{align*}}\vspace{-.4cm} \par\nobreak\noindent
 On the other hand, the $\msgAGray{popI}{m\;y}$ event in the abstract trace has index $m = 0$, and the algorithm can smartly determine that there is no previous $\eff{pop}$ event in this case. It is because the merge result of the first intersected type of $\effGray{popI}$ fails the non-emptiness check, where $m > 0 \land m = 0$ is unsatisfiable. Finally, this trace will be refined to one that consistent with the program shown in Example~\ref{ex:operator-application-typing}:
 \vspace{-.4cm} \par\nobreak{\small %
   \begin{align*}
     &(m{:}\urt{\Int}{\vnu = 0}, n{:}\urt{\Int}{\vnu = m{+}1}, y{:}\urt{\Int}{\top}, x{:}\urt{\Int}{\vnu > y},
     \\&\qquad\qquad\Pi_\Code{noI}^*\msgAGray{pushI}{m\;y}\msgAGray{popI}{m\;y}\Pi_\Code{noI}^*\msgA{push}{x}\msgAGray{pushI}{n\;x}\Pi_\Code{noI}^*\msgA{pop}{x}\msgAGray{popI}{n\;x}\Pi_\Code{any}^*) \tag{$\pi_\Code{stack}$}\label{prop:stackTrace}
-  \end{align*}}\noindent
+  \end{align*}}\vspace{-.4cm} \par\nobreak\noindent
 \end{example}
 
 \paragraph{Deriving a Generator}
@@ -228,10 +231,10 @@ generates straightline programs without recursion by dropping by all
 ghost events and variables and then mapping each symbolic event to a
 corresponding effectful operation with appropriate arguments. So,
 given the following context and abstract trace:
-\begin{align*}
+\vspace{-.4cm} \par\nobreak{\small\begin{align*}
   (m{:}\urt{\Int}{\vnu = 0}, n{:}\urt{\Int}{\vnu = m{+}1}, y{:}\urt{\Int}{\top}, x{:}\urt{\Int}{\vnu > y}, \msgA{push}{x};\msgA{pop}{x})
 \end{align*}
-\noindent \deriveTrace{} will synthesize the following program:
+}\noindent \deriveTrace{} will synthesize the following program:
 \begin{minted}[fontsize = \footnotesize, escapeinside=??, xleftmargin=10pt, linenos]{ocaml}
   let (x: int) = assume (?$\exists m\;n\;y. m = 0 \land n = m{+}1 \land x > y$?) in push x; (* equivalent to assume true *)
   let (z: int) = pop () in assert (x == z)
@@ -271,20 +274,21 @@ number of loop iterations to ensure a completed sketch is well-typed.
   call to $f$. We can build the following two program sketches by
   mapping portions of $\pi_\Code{stack}$ from
   Example~\ref{ex:refinement-process} to the four holes in $T$: %
-  \vspace{-.4cm} \par\nobreak {\small %
+  \vspace{-.4cm} \par\nobreak {\footnotesize %
     \begin{align*}
       &
         \underbrace{\Pi_\Code{noI}^*\msgAGray{pushI}{m\;y}\msgAGray{popI}{m\;y}\Pi_\Code{noI}^*}_{e_3}\;\;
         \underbrace{\msgA{push}{x}\msgAGray{pushI}{n\;x}}_{e_1}\;\;
         \underbrace{\Pi_\Code{noI}^*}_\text{$f$\;()}\;\;
         \underbrace{\msgA{pop}{x}\msgAGray{popI}{n\;x}}_{e_2}\;\;
-        \underbrace{\Pi_\Code{noI}^*}_{e_4} \\
+        \underbrace{\Pi_\Code{noI}^*}_{e_4}
+      \\[-0.3em]
       & \underbrace{\Pi_\Code{noI}^*\msgAGray{pushI}{m\;y}\msgAGray{popI}{m\;y}\Pi_\Code{noI}^*\msgA{push}{x}\msgAGray{pushI}{n\;x}}_{e_3}\;\;
         \underbrace{\Pi_\Code{noI}^*}_{e_1}\;\;
         \underbrace{\Pi_\Code{noI}^*}_\text{$f$\;()}\;\;
         \underbrace{\msgA{pop}{x}\msgAGray{popI}{n\;x}}_{e_2}\;\;
         \underbrace{\Pi_\Code{noI}^*}_{e_4}
-    \end{align*}}\noindent %
+    \end{align*}}\vspace{-.4cm} \par\nobreak \noindent %
   We can then simulate unrolling the recursive call in a solution to
   each sketch by duplicating the subtraces labeled $e_1\; f\;()\;
   e_2$ a bounded number of times and checking whether they are consistent with
@@ -295,8 +299,7 @@ number of loop iterations to ensure a completed sketch is well-typed.
   using \deriveTrace{} to synthesize generators for each $e$ yields
   the following generator:
   \begin{minted}[fontsize = \footnotesize, escapeinside=??, xleftmargin=10pt, linenos]{ocaml}
-let rec f () =
-  () ?$\oplus$?
+let rec f () = () ?$\oplus$?
     let (x: int) = int_gen () in push x; (* ?$e_1$? *)
     f ();
     let (z: int) = pop () in assert (x == z) (* ?$e_2$? *)

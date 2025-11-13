@@ -115,15 +115,16 @@ Our experimental evaluation addresses three research questions:
 \footnotesize
 %\multicolumn{2}{c||}{} & 
 \setlength{\tabcolsep}{1.3pt}
-\begin{tabular}{c|P{4.25cm}||ccc||cc||c|ccc}
+\begin{tabular}{c|P{4.8cm}||ccc||cc||c|ccc}
   \toprule
   \multicolumn{2}{c||}{Benchmark} & \#$\eff{op}$ & \multicolumn{2}{c||}{\#qualifier} & \multicolumn{2}{c||}{\scriptsize \# Num. Executions} & t$_\text{total}$(s) & \#evt & \#refine & \#SMT \\
-  \hline
+  \midrule
 Name & Property &   &uHAT &goal & {\scriptsize Clouseau} & {\scriptsize Baseline} &  &  \\
 \midrule
 \textsf{Stack}\cite{ZYDJ24} & {\scriptsize  Pushes and pops are correctly paired.} & $6$ & $12$ & $3$ & $1.0$ & $31.9$ & $0.60$ & $15$ & $4$ & $98$\\
 \midrule
 \textsf{Set}\cite{ZYDJ24} & {\scriptsize Membership holds for every element inserted into the set.} & $7$ & $22$ & $3$ & $1.0$ & $22.1$ & $1.28$ & $12$ & $12$ & $255$\\
+\midrule
 \textsf{Filesystem}\cite{ZYDJ24} & {\scriptsize A valid file path only contains non-deleted entries.} & $7$ & $67$ & $4$ & $1.3$ & $2812.1$ & $6.02$ & $13$ & $14$ & $853$\\
 \midrule
 \midrule
@@ -160,7 +161,7 @@ Name & Property &   &uHAT &goal & {\scriptsize Clouseau} & {\scriptsize Baseline
 \bottomrule
 \end{tabular}                                
 \label{tab:evaluation}
-% \vspace*{-.15in}
+\vspace*{-.15in}
 \end{table}
 
 
@@ -192,7 +193,7 @@ Name & Property &   &uHAT &goal & {\scriptsize Clouseau} & {\scriptsize Baseline
 \begin{tabular}{c|P{4.0cm}||ccc||cc||c|ccc}
   \toprule
   \multicolumn{2}{c||}{Benchmark} & \#$\eff{op}$ & \multicolumn{2}{c||}{\#qualifier} & \multicolumn{2}{c||}{\scriptsize \# Num. Executions} & t$_\text{total}$(s) & \#evt & \#refine & \#SMT \\
-  \hline
+  \midrule
 Name & Property &   &uHAT &goal & {\scriptsize Clouseau} & {\scriptsize Baseline} &  &  \\
   \midrule
   {\scriptsize\textsf{Database}} & {\scriptsize The database maintains a Read-Your-Writes policy.} & $4$ & $15$ & $3$ & $1.0$ & $5.6$ & $0.32$ & $6$ & $6$ & $49$\\
@@ -217,7 +218,7 @@ Name & Property &   &uHAT &goal & {\scriptsize Clouseau} & {\scriptsize Baseline
 \bottomrule
   \end{tabular}
 \label{tab:evaluation2}
-% \vspace*{-.15in}
+\vspace*{-.15in}
 \end{table}
 
 We have evaluated \name{} on a diverse corpus of programs drawn from a

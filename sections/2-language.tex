@@ -33,10 +33,10 @@
     %  \mykw{let}\;\eff{op}\;\overline{v}\;\mykw{in}\;e \doteq \zgen{op}{\overline{v}}{e} \qquad\qquad
   \end{alignat*}
 }
-\vspace*{-.25in}
+\vspace*{-.3in}
 \caption{Syntax of \DSL{} expressions}
 \label{fig:term-syntax}
-\vspace*{-.1in}
+\vspace*{-.2in}
 \end{figure}
 
 We formalize our approach using a core language, \DSL{}, for
@@ -48,7 +48,7 @@ a program \emph{must} be able to produce, \emph{if} the system under
 test produces appropriate responses. The syntax of \DSL{} is shown in
 \autoref{fig:term-syntax}; the calculus includes both pure and
 effectful operations ($\primop$ and $\eff{op}$), nondeterministic
-choices ($\oplus$), recursion (\textbf{fix}), and $\mykw{assume}$ and
+choices ($\oplus$), recursion ($\mykw{fix}$), and $\mykw{assume}$ and
 $\mykw{assert}$ statements in the style of solver-aided
 languages~\cite{BC+10}. As we saw in \autoref{sec:overview},
 asynchronous effects can be modeled as a pair of $\eff{opReq}$ /
@@ -220,10 +220,10 @@ underapproximate type.
     % & \widehat{\ort{b}{\phi}} \doteq \urt{b}{\phi} \;\; \widehat{\urt{b}{\phi}} \doteq \ort{b}{\phi} \;\; \widehat{x{:}t\sarr t'} \doteq x{:}t\sarr t' \;\; \widehat{x{:}t\sarr \tau} \doteq x{:}t\sarr \tau
   \end{flalign*}}
 }
-\vspace*{-.15in}
+\vspace*{-.2in}
 \caption{\DSL{} types}
 \label{fig:type-syntax}
-\vspace*{-.15in}
+\vspace*{-.2in}
 \end{figure}
 
 
@@ -253,11 +253,11 @@ The figure also gives the definition of the type aliases that
 \autoref{sec:overview} used to limit user annotation burden.  When the
 fields of a symbolic event are clear from context, we omit its
 arguments $\overline{x}$, e.g.,
-$\langle\textbf{write}\;|\;v > 0\rangle$ means
-$\langle\textbf{write}\;\iota\;v\;|\;v > 0\rangle$. We omit
+$\langle\eff{push}\;|\;v > 0\rangle$ means
+$\langle\eff{push}\;v\;|\;v > 0\rangle$. We omit
 quantifiers with equality constraints, e.g., writing
-$\langle\textbf{write}\;\iota\;v\;|\;\iota = 1 \land v = 3\rangle$, as
-$\msgA{write}{1\;3}$; we also omit the top ($\top$) qualifier in
+$\langle\eff{push}\;v\;|\;v = 3\rangle$, as
+$\msgA{push}{3}$, and the top ($\top$) qualifier in
 symbolic events and types.
 
 
@@ -274,9 +274,9 @@ symbolic events and types.
   $\eff{push}$ operations to be dropped.  To detect this violation, we
   need to explore traces of the following form, where the last pop
   operation raises an ``empty stack'' exception:
-  \begin{align*}
+  \vspace{-.4cm} \par\nobreak {\small\begin{align*}
     \zevent{push}{1};\zevent{push}{2}; \zevent{push}{3}; \zevent{pop}{2}; \zevent{pop}{1};\textcolor{red}{\zevent{pop}{?}}
-  \end{align*}\noindent
+  \end{align*}}\vspace{-.5cm} \par\nobreak\noindent
   Because we would like the \tyName{} specifications for $\eff{push}$
   and $\eff{pop}$ to guide the synthesis of a test generator, they
   should be interpreted as underapproximations, consisting of nested
@@ -295,7 +295,7 @@ symbolic events and types.
         \Code{Last}(\msgAGray{pushI}{n\;\_}) \land
         (\allA\seqA\msgAGray{pushI}{(n{-}m)\;x}\seqA\allA)}{x{:}\Int}{\msgA{pop}{x}\seqA\msgAGray{popI}{m{+}1\;
         x}}
-    \end{align*}}\noindent
+    \end{align*}}\vspace{-.5cm} \par\nobreak\noindent
   Intuitively, the $\effGray{pushI}$ and $\effGray{popI}$ ghost events are
   simply $\eff{push}$ and $\eff{pop}$ events equipped with indices that
   record the number of push and pop operations.  As seen here, ghost events allow \tyName{}
@@ -303,7 +303,8 @@ symbolic events and types.
     operations.   The signature for $\eff{push}$ requires
   that the new pushed value ($x$) is greater than the last pushed value
   ($y$), and adds a new ghost event $\effGray{pushI}$ with an
-  incremented index (i.e., $\msgAGray{pushI}{n{+}1\;x}$).  The
+  incremented index (i.e., $\msgAGray{pushI}{n{+}1\;x}$).  
+  The
   signature for $\eff{pop}$ also records the number of pop operations
   in the same way (i.e., $\msgAGray{popI}{m{+}1\;x}$); additionally, it
   requires the last popped value ($x$) to be equal to the
@@ -373,120 +374,6 @@ symbolic events and types.
 
 \subsection{Typing Rules}
 
-\begin{figure}[!t]
-{\footnotesize
-{\footnotesize
-\begin{flalign*}
- &\text{\textbf{Auxiliary Typing}} & & \fbox{$\Gamma \wfvdash \tau \quad \Gamma \vdash A \subseteq A \quad \Gamma \vdash \tau <: \tau$} &\text{\textbf{Typing}} &  & \fbox{$\Gamma\vdash \eff{op}: t \quad \Gamma\vdash v : t \quad \Gamma \vdash e: \tau$}
-\end{flalign*}
-}
-\\ \
-\mprooftr{30mm}
-{$\Gamma\wfvdash \tau[x\mapsto v]$}
-{SubG}
-{$\Gamma \vdash x{:}b\garr \tau <: \tau[x\mapsto v]$}
-\;
-\mprooftr{41mm}
-{$\Gamma \vdash t_1 <: t_2$ \quad
-$\Gamma,x{:}t_1 \vdash F_2 \subseteq F_1$ \quad
-$\Gamma,x{:}t_1 \vdash H_1 \subseteq H_2$
- }
-{SubHF}
-{$\Gamma \vdash \uhat{H_1}{x{:}t_1}{F_1} <: \uhat{H_2}{x{:}t_2}{F_2}$}
-\;
-\mprooftr{30mm}
-{$\Gamma \vdash \eff{op} : \overline{x{:}t_x}\sarr\uhat{H}{t}{F}$ \quad
-$\Gamma,\overline{x{:}t_x} \vdash H' \subseteq H$}
-{TOpHis}
-{$\Gamma\vdash \eff{op} : \overline{x{:}t_x}\sarr\uhat{H'}{t}{F}$}
-% \quad
-% \mprooftr{30mm}
-% {$\Gamma\vdash e: \tau$ \quad
-% $\Gamma \vdash \tau <: \tau'$\quad $\Gamma \vdash \tau' <: \tau$}
-% {TEq}
-% {$\Gamma\vdash e: \tau'$}
-\\[.8em]
-\mprooftr{20mm}
-{$\Gamma\vdash v : t$}
-{TRet}
-{$\Gamma\vdash v : \uhat{H}{t}{\epsilon}$}
-\quad
-\mprooftr{15mm}
-{$\Delta(\eff{op}) = t$}
-{TOpCtx}
-{$\Gamma\vdash \eff{op} : t$}
-\quad
-\mprooftr{58mm}
-{
-$\Gamma \vdash \eff{op} : \overline{x_i{:}t_i}\sarr \uhat{H}{t}{\msgA{op}{\overline{x_i}} \seqA F}$ \quad
-$\forall i. \;\Gamma \vdash v_i : t_i$}
-{TEffOp}
-{$\Gamma\vdash \eff{op}{\;\overline{v_i}} : \uhat{H}{t}{\msgA{op}{\overline{v_i}} \seqA F}$}
-\\[.8em]
-%%\mprooftr{56mm}
-%%{
-%%$\Gamma \vdash \eff{op} : \overline{x_i{:}t_i}\sarr \uhat{H}{t}{\msgA{op}{\overline{x_i}} \seqA F}$ \\
-%%  $\forall i. \;\Gamma \vdash v_i : t_i$}
-%% {TReqOp}
-%% {$\Gamma\vdash \reqOp{op}{\;\ensuremath{\iota\; \overline{v_i}}} : \uhat{H}{\Code{id}}{\reqEvt{op}{\ensuremath{\iota\; \overline{v_i}}} \seqA F}$}
-%% % \mprooftr{62mm}
-%% % {
-%% % $\Gamma\vdash \eff{op} : \overline{x_i{:}t_i}\sarr \uhat{H}{\Unit}{\msgA{op}{\overline{x_i}} \seqA F}$ \quad
-%% % $\forall i. \;\Gamma \vdash v_i : \widehat{t_i}$ \quad
-%% % $\Gamma\vdash e : \uhat{H \seqA (\msgA{op}{\overline{v_i}} \land \msg{op}{\phi}) \seqA F}{t}{F'}$}
-%% % {TGen}
-%% % {$\Gamma\vdash \zgen{op}{\overline{v_i}}{e} : \uhat{H}{t}{\msg{op}{\phi} \seqA F \seqA F'}$}
-%% \;
-%% \mprooftr{51mm}
-%% {
-%%   $\Gamma \vdash \eff{op} : \overline{x_i{:}t_i}\sarr \uhat{H}{t}{\msgA{op}{\overline{x_i}} \seqA F}$\\
-%%   $\forall i. \;\Gamma \vdash v_i : t_i$
-%% }
-%% {TRspOp}
-%% {$\Gamma\vdash \respOp{op}{\ensuremath{\iota}} : \uhat{H}{t}{\respEvt{op}{\ensuremath{\iota\; \overline{v_i}}} \seqA F}$}
-%% \\[.8em]
-\mprooftr{35mm}
-{
-$\Gamma\vdash e_1 : \tau_1$ \quad $\Gamma\vdash e_2 : \tau_2$}
-{TChoice}
-{$\Gamma\vdash e_1 \oplus e_2 : \tau_1 \interty \tau_2$}
-\quad
-\mprooftr{66mm}{
-  $\Gamma\vdash e_1 : \uhat{H}{x{:}t_x}{F_1}$ \quad
-  $\Gamma, x{:}t_x\vdash e_2 : \uhat{H \seqA F_1}{t}{F_2}$}
-{TLet}
-{
-  $\Gamma\vdash \zlet{x}{e_1}{e_2} : \uhat{H}{t}{F_1 \seqA F_2}$
-}
-\\[.8em]
-\mprooftr{22mm}{
- $\Gamma, x{:}t_x\vdash e : \tau$
-}{TFun}{
- $\Gamma\vdash \zzlam{x}{e} : x{:}t_x\sarr \tau$}
-\
-\mprooftr{47mm}{
-}{TFixBase}{
- $\Gamma\vdash \zzfix{f}{x}{e} : \overline{x{:}s}\sarr\uhat{H}{\urt{b}{\bot}}{\emptyset}$}
-\
-\mprooftr{27mm}{
- $\Gamma\vdash \zzfix{f}{x}{e} : t$ \quad
- $\Gamma, f{:}t\vdash \zzlam{x}{e} : t'$
-}{TFixInd}{
- $\Gamma\vdash \zzfix{f}{x}{e} : t'$}
-% \quad
-% \mprooftr{60mm}{
-%  $\Gamma\vdash v_1 : y{:}t_y\sarr\uhat{H}{A}$ \quad
-%  $\Gamma\vdash v_2 : t_y$ \quad
-%  $\Gamma; \Delta' \vdash e' : \uhat{H \seqA A}{A'}$
-% }{TApp}{
-%  $\Gamma\vdash \zlet{x}{v_1\;v_2}{e} : \uhat{H}{A \seqA A'}$}
-}
-\vspace*{-.1in}
-\caption{Selected typing rules.}
-\label{fig:selected-typing-rules}
-\vspace*{-.15in}
-\end{figure}
-
 $\DSL{}$ is equipped with a pair of typing judgments on pure and
 effectful expressions, $\Gamma \vdash v : t$ and $\Gamma\vdash e:
 \uhat{H}{x{:}t}{F}$, respectively. Both judgments rely on a type
@@ -510,6 +397,121 @@ can be efficiently handled by an off-the-shelf theorem prover such as
 Z3~\cite{de2008z3}.  We also require the
 history regex $H$ to not be empty, which guarantees that it represents
 a meaningful underapproximate precondition.
+
+\begin{figure}[t!]
+  {\footnotesize
+  {\footnotesize
+  \begin{flalign*}
+   &\text{\textbf{Auxiliary Typing}} & & \fbox{$\Gamma \wfvdash \tau \quad \Gamma \vdash A \subseteq A \quad \Gamma \vdash \tau <: \tau$} &\text{\textbf{Typing}} &  & \fbox{$\Gamma\vdash \eff{op}: t \quad \Gamma\vdash v : t \quad \Gamma \vdash e: \tau$}
+  \end{flalign*}
+  }
+  \\ \
+  \mprooftr{30mm}
+  {$\Gamma\wfvdash \tau[x\mapsto v]$}
+  {SubG}
+  {$\Gamma \vdash x{:}b\garr \tau <: \tau[x\mapsto v]$}
+  \;
+  \mprooftr{41mm}
+  {$\Gamma \vdash t_1 <: t_2$ \quad
+  $\Gamma,x{:}t_1 \vdash F_2 \subseteq F_1$ \quad
+  $\Gamma,x{:}t_1 \vdash H_1 \subseteq H_2$
+   }
+  {SubHF}
+  {$\Gamma \vdash \uhat{H_1}{x{:}t_1}{F_1} <: \uhat{H_2}{x{:}t_2}{F_2}$}
+  \;
+  \mprooftr{30mm}
+  {$\Gamma \vdash \eff{op} : \overline{x{:}t_x}\sarr\uhat{H}{t}{F}$ \quad
+  $\Gamma,\overline{x{:}t_x} \vdash H' \subseteq H$ \quad
+  $\Gamma,\overline{x{:}t_x} \not\vdash H' \subseteq \emptyset$}
+  {TOpHis}
+  {$\Gamma\vdash \eff{op} : \overline{x{:}t_x}\sarr\uhat{H'}{t}{F}$}
+  % \quad
+  % \mprooftr{30mm}
+  % {$\Gamma\vdash e: \tau$ \quad
+  % $\Gamma \vdash \tau <: \tau'$\quad $\Gamma \vdash \tau' <: \tau$}
+  % {TEq}
+  % {$\Gamma\vdash e: \tau'$}
+  \\[.8em]
+  \mprooftr{20mm}
+  {$\Gamma\vdash v : t$}
+  {TRet}
+  {$\Gamma\vdash v : \uhat{H}{t}{\epsilon}$}
+  \quad
+  \mprooftr{15mm}
+  {$\Delta(\eff{op}) = t$}
+  {TOpCtx}
+  {$\Gamma\vdash \eff{op} : t$}
+  \quad
+  \mprooftr{58mm}
+  {
+  $\Gamma \vdash \eff{op} : \overline{x_i{:}t_i}\sarr \uhat{H}{t}{\msgA{op}{\overline{x_i}} \seqA F}$ \quad
+  $\forall i. \;\Gamma \vdash v_i : t_i$}
+  {TEffOp}
+  {$\Gamma\vdash \eff{op}{\;\overline{v_i}} : \uhat{H}{t}{\msgA{op}{\overline{v_i}} \seqA F}$}
+  \\[.8em]
+  %%\mprooftr{56mm}
+  %%{
+  %%$\Gamma \vdash \eff{op} : \overline{x_i{:}t_i}\sarr \uhat{H}{t}{\msgA{op}{\overline{x_i}} \seqA F}$ \\
+  %%  $\forall i. \;\Gamma \vdash v_i : t_i$}
+  %% {TReqOp}
+  %% {$\Gamma\vdash \reqOp{op}{\;\ensuremath{\iota\; \overline{v_i}}} : \uhat{H}{\Code{id}}{\reqEvt{op}{\ensuremath{\iota\; \overline{v_i}}} \seqA F}$}
+  %% % \mprooftr{62mm}
+  %% % {
+  %% % $\Gamma\vdash \eff{op} : \overline{x_i{:}t_i}\sarr \uhat{H}{\Unit}{\msgA{op}{\overline{x_i}} \seqA F}$ \quad
+  %% % $\forall i. \;\Gamma \vdash v_i : \widehat{t_i}$ \quad
+  %% % $\Gamma\vdash e : \uhat{H \seqA (\msgA{op}{\overline{v_i}} \land \msg{op}{\phi}) \seqA F}{t}{F'}$}
+  %% % {TGen}
+  %% % {$\Gamma\vdash \zgen{op}{\overline{v_i}}{e} : \uhat{H}{t}{\msg{op}{\phi} \seqA F \seqA F'}$}
+  %% \;
+  %% \mprooftr{51mm}
+  %% {
+  %%   $\Gamma \vdash \eff{op} : \overline{x_i{:}t_i}\sarr \uhat{H}{t}{\msgA{op}{\overline{x_i}} \seqA F}$\\
+  %%   $\forall i. \;\Gamma \vdash v_i : t_i$
+  %% }
+  %% {TRspOp}
+  %% {$\Gamma\vdash \respOp{op}{\ensuremath{\iota}} : \uhat{H}{t}{\respEvt{op}{\ensuremath{\iota\; \overline{v_i}}} \seqA F}$}
+  %% \\[.8em]
+  \mprooftr{35mm}
+  {
+  $\Gamma\vdash e_1 : \tau_1$ \quad $\Gamma\vdash e_2 : \tau_2$}
+  {TChoice}
+  {$\Gamma\vdash e_1 \oplus e_2 : \tau_1 \interty \tau_2$}
+  \quad
+  \mprooftr{66mm}{
+    $\Gamma\vdash e_1 : \uhat{H}{x{:}t_x}{F_1}$ \quad
+    $\Gamma, x{:}t_x\vdash e_2 : \uhat{H \seqA F_1}{t}{F_2}$}
+  {TLet}
+  {
+    $\Gamma\vdash \zlet{x}{e_1}{e_2} : \uhat{H}{t}{F_1 \seqA F_2}$
+  }
+  \\[.8em]
+  \mprooftr{22mm}{
+   $\Gamma, x{:}t_x\vdash e : \tau$
+  }{TFun}{
+   $\Gamma\vdash \zzlam{x}{e} : x{:}t_x\sarr \tau$}
+  \
+  \mprooftr{47mm}{
+  }{TFixBase}{
+   $\Gamma\vdash \zzfix{f}{x}{e} : \overline{x{:}s}\sarr\uhat{H}{\urt{b}{\bot}}{\emptyset}$}
+  \
+  \mprooftr{27mm}{
+   $\Gamma\vdash \zzfix{f}{x}{e} : t$ \quad
+   $\Gamma, f{:}t\vdash \zzlam{x}{e} : t'$
+  }{TFixInd}{
+   $\Gamma\vdash \zzfix{f}{x}{e} : t'$}
+  % \quad
+  % \mprooftr{60mm}{
+  %  $\Gamma\vdash v_1 : y{:}t_y\sarr\uhat{H}{A}$ \quad
+  %  $\Gamma\vdash v_2 : t_y$ \quad
+  %  $\Gamma; \Delta' \vdash e' : \uhat{H \seqA A}{A'}$
+  % }{TApp}{
+  %  $\Gamma\vdash \zlet{x}{v_1\;v_2}{e} : \uhat{H}{A \seqA A'}$}
+  }
+  \vspace*{-.1in}
+  \caption{Selected typing rules.}
+  \label{fig:selected-typing-rules}
+  \vspace*{-.15in}
+  \end{figure}
 
 The type system also uses a semantic subtyping relation tailored for
 underapproximation; \autoref{fig:selected-typing-rules} presents the
@@ -547,7 +549,7 @@ operator executes, and by the operator type alone.  We, therefore,
 expect that the operator type found in the operator context is the
 most precise one, i.e., it doesn't allow any unreachable history
 traces, and admits underapproximation specialization.  The rule
-\textsc{TOpHis} can then freely choose a subset of the reachable
+\textsc{TOpHis} can then freely choose a \emph{non-empty} subset of the reachable
 history traces to align with the actual calling context.  The
 application rule \textsc{TEffOp} requires the arguments of an
 effectful operator to be well-typed against its parameter types; it
@@ -810,9 +812,8 @@ function itself has type $t$.
 % \end{example}
 
 Although ghost events constrain \tyName{}s, they do not
-appear in the actual traces produced by the operational semantics.  We
-define a erasure function $\eraseGhost{\alpha}$ to erase ghost events
-in a \tyName{} from the trace $\alpha$.
+appear in actual traces produced by the operational semantics. We
+define an erasure function $\eraseGhost{\alpha}$ to remove ghost events from a trace $\alpha$.
 
 \paragraph{Type denotations} Similar to other refinement type
 systems~\cite{JV21}, types in $\DSL$ are denoted as their inhabitants
@@ -824,22 +825,15 @@ language) of SREs is a set of traces. Then, trace inclusion under a
 type context is defined as
 $\Gamma \vdash A \subseteq A' \doteq \forall \sigma \in
 \denot{\Gamma}. \denot{\sigma(A)} \subseteq \denot{\sigma(B)}$.  The
-type denotation of $\uhat{H}{x{:}\urt{b}{\phi}}{F}$ is defined as
-follows:
-% {\small\begin{align*}
-%   &\denot{\rg{H}{A}{F}}_{(\Theta, \Theta')} \doteq \{(e,  e_f) ~|~ \emptyset \basicvdash e : \Code{unit} \land
-%   \\&\qquad \forall \alpha \in \denot{A}. \exists \alpha_h \in\denot{H}.\exists \alpha_f \in \denot{F}. \exists \beta \in \denot{\Theta}. \exists \beta' \in \denot{\Theta'}. \msteptr{\alpha_h}{(\beta, e;e_f)}{\alpha}{(\beta',  e_f)}\mharr{\alpha_f}{(\emptyset, ())} \}
-% \end{align*}}\noindent
-{\small\begin{align*}
-  % &\denot{\uhat{H}{x{:}\urt{b}{\phi}}{F}} \doteq
-  % \\[-0.4em]& \quad
+type denotation of $\uhat{H}{x{:}\urt{b}{\phi}}{F}$ is:
+\vspace{-.4cm} \par\nobreak {\small\begin{align*}
   \{e ~|~ \emptyset \basicvdash e : b \land \forall v{:}b. \phi[v\mapsto v] \impl \forall \alpha_f \in \denot{F[x\mapsto v]}. \exists \alpha_h \in\denot{H[x\mapsto v]}. \msteptr{\eraseGhost{\alpha_h}}{e}{\eraseGhost{\alpha_f}}{v} \}
 \end{align*}}\noindent
 A term $e$ inhabits $\uhat{H}{x{:}\urt{b}{\phi}}{F}$ iff, for trace $\alpha_f$ accepted by $F$, there exists history trace $\alpha_h$ accepted by $H$, such that the execution of $e$ under
 $\alpha_h$ produces $\alpha_f$.
 \footnote{The details of these definition can be found in our \techreport{}.}
 Our formulation constitutes a trace-based analogue of IL~\cite{OHP19}, in which effects are modeled as program state transitions:
-{\small\begin{align*}
+\vspace{-.4cm} \par\nobreak {\small\begin{align*}
   [P]\; e\; [Q] \doteq \forall s_\Code{post} \in \denot{Q}. \exists s_\Code{pre} \in \denot{P}. (s_\Code{pre}, e) \Downarrow s_\Code{post}
 \end{align*}}\noindent
 A notable distinction between these two presentations is that we
@@ -881,10 +875,10 @@ semantics:
   consistent with the type $\overline{x{:}b_{\I{x}}}\garr
   \overline{y{:}t_{\I{y}}}\sarr \uhat{H}{z{:}t}{F}$ provided by $\Delta$, and $H$
   does not specify any unreachable traces.
-  \begin{align*}
+  \vspace{-.4cm} \par\nobreak {\small\begin{align*}
 \overline{\forall
       x{:}b_{\I{x}}}.\; \overline{\forall y \in \denotation{t_{\I{y}}}}.\; \forall H'. H'\not=\emptyset \land  H' \subseteq H \impl (\eff{op}\, \overline{y}) \in \denotation{\uhat{H'}{z{:}t}{F}}
-  \end{align*}
+  \end{align*}} \vspace{-.4cm} \par\nobreak\noindent
 \end{definition}
 
 \begin{theorem}[Fundamental Theorem]
