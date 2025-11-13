@@ -121,10 +121,10 @@ Our experimental evaluation addresses three research questions:
 \midrule
 \textsf{Stack}\cite{ZYDJ24} & {\scriptsize  Pushed values are dropped.} & $6$ & $12$ & $3$ & $1.0$ & $31.9$ & $0.60$ & $15$ & $4$ & $98$\\
 \midrule
-\textsf{Filesystem}\cite{ZYDJ24} & {\scriptsize Allow access to a file whose ancestor directory has been deleted.} & $7$ & $67$ & $4$ & $1.3$ & $2812.1$ & $6.02$ & $13$ & $14$ & $853$\\
+\textsf{Set}\cite{ZYDJ24} & {\scriptsize Missing inserted value.} & $7$ & $22$ & $3$ & $1.0$ & $22.1$ & $1.28$ & $12$ & $12$ & $255$\\
 \midrule
 \midrule
-\textsf{Graph}\cite{ZYDJ24} & {\scriptsize Graph search fails when graph is not fully connected.} & $6$ & $24$ & $4$ & $1.0$ & {\tiny Timeout} & $16.61$ & $16$ & $16$ & $2114$\\
+\textsf{Graph}\cite{ZYDJ24} & {\scriptsize A connected graph with at least $3$ nodes.} & $6$ & $24$ & $4$ & $1.0$ & {\tiny Timeout} & $16.61$ & $16$ & $16$ & $2114$\\
 \midrule
 \textsf{NFA}\cite{ZYDJ24} & {\scriptsize NFA acceptor fails if a state has more than two outgoing
   edges.} & $8$ & $50$ & $4$ & $1.0$ & {\tiny Timeout} & $21.85$ & $26$ & $6$ & $5080$\\
@@ -142,11 +142,11 @@ Our experimental evaluation addresses three research questions:
   a well-typed higher-order STLC program using a de Brujin representation.} & $10$ & $118$ & $4$ & $1.4$ & {\tiny Timeout}$^{\dagger}$ & $91.73$ & $18$ & $31$ & $9034$\\
 \midrule
 \midrule
-\textsf{ReadAtomicity} & {\scriptsize Asynchronous reads behave atomically.} & $?$ & $?$ & $?$ & $?$ & $?$ & $?$ & $?$ & $?$\\
-\midrule
 \textsf{Shopping}\cite{MonkeyDB} & {\scriptsize Added items to a cart are not visible.} & $10$ & $60$ & $3$ & $1.0$ & $20.0^{\dagger}$ & $22.10$ & $17$ & $30$ & $1269$\\
 \midrule
-\textsf{HashTable}\cite{OcamlMulticorePBT} & {\scriptsize A concurrent hashtable lose updates.} & $13$ & $29$ & $15$ & $1.0$ & $2.5^{\dagger}$ & $0.58$ & $5$ & $5$ & $45$\\
+\textsf{HashTable}\cite{OcamlMulticorePBT} & {\scriptsize A concurrent hashtable loses updates.} & $13$ & $38$ & $4$ & $1.0$ & $2.5^{\dagger}$ & $0.76$ & $6$ & $6$ & $57$\\
+\midrule
+\textsf{ReaderWriter} & {\scriptsize Read atomicity violation.} & $8$ & $45$ & $3$ & $1.2$ & {\tiny Timeout} & $2.89$ & $15$ & $16$ & $423$\\
 \midrule
 \textsf{Courseware}\cite{MonkeyDB} & {\scriptsize A database managing courses loses
   enrollment updates.} & $16$ & $106$ & $3$ & $1.0$ & $57.5^{\dagger}$ & $27.71$ & $18$ & $33$ & $1479$\\
