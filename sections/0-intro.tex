@@ -13,7 +13,7 @@ proposed~\cite{casl,OHP19,LR+22,ZDS23} for reasoning about
 \emph{incorrectness} properties of a program, i.e., a characterization
 of the conditions under which a particular error state is guaranteed
 to be reached.  As one example, O'Hearn defines~\cite{OHP19}
-incorrectness triples of the form $[P]\texttt{c}[Q]$, which assert
+incorrectness triples of the form $[P]\;\texttt{c}\;[Q]$, which assert
 that for any post-state of a command \texttt{c} satisfying assertion
 $Q$ there \emph{must} exist a pre-state satisfying $P$.  This
 interpretation underapproximates \texttt{c}'s behavior because it
@@ -38,8 +38,9 @@ effectful libraries.  To address this important limitation, this paper
 introduces \emph{Underapproximate Hoare Automata Types}, or
 \tyName{}s, a type abstraction for \emph{underapproximating effectful
   computations}.  A \tyName{} type judgement has the form:
+\vspace{-.4cm} \par\nobreak {
 \[\vdash e\, :\, [H]\,t\,[F]\]
-\noindent where $H$ and $F$ qualify type $t$ with pre- ($H$) and post-
+}\noindent where $H$ and $F$ qualify type $t$ with pre- ($H$) and post-
 ($F$) conditions. Both conditions are expressed as symbolic regular
 expressions (SREs) that capture the trace of effects performed before
 and by $e$, similar to the \textsc{Hat}s proposed by
@@ -62,11 +63,11 @@ $\eff{put}$s:
   \effLR{\allA \seqA \msgA{put}{k\;v}\seqA \allA }
   \urt{\Code{Value.t}}{\vnu = v} \effLR{\msgA{get}{k\; v}}
 \end{align*}
-}
+}\noindent
 This \tyName{} asserts that a $\eff{get}$ operation is guaranteed to
 produce a trace consisting of a single event, $\msgA{get}{k\; v}$,
 provided that some $\eff{put}$ operation binding $k$ to $v$
-($\allA\seqA\msgA{put}{k\;v}\seqA\allA$) was executed before.  The
+(i.e., $\allA\seqA\msgA{put}{k\;v}\seqA\allA$) was executed before.  The
 underapproximate interpretation given to \tyName{}s encodes a form of
 reachability and data dependence between the effects that have
 occurred prior to executing an operation, and the effect produced by
@@ -162,9 +163,11 @@ provided specifications when performing effects.
 % intelligently inform SUT input generation.
 \begin{wrapfigure}{l}{.65\textwidth}
   \centering
-  \includegraphics[width=0.98\linewidth]{figures/workflow.pdf}
+  \includegraphics[width=0.98\linewidth]{figures/clouseau-workflow.drawio.png}
+  \vspace*{-.1in}
   \caption{\name\ workflow}
   \label{fig:workflow}
+  \vspace*{-.2in}
 \end{wrapfigure}
 
 \autoref{fig:workflow} depicts the workflow of our system, named
