@@ -207,9 +207,8 @@ underapproximate type.
     % \\\text{\textbf{Symbolic Event}}& \quad &se  ::= \quad & \msgB{op}{\overline{x}}{\phi}
     \text{\textbf{Symbolic Regex}}& \quad &H,F,A  ::= \quad & \emptyset ~|~ \epsilon ~|~ \msgB{op}{\overline{x}}{\phi} ~|~ A \lorA A ~|~ A \seqA A ~|~ A^* ~|~ A \setminus A ~|~ A \landA A ~|~ \anyA
     % \\& \quad &  \quad & \text{\textcolor{gray}{in Symbolic LTL$_f$ }}  se ~|~ A \lorA A ~|~ \nextA A ~|~ A \untilA A ~|~ \negA A ~|~ A \landA A
-    \\\text{\textbf{Pure Refinement Types}}& \quad & t  ::= \quad & \urt{b}{\phi} ~|~  x{:}t\sarr t ~|~ x{:}t\sarr \tau
-    \\ \text{\textbf{Underapproximate HATs}}& \quad & \tau  ::= \quad & \uhat{H}{x{:}t}{F} ~|~ \tau \interty \tau ~
-    |~ x{:}b \garr \tau ~|~ \effGray{op}{:}s \sarr \tau
+    \\\text{\textbf{Pure Refinement Types}}& \quad & t  ::= \quad & \urt{b}{\phi} ~|~  x{:}t\sarr t ~|~ x{:}t\sarr \tau ~|~ x{:}b \garr t ~|~ \effGray{op}{:}s \sarr t
+    \\ \text{\textbf{Underapproximate HATs}}& \quad & \tau  ::= \quad & \uhat{H}{x{:}t}{F} ~|~ \tau \interty \tau
     \\\text{\textbf{Type Contexts}}& \quad &\Gamma ::= \quad  &\emptyset ~|~ x{:}t, \Gamma
   \end{alignat*}
   \vspace*{-.15in}

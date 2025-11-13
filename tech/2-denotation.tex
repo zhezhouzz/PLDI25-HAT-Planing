@@ -5,27 +5,19 @@
 \footnotesize{
 {\small
 \begin{flalign*}
- &\text{\textbf{Well-Formed Message, Capability, and Trace}} & \fbox{$\wfvdash m \quad \wfvdash \beta \quad  \wfvdash \alpha$}
+ &\text{\textbf{Well-Formed Event and Trace}} & \fbox{$\wfvdash m \quad \wfvdash \alpha$}
 \end{flalign*}
 \begin{prooftree}
 \hypo{
-\emptyset \basicvdash \eff{op} : \overline{b}\sarr\Code{unit} \quad
-\forall i. \emptyset \basicvdash c_i : b_i\quad
+\emptyset \basicvdash \eff{op} : \overline{b_i}\sarr b \quad
+\emptyset \basicvdash c' : b \quad
+\forall i. \emptyset \basicvdash c_i : b_i
 }
-\infer1[\textsc{WfMsg}]{
-    \wfvdash \zevent{op}{\overline{c}}
+\infer1[\textsc{WfEvent}]{
+    \wfvdash \zevent{op}{\overline{c_i}\;c'}
 }
 \end{prooftree}
 \quad
-\begin{prooftree}
-\hypo{
-\forall m \in \beta. \wfvdash m
-}
-\infer1[\textsc{WfCapability}]{
-    \wfvdash \beta
-}
-\end{prooftree}
-\ \\ \ \\ \ \\
 \begin{prooftree}
 \hypo{}
 \infer1[\textsc{WfNil}]{
@@ -68,18 +60,21 @@
 \end{flalign*}}
 \vspace{-1.5em}
 \begin{align*}
-  &\denot{ \ort{b}{\phi} } &&\doteq \{ c ~|~ \emptyset
-                                       \basicvdash c : b \land
-                                       \phi[\nu\mapsto v] \}
-  \\ &\denot{ x{:}\ort{b}{\phi} \sarr t } &&\doteq \{ e ~|~ \emptyset \basicvdash e : b\sarr\eraserf{t} \land
-                                           \forall c \in \denot{ \ort{b}{\phi} }.\, e\ c \in  \denot{ t[x \mapsto c ] } \}
-  \\ &\denot{ x{:}\ort{b}{\phi}\sarr\tau } &&\doteq \{ e ~|~ \emptyset \basicvdash e : b\sarr\eraserf{\tau} \land
-                                           \forall c \in \denot{ \ort{b}{\phi} }.\, e\ c \in  \denot{ \tau[x\mapsto c ] } \}
+  &\denot{ \urt{b}{\phi} } &&\doteq \{ e ~|~ \emptyset
+                                       \basicvdash e : b \land
+                                       \forall v. \phi[\nu\mapsto v] \impl \msteptr{[\;]}{e}{[\;]}{v}  \}
+  \\ &\denot{ x{:}\urt{b}{\phi} \sarr t } &&\doteq \{ e ~|~ \emptyset \basicvdash e : b\sarr\eraserf{t} \land
+                                           \forall v.\, \phi[\nu\mapsto v] \implies e\ v \in  \denot{ t[x \mapsto v ] } \}
+  \\ &\denot{ x{:}\urt{b}{\phi}\sarr\tau } &&\doteq \{ e ~|~ \emptyset \basicvdash e : b\sarr\eraserf{\tau} \land
+                                           \forall v.\, \phi[\nu\mapsto v] \implies e\ v \in  \denot{ \tau[x\mapsto v ] } \}
+  \\ &\denot{ x{:}t_x \sarr t } &&\doteq \{ e ~|~ \emptyset \basicvdash e : \eraserf{t_x\sarr t} \land
+                                           \forall v_x \in \denot{t_x}.\, e\ v_x \in  \denot{ t[x \mapsto v_x ] } \} \quad \text{$t_x$ is a function type}
+  \\ &\denot{ x{:}t_x\sarr\tau } &&\doteq \{ e ~|~ \emptyset \basicvdash e : \eraserf{t_x\sarr\tau} \land
+                                           \forall v_x \in \denot{t_x}.\, e\ v_x \in  \denot{ \tau[x \mapsto v_x ] } \} \quad \text{$t_x$ is a function type}
   \\ &\denot{ x{:}b\garr\tau } &&\doteq \{ e ~|~ 
     \emptyset \basicvdash e : \eraserf{\tau} \land 
-    \forall c \in \denot{\ort{b}{\top}}. e \in  \denot{ \tau[x\mapsto c ] } \}
-  \\ &\denot{\rg{H}{A}{F}} &&\doteq \{e ~|~ \emptyset \basicvdash e : \Code{unit} \land \forall \alpha_h \in\denot{H}.\forall \alpha_f \in\denot{F}. \forall \alpha\; \beta\;\beta'\;e_h\;e_f.
-  \\&&& \qquad \msteptr{[]}{(\emptyset, e_h)}{\alpha_h}{(\beta, ())}\land \msteptr{\alpha_h}{(\beta, e)}{\alpha}{(\beta', ())} \land \msteptr{\alpha_h \listconcat \alpha }{(\beta', e_f)}{\alpha_f}{(\emptyset, ())} \impl \alpha \in\denot{A} \}
+    \forall c{:}b. e \in  \denot{ \tau[x\mapsto c ] } \}
+  \\ &\denot{\rg{H}{A}{F}} &&\doteq \{e ~|~ \emptyset \basicvdash e : s \land \forall v{:}b. \phi[v\mapsto v] \impl \forall \alpha_f \in \denot{F[x\mapsto v]}. \exists \alpha_h \in\denot{H[x\mapsto v]}. \msteptr{\eraseGhost{\alpha_h}}{e}{\eraseGhost{\alpha_f}}{v} \}
   \\ &\denot{ \tau_1 \interty \tau_2 } &&\doteq \denot{\tau_1} \cap \denot{\tau_2}
 \end{align*}
 \vspace{-1.5em}
@@ -90,20 +85,11 @@
 \end{flalign*}}
 \vspace{-1.2em}
 \begin{flalign*}
-    \denot{ \emptyset } &\doteq \{ \emptyset \} \qquad\qquad\qquad\qquad&
-    \denot{ x{:}t, \Gamma } &\doteq \{ \sigma[x\mapsto c] ~|~ c\in \denot{t}, \sigma \in \denot{\Gamma[x\mapsto c]} \}
+    &\denot{ \emptyset } \doteq \{ \emptyset \} \quad \denot{ x{:}\urt{b}{\phi} } \doteq  \{ \sigma[x\mapsto v] ~|~ \phi[\vnu \mapsto v], \sigma \in \denot{\Gamma[x\mapsto v]} \}
+    &
+    &\denot{ x{:}t, \Gamma } \doteq \denot{ \Gamma } \quad \text{if $t$ is not a base type}
 \end{flalign*}
 }
-\vspace{-1.5em}
-{\small
-\begin{flalign*}
-  &\text{\textbf{Capability Context Denotation}}
-  & \fbox{$\denot{\Theta} \in \mathcal{P}(\beta)$}
-\end{flalign*}}
-\vspace{-1.2em}
-\begin{flalign*}
-    \denot{ \Theta } &\doteq \{ \{\overline{\zevent{op}{\overline{c}}}\} ~|~ \{\overline{\eff{op}}\} = \Theta \land \wfvdash \{\overline{\zevent{op}{\overline{c}}}\}   \}
-\end{flalign*}
 \vspace{-0.4cm}
 \caption{Type denotations in $\DSL{}$}
 \label{fig:type-denotation}
