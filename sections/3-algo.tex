@@ -226,6 +226,16 @@ On the other hand, the $\msgAGray{popI}{m\;y}$ event in the abstract trace has i
   % Why do we do this unrolling?
 }
 
+The trace update erase ghost variables:
+\begin{align*}
+  (m{:}\urt{\Int}{\vnu = 0}, n{:}\urt{\Int}{\vnu = m{+}1}, y{:}\urt{\Int}{\top}, x{:}\urt{\Int}{\vnu > y}, \msgA{push}{x};\msgA{pop}{x})
+\end{align*}
+
+\begin{minted}[fontsize = \footnotesize, escapeinside=??, xleftmargin=10pt, linenos]{ocaml}
+  let (x: int) = int_gen () in assume (?$\exists m\;n\;y. m = 0 \land n = m{+}1 \land x > y$?) in push x; (* equal to assume true *)
+  let (z: int) = pop () in assert (x == z)
+\end{minted}
+
 Kleene stars ($\Pi^*$) in abstract traces are interpreted as recursion
 points. The synthesis algorithm $\derive$ non-deterministically either
 (i) generates a sequential program by eliminating all ghost events and
@@ -293,8 +303,7 @@ let rec f () =
   () ?$\oplus$?
     let (x: int) = int_gen () in push x; (* e1 *)
     f ();
-    let (y: int) = pop () in (*e2 *)
-    assert (x == y) (* e3 *)
+    let (z: int) = pop () in assert (x == z) (*e2 *)
 in f ()
   \end{minted}
 \end{example}
