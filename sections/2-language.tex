@@ -647,20 +647,20 @@ function itself has type $t$.
       \\[-0.2em]& \qquad\qquad\  \uhat{\Code{Last}(\msgAGray{popI}{m\;\_}) \land
       \Code{Last}(\msgAGray{pushI}{n\;\_}) \land
       (\allA\msgAGray{pushI}{(n{-}m)\;x}\allA)}{x{:}\Int}{\msgA{pop}{x}\msgAGray{popI}{m{+}1\;x}}
-    && \tag{\ding{172}}\label{eqn:typing+l1}
+    && \tag*{\ding{172}}\label{eqn:typing+l1}
       \\&... \vdash \eff{pop} : \uhat{\Code{Last}(\msgAGray{popI}{0\;\_}) \land
       \Code{Last}(\msgAGray{pushI}{1\;\_}) \land
       (\allA\msgAGray{pushI}{1\;x}\allA)}{x{:}\Int}{\msgA{pop}{x}\msgAGray{popI}{1\;x}}
-    && \tag{\ding{173}}\label{eqn:typing+l2}
+    && \tag*{\ding{173}}\label{eqn:typing+l2}
       \\&... \vdash \eff{pop} : \uhat{\Code{Last}(\msgAGray{popI}{0\;\_}) \land
       \Code{Last}(\msgAGray{pushI}{1\;\_}) \land
       (\allA\msgAGray{pushI}{1\;x}\allA)}{x{:}\urt{\Int}{0 <
         \vnu}}{\msgA{pop}{x}\msgAGray{popI}{1\;x}} &&
-    \tag{\ding{174}}\label{eqn:typing+l3}
+    \tag*{\ding{174}}\label{eqn:typing+l3}
       \\&... \vdash \eff{pop} :
       \uhat{\msgAGray{pushI}{0\;0}\msgAGray{popI}{0\;0}\msgA{push}{x}\msgAGray{pushI}{1\;x}}{x{:}\urt{\Int}{0
           < \vnu}}{\msgA{pop}{x}\msgAGray{popI}{1\;x}} &&
-      \tag{\ding{175}}\label{eqn:typing+l4}
+      \tag*{\ding{175}}\label{eqn:typing+l4}
     \end{flalign}}%
   \noindent
 \end{example}
