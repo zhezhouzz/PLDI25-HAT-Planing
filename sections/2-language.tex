@@ -48,12 +48,13 @@ a program \emph{must} be able to produce, \emph{if} the system under
 test produces appropriate responses. The syntax of \DSL{} is shown in
 \autoref{fig:term-syntax}; the calculus includes both pure and
 effectful operations ($\primop$ and $\eff{op}$), nondeterministic
-choices ($\oplus$), and $\mykw{assume}$ and $\mykw{assert}$ statements
-in the style of solver-aided languages~\cite{BC+10}. As we saw in
-\autoref{sec:overview}, asynchronous effects can be modeled as a pair
-of $\eff{opReq}$ / $\eff{opResp}$ operation, where the former
-generates an id (given as $\iota$ in the syntax) that can then be
-subsequently used when performing a corresponding response operation.
+choices ($\oplus$), recursion (\textbf{fix}), and $\mykw{assume}$ and
+$\mykw{assert}$ statements in the style of solver-aided
+languages~\cite{BC+10}. As we saw in \autoref{sec:overview},
+asynchronous effects can be modeled as a pair of $\eff{opReq}$ /
+$\eff{opResp}$ operations, where the former generates an id (given as
+$\iota$ in the syntax) that can then be subsequently referenced when
+performing a corresponding response operation.
 %\autoref{fig:term-syntax} defines some shorthand notations used by our
 %examples, e.g., we use $e_1;e_2$ to simplify $\mykw{let}$-expressions
 %when the remaining program does not use the bound variable, i.e.,
@@ -245,7 +246,7 @@ predicates that describes an effectful operation {$\eff{op}$} whose
 arguments $\overline{x}$ satisfy the qualifier $\phi$. SREs provide a
 convenient language for writing SFAs, supporting versions of the
 standard regex operators shown in \autoref{fig:type-syntax}, including
-union $A \lorA A$, sequence $A \seqA A$, and kleene star $A^*$
+union $A \lorA A$, sequence $A \seqA A$, and Kleene star $A^*$
 operators.
 
 The figure also gives the definition of the type aliases that
@@ -297,10 +298,9 @@ symbolic events and types.
     \end{align*}}\noindent
   Intuitively, the $\effGray{pushI}$ and $\effGray{popI}$ ghost events are
   simply $\eff{push}$ and $\eff{pop}$ events equipped with indices that
-  record the number of push and pop operations.\footnote{For simplicity,
-    we assume the index starts from $1$, so the first push will be
-    recorded as $\msgAGray{pushI}{1\;x}$. We also omit unused variables
-    using the wildcard $\_$.}  The signature for $\eff{push}$ requires
+  record the number of push and pop operations.  As seen here, ghost events allow \tyName{}
+    specifications to capture latent data dependencies between effectful
+    operations.   The signature for $\eff{push}$ requires
   that the new pushed value ($x$) is greater than the last pushed value
   ($y$), and adds a new ghost event $\effGray{pushI}$ with an
   incremented index (i.e., $\msgAGray{pushI}{n{+}1\;x}$).  The
@@ -511,18 +511,19 @@ Z3~\cite{de2008z3}.  We also require the
 history regex $H$ to not be empty, which guarantees that it represents
 a meaningful underapproximate precondition.
 
-The type system also uses a mostly standard semantic subtyping
-relation; \autoref{fig:selected-typing-rules} presents the key
-subtyping rule for \tyName{}s.  The rule \textsc{SubG} allows the
+The type system also uses a semantic subtyping relation tailored for
+underapproximation; \autoref{fig:selected-typing-rules} presents the
+key subtyping rule for \tyName{}s.  The rule \textsc{SubG} allows the
 instantiation of a ghost variable in a \tyName{} into well-formed
 types. The rule \textsc{SubHF} uses an auxiliary inclusion relation on
 SREs $\Gamma \vdash A \subseteq A$ to relate the history and future
 regexes of two \tyName{}s under the current type context $\Gamma$, as
 well as the return type using the standard subtyping relation on pure
-refinement types. Notably, this subtyping relation is covariant in the
-history regex and contravariant in the future regex, yielding behavior
-similar to the reverse rule of consequence found in Incorrectness
-Logic (IL)~\cite{OHP19}.  Informally, the rule allows specialization of the
+refinement types. Notably, because our typing judgements are
+underapproximate, this subtyping relation is covariant in the history
+regex and contravariant in the future regex, yielding behavior similar
+to the reverse rule of consequence found in Incorrectness Logic
+(IL)~\cite{OHP19}.  Informally, the rule allows specialization of the
 history trace (i.e., $H_1 \subseteq H_2$) and generalization of the
 future trace (i.e., $F_2 \subseteq F_1$).  In other words, we can
 always replace a \tyName{} triple with one that can justify more
@@ -808,8 +809,8 @@ function itself has type $t$.
 %   In the final step, the program executes $\mykw{obs}\;\eff{readRsp}\;2$, producing a read value $y=7$, which matches the value of the most recent $\eff{writeRsp}$ (blue) at the point where the $\eff{readReq}$ event (orange) occurred. Thus, read atomicity is preserved and execution can continue to generate further transactions.
 % \end{example}
 
-Although ghost events are constrained by \tyName{}s, they do not
-appear in the actual traces produced by operational semantics.  We
+Although ghost events constrain \tyName{}s, they do not
+appear in the actual traces produced by the operational semantics.  We
 define a erasure function $\eraseGhost{\alpha}$ to erase ghost events
 in a \tyName{} from the trace $\alpha$.
 

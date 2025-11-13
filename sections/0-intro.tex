@@ -67,7 +67,7 @@ This \tyName{} asserts that a $\eff{get}$ operation is guaranteed to
 produce a trace consisting of a single event, $\msgA{get}{k\; v}$,
 provided that some $\eff{put}$ operation binding $k$ to $v$
 ($\allA\seqA\msgA{put}{k\;v}\seqA\allA$) was executed before.  The
-underapproximate interpretation of \tyName{} encodes a form of
+underapproximate interpretation given to \tyName{}s encodes a form of
 reachability and data dependence between the effects that have
 occurred prior to executing an operation, and the effect produced by
 the operation --- in this case, the execution of a $\eff{get}$
