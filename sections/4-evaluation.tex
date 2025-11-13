@@ -293,20 +293,20 @@ even for benchmarks in which there is a sophisticated customized
 generator available\footnote{We used the artifacts available in their
   publication as the baseline.} (e.g., \textsf{IFC} or \textsf{de
   Brujin}), \tyName{}-guided synthesis leads to significantly better
-outcomes.  The baseline for A number of the concurrency benchmarks is
-MonkeyDB~\cite{MonkeyDB}, a mock storage system that can be used to
-find violations of database isolation properties.  Although it is
-specialized for this particular application class, and \name{} is not,
-evaluation results are comparable, with \name{} yielding generators
-that identify weak isolation violations modestly more effectively than
-the targeted baseline.  Similar conclusions apply to the P benchmarks
-shown in~\autoref{tab:evaluation2}.  For the simple benchmarks in this
-table, P's default scheduler, which performs enumerative state
-exploration to construct schedules, independently of the behaviors of
-the actors under test or the target property, or handwritten ones
-which inject additional actors to control input message generation and
-prevent uninteresting message orderings (e.g. \textsf{Simplified2PC}
-or \textsf{Heartbeat}), are effective and \name{}'s performance is
+outcomes.  We use MonkeyDB~\cite{MonkeyDB}, a mock storage system that
+can be used to find violations of database isolation properties, as
+the baseline for a number of the concurrency benchmarks.  Although it
+is specialized for this particular application class, and \name{} is
+not, evaluation results are comparable, with \name{} yielding
+generators that identify weak isolation violations modestly more
+effectively than the baseline.  Similar conclusions apply to the P
+benchmarks shown in~\autoref{tab:evaluation2}.  For simple benchmarks,
+P's default scheduler, which performs enumerative state exploration to
+construct schedules, independently of the behaviors of the actors
+under test or the target property, or handwritten ones which inject
+additional actors to control input message generation and prevent
+uninteresting message orderings (e.g. \textsf{Simplified2PC} or
+\textsf{Heartbeat}), are effective and \name{}'s performance is
 comparable to these.  But, as in the previous set of experiments, for
 more complex benchmarks (e.g., \textsf{ChainReplication},
 \textsf{Paxos}), even manual specialization to generate interesting

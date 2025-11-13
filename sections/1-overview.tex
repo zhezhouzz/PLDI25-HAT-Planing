@@ -314,12 +314,11 @@ this property and the \tyName{} specifications for $\eff{push}$ and $\eff{store}
   let push_gen () =
     let (x: int) = ?$\mykw{assume}(\mbox{\textit{isAddr}}$? x) in
     let (y: int) = ?$\mykw{assume}(\mbox{\textit{isAddr}}$? y) in
-    (?$\mykw{assume}$? (x = y); ?$\eff{push}$? L ?$\langle$?x, y?$\rangle$?) ?$\oplus$? (?$\mykw{assume}$?(x != y); ?$\eff{push}$? H ?$\langle$?x, y?$\rangle$?)
+    (?$\mykw{assume}$? (x = y); ?$\eff{push}$? L ?$\langle$?x, y?$\rangle$?) ?$\oplus$?
+    (?$\mykw{assume}$?(x != y); ?$\eff{push}$? H ?$\langle$?x, y?$\rangle$?)
   in push_gen (); push_gen (); ?$\eff{store}$?;
 \end{minted}
-
 %\end{example}
-
 %\begin{example}[De Bruijn Index]  \label{ex:de-bruijn-index}
 \paragraph{STLC Terms}
   Our final example applies our approach to the
