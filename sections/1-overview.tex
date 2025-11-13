@@ -113,11 +113,11 @@ halts program execution if the formula $\phi$ fails to hold.
     and commit their value to the database immediately.}: %
   \vspace{-.4cm} \par\nobreak {\scriptsize %
     \begin{align*}
-      & \text{\textcolor{gray}{Client 1:}}\ \msgA{write}{3};
+      & \text{\textcolor{blue}{Client 1:}}\ \msgA{write}{3};
       & \msgA{write}{4} & \\
-      & \text{\textcolor{gray}{Client 2:}} \quad \quad \quad \quad \quad \quad \msgA{readReq}{\iota_1};\msgA{readRsp}{\iota_1\;3};\msgA{readReq}{\iota_2};& &\textcolor{red}{\msgA{readRsp}{\iota_2\;4}}
+      & \text{\textcolor{blue}{Client 2:}} \quad \quad \quad \quad \quad \quad \msgA{readReq}{\iota_1};\msgA{readRsp}{\iota_1\;3};\msgA{readReq}{\iota_2};& &\textcolor{red}{\msgA{readRsp}{\iota_2\;4}}
     \end{align*}}\noindent
-  Here, \textcolor{gray}{Client 2} issues two consecutive asynchronous
+  Here, \textcolor{blue}{Client 2} issues two consecutive asynchronous
   read operations.  A $\eff{readReq}$ event indicates that an asynchronous
   read request effect has been issued by the client on the single key managed
   by the database; the asynchronous response
@@ -131,7 +131,7 @@ halts program execution if the formula $\phi$ fails to hold.
   \vspace{-.4cm} \par\nobreak {\small %
   \begin{align*}
     &\eff{readRsp}:
-      \effLR{\Code{LAST}(\msgA{write}{v})\seqA\msgA{readReq}{\iota}\seqA
+      \effLR{\Code{LAST}(\msgA{write}{v})\;\seqA\;\msgA{readReq}{\iota}\;\seqA\;
       \allA}\urt{\Code{int}}{\vnu = v}\effLR{\msgA{readRsp}{\iota\;v}}
   \end{align*}}\noindent
 This type specifies that the response to a previously issued
@@ -147,7 +147,7 @@ trace which contains these events.  This \tyName{} uses
 \Code{LAST}($\eff{evt}$) as an alias for the following regex:
 \vspace{-.4cm} \par\nobreak {\small %
   \begin{align*}
-    \Code{LAST}(\eff{evt}) \equiv \allA\seqA \eff{evt}\seqA (\anyA \setminus \eff{evt})^*
+    \Code{LAST}(\eff{evt}) \equiv \allA\;\seqA\; \eff{evt}\;\seqA\; (\anyA \setminus \eff{evt})^*
   \end{align*}
 }\noindent %
 An implementation of $\eff{readResp}$ that does not satisfy this type
@@ -158,7 +158,7 @@ following SRE:\footnote{SREs are implicitly universally quantified
   over any free variables occuring in them.}%
 \vspace{-.4cm} \par\nobreak {\small %
   \begin{align}
-    &\Code{LAST}(\msgA{write}{v}) \seqA \msgA{readReq}{\iota} \seqA \Code{FIRST}(\msgA{readRsp}{\iota\;v})
+    &\Code{LAST}(\msgA{write}{v})\; \seqA\; \msgA{readReq}{\iota}\; \seqA\; \Code{FIRST}(\msgA{readRsp}{\iota\;v})
       \tag{$A_\text{atomic}$}\label{eqn:ReadAtomicity}
   \end{align}
 }
@@ -166,8 +166,8 @@ following SRE:\footnote{SREs are implicitly universally quantified
 \Code{FIRST}($\eff{evt}$) as an alias for the following regex:
 \vspace{-.4cm} \par\nobreak {\small %
   \begin{align*}
-    \Code{FIRST}(\eff{evt})   \equiv (\anyA \setminus \eff{evt})^*
-    \seqA \; \eff{evt}\seqA \; \allA;
+    \Code{FIRST}(\eff{evt})   \equiv (\anyA \setminus \eff{evt})^*\;
+    \seqA \; \eff{evt}\; \seqA \; \allA;
   \end{align*}
 }\noindent %
 A violation of this property can be manifested by a test
@@ -179,7 +179,7 @@ Asynchronous effect pairs like $\eff{readReq}$/$\eff{readRsp}$ allow
 our DSL to support a form of \emph{interactive} test generation,
 instructing the SUT to perform effects via $\eff{opReq}$, and later
 observing the results via their $\eff{opResp}$ counterparts.  For
-instance, the test generator shown to the right is automatically
+instance, the test generator shown below is automatically
 \begin{wrapfigure}{r}{.4\textwidth}
   \vspace{-5pt}
   \begin{minted}[fontsize = \footnotesize, escapeinside=??, xleftmargin=18pt, linenos]{ocaml}
@@ -204,7 +204,9 @@ This behavior is subsumed by the recursive call to
 \Code{transaction\_gen} at line 5.  The $\eff{readReq}$ effect at line
 4 matches the $\msgA{readResp}{\iota}$ event and the $\eff{write}$
 operations on line 3 are synthesized from the $\msgA{write}{v}$ event
-that precedes the $\EvtNoArgs{readReq}$ in the history trace.  The
+that precedes the $\EvtNoArgs{readReq}$ in the history trace; since $v$
+is unconstrained in the specification, it is instantiated by a call
+to the \Code{int\_gen} primitive generator at line 2.  The
 choice operator at line 2 determines if more recursive calls are
 required, i.e., if more $\eff{readReq}$ and $\eff{writeResp}$ events
 are generated.  The assertion comparing \Code{y} with \Code{x}
@@ -281,7 +283,7 @@ that cannot violate non-interference (e.g.,
 $\zevent{push}{\Code{L}, \langle 0, 1 \rangle}$), operate over invalid
 addresses (e.g., $\zevent{push}{\Code{L},\langle -1, -1\rangle}$), or
 construct executions with uninteresting secrets (e.g.,
-$\zevent{push}{\Code{H}, \langle 1, 1\rangle}$, we can provide our
+$\zevent{push}{\Code{H}, \langle 1, 1\rangle}$, we provide our
 synthesizer with the following \tyName{} specifications:%
 \vspace{-.4cm} \par\nobreak {\small %
   \begin{align*}
@@ -289,8 +291,8 @@ synthesizer with the following \tyName{} specifications:%
     & \effLR{\allA} \;\Code{unit}\; \effLR{\msgB{push}{\I{lvl}\;x\;y}{\I{lvl} = \Code{L} {\iff} x = y}}
     \\
     \eff{store} ~:~
-    & \effLR{\allA \seqA \msgA{push}{\I{lvl}\;x_1\;y_1\rangle} \seqA
-      (\anyA \setminus \msgC{store})^* \seqA \msgB{push}{\I{lvl}\;x_2\;y_2}{\I{isAddr}(x_2) \land \I{isAddr}(y_2)}}\; \Code{unit} \; \effLR{\eff{store}}
+    & \effLR{\allA\; \seqA\; \msgA{push}{\I{lvl}\;x_1\;y_1\rangle} \seqA\;
+      (\anyA \setminus \msgC{store})^* \seqA\; \msgB{push}{\I{lvl}\;x_2\;y_2}{\I{isAddr}(x_2) \land \I{isAddr}(y_2)}}\; \Code{unit} \; \effLR{\eff{store}}
   \end{align*}}\noindent
 The post-condition SRE for $\eff{push}$ enforces that its arguments
 should only be equal if they are intended to be public, while the
@@ -302,9 +304,9 @@ updated.  The desired safety property
 that a generator needs to test can be expressed as the following SRE:
 \vspace{-.4cm} \par\nobreak {\small %
 \begin{align*}
-  &\msgB{push}{\I{lvl}\;x\;y}{\I{lvl}=\Code{L}{\iff} x = y} \seqA
-    (\anyA \setminus \msgC{store})^* \seqA \msgB{push}{\I{lvl}\;x_2\;y_2}{\I{isAddr}(x_2) \land
-    \I{isAddr}(y_2)} \seqA \; \eff{store}
+  &\msgB{push}{\I{lvl}\;x\;y}{\I{lvl}=\Code{L}{\iff} x = y}\; \seqA\;
+    (\anyA \setminus \msgC{store})^* \seqA\; \msgB{push}{\I{lvl}\;x_2\;y_2}{\I{isAddr}(x_2) \land
+    \I{isAddr}(y_2)}\; \seqA \; \eff{store}
 \end{align*}}\noindent %
 The following test generator generates effect sequences consistent with
 this property and the \tyName{} specifications for $\eff{push}$ and $\eff{store}$ given above:
@@ -349,28 +351,28 @@ Guiding test generation for interpreters over \emph{serialized} STLC
 terms is challenging, as the generated token sequences must contain
 \emph{nested function abstractions} with appropriate de Bruijn
 indices; otherwise, errors involving incorrect variable substitution
-with non-zero bound variable indices cannot be detected. Enforcing
-correct de Bruijn indices is particularly difficult in our setting, as
-it requires reasoning about counting properties that are not easily
-expressible using SREs. To increase the expressive power of our type
-language, we introduce a \emph{ghost} event $\effGray{depth}$ that
-tracks the current abstraction depth;\footnote{The well-typedness of
-  STLC terms can also be expressed using another auxiliary ghost event
-  $\effGray{ty}$; details are provided in the supplementary material.}
-as we describe in the following sections, ghost events carry a payload
-whose dependencies with other events can still be efficiently checked
-using our type system.  Here, $\eff{token}$ is an effect that appends
-its argument to a serialized string that is eventually passed to the
-interpreter being tested. A \tyName{} specification to track depth can
-be given as follows:
+with non-zero bound variable indices cannot be detected. To enforce
+the correct use of de Bruijn indices we need to express the relation
+between indices and abstraction depth.  To do so, we introduce a
+\emph{ghost} event $\effGray{depth}$ that tracks the current
+abstraction depth;\footnote{The well-typedness of STLC terms can also
+  be expressed using another auxiliary ghost event $\effGray{ty}$;
+  details are provided in the supplementary material.}  as we describe
+in the following sections, ghost events carry a payload that enable
+establishing additional dependencies with other events beyond those involving
+the effects parameters and result that can still be efficiently checked using
+our type system.  Here, $\eff{token}$ is an effect that appends its
+argument to a serialized string that is eventually passed to the
+interpreter being tested.  A \tyName{} specification to track depth can
+be now given as follows:
   % {\small\begin{align*}
   %   \effLR{\Code{LAST}(\msgAGray{depth}{d}) \msgA{token}{\boxed{(\lambda t.}\;} \msgAGray{depth}{d + 1} \allA \msgA{token}{\boxed{[n]}\;} \allA }\; \eff{token}\;\boxed{)}\;\effLR{\msgA{token}{\boxed{)}\;} \msgAGray{depth}{d}}
              %            \end{align*}}\noindent
   \vspace{-.4cm} \par\nobreak {\small %
     \begin{align*}
-      \effLR{\Code{LAST}(\msgAGray{depth}{d}) \seqA
-      \msgA{token}{\boxed{(\lambda t.}\;}\seqA \msgAGray{depth}{d +
-      1}\seqA \allA }\; unit \;\effLR{\msgA{token}{\boxed{)}\;} \seqA \msgAGray{depth}{d}}
+      \effLR{\Code{LAST}(\msgAGray{depth}{d}) \seqA\;
+      \msgA{token}{\boxed{(\lambda t.}\;}\seqA\; \msgAGray{depth}{d +
+      1}\seqA\; \allA }\; unit \;\effLR{\msgA{token}{\boxed{)}\;} \seqA\; \msgAGray{depth}{d}}
     \end{align*}}\noindent
   As shown above, upon entering a function abstraction, we retrieve
   the last tagged depth (assumed to be initialized to $0$), increment it at the
@@ -379,7 +381,7 @@ be given as follows:
   safety property as the following SRE:
   \vspace{-.4cm} \par\nobreak {\small %
     \begin{align*}
-      \Code{LAST}(\msgBGray{depth}{d}{n < d}) \seqA \Code{FIRST}(\eff{token}\;\boxed{[\widehat{n}]})
+      \Code{LAST}(\msgBGray{depth}{d}{n < d}) \seqA\; \Code{FIRST}(\eff{token}\;\boxed{[\widehat{n}]})
     \end{align*}}\noindent
   The bound variable index $n$ is required to be less than the
   current depth $d$; the notation $\widehat{n}$ signifies that $n$'s value must

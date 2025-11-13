@@ -5,7 +5,7 @@
 We have implemented a tool based on the above approach, called
 \name{}, that synthesizes effectful test generators from given
 \tyName{} specifications and safety properties.  The output program in
-our DSL can be transpiled to OCaml (Quickcheck) or P.  Our experiments
+our DSL can be transpiled to OCaml (QCheck) or P.  Our experiments
 use the OCaml transpilation to test effectful abstract datatype
 libraries, serializers, transformers, and interpreters, concurrent
 data structures and databases; we use the P target to test reactive
@@ -113,47 +113,50 @@ Our experimental evaluation addresses three research questions:
     violation.}
 \vspace*{-.1in}
 \footnotesize
+%\multicolumn{2}{c||}{} & 
 \setlength{\tabcolsep}{1.3pt}
 \begin{tabular}{c|P{4.25cm}||ccc||cc||c|ccc}
   \toprule
   \multicolumn{2}{c||}{Benchmark} & \#$\eff{op}$ & \multicolumn{2}{c||}{\#qualifier} & \multicolumn{2}{c||}{\scriptsize \# Num. Executions} & t$_\text{total}$(s) & \#evt & \#refine & \#SMT \\
-  \multicolumn{2}{c||}{} &  &uHAT &goal & {\scriptsize Clouseau} & {\scriptsize Baseline} &  &  \\
+  \hline
+Name & Property &   &uHAT &goal & {\scriptsize Clouseau} & {\scriptsize Baseline} &  &  \\
 \midrule
-\textsf{Stack}\cite{ZYDJ24} & {\scriptsize  Pushed values are dropped.} & $6$ & $12$ & $3$ & $1.0$ & $31.9$ & $0.60$ & $15$ & $4$ & $98$\\
+\textsf{Stack}\cite{ZYDJ24} & {\scriptsize  Pushes and pops are correctly paired.} & $6$ & $12$ & $3$ & $1.0$ & $31.9$ & $0.60$ & $15$ & $4$ & $98$\\
 \midrule
-\textsf{Set}\cite{ZYDJ24} & {\scriptsize Missing inserted value.} & $7$ & $22$ & $3$ & $1.0$ & $22.1$ & $1.28$ & $12$ & $12$ & $255$\\
-\midrule
-\midrule
-\textsf{Graph}\cite{ZYDJ24} & {\scriptsize A connected graph with at least $3$ nodes.} & $6$ & $24$ & $4$ & $1.0$ & {\tiny Timeout} & $16.61$ & $16$ & $16$ & $2114$\\
-\midrule
-\textsf{NFA}\cite{ZYDJ24} & {\scriptsize NFA acceptor fails if a state has more than two outgoing
-  edges.} & $8$ & $50$ & $4$ & $1.0$ & {\tiny Timeout} & $21.85$ & $26$ & $6$ & $5080$\\
-\midrule
-\textsf{IFCStore}\cite{pbt-ifc} & {\scriptsize An IFC program leaks a secret if it contains a $\Code{Store}$ command.} & $8$ & $37$ & $2$ & $2.8$ & $4811.7^{\dagger}$ & $1.02$ & $8$ & $8$ & $160$\\
-\midrule
-\textsf{IFCAdd}\cite{pbt-ifc} & {\scriptsize An IFC program leaks a secret if it contains an $\Code{Add}$ command.} & $8$ & $37$ & $2$ & $1.6$ & $3383.4^{\dagger}$ & $0.96$ & $8$ & $8$ & $154$\\
-\midrule
-\textsf{IFCLoad}\cite{pbt-ifc} & {\scriptsize An IFC program leaks a secret if it contains a $\Code{Load}$ command.} & $8$ & $37$ & $2$ & $15.4$ & $11293.7^{\dagger}$ & $5.76$ & $16$ & $18$ & $930$\\
-\midrule
-\textsf{DeBruijn1}\cite{CoverageType} & {\scriptsize An STLC interpreter mis-evaluates given a
-  well-typed first-order STLC program using a de Brujin representation.} & $10$ & $117$ & $4$ & $1.5$ & $634.0^{\dagger}$ & $40.38$ & $18$ & $26$ & $4765$\\
-\midrule
-\textsf{DeBruijn2}\cite{CoverageType} & {\scriptsize An STLC interpreter mis-evaluates given
-  a well-typed higher-order STLC program using a de Brujin representation.} & $10$ & $118$ & $4$ & $1.4$ & {\tiny Timeout}$^{\dagger}$ & $91.73$ & $18$ & $31$ & $9034$\\
+\textsf{Set}\cite{ZYDJ24} & {\scriptsize Membership holds for every element inserted into the set.} & $7$ & $22$ & $3$ & $1.0$ & $22.1$ & $1.28$ & $12$ & $12$ & $255$\\
+\textsf{Filesystem}\cite{ZYDJ24} & {\scriptsize A valid file path only contains non-deleted entries.} & $7$ & $67$ & $4$ & $1.3$ & $2812.1$ & $6.02$ & $13$ & $14$ & $853$\\
 \midrule
 \midrule
-\textsf{Shopping}\cite{MonkeyDB} & {\scriptsize Added items to a cart are not visible.} & $10$ & $60$ & $3$ & $1.0$ & $20.0^{\dagger}$ & $22.10$ & $17$ & $30$ & $1269$\\
+\textsf{Graph}\cite{ZYDJ24} & {\scriptsize A serialized stream of nodes and edges is re-constituted to
+  form a fully-connected graph.} & $6$ & $24$ & $4$ & $1.0$ & {\tiny Timeout} & $16.61$ & $16$ & $16$ & $2114$\\
 \midrule
-\textsf{HashTable}\cite{OcamlMulticorePBT} & {\scriptsize A concurrent hashtable loses updates.} & $13$ & $38$ & $4$ & $1.0$ & $2.5^{\dagger}$ & $0.76$ & $6$ & $6$ & $57$\\
+\textsf{NFA}\cite{ZYDJ24} & {\scriptsize An NFA reaches a final state for every string in the language it accepts.} & $8$ & $50$ & $4$ & $1.0$ & {\tiny Timeout} & $21.85$ & $26$ & $6$ & $5080$\\
 \midrule
-\textsf{ReaderWriter} & {\scriptsize Read atomicity violation.} & $8$ & $45$ & $3$ & $1.2$ & {\tiny Timeout} & $2.89$ & $15$ & $16$ & $423$\\
+\textsf{IFCStore}\cite{pbt-ifc} & {\scriptsize A well-behaved IFC program containing a $\Code{Store}$ command never leaks a secret.} & $8$ & $37$ & $2$ & $2.8$ & $4811.7^{\dagger}$ & $1.02$ & $8$ & $8$ & $160$\\
 \midrule
-\textsf{Courseware}\cite{MonkeyDB} & {\scriptsize A database managing courses loses
-  enrollment updates.} & $16$ & $106$ & $3$ & $1.0$ & $57.5^{\dagger}$ & $27.71$ & $18$ & $33$ & $1479$\\
+\textsf{IFCAdd}\cite{pbt-ifc} & {\scriptsize A well-behaved IFC program containing an $\Code{Add}$ command never leaks a secret.} & $8$ & $37$ & $2$ & $1.6$ & $3383.4^{\dagger}$ & $0.96$ & $8$ & $8$ & $154$\\
 \midrule
-\textsf{Twitter}\cite{MonkeyDB} & {\scriptsize Posted tweets are not visible to all followers.} & $16$ & $99$ & $3$ & $1.0$ & $6.3^{\dagger}$ & $61.96$ & $24$ & $24$ & $2339$\\
+\textsf{IFCLoad}\cite{pbt-ifc} & {\scriptsize A well-behaved IFC program containing a $\Code{Load}$ command never leaks a secret.} & $8$ & $37$ & $2$ & $15.4$ & $11293.7^{\dagger}$ & $5.76$ & $16$ & $18$ & $930$\\
 \midrule
-\textsf{Smallbank}\cite{OLTPBench} & {\scriptsize Lost updates on balances.} & $22$ & $162$ & $3$ & $1.9$ & {\tiny Timeout} & $163.55$ & $28$ & $29$ & $10263$\\
+\textsf{DeBruijn1}\cite{CoverageType} & {\scriptsize An STLC interpreter correctly evaluates a
+  well-typed first-order STLC program that uses a de Brujin representation.} & $10$ & $117$ & $4$ & $1.5$ & $634.0^{\dagger}$ & $40.38$ & $18$ & $26$ & $4765$\\
+\midrule
+\textsf{DeBruijn2}\cite{CoverageType} & {\scriptsize An STLC interpreter correctly evaluates a
+  a well-typed higher-order STLC program that uses a de Brujin representation.} & $10$ & $118$ & $4$ & $1.4$ & {\tiny Timeout}$^{\dagger}$ & $91.73$ & $18$ & $31$ & $9034$\\
+\midrule
+\midrule
+\textsf{Shopping}\cite{MonkeyDB} & {\scriptsize All items added to a cart can be checked-out.} & $10$ & $60$ & $3$ & $1.0$ & $20.0^{\dagger}$ & $22.10$ & $17$ & $30$ & $1269$\\
+\midrule
+\textsf{HashTable}\cite{OcamlMulticorePBT} & {\scriptsize No updates to a concurrent hashtable are every lost.} & $13$ & $38$ & $4$ & $1.0$ & $2.5^{\dagger}$ & $0.76$ & $6$ & $6$ & $57$\\
+\midrule
+\textsf{ReaderWriter} & {\scriptsize Asynchronous read operations are logically atomic.} & $8$ & $45$ & $3$ & $1.2$ & {\tiny Timeout} & $2.89$ & $15$ & $16$ & $423$\\
+\midrule
+\textsf{Courseware}\cite{MonkeyDB} & {\scriptsize Every student enrolled in a course exists in the
+  enrollment database for that course.} & $16$ & $106$ & $3$ & $1.0$ & $57.5^{\dagger}$ & $27.71$ & $18$ & $33$ & $1479$\\
+\midrule
+\textsf{Twitter}\cite{MonkeyDB} & {\scriptsize Posted tweets are visible to all followers.} & $16$ & $99$ & $3$ & $1.0$ & $6.3^{\dagger}$ & $61.96$ & $24$ & $24$ & $2339$\\
+\midrule
+\textsf{Smallbank}\cite{OLTPBench} & {\scriptsize Account updates are strongly consistent.} & $22$ & $162$ & $3$ & $1.9$ & {\tiny Timeout} & $163.55$ & $28$ & $29$ & $10263$\\
 \bottomrule
 \end{tabular}                                
 \label{tab:evaluation}
@@ -189,27 +192,28 @@ Our experimental evaluation addresses three research questions:
 \begin{tabular}{c|P{4.0cm}||ccc||cc||c|ccc}
   \toprule
   \multicolumn{2}{c||}{Benchmark} & \#$\eff{op}$ & \multicolumn{2}{c||}{\#qualifier} & \multicolumn{2}{c||}{\scriptsize \# Num. Executions} & t$_\text{total}$(s) & \#evt & \#refine & \#SMT \\
-\multicolumn{2}{c||}{} &  &uHAT &goal & {\scriptsize Clouseau} & {\scriptsize Baseline} &  &  \\
+  \hline
+Name & Property &   &uHAT &goal & {\scriptsize Clouseau} & {\scriptsize Baseline} &  &  \\
   \midrule
-  {\scriptsize\textsf{Database}} & {\scriptsize The database violates a read-your-writes policy.} & $4$ & $15$ & $3$ & $1$ & $6$ & $0.32$ & $6$ & $6$ & $49$\\
+  {\scriptsize\textsf{Database}} & {\scriptsize The database maintains a Read-Your-Writes policy.} & $4$ & $15$ & $3$ & $1$ & $6$ & $0.32$ & $6$ & $6$ & $49$\\
   \midrule
-  {\scriptsize\textsf{Firewall}}\cite{MessageChain} & {\scriptsize Requests generated inside the firewall are not propagated to the outside.} & $5$ & $26$ & $4$ & $1$ & $10$ & $0.59$ & $10$ & $10$ & $222$\\
+  {\scriptsize\textsf{Firewall}}\cite{MessageChain} & {\scriptsize  Requests generated inside the firewall are eventually propagated to the outside.} & $5$ & $26$ & $4$ & $1$ & $10$ & $0.59$ & $10$ & $10$ & $222$\\
   \midrule
-  {\scriptsize\textsf{RingLeaderElection}}\cite{MessageChain} & {\scriptsize Multiple leaders are elected.} & $3$ & $14$ & $2$ & $1$ & $18$ & $0.83$ & $8$ & $8$ & $100$\\
+  {\scriptsize\textsf{RingLeaderElection}}\cite{MessageChain} & {\scriptsize There is always a single unique  leader.} & $3$ & $14$ & $2$ & $1$ & $18$ & $0.83$ & $8$ & $8$ & $100$\\
   \midrule
-  {\scriptsize\textsf{BankServer}}\cite{DGJ+13} & {\scriptsize Withdrawals in excess of the available balance are allowed, violating strong consistency.} & $6$ & $42$ & $1$ & $1$ & $2^{\dagger}$ & $0.17$ & $5$ & $5$ & $27$\\
+  {\scriptsize\textsf{BankServer}}\cite{DGJ+13} & {\scriptsize Withdrawals in excess of the available balance are never allowed.} & $6$ & $42$ & $1$ & $1$ & $2^{\dagger}$ & $0.17$ & $5$ & $5$ & $27$\\
   \midrule
-  {\scriptsize\textsf{Simplified2PC}}\cite{DGJ+13} & {\scriptsize Transactions are not atomic.} & $9$ & $32$ & $5$ & $2$ & $6^{\dagger}$ & $1.03$ & $8$ & $8$ & $88$\\
+  {\scriptsize\textsf{Simplified2PC}}\cite{DGJ+13} & {\scriptsize Transactions are atomic.} & $9$ & $32$ & $5$ & $2$ & $6^{\dagger}$ & $1.03$ & $8$ & $8$ & $88$\\
   \midrule
-  {\scriptsize\textsf{HeartBeat}}\cite{DGJ+13} & {\scriptsize A detector mistakenly records a node as failed although it is still responsive.} & $7$ & $31$ & $3$ & $1$ & $6^{\dagger}$ & $1.10$ & $14$ & $14$ & $145$\\
+  {\scriptsize\textsf{HeartBeat}}\cite{DGJ+13} & {\scriptsize All available nodes are identified by a  detector.} & $7$ & $31$ & $3$ & $1$ & $6^{\dagger}$ & $1.10$ & $14$ & $14$ & $145$\\
   \midrule
-  {\scriptsize\textsf{ChainReplication}}\cite{ModP} & {\scriptsize Updates are lost.} & $7$ & $72$ & $4$ & $1$ & $500^{\dagger}$ & $19.24$ & $12$ & $169$ & $2054$\\
+  {\scriptsize\textsf{ChainReplication}}\cite{ModP} & {\scriptsize Concurrent updates are never lost.} & $7$ & $72$ & $4$ & $1$ & $500^{\dagger}$ & $19.24$ & $12$ & $169$ & $2054$\\
   \midrule
-  {\scriptsize\textsf{Paxos}}\cite{ModP} & {\scriptsize Logs are not correctly replicated.} & $10$ & $110$ & $2$ & $1$ & $667^{\dagger}$ & $23.70$ & $14$ & $77$ & $1763$\\
+  {\scriptsize\textsf{Paxos}}\cite{ModP} & {\scriptsize Logs are correctly replicated.} & $10$ & $110$ & $2$ & $1$ & $667^{\dagger}$ & $23.70$ & $14$ & $77$ & $1763$\\
   \midrule
-  {\scriptsize\textsf{Raft}} & {\scriptsize Leader election is not fault-tolerant.} & $9$ & $39$ & $6$ & $1$ & {\tiny Timeout} & $26.84$ & $12$ & $78$ & $1262$\\
+  {\scriptsize\textsf{Raft}} & {\scriptsize Leader election is robust to faults.} & $9$ & $39$ & $6$ & $1$ & {\tiny Timeout} & $26.84$ & $12$ & $78$ & $1262$\\
   \midrule
-  {\scriptsize\textsf{Kermit2PCModel}} & {\scriptsize Atomicity violation.} & $17$ & $113$ & $3$ & $1$ & $53^{\dagger}$ & $18.35$ & $16$ & $16$ & $1909$\\
+  {\scriptsize\textsf{AnonReadAtomicity}} & {\scriptsize Read Atomicity is preserved.} & $17$ & $113$ & $3$ & $1$ & $53^{\dagger}$ & $18.35$ & $16$ & $16$ & $1909$\\
 \bottomrule
   \end{tabular}
 \label{tab:evaluation2}
@@ -222,18 +226,21 @@ variety of sources (described in the captions of
 benchmarks except for \textsf{Database} and \textsf{Raft} were written
 by others (\textbf{Q1}).  Our benchmarks are grouped into four
 categories.  The first are data structure benchmarks (\textsf{Stack},
-\textsf{Filesystem}) where the test generator probes for violations of
-structural invariants.  The second are evaluators - programs that
-input serialized data, transform them into an internal AST
-representation, and then interpret them; we consider evaluators for
-data structures like graphs and automata (\textsf{Graph},
+\textsf{Set}, \textsf{Filesystem}) where the test generator probes for
+violations of structural invariants.  The second are evaluators -
+programs that input serialized data, transform them into an internal
+AST representation, and then interpret them; we consider evaluators
+for data structures like graphs and automata (\textsf{Graph},
 \textsf{NFA}), information flow control machines, and simply-typed
 lambda-calculus, the latter two both described
 in~\autoref{sec:overview}.  The third are concurrent and database
 benchmarks (\textsf{Transaction}, \textsf{Shopping},
-\textsf{Courseware}, \textsf{Twitter}, \textsf{Smallbank}).  We
+\textsf{Courseware}, \textsf{Twitter}, \textsf{Smallbank}).
+Violations of these properties manifest in specific configurations
+(e.g., a violating test case for \textsf{NFA} involves constructing an
+automata containing nodes with more than two outgoing edges).  We
 evaluate these three classes of benchmarks by transpiling synthesized
-generators into OCaml, leveraging its Quickcheck library as
+generators into OCaml, leveraging its QCheck library as
 needed. The SUT for each of these benchmarks is known to be buggy; in
 all cases we use implementations either available from prior sources
 directly (if the OCaml source was available), or by directly
@@ -271,28 +278,29 @@ complexity of benchmarks with respect to the number of distinct
 effectful operators (\#$\eff{op}$) and the number of qualifiers (i.e.,
 symbolic events) used in \tyName{} specifications and the property
 being tested.  For the benchmarks in~\autoref{tab:evaluation}, our
-results show that writing underapproximate specifications
-require anywhere from $6$ - $22$ different operators which occur in
-over 100 symbolic events for the most complex examples.  The second
-group of columns characterizes \name{}'s ability to discover a
-violation compared to the baseline (\textbf{Q2}).  To make the
-comparison objective, we execute generators in the two systems 10K
-times, and count the number of runs in which a fault was uncovered.
-For example, for \textsf{Stack}, using Quickcheck to generate random
-sequences of $\eff{push}$ and $\eff{pop}$ effects, resulted in an
-erroneous execution every 31.9 times on average; in contrast, every
-execution of the generator(s) synthesized by \name\ manifested the bug.
-Notably, even for benchmarks in which there is a customized generator
-available (e.g., \textsf{IFC} or \textsf{de Brujin}), \tyName{}-guided
-synthesis leads to significantly better outcomes.  A number of the
-concurrency benchmarks use MonkeyDB~\cite{MonkeyDB}, a mock storage
-system that can be used to find violations of database isolation
-properties.  Although it is specialized for this particular
-application class, and \name{} is not, evaluation results are
-comparable, with \name{} yielding generators that identify weak
-isolation violations modestly more effectively than the targeted
-baseline.  Similar conclusions apply to the P benchmarks shown
-in~\autoref{tab:evaluation2}.  For the simple benchmarks in this
+results show that writing underapproximate specifications require
+anywhere from $6$ - $22$ different operators which occur in over 100
+symbolic events for the most complex examples.  The second group of
+columns characterizes \name{}'s ability to discover a violation
+compared to the baseline (\textbf{Q2}).  To make the comparison
+objective, we execute generators in the two systems 10K times, and
+count the number of runs in which a fault was uncovered.  For example,
+for \textsf{Stack}, using QCheck to generate random sequences of
+$\eff{push}$ and $\eff{pop}$ effects, resulted in an erroneous
+execution every 31.9 times on average; in contrast, every execution of
+the generator(s) synthesized by \name\ manifested the bug.  Notably,
+even for benchmarks in which there is a sophisticated customized
+generator available\footnote{We used the artifacts available in their
+  publication as the baseline.} (e.g., \textsf{IFC} or \textsf{de
+  Brujin}), \tyName{}-guided synthesis leads to significantly better
+outcomes.  The baseline for A number of the concurrency benchmarks is
+MonkeyDB~\cite{MonkeyDB}, a mock storage system that can be used to
+find violations of database isolation properties.  Although it is
+specialized for this particular application class, and \name{} is not,
+evaluation results are comparable, with \name{} yielding generators
+that identify weak isolation violations modestly more effectively than
+the targeted baseline.  Similar conclusions apply to the P benchmarks
+shown in~\autoref{tab:evaluation2}.  For the simple benchmarks in this
 table, P's default scheduler, which performs enumerative state
 exploration to construct schedules, independently of the behaviors of
 the actors under test or the target property, or handwritten ones
@@ -312,53 +320,52 @@ competitive, and in several cases, superior to handcrafted P
 schedulers, even though \name{} has no built-in knowledge of P's
 underlying programming model.
 
-The last group of columns in both tables provides details on the cost
+The last group of columns in both tables provide details on the cost
 of our synthesis procedure. The first column presents total synthesis
 time (t$_\text{total}$), which takes anywhere from $.6$ to $165$
 seconds (\textbf{Q3}); synthesis time is roughly proportional to
 benchmark complexity, as reflected in the \#$\eff{op}$ and \#qualifier
 columns.  The last three columns additionally analyze the
 characteristics of \name{}'s synthesis procedure with respect to the
-number of SMT queries (\#SMT), as well as the number of
-refinement steps (\#refine); recall that the synthesis procedure uses
-a refinement loop to construct a more specialized underapproximation
-from \tyName{} specifications that are consistent with the provided
-safety property.  These numbers all correlate with each other, and
-serve as proxies for benchmark complexity.  Nonetheless, they indicate
-that even for the most challenging benchmarks, \name{} is able to
-synthesis an effective generator in a reasonable amount of time.
+number of events in the abstract refined trace (\#evt), the number of
+SMT queries (\#SMT), as well as the number of refinement steps
+(\#refine); recall that the synthesis procedure uses a refinement loop
+to construct a more specialized underapproximation from \tyName{}
+specifications that are consistent with the provided safety property.
+In general, these numbers correlate with each other, and serve as
+rough proxies for benchmark complexity.  They indicate that even for
+the most challenging benchmarks, \name{} is able to synthesis an
+effective generator in a reasonable amount of time.
 
 \paragraph{Case study}
 To demonstrate that \name{} can be effective in real-world scenarios,
-we have applied it to \textsf{Anon2PCModel}, a model of a
-two-phase commit (2PC) protocol that is currently in use at a major
-cloud provider.  The original P model checks a standard consistency
-property for 2PC transactions, specifically that if there exists a key
-$\Code{k}$ updated within an active transaction $\Code{i}$, any
-successful read response asking its value should return the value last
-written to $\Code{k}$ made by that transaction. We can express a
-violation of this property as the following SRE: %
-{\small
-  \begin{align*}
-    \allA &\msgA{write}{\Code{tid}\;\Code{k}\;\Code{x}\;\Code{OK}}(\anyA\setminus\msgA{write}{\Code{tid}\;\Code{k}\;\Code{x}\;\Code{OK}})^*
-                \msgA{readRsp}{\iota\;\Code{tid}\;\Code{k}\;\Code{x}\;\Code{OK}}\;\allA
-\end{align*}}%
-\SJ{Fix....}
-\noindent where the field $\mathit{tid}$ represents a transaction id, while
-other fields have the same meanings as in the example from
-\autoref{sec:intro}.  Generating a fault-inducing scenario requires
-(a) initiating a new transaction with transaction id $\Code{i}$, (b)
-successfully performing a write within that transaction, and then (c)
-subsequently performing a read within $\Code{i}$ that yields a
-different value than the one last written.  This is an extremely
-challenging sequence of steps for a controller to automatically
-generate absent guidance from the property it is trying to violate.
-In contrast, since the \PAT for $\eff{readReq}$ includes a history
-automaton $\finalA \msg{startTxnRsp}{tid = \Code{i}}$ that requires
-the user to have previously received a valid transaction id
-$\Code{i}$, \name{} can directly synthesize a controller program that
-strategically requests a new transaction to initiate triggering the
-intended violation.  A version of the benchmark in which this sequence
-structure is enforced by a manually crafted environment can discover
-the violation in 53 executions, but at the cost of more
-user effort and a less concise model definition.
+we have applied it to \textsf{AnonReadAtomicity}, a distributed
+transaction system in use at a major cloud provider, where
+asynchronous reads are expected to execute atomically, as discussed
+in~\ref{sec:overview}. The property to be checked requires that if there
+exists a key $\Code{k}$ updated within an active transaction
+$\Code{i}$, any successful read response asking its value should
+return the value last written to $\Code{k}$ made by that transaction.
+%% We can express a
+%% violation of this property as the following SRE: %
+%% {\small
+%%   \begin{align*}
+%%     \allA &\msgA{write}{\Code{tid}\;\Code{k}\;\Code{x}\;\Code{OK}}(\anyA\setminus\msgA{write}{\Code{tid}\;\Code{k}\;\Code{x}\;\Code{OK}})^*
+%%                 \msgA{readRsp}{\iota\;\Code{tid}\;\Code{k}\;\Code{x}\;\Code{OK}}\;\allA
+%% \end{align*}}%
+%% \SJ{Fix....}
+%% \noindent where the field $\mathit{tid}$ represents a transaction id, while
+%% other fields have the same meanings as in the example from
+%%\autoref{sec:intro}.
+Generating a fault-inducing scenario requires (a) initiating a new
+transaction with transaction id $\Code{tid}$, (b) successfully
+performing a write within that transaction, and then (c) subsequently
+performing a read within $\Code{tid}$ that yields a different value
+than the one last written.  As the example in~\ref{sec:overview}
+implies, using \tyName{} to express the behavior of $\eff{readRsp}$
+enables the synthesis of a test generator that can strategically
+request a new transaction to initiate triggering the intended
+violation.  A version of the benchmark in which this sequence
+structure is enforced manually discovers the violation in 53
+executions, compared to \name{}'s version which is able to uncover the
+violation on all of its executions.
