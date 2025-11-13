@@ -147,7 +147,7 @@ trace which contains these events.  This \tyName{} uses
 \Code{LAST}($\msgA{op}{v}$) as an alias for the following regex:
 \vspace{-.4cm} \par\nobreak {\small %
   \begin{align*}
-    \Code{LAST}(\msgA{op}{v}) \equiv \allA\;\seqA\; \msgA{op}{v}\;\seqA\; (\anyA \setminus \eff{op})^*
+    \Code{LAST}(\msgA{op}{v}) \equiv \allA\;\seqA\; \msgA{op}{v}\;\seqA\; (\anyA \setminus \msgC{op})^*
   \end{align*}
 }\vspace{-.5cm} \par\nobreak\noindent %
 An implementation of $\eff{readResp}$ that does not satisfy this type
@@ -158,18 +158,11 @@ following SRE:\footnote{SREs are implicitly universally quantified
   over any free variables occuring in them.}%
 \vspace{-.4cm} \par\nobreak {\small %
   \begin{align}
-    &\Code{LAST}(\msgA{write}{v})\; \seqA\; \msgA{readReq}{\iota}\; \seqA\; \Code{FIRST}(\msgA{readRsp}{\iota\;v})
+    &\Code{LAST}(\msgA{write}{v})\; \seqA\; \msgA{readReq}{\iota}\; \seqA\; \allA\seqA\msgA{readRsp}{\iota\;v}\seqA\allA
       \tag{$A_\text{atomic}$}\label{eqn:ReadAtomicity}
   \end{align}
 }
-\vspace{-.5cm} \par\nobreak\noindent where
-\Code{FIRST}($\msgA{op}{v}$) as an alias for the following regex:
-\vspace{-.5cm} \par\nobreak {\small %
-  \begin{align*}
-    \Code{FIRST}(\msgA{op}{v})   \equiv (\anyA \setminus \eff{op})^*\;
-    \seqA \; \msgA{op}{v}\; \seqA \; \allA;
-  \end{align*}
-}\vspace{-.5cm} \par\nobreak\noindent %
+\vspace{-.5cm} \par\nobreak\noindent
 A violation of this property can be manifested by a test
 generator that perform sequences of synchronous $\eff{write}$ and
 asynchronous $\eff{read}$ effects in search of an offending trace
@@ -374,7 +367,7 @@ be now given as follows:
   safety property as the following SRE:
   \vspace{-.4cm} \par\nobreak {\small %
     \begin{align*}
-      \Code{LAST}(\msgBGray{depth}{d}{n < d}) \seqA\; \Code{FIRST}(\eff{token}\;\boxed{[\widehat{n}]})
+      \Code{LAST}(\msgBGray{depth}{d}{n < d}) \seqA\; \eff{token}\;\boxed{[\widehat{n}]} \seqA \allA
     \end{align*}}\vspace{-.5cm} \par\nobreak\noindent
   The bound variable index $n$ is required to be less than the
   current depth $d$; the notation $\widehat{n}$ signifies that $n$'s value must
