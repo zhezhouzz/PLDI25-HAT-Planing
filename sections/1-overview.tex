@@ -130,8 +130,8 @@ halts program execution if the formula $\phi$ fails to hold.
   \vspace{-.4cm} \par\nobreak {\small %
   \begin{align*}
     &\eff{readRsp}:
-      \effLR{\Code{LAST}(\msgA{write}{\iota_1\;v});\msgA{readReq}{\iota_2};\allA}
-      \urt{\Code{int}}{\vnu = v}\effLR{\msgA{readRsp}{\iota_2\;v}}
+      \effLR{\Code{LAST}(\msgA{write}{v});\msgA{readReq}{\iota};\allA}
+      \urt{\Code{int}}{\vnu = v}\effLR{\msgA{readRsp}{\iota\;v}}
   \end{align*}}\noindent
 This type specifies that the response to a previously issued
 asynchronous $\eff{read}$ operation can return a value $v$, if the
@@ -196,7 +196,7 @@ safety condition.
   The $\eff{read}$ effect at line 4 matches the
   $\msgA{read}{\iota_2}$ event 
   and the $\eff{write}$  operations on line 3
-  are synthesized from the $\msgA{write}{\iota_1\;v}$ event that precedes
+  are synthesized from the $\msgA{write}{v}$ event that precedes
   the $\eff{read}$ in the history trace.  The choice operator at line 2 determines if
   more recursive calls are required, i.e., if more $\eff{read}$ and $\eff{write}$
   events are generated.  The assertion comparing \Code{y} with \Code{x} determines if a
