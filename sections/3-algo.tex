@@ -35,58 +35,60 @@ property as a template.
 
 The main refinement loop in our synthesis algorithm operates over
 \emph{abstract traces} --- sequences of symbolic events
-$\msg{op}{\phi}$ plus Kleene stars defined by the following grammar: %
+$\msg{op}{\phi}$ plus alternatives defined by the following grammar: %
 \vspace{-.4cm} \par\nobreak {\small
   \begin{flalign*}
-    &\text{\textbf{Abstract Trace}} \quad \pi ::=  \epsilon ~|~
-    \msg{op}{\phi}^b ~|~ \pi \seqA \pi ~|~ \Pi^*   &&
-    \text{\textbf{Event Set}} \quad \Pi ::= \emptyset ~|~
-    \pi ~|~ \Pi \cup \Pi
-  \end{flalign*}}\noindent Each symbolic events $\msg{op}{\phi}^b$ in
+    &\text{\textbf{Abstract Trace}} \quad \pi ::= \epsilon ~|~
+    \msg{op}{\phi}^b ~|~ \pi \seqA \pi ~|~
+    [\overline{\msg{op}{\phi}^b}]^*
+  \end{flalign*}}\noindent Each symbolic event $\msg{op}{\phi}^b$ in
 an abstract trace is tagged with a boolean $b$ indicating whether the
-surrounding context satisfies its constraints. Every SRE can be
-transformed into a set of abstract traces;\footnote{The definition of
-  our SRE normalization procedure is provided in the \techreport{}.}
-operating over abstract traces helps our synthesizer easily identify
-events with unresolved dependencies. \BD{I'm still iffy on why these
-  need to be defined mutually recursively.}
+surrounding context satisfies its constraints. Operating over abstract
+traces helps our synthesizer easily identify events with unresolved
+dependencies. Every SRE can be normalized into a set of abstract
+traces via an algorithm that applies a standard minimization algorithm
+and then decomposes unions into abstract traces:
+$\msg{op_1}{\phi_1} \cup \msg{op_2}{\phi_2}$ becomes
+$\{\msg{op_1}{\phi_1}^\bot, \msg{op_2}{\phi_2}^\bot\}$, for
+example.\footnote{The full definition of our SRE normalization
+  procedure is provided in the \techreport{}.}
 
 \begin{example}[SRE Normalization]\label{ex:sre-norm}
-  The normalized version of the history regex of $\eff{pop}$ from
-  Example~\ref{ex:stack-example} includes the following abstract
-  trace: %
+  The set of abstract traces corresponding to the history regex of
+  $\eff{pop}$ from Example~\ref{ex:stack-example} includes the
+  following abstract trace: %
   \vspace{-.4cm} \par\nobreak {\small %
     \begin{align*}
       \text{Original SRE:} \quad&  \Code{Last}(\msgAGray{popI}{m\;\_}) \land \Code{Last}(\msgAGray{pushI}{n\;\_}) \land (\allA\msgAGray{pushI}{(n{-}m)\;x}\allA)
       \\
       \text{One normalized trace:} \quad& \Pi_\Code{any}^*\seqA \msgAGray{popI}{m\;\_}^\bot \seqA \Pi_\Code{noPopI}^* \msgAGray{pushI}{(n-m)\;x}^\bot \seqA\Pi_\Code{noPopI}^* \msgAGray{pushI}{n\;\_}^\bot \seqA \Pi_\Code{noI}^* \tag{$\pi_\Code{pop1}$}\label{prop:popHis1}
       \\[-0.2em]
-      \text{where} \quad& \Pi_\Code{any} \equiv \msgCGray{pushI}^\bot \cup \msgCGray{popI}^\bot \cup \msgC{push}^\bot \cup \msgC{pop}^\bot
+      \text{where} \quad& \Pi_\Code{any} \equiv [\msgCGray{pushI}^\bot \mid \msgCGray{popI}^\bot \mid \msgC{push}^\bot \mid \msgC{pop}^\bot]
       \\[-0.2em]
-      \text{where} \quad& \Pi_\Code{noPopI} \equiv \msgCGray{pushI}^\bot \cup \msgC{push}^\bot \cup \msgC{pop}^\bot \qquad\quad \Pi_\Code{noI} \equiv \msgC{push}^\bot \cup \msgC{pop}^\bot
+                                & \Pi_\Code{noPopI} \equiv [\msgCGray{pushI}^\bot \mid \msgC{push}^\bot \mid \msgC{pop}^\bot] \qquad\quad \Pi_\Code{noI} \equiv [\msgC{push}^\bot \mid \msgC{pop}^\bot]
     \end{align*}}\noindent
-  The normalized trace assumes that the three combine
-  symbolic events in the original SRE occur in the order
-  $\msgAGray{popI}{m\;\_}$, $\msgAGray{pushI}{(n-m)\;x}$, and
-  $\msgAGray{pushI}{n\;\_}$. The Kleene stars after
+  This abstract trace imposes an ordering on the three intersected
+  symbolic events in the original SRE; other traces correspond to
+  different orderings. The alternatives after
   $\msgAGray{popI}{m\;\_}$ and $\msgAGray{pushI}{(n-m)\;x}$ in the
-  trace are needed to disallow the $\msgCGray{popI}$ event and
-  $\msgCGray{pushI}$ events, respectively.  The trace shown above is
-  one possible normalized result.  By assuming $m = 0$, we can make
-  two $\effGray{pushI}$ events to be the same event, resulting in the
-  another normalized trace: \BD{Assuming that $m = 0$ seems pretty
-    magical-- does our normalization procedure actually do this?} %
+  trace disallow $\msgCGray{popI}$ event and
+  $\msgCGray{pushI}$ events, respectively. The minimization step
+  also produces traces that merge these intersected events: the
+  procedure automatically considers the case where $m = 0$, which
+  unifies the two $\effGray{pushI}$ events, resulting in the inclusion
+  of the following abstract trace in the normalized set: %
   \vspace{-.4cm} \par\nobreak {\small %
 \begin{align*}
-  \Pi_\Code{any}^* \msgAGray{popI}{0\;\_}^\bot \Pi_\Code{noPopI}^* \msgAGray{pushI}{n\;x}^\bot \Pi_\Code{noI}^* \tag{$\pi_\Code{pop2}$}\label{prop:popHis2}
+  \Pi_\Code{any}^* \seqA \msgAGray{popI}{0\;\_}^\bot \seqA
+  \Pi_\Code{noPopI}^* \seqA \msgAGray{pushI}{n\;x}^\bot \seqA \Pi_\Code{noI}^* \tag{$\pi_\Code{pop2}$}\label{prop:popHis2}
 \end{align*}}\noindent
 \end{example}
 
 \setlength{\textfloatsep}{4pt}
 \begin{algorithm}[t!]
-  \Params{Operator context $\Delta$, variables $\overline{x{:}b}$, and
+  \Params{\quad Operator context $\Delta$, variables $\overline{x{:}b}$, and
     target trace property $A$}%
-  \Output{Generator $e$, such that
+  \Output{\quad Generator $e$, such that
     $\overline{x{:}\urt{b}{\top}} \vdash e :
     \uhat{\epsilon}{\Unit}{A'} \land%
     \overline{x{:}\urt{b}{\top}} \vdash A' \subseteq A$} %
@@ -98,8 +100,8 @@ events with unresolved dependencies. \BD{I'm still iffy on why these
   { %
     $\exists (\Gamma', \pi) \in C.\; %
     \pi = \pi_h \seqA \msg{op}{\phi}^\bot \seqA \pi_f$ } {
-    $\Pi \leftarrow \refine(\Delta, \Gamma, \pi_h,
-    \msg{op}{\phi}^\bot, \pi_f) \cup c - \{(\Gamma', \pi)\}$ }
+    $\Pi \leftarrow \refine(\Delta, \Gamma', \pi_h,
+    \msg{op}{\phi}^\bot, \pi_f) \cup C - \{(\Gamma', \pi)\}$ }
 \Return{$\derive(C)$} \tcp*[l]{synthesize recursions and derive generator program}
 \caption{Test Generator Synthesis}
 \label{algo:top-syn}
@@ -117,16 +119,16 @@ algorithm first uses a loop (lines $3-4$) to refine $C$ until it only
 contains abstract traces that are consistent with the operator context
 $\Delta$, and then uses the resulting set of traces to derive the
 final (recursive) generator (line $5$). Each iteration of this loop
-nondeterministically chooses a target event in the current abstract
-trace (line $2$) whose tag indicates its dependencies are not
-satisfied; it then uses the $\refine$ subroutine to insert the
+nondeterministically chooses a target event in one of the current
+abstract traces (line $2$) whose tag indicates its dependencies are
+not satisfied; it then uses the $\refine$ subroutine to insert the
 required operations before and after the target event.
 
 \setlength{\textfloatsep}{4pt}
 \begin{algorithm}[t!]
-    \Params{Operator context $\Delta$, typing context $\Gamma$,
+    \Params{\quad Operator context $\Delta$, typing context $\Gamma$,
       abstract trace $\pi_h \seqA \msg{op}{\phi}^\bot \seqA \pi_f$}%
-    \Output{Set of refined abstract traces $\Pi$ where the
+    \Output{\quad Set of refined abstract traces $\Pi$ where the
       dependencies of $\msg{op}{\phi}$ are satisfied}
     $\overline{z{:}b}\garr\overline{y{:}t_y}\sarr\uhat{H}{x{:}t_x}{\msg{op}{\phi'}\seqA
       F} \leftarrow \Delta(\eff{op})$\tcp*[l]{retrieve \tyName of
@@ -139,9 +141,9 @@ required operations before and after the target event.
     $H' \leftarrow \pi_h \land H$ \tcp*[l]{merge history regex}
     $F' \leftarrow \pi_f \land (F \seqA \allA)$ \tcp*[l]{merge future
       regex} %
-    $\Pi' \leftarrow \normPlan(H'\seqA \msg{op}{\phi''}^\top\seqA F')$
+    $ P \leftarrow \normPlan(H'\seqA \msg{op}{\phi''}^\top\seqA F')$
     \tcp*[l]{normalize refined trace} %
-    \Return{$\{(\Gamma', \pi') \mid \pi' \in \Pi' \land \Gamma' \vdash
+    \Return{$\{(\Gamma', \pi') \mid \pi' \in P \land \Gamma' \vdash
       \pi' \not \subseteq \emptyset \}$}
     \tcp*[l]{filter empty abstract traces} %
     \caption{Abstract Trace Refinement (\refine{})}
@@ -215,16 +217,11 @@ On the other hand, the $\msgAGray{popI}{m\;y}$ event in the abstract trace has i
   \end{align*}}\noindent
 \end{example}
 
-\paragraph{Deriving a Program}
-
-
-\BD{I need to revisit this section once the definition of $\derive$ in
-  the appendix is update. As it stands, this section is too high level
-  to understand what is going on...%  -- how does it decide how to insert
-  % $\mykw{assume}$s and $\mykw{assert}$s statements, and how to bind
-  % variables? How does the algorithm pick between options (i) and (ii)?
-  % Why do we do this unrolling?
-}
+\paragraph{Deriving a Generator}
+The second phase of our synthesis algorithm constructs a generator
+program from a set of abstract traces using \derive{}. This algorithm
+relies on a subroutine, \deriveTrace{}, that generates straightline
+programs without recursion.
 
 The trace update erase ghost variables:
 \begin{align*}
