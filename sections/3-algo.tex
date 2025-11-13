@@ -161,11 +161,12 @@ $\eff{op}$ (line $7$).  Line $6$ effectively applies the
 \textsc{SubHF} rule to drop any states that are unreachable after the
 target operation; while line 4 effectively applies \textsc{TOpHis} to
 ensure the trace that precedes the target operation satisfies its
-specification \BD{The careful reader will notice we're using a very
-  precise specification of an operator here... Do we need to argue why
-  that's okay?}.  Before returning the refined trace, \refine{} checks
-that it corresponds to a meaningful test generator by filtering out
-any empty traces (line $7$).
+specification. % \BD{The careful reader will notice we're using a very
+  % precise specification of an operator here... Do we need to argue why
+  % that's okay?}
+Before returning the refined trace, \refine{} checks that it
+corresponds to a meaningful test generator by filtering out any empty
+traces (line $7$).
 
 \begin{example}[Abstract Trace Refinement]\label{ex:refinement-process}
   We illustrate the refinement process by showing how it derives a
