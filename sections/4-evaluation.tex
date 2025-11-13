@@ -1,14 +1,12 @@
 \section{Implementation And Evaluation}\label{sec:impl}
-\newcommand{\ranint}{\underline{\Code{int\_gen\;()}}}
-
-\paragraph{\name}
+%
 We have implemented a tool based on the above approach, called
-\name{}, that synthesizes effectful test generators from given
-\tyName{} specifications and safety properties.  The output program in
-our DSL can be transpiled to OCaml (QCheck) or P.  Our experiments
-use the OCaml transpilation to test effectful abstract datatype
-libraries, serializers, transformers, and interpreters, concurrent
-data structures and databases; we use the P target to test reactive
+\name{}, that synthesizes effectful test generators from user-provided
+\tyName{} specifications and property.  The output program in our DSL
+can be transpiled to OCaml (QCheck) or P.  Our experiments use the
+OCaml transpilation to test effectful abstract datatype libraries,
+serializers, transformers, and interpreters, concurrent data
+structures and databases; we use the P target to test reactive
 distributed system models (i.e., message-passing systems defined as a
 collection of actors) by using the synthesized generator as a
 property-directed scheduler that replaces P's default random one.
@@ -16,29 +14,30 @@ Notably, the same specification and synthesis strategy is used in both
 cases.  \name{} consists of approximately 14K lines of OCaml code and
 uses Z3~\cite{de2008z3} as its backend SMT solver.\footnote{The
   supplemental material provides additional explanation of our
-  experiments as well as a docker image that contains the \name{}
-  source code and benchmarks.}
+  experiments. % as well as a docker image that contains the \name{}
+  % source code and benchmarks.
+}
 
 \paragraph{Evaluation setting} \name{} takes two inputs: a target
-safety property, expressed as an SRE, and an operator context that
-contains \tyName{} specifications for the operators used in the SUT.
-During synthesis, \name{} decomposes the target property to build a
-generator consistent with the traces that the property accepts, but
-constrained to respect the history and future traces of the any
-effects it references.  Because operator types are interpreted
-underapproximately, there are potentially many valid synthesis choices
-that can be made for any given operator that are consistent with
-provided types.  Our implementation considers a union of well-typed
-synthesis candidates, the number of which is bounded by the amount of
-time allotted for synthesis (3 minutes in our experiments).
-Non-determinism also manifests in how recursive functions are unrolled
-- recall that in an underapproximate setting, the body of a recursive
-function need only be unrolled until it can be shown that the effects
-performed by the loop's continuation are justified by the effects
-performed within the loop body and its history trace.  \Code{Assume}
-statements in synthesized programs ensure that data dependencies among
-effectful operations are respected, while \Code{assert} statements are
-used to flag property violations.
+property, expressed as an SRE, and an operator context that contains
+\tyName{} specifications for the operators used in the SUT.  During
+synthesis, \name{} decomposes the target property to build a generator
+consistent with the traces that the property accepts, but constrained
+to respect the history and future traces of the any effects it
+references.  Because operator types are interpreted
+underapproximately, there are potentially many valid candidate
+programs that are consistent with the \tyName{} specifications of the
+operators they use.  Our implementation considers a union of
+well-typed synthesis candidates, the number of which is bounded by the
+amount of time allotted for synthesis (3 minutes in our experiments).
+% Non-determinism also manifests in how recursive functions are unrolled
+% - recall that in an underapproximate setting, the body of a recursive
+% function need only be unrolled until it can be shown that the effects
+% performed by the loop's continuation are justified by the effects
+% performed within the loop body and its history trace.
+Synthesized generators use $\mykw{assume}$ statements to ensure that
+data dependencies among effectful operations are respected and use
+$\mykw{assert}$ statements to flag property violations.
 
 %% We evaluate our approach by integrating our synthesized controllers
 %% into the testing framework provided by P~\cite{DGJ+13,DQ17}, a
@@ -95,25 +94,24 @@ Our experimental evaluation addresses three research questions:
 \begin{table}[t!]
   \renewcommand{\arraystretch}{0.8}
   % \vspace*{-.1in}
-  \caption{\small Using \name{} to synthesize
-    effectful test generators in OCaml. Benchmarks from prior work are
-    annotated with their source: HAT~\cite{ZYDJ24}, the OCaml
-    multicore PBT framework~\cite{OcamlMulticorePBT}, QuickCheck on
-    IFC machines~\cite{pbt-ifc} and well-typed De Bruijn STLC
+  \caption{\small Using \name{} to synthesize effectful test
+    generators in OCaml. Benchmarks from prior work are annotated with
+    their source: HAT~\cite{ZYDJ24}, the OCaml multicore PBT
+    framework~\cite{OcamlMulticorePBT}, QuickCheck on IFC
+    machines~\cite{pbt-ifc} and well-typed De Bruijn STLC
     programs~\cite{CoverageType}; as well as
     OLTP-Bench~\cite{OLTPBench}, an extensible testbed for
     benchmarking relational databases, and MonkeyDB~\cite{MonkeyDB}, a
     mock storage system for testing weak isolation levels.  The
-    baselines used from comparison are either from the original
-    sources if they exist (labeled with $^{\dagger}$), otherwise we
-    use Quickcheck's default random generator.  \name{} synthesized
+    baselines used for comparison are taken from the original sources
+    when they exist (these are labeled with $^{\dagger}$), otherwise
+    we use QCheck's default random generator.  \name{} synthesized
     correct-by-construction test generators for all benchmarks within
     3 minutes; the number of generator variants synthesized is bounded
-    at 3.  We set a 30-minute bound for the baselines to find a property
-    violation.}
-\vspace*{-.1in}
-\footnotesize
-%\multicolumn{2}{c||}{} & 
+    at 3.  We set a 30-minute bound for the baselines to find a
+    property violation.}
+  \vspace*{-.1in} \footnotesize
+%\multicolumn{2}{c||}{} &
 \setlength{\tabcolsep}{1.3pt}
 \begin{tabular}{c|P{4.25cm}||ccc||cc||c|ccc}
   \toprule
@@ -158,7 +156,7 @@ Name & Property &   &uHAT &goal & {\scriptsize Clouseau} & {\scriptsize Baseline
 \midrule
 \textsf{Smallbank}\cite{OLTPBench} & {\scriptsize Account updates are strongly consistent.} & $22$ & $162$ & $3$ & $1.9$ & {\tiny Timeout} & $163.55$ & $28$ & $29$ & $10263$\\
 \bottomrule
-\end{tabular}                                
+\end{tabular}
 \label{tab:evaluation}
 % \vspace*{-.15in}
 \end{table}
@@ -279,8 +277,8 @@ effectful operators (\#$\eff{op}$) and the number of qualifiers (i.e.,
 symbolic events) used in \tyName{} specifications and the property
 being tested.  For the benchmarks in~\autoref{tab:evaluation}, our
 results show that writing underapproximate specifications require
-anywhere from $6$ - $22$ different operators which occur in over 100
-symbolic events for the most complex examples.  The second group of
+anywhere from $6$ - $22$ different operators and include over 100
+symbolic events in our most complex examples.  The second group of
 columns characterizes \name{}'s ability to discover a violation
 compared to the baseline (\textbf{Q2}).  To make the comparison
 objective, we execute generators in the two systems 10K times, and
@@ -307,18 +305,17 @@ under test or the target property, or handwritten ones which inject
 additional actors to control input message generation and prevent
 uninteresting message orderings (e.g. \textsf{Simplified2PC} or
 \textsf{Heartbeat}), are effective and \name{}'s performance is
-comparable to these.  But, as in the previous set of experiments, for
-more complex benchmarks (e.g., \textsf{ChainReplication},
+comparable to these.  As in the previous set of experiments, however,
+for more complex benchmarks (e.g., \textsf{ChainReplication},
 \textsf{Paxos}), even manual specialization to generate interesting
 test sequences is significantly less effective than \name{}'s
 trace-guided synthesis approach.  Moreover, as indicated by the
 \textsf{Raft} numbers, a random exploration procedure, without
-manually engineered guidance, is simply too na\"{i}ve to find a
-violating execution.  As mentioned for the comparison to MonkeyDB, it
-is notable that \name{}'s performance on these P benchmarks are
-competitive, and in several cases, superior to handcrafted P
-schedulers, even though \name{} has no built-in knowledge of P's
-underlying programming model.
+manually engineered guidance, is too na\"{i}ve to find a violating
+execution.  As mentioned for the comparison to MonkeyDB, it is notable
+that \name{}'s performance on these P benchmarks is competitive, and
+in several cases, superior to handcrafted P schedulers, even though
+\name{} has no built-in knowledge of P's underlying programming model.
 
 The last group of columns in both tables provide details on the cost
 of our synthesis procedure. The first column presents total synthesis
@@ -342,8 +339,8 @@ To demonstrate that \name{} can be effective in real-world scenarios,
 we have applied it to \textsf{AnonReadAtomicity}, a distributed
 transaction system in use at a major cloud provider, where
 asynchronous reads are expected to execute atomically, as discussed
-in~\ref{sec:overview}. The property to be checked requires that if there
-exists a key $\Code{k}$ updated within an active transaction
+in~\autoref{sec:overview}. The property to be checked requires that if
+there exists a key $\Code{k}$ updated within an active transaction
 $\Code{i}$, any successful read response asking its value should
 return the value last written to $\Code{k}$ made by that transaction.
 %% We can express a
@@ -367,5 +364,5 @@ enables the synthesis of a test generator that can strategically
 request a new transaction to initiate triggering the intended
 violation.  A version of the benchmark in which this sequence
 structure is enforced manually discovers the violation in 53
-executions, compared to \name{}'s version which is able to uncover the
-violation on all of its executions.
+executions, while \name{}'s version can uncover the violation on all
+of its executions.
