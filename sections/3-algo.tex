@@ -244,42 +244,57 @@ placeholders in the recursive template.
 
 \begin{example}[Recursion Template]
   A representative template is a non-deterministic loop, whose form is
-  $T \doteq \zlet{f}{\mykw{fix}\ f.\lambda ().\
-  () \oplus \boxed{e_1}; f\;(); \boxed{e_2}}{\boxed{e_3};f\;();\boxed{e_4}}$,
-  allowing $\Pi^*$ in the abstract trace to be matched. For instance,
-  consider the abstract trace $\pi_\Code{stack}$ shown in Example~\ref{ex:refinement-process}:
+  $T \doteq \zlet{f}{\mykw{fix}\ f.\lambda ().\ () \oplus \boxed{e_1};
+    f\;(); \boxed{e_2}}{\boxed{e_3};f\;();\boxed{e_4}}$, allowing
+  $\Pi^*$ in the abstract trace to be matched. For instance, consider
+  the abstract trace $\pi_\Code{stack}$ shown in
+  Example~\ref{ex:refinement-process}: %
   \vspace{-.4cm} \par\nobreak {\small %
-    \begin{align*} &
-                     \underbrace{\Pi_\Code{noI}^*\msgAGray{pushI}{m\;y}\msgAGray{popI}{m\;y}\Pi_\Code{noI}^*}_{e_3}\;\;
-                     \underbrace{\msgA{push}{x}\msgAGray{pushI}{n\;x}}_{e_1}\;\;
-                     \underbrace{\Pi_\Code{noI}^*}_\text{recursion}\;\;
-                     \underbrace{\msgA{pop}{x}\msgAGray{popI}{n\;x}}_{e_2}\;\;
-                     \underbrace{\Pi_\Code{noI}^*}_{e_4}
+    \begin{align*}
+      &
+        \underbrace{\Pi_\Code{noI}^*\msgAGray{pushI}{m\;y}\msgAGray{popI}{m\;y}\Pi_\Code{noI}^*}_{e_3}\;\;
+        \underbrace{\msgA{push}{x}\msgAGray{pushI}{n\;x}}_{e_1}\;\;
+        \underbrace{\Pi_\Code{noI}^*}_\text{recursion}\;\;
+        \underbrace{\msgA{pop}{x}\msgAGray{popI}{n\;x}}_{e_2}\;\;
+        \underbrace{\Pi_\Code{noI}^*}_{e_4}
     \end{align*}}\noindent
-  Here, $\pi_\Code{stack}$ is divided into five parts, corresponding to the four placeholders and the self-recursive call (i.e., $f\;()$) in the template.
-  The synthesizer then re-refines the abstract trace for $i$-fold recursion unrolling after erasing all qualifiers from the abstract trace:
+  Here, $\pi_\Code{stack}$ is divided into five parts, corresponding
+  to the four placeholders and the self-recursive call (i.e., $f\;()$)
+  in the template. The synthesizer then re-refines the abstract trace for $i$-fold
+  recursion unrolling after erasing all qualifiers from the abstract
+  trace: %
   \vspace{-.4cm} \par\nobreak {\small %
-  \begin{align*}
-    \Pi_\Code{anyA}^*\msgCGray{pushI}\msgCGray{popI}&\;\underline{\epsilon}\;\Pi_\Code{anyA}^* \tag{0-fold unrolling}
-    \\\Pi_\Code{anyA}^*\msgCGray{pushI}\msgCGray{popI}\Pi_\Code{anyA}^*\;\underline{\msgCGray{pushI}\msgC{push}}&\underline{\msgCGray{popI}\msgC{pop}}\;\Pi_\Code{anyA}^* \tag{1-fold unrolling}
-    \\\Pi_\Code{anyA}^*\msgCGray{pushI}\msgCGray{popI}\Pi_\Code{anyA}^*\;\underline{\msgCGray{pushI}\msgC{push}\msgCGray{pushI}\msgC{push}}&\underline{\msgCGray{popI}\msgC{pop}\msgCGray{popI}\msgC{pop}}\;\Pi_\Code{anyA}^* \tag{2-fold unrolling}
-  \end{align*}}\noindent
-  This refinement ensures that multiple unfoldings remain well-typed, which disallows an incorrect recursion template instantiation, as shown below:
+    \begin{align*}
+      \Pi_\Code{anyA}^*\msgCGray{pushI}\msgCGray{popI}&\;\underline{\epsilon}\;\Pi_\Code{anyA}^* \tag{0-fold unrolling}
+      \\\Pi_\Code{anyA}^*\msgCGray{pushI}\msgCGray{popI}\Pi_\Code{anyA}^*\;\underline{\msgCGray{pushI}\msgC{push}}&\underline{\msgCGray{popI}\msgC{pop}}\;\Pi_\Code{anyA}^* \tag{1-fold unrolling}
+      \\\Pi_\Code{anyA}^*\msgCGray{pushI}\msgCGray{popI}\Pi_\Code{anyA}^*\;\underline{\msgCGray{pushI}\msgC{push}\msgCGray{pushI}\msgC{push}}&\underline{\msgCGray{popI}\msgC{pop}\msgCGray{popI}\msgC{pop}}\;\Pi_\Code{anyA}^* \tag{2-fold unrolling}
+    \end{align*}}\noindent
+  This refinement ensures that multiple unfoldings remain well-typed,
+  which disallows an incorrect recursion template instantiation, as
+  shown below: %
   \vspace{-.4cm} \par\nobreak {\small %
-    \begin{align*} &
-                     \underbrace{\Pi_\Code{noI}^*\msgAGray{pushI}{m\;y}\msgAGray{popI}{m\;y}\Pi_\Code{noI}^*\msgA{push}{x}\msgAGray{pushI}{n\;x}}_{e_3}\;\;
-                     \underbrace{\Pi_\Code{noI}^*}_{e_1}\;\;
-                     \underbrace{\Pi_\Code{noI}^*}_\text{recursion}\;\;
-                     \underbrace{\msgA{pop}{x}\msgAGray{popI}{n\;x}}_{e_2}\;\;
-                     \underbrace{\Pi_\Code{noI}^*}_{e_4}
-  \end{align*}}\noindent
-  This instantiation will repeatedly perform $\eff{pop}$ events without any $\eff{push}$ events; its two-fold recursion unrolling will therefore be rejected.
-  The final recursive
-  program is assembled by composing synthesized programs from these
-  traces to populate the template placeholders, thereby yielding the following program:
-  \begin{minted}[fontsize = \footnotesize, escapeinside=??, xleftmargin=18pt, linenos]{ocaml}
+    \begin{align*}
+      & \underbrace{\Pi_\Code{noI}^*\msgAGray{pushI}{m\;y}\msgAGray{popI}{m\;y}\Pi_\Code{noI}^*\msgA{push}{x}\msgAGray{pushI}{n\;x}}_{e_3}\;\;
+        \underbrace{\Pi_\Code{noI}^*}_{e_1}\;\;
+        \underbrace{\Pi_\Code{noI}^*}_\text{recursion}\;\;
+        \underbrace{\msgA{pop}{x}\msgAGray{popI}{n\;x}}_{e_2}\;\;
+        \underbrace{\Pi_\Code{noI}^*}_{e_4}
+    \end{align*}
+  } %
+  \noindent This instantiation will repeatedly perform $\eff{pop}$
+  events without any $\eff{push}$ events; its two-fold recursion
+  unrolling will therefore be rejected.  The final recursive program
+  is assembled by composing synthesized programs from these traces to
+  populate the template placeholders, thereby yielding the following
+  program:
+
+  \begin{minted}[fontsize = \footnotesize, escapeinside=??, xleftmargin=10pt, linenos]{ocaml}
 let rec f () =
-    () ?$\oplus$? let (x: int) = int_gen () in push x; f (); let (y: int) = pop () in assert (x == y)
+  () ?$\oplus$?
+    let (x: int) = int_gen () in push x; (* e1 *)
+    f ();
+    let (y: int) = pop () in (*e2 *)
+    assert (x == y) (* e3 *)
 in f ()
   \end{minted}
 \end{example}
