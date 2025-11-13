@@ -68,13 +68,17 @@
   \\ &\denot{ x{:}\urt{b}{\phi}\sarr\tau } &&\doteq \{ e ~|~ \emptyset \basicvdash e : b\sarr\eraserf{\tau} \land
                                            \forall v.\, \phi[\nu\mapsto v] \implies e\ v \in  \denot{ \tau[x\mapsto v ] } \}
   \\ &\denot{ x{:}t_x \sarr t } &&\doteq \{ e ~|~ \emptyset \basicvdash e : \eraserf{t_x\sarr t} \land
-                                           \forall v_x \in \denot{t_x}.\, e\ v_x \in  \denot{ t[x \mapsto v_x ] } \} \quad \text{$t_x$ is a function type}
+                                           \forall v_x \in \denot{t_x}.\, e\ v_x \in  \denot{ t[x \mapsto v_x ] } \} \qquad \text{(if $t_x$ is a function type)}
   \\ &\denot{ x{:}t_x\sarr\tau } &&\doteq \{ e ~|~ \emptyset \basicvdash e : \eraserf{t_x\sarr\tau} \land
-                                           \forall v_x \in \denot{t_x}.\, e\ v_x \in  \denot{ \tau[x \mapsto v_x ] } \} \quad \text{$t_x$ is a function type}
-  \\ &\denot{ x{:}b\garr\tau } &&\doteq \{ e ~|~ 
-    \emptyset \basicvdash e : \eraserf{\tau} \land 
-    \forall c{:}b. e \in  \denot{ \tau[x\mapsto c ] } \}
-  \\ &\denot{\rg{H}{A}{F}} &&\doteq \{e ~|~ \emptyset \basicvdash e : s \land \forall v{:}b. \phi[v\mapsto v] \impl \forall \alpha_f \in \denot{F[x\mapsto v]}. \exists \alpha_h \in\denot{H[x\mapsto v]}. \msteptr{\eraseGhost{\alpha_h}}{e}{\eraseGhost{\alpha_f}}{v} \}
+                                           \forall v_x \in \denot{t_x}.\, e\ v_x \in  \denot{ \tau[x \mapsto v_x ] } \} \qquad \text{(if $t_x$ is a function type)}
+  \\ &\denot{ x{:}b\garr t } &&\doteq \{ e ~|~ 
+    \emptyset \basicvdash e : \eraserf{t} \land 
+    \forall c{:}b. e \in  \denot{ t[x\mapsto c ] } \}
+  \\ &\denot{ \effGray{op}{:}s\garr t } &&\doteq \{ e ~|~ 
+    \emptyset \basicvdash e : \eraserf{t} \land 
+    e\in\denot{ t } \}
+  \\[-.8em] &\denot{\uhat{H}{x{:}\urt{b}{\phi}}{F}} &&\doteq \{e ~|~ \emptyset \basicvdash e : b \land \forall v{:}b. \phi[v\mapsto v] \impl \forall \alpha_f \in \denot{F[x\mapsto v]}. \exists \alpha_h \in\denot{H[x\mapsto v]}. \msteptr{\eraseGhost{\alpha_h}}{e}{\eraseGhost{\alpha_f}}{v} \}
+  \\[-.4em] &\denot{\uhat{H}{x{:}t}{F}} &&\doteq \{e ~|~ \emptyset \basicvdash e : \eraserf{t} \land \forall v\in\denot{t}. \forall \alpha_f \in \denot{F}. \exists \alpha_h \in\denot{H}. \msteptr{\eraseGhost{\alpha_h}}{e}{\eraseGhost{\alpha_f}}{v} \}
   \\ &\denot{ \tau_1 \interty \tau_2 } &&\doteq \denot{\tau_1} \cap \denot{\tau_2}
 \end{align*}
 \vspace{-1.5em}
@@ -85,9 +89,9 @@
 \end{flalign*}}
 \vspace{-1.2em}
 \begin{flalign*}
-    &\denot{ \emptyset } \doteq \{ \emptyset \} \quad \denot{ x{:}\urt{b}{\phi} } \doteq  \{ \sigma[x\mapsto v] ~|~ \phi[\vnu \mapsto v], \sigma \in \denot{\Gamma[x\mapsto v]} \}
+    &\denot{ \emptyset } \doteq \{ \emptyset \} \qquad \denot{ x{:}\urt{b}{\phi} } \doteq  \{ \sigma[x\mapsto v] ~|~ \phi[\vnu \mapsto v], \sigma \in \denot{\Gamma[x\mapsto v]} \}
     &
-    &\denot{ x{:}t, \Gamma } \doteq \denot{ \Gamma } \quad \text{if $t$ is not a base type}
+    &\denot{ x{:}t, \Gamma } \doteq \denot{ \Gamma } \quad \text{(if $t$ is not a base type)}
 \end{flalign*}
 }
 \vspace{-0.4cm}

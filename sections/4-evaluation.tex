@@ -195,25 +195,25 @@ Name & Property &   &uHAT &goal & {\scriptsize Clouseau} & {\scriptsize Baseline
   \hline
 Name & Property &   &uHAT &goal & {\scriptsize Clouseau} & {\scriptsize Baseline} &  &  \\
   \midrule
-  {\scriptsize\textsf{Database}} & {\scriptsize The database maintains a Read-Your-Writes policy.} & $4$ & $15$ & $3$ & $1$ & $6$ & $0.32$ & $6$ & $6$ & $49$\\
+  {\scriptsize\textsf{Database}} & {\scriptsize The database maintains a Read-Your-Writes policy.} & $4$ & $15$ & $3$ & $1.0$ & $5.6$ & $0.32$ & $6$ & $6$ & $49$\\
   \midrule
-  {\scriptsize\textsf{Firewall}}\cite{MessageChain} & {\scriptsize  Requests generated inside the firewall are eventually propagated to the outside.} & $5$ & $26$ & $4$ & $1$ & $10$ & $0.59$ & $10$ & $10$ & $222$\\
+  {\scriptsize\textsf{Firewall}}\cite{MessageChain} & {\scriptsize  Requests generated inside the firewall are eventually propagated to the outside.} & $5$ & $26$ & $4$ & $1.0$ & $10.0$ & $0.59$ & $10$ & $10$ & $222$\\
   \midrule
-  {\scriptsize\textsf{RingLeaderElection}}\cite{MessageChain} & {\scriptsize There is always a single unique  leader.} & $3$ & $14$ & $2$ & $1$ & $18$ & $0.83$ & $8$ & $8$ & $100$\\
+  {\scriptsize\textsf{RingLeaderElection}}\cite{MessageChain} & {\scriptsize There is always a single unique  leader.} & $3$ & $14$ & $2$ & $1.0$ & $17.7$ & $0.83$ & $8$ & $8$ & $100$\\
   \midrule
-  {\scriptsize\textsf{BankServer}}\cite{DGJ+13} & {\scriptsize Withdrawals in excess of the available balance are never allowed.} & $6$ & $42$ & $1$ & $1$ & $2^{\dagger}$ & $0.17$ & $5$ & $5$ & $27$\\
+  {\scriptsize\textsf{BankServer}}\cite{DGJ+13} & {\scriptsize Withdrawals in excess of the available balance are never allowed.} & $6$ & $42$ & $1$ & $1.0$ & $2.2^{\dagger}$ & $0.17$ & $5$ & $5$ & $27$\\
   \midrule
-  {\scriptsize\textsf{Simplified2PC}}\cite{DGJ+13} & {\scriptsize Transactions are atomic.} & $9$ & $32$ & $5$ & $2$ & $6^{\dagger}$ & $1.03$ & $8$ & $8$ & $88$\\
+  {\scriptsize\textsf{Simplified2PC}}\cite{DGJ+13} & {\scriptsize Transactions are atomic.} & $9$ & $32$ & $5$ & $2.1$ & $5.8^{\dagger}$ & $1.03$ & $8$ & $8$ & $88$\\
   \midrule
-  {\scriptsize\textsf{HeartBeat}}\cite{DGJ+13} & {\scriptsize All available nodes are identified by a  detector.} & $7$ & $31$ & $3$ & $1$ & $6^{\dagger}$ & $1.10$ & $14$ & $14$ & $145$\\
+  {\scriptsize\textsf{HeartBeat}}\cite{DGJ+13} & {\scriptsize All available nodes are identified by a  detector.} & $7$ & $31$ & $3$ & $1.0$ & $6.0^{\dagger}$ & $1.10$ & $14$ & $14$ & $145$\\
   \midrule
-  {\scriptsize\textsf{ChainReplication}}\cite{ModP} & {\scriptsize Concurrent updates are never lost.} & $7$ & $72$ & $4$ & $1$ & $500^{\dagger}$ & $19.24$ & $12$ & $169$ & $2054$\\
+  {\scriptsize\textsf{ChainReplication}}\cite{ModP} & {\scriptsize Concurrent updates are never lost.} & $7$ & $72$ & $4$ & $1.0$ & $500.0^{\dagger}$ & $19.24$ & $12$ & $169$ & $2054$\\
   \midrule
-  {\scriptsize\textsf{Paxos}}\cite{ModP} & {\scriptsize Logs are correctly replicated.} & $10$ & $110$ & $2$ & $1$ & $667^{\dagger}$ & $23.70$ & $14$ & $77$ & $1763$\\
+  {\scriptsize\textsf{Paxos}}\cite{ModP} & {\scriptsize Logs are correctly replicated.} & $10$ & $110$ & $2$ & $1.0$ & $667.7^{\dagger}$ & $23.70$ & $14$ & $77$ & $1763$\\
   \midrule
-  {\scriptsize\textsf{Raft}} & {\scriptsize Leader election is robust to faults.} & $9$ & $39$ & $6$ & $1$ & {\tiny Timeout} & $26.84$ & $12$ & $78$ & $1262$\\
+  {\scriptsize\textsf{Raft}} & {\scriptsize Leader election is robust to faults.} & $9$ & $39$ & $6$ & $1.0$ & {\tiny Timeout} & $26.84$ & $12$ & $78$ & $1262$\\
   \midrule
-  {\scriptsize\textsf{AnonReadAtomicity}} & {\scriptsize Read Atomicity is preserved.} & $17$ & $113$ & $3$ & $1$ & $53^{\dagger}$ & $18.35$ & $16$ & $16$ & $1909$\\
+  {\scriptsize\textsf{AnonReadAtomicity}} & {\scriptsize Read Atomicity is preserved.} & $17$ & $113$ & $3$ & $1.0$ & $53.3^{\dagger}$ & $18.35$ & $16$ & $16$ & $1909$\\
 \bottomrule
   \end{tabular}
 \label{tab:evaluation2}

@@ -833,7 +833,7 @@ follows:
 {\small\begin{align*}
   % &\denot{\uhat{H}{x{:}\urt{b}{\phi}}{F}} \doteq
   % \\[-0.4em]& \quad
-  \{e ~|~ \emptyset \basicvdash e : s \land \forall v{:}b. \phi[v\mapsto v] \impl \forall \alpha_f \in \denot{F[x\mapsto v]}. \exists \alpha_h \in\denot{H[x\mapsto v]}. \msteptr{\eraseGhost{\alpha_h}}{e}{\eraseGhost{\alpha_f}}{v} \}
+  \{e ~|~ \emptyset \basicvdash e : b \land \forall v{:}b. \phi[v\mapsto v] \impl \forall \alpha_f \in \denot{F[x\mapsto v]}. \exists \alpha_h \in\denot{H[x\mapsto v]}. \msteptr{\eraseGhost{\alpha_h}}{e}{\eraseGhost{\alpha_f}}{v} \}
 \end{align*}}\noindent
 A term $e$ inhabits $\uhat{H}{x{:}\urt{b}{\phi}}{F}$ iff, for trace $\alpha_f$ accepted by $F$, there exists history trace $\alpha_h$ accepted by $H$, such that the execution of $e$ under
 $\alpha_h$ produces $\alpha_f$.

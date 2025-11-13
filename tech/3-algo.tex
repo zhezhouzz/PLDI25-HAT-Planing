@@ -2,7 +2,7 @@
 \section{Auxiliary Functions for Synthesis}\label{sec:tech:algo}
 
 This section describes three auxiliary functions used for generator
-synthesis. The first of these, $\normPlan$, converts a SRE formula into a set of unsafe abstract traces. The second, $\mathbf{NormCtx}$ normalizes the \PAT{} of each effect operator. The third, $\termDerive$, generates a generator program from a refined abstract trace.
+synthesis. The first of these, $\normPlan$, converts a SRE formula into a set of abstract traces. The second, $\termDerive$, generates a straitline program from a refined abstract trace. The third, $\S{synRecursion}$, generates a recursive program with the help of a recursion template.
 
 \begin{algorithm}[t!]
   \Procedure{$\normPlan(A) := $}{
@@ -10,19 +10,16 @@ synthesis. The first of these, $\normPlan$, converts a SRE formula into a set of
     \lCase{$\emptyset$}{ \Return{$\emptyset$} }
     \lCase{$\epsilon$}{ \Return{$\{\epsilon\}$} }
     \lCase{$\msg{op}{\phi}$}{ \Return{$\{\msg{op}{\phi}\}$} }
-    \lCase{$A_1 \seqA A_2$}{ \Return{$\{ \pi_1 \seqA \Pi_2 ~|~ \Pi_1 \in \normPlan(A_1) \land \Pi_2 \in \normPlan(A_2) \}$}}
+    \lCase{$A_1 \seqA A_2$}{ \Return{$\{ \pi_1 \seqA \pi_2 ~|~ \pi_1 \in \normPlan(A_1) \land \pi_2 \in \normPlan(A_2) \}$}}
     \lCase{$A_1 \lorA A_2$}{ \Return{$\normPlan(A_1) \cup \normPlan(A_2)$}}
-    \lCase{$A^*$}{\Return{$\{ A^* \}$}}
-  }
-  }
-  \Procedure{$\mathbf{NormCtx}(\Delta) := $}{
-    $\Delta \leftarrow \emptyset$\;
-    \ForEach{$(\Theta, \overline{z{:}b}\garr\overline{y{:}t}\sarr\rg{H}{\eff{op}(\overline{y})}{F}) \in \Delta(\eff{op})$}{
-      \ForEach{$\Pi_h \in \normPlan(H)$ and $\Pi_f \in \normPlan(F)$}{
-        $\Delta'(\eff{op}) \leftarrow \Delta'(\eff{op}) \cup \{(\Theta, \overline{z{:}b}\garr\overline{y{:}t}\sarr\rg{\Pi_h}{\eff{op}(\overline{y})}{\Pi_f})\}$\;
+    \Case{$A^*$}{
+      \Match{$\normPlan(A)$}{
+        \lCase{$\emptyset$}{ \Return{$\emptyset$} }
+        \lCase{$\bigcup \msg{op}{\phi}$}{ \Return{$\{(\bigcup \msg{op}{\phi})^*\}$} }
+        \lCase{$\Pi$}{ \Return{$\{ \pi_1 \listconcat \pi_2 \listconcat \cdots \listconcat \pi_n ~|~ \pi_i \in \Pi \}$} }
       }
     }
-    \Return{$\Delta'$}\;
+  }
   }
   \caption{Abstract Trace Normalization}
   \label{algo:norm}
@@ -30,77 +27,132 @@ synthesis. The first of these, $\normPlan$, converts a SRE formula into a set of
 
 \paragraph{Normalization} 
 As shown in \autoref{algo:norm}, the function $\normPlan$ recursively translates the input
-SRE into a set of abstract traces. It keeps the Kleene star operator $A^*$ unchanged and divides $A \lorA A'$ into multiple abstract traces. The function $\mathbf{NormCtx}$ also normalizes the history and prophecy regexes in \PAT{}.
-
-
-% \begin{lemma}\label{lemma:traceAnd}[Abstract traces are closed under
-%     conjunction] The conjunction ($\land$) of two abstract traces is also
-%     an abstract trace.
-% \end{lemma}
+SRE into a set of abstract traces. It divides $A \lorA A'$ into multiple abstract traces, and leaves the Kleene star over multiple singleton events unchanged.
 
 \begin{lemma}\label{lemma:norm-sound}[Normalization is sound ]
   The normalized result has the same denotation as the input SRE,
-  that is, for all SRE $A$ and set of traces $\{\Pi_i\}$, {\small
-    $\denot{A} = \bigcup_{i} \denot{\Pi_i}$}
+  that is, for all SRE $A$ and set of traces $\{\pi_i\}$, {\small
+    $\denot{A} = \bigcup_{i} \denot{\pi_i}$}
 \end{lemma}
 
 \begin{algorithm}[t!]
-    \Procedure{$\S{TermDerive}(\Gamma, \Pi) := $}{
+    \Procedure{$\S{TermDerive}(\Gamma, \pi) := $}{
       \Match{$\Gamma$}{
-      \Case{$[]$}{ \Return{$\S{DeriveTrace}(\Pi)$}\; }
-      \Case{$x{:}\rawnuot{b}{\phi} \cons \Gamma'$}{
-      \Return{$\zassume{\overline{x}}{\phi[\vnu \mapsto x]}{\S{TermDerive}(\Gamma', \Code{ToList}(\Pi))}$}\;
+      \lCase{$[]$}{ \Return{$\S{DeriveTrace}(\pi)$} }
+      \Case{$x{:}\urt{b}{\phi} \cons \Gamma'$}{
+      \Return{$\zassume{\overline{x}}{\phi[\vnu \mapsto x]}{\S{TermDerive}(\Gamma', \pi)}$}\;
       }
     }
     }
+    \Procedure{$\S{DeriveTrace}(\Pi) := $}{
+      \Match{$\Pi$}{
+        \lCase{$\epsilon$}{ \Return{$()$} }
+        \lCase{$\Pi^* \seqA \pi'$}{ \Return{$\S{DeriveTrace}(\pi')$} }
+        \Case{$\msgBGray{op}{\overline{x}}{\phi} \seqA \pi'$}{
+          $\overline{x'} \leftarrow \Code{GetFreshNames}(\overline{x})$\;
+          $\phi_1 \leftarrow \phi\msubst{x}{x'}$\;
+          $e \leftarrow \S{DeriveTrace}(\pi')$\;
+          \Return{$\zassume{\overline{x'}}{\phi_1}{e}$}
+        }
+        \Case{$\msgB{op}{\overline{x}\;y}{\phi} \seqA \pi'$}{
+          $\overline{x'} \leftarrow \Code{GetFreshNames}(\overline{x})$\;
+          $y' \leftarrow \Code{GetFreshName}(y)$\;
+          $\phi_1 \leftarrow \exists y.\phi\msubst{x}{x'}$\;
+          $\phi_2 \leftarrow \phi\msubst{x}{x'}[y\mapsto y']$\;
+          $e \leftarrow \S{DeriveTrace}(\pi')$\;
+          \Return{$\zassume{\overline{x'}}{\phi_1}{\zlet{y'}{\eff{op}\;\overline{x'}}{\sassert{\phi_2}; e}}$}
+        }
+      }
+      }
     \caption{Term Derivation}
     \label{algo:term-derive}
   \end{algorithm}
 
-\begin{algorithm}[t!]
-    \Procedure{$\S{DeriveTrace}(\Pi) := $}{
-    \Match{$\Pi$}{
-      \lCase{$[]$}{ \Return{$()$} }
-      \Case{$\Pi^* \cons \Pi'$}{ 
-        $e \leftarrow \S{DeriveTrace}(\Pi)$\;
-        $e' \leftarrow\S{DeriveTrace}(\Pi')$\;
-        \Return{$\zwhile{e}{e'}$}
-        }
-      \Case{$\msgB{op}{\overline{x}}{\phi} \seqA \Pi'$ when $\mykw{gen}\;\eff{op}$}{
-        $\overline{x'} \leftarrow \Code{GetFreshNames}(\overline{x})$\;
-        $e \leftarrow \S{DeriveTrace}(\Pi')$\;
-        \Return{$\zassume{\overline{x'}}{\phi\msubst{x}{x'}}{e}$}
-      }
-      \Case{$\msgB{op}{\overline{x}}{\phi} \cons \Pi'$ when $\mykw{obs}\;\eff{op}$}{
-        $\overline{x'} \leftarrow \Code{GetFreshNames}(\overline{x})$\;
-        $e \leftarrow \S{DeriveTrace}(\Pi')$\;
-        \Return{$\zobs{\overline{x'}}{op}{}{\zassert{\phi\msubst{x}{x'}}{e}}$}
-      }
-    }
-    }
-    \caption{Trace Derivation}
-    \label{algo:trace-derive}
-\end{algorithm}
-
 \paragraph{Term Derivation} The term derivation function
 \(\S{TermDerive}\) is shown in \autoref{algo:term-derive}. It first
 converts the input type context into \(\mykw{assume}\) statements over
-the corresponding qualifiers in pure refinement types (line 6), then
-derives the abstract trace with the help of the \(\S{DeriveTrace}\)
-subroutine shown in \autoref{algo:trace-derive}. The input abstract
-trace is first be converted into a list of SRE
-(\(\Code{ToList}\)) before the subroutine is called; it then
-recursively transforms this list into a generator program. The kleene star $\Pi^*$ is converted into a $\mykw{while}$ loop on line 4. For a generable symbolic event (line 8),
-\(\S{DeriveTrace}\) inserts an \(\mykw{assume}\) expression before the
-\(\mykw{gen}\) expression on line 11. Conversely, for observable
-events, \(\S{DeriveTrace}\) adds an \(\mykw{assert}\) expression after
-the \(\mykw{obs}\) expression on line 13.
+the corresponding qualifiers in pure refinement types (line 5), then
+derives the abstract trace with the help of the \(\S{DeriveTrace}\), which
+recursively transforms this list into a generator program. 
+The kleene star is dropped (line 9), 
+the ghost event is converted into an \(\mykw{assume}\) expression (line 14), and 
+concrete event is converted into effectful operation invocation (line 16-21).
+Note that the arguments of the effectful operation are provided by $\mykw{assume}$ and the return value need to be checked by $\mykw{assert}$ (line 21).
 
-\begin{lemma}\label{lemma:derive-sound}[Term Derivation is Sound]
-  Fora given type context $\Gamma$, well-founded type context
-  $\Delta$, abstract trace $\Pi$, and term $e$,
-  {\small
+\begin{algorithm}[t!]
+  \Procedure{$\S{SynRecursion}(\Gamma, \Pi, \Code{UnrollingBound}) := $}{
+     $(T, \{\pi_i\}) \leftarrow \S{MatchTemplate}(\Pi)$\;
+     \If{$\forall i. 0 \leq i < \Code{UnrollingBound}. \exists \tau. \Gamma \vdash \Code{Unroll}(T, \{\pi_i\}, i) : \tau$}{
+        $e_i \leftarrow \S{DeriveTrace}(\pi_i)$\;
+        \Return{$T(\overline{e_i})$}
+     }
+  }
+  \caption{Synthesis of Recursive Programs}
+  \label{algo:syn-recursion}
+\end{algorithm}
+
+\paragraph{Recursion Synthesis} Kleene stars ($\Pi^*$) in abstract traces are interpreted as recursion
+points. The synthesis algorithm can synthesize a recursive program by
+expanding the Kleene star using recursion. As shwon in \autoref{algo:syn-recursion}, we employ a template-based
+strategy, in which the algorithm matches the given abstract trace with a
+template $T$, together with a set of abstract traces $\{\pi_i\}$ that are matched from the orginal trace. As dictated by \textsc{TFixInd}, the algorithm
+unrolls the recursive body up to a bounded depth and invokes
+refinement loop (lines 3 in \autoref{algo:syn-recursion}) to ensure that
+the unrolled abstract traces are well-typed.
+Finally, the synthesized program is instantiated by the template with derived programs from these abstract traces.
+
+\begin{example}[Recursion Template]
+  A representative template is a non-deterministic loop, whose form is
+  $T \doteq \zlet{f}{\mykw{fix}\ f.\lambda ().\ () \oplus \boxed{e_1};
+    f\;(); \boxed{e_2}}{\boxed{e_3};f\;();\boxed{e_4}}$, allowing
+  $\Pi^*$ in the abstract trace to be matched. For instance, consider
+  the abstract trace $\pi_\Code{stack}$ shown in
+  Example~\ref{ex:refinement-process}: %
+  \vspace{-.4cm} \par\nobreak {\small %
     \begin{align*}
-      \S{TermDerive}(\Gamma, \Pi) = e \impl \Gamma;\Delta;\emptyset \vdash e : \capTau{\emptyset, \rg{\epsilon}{A}{\epsilon}}
-    \end{align*}}
-\end{lemma}
+      &
+        \underbrace{\Pi_\Code{noI}^*\msgAGray{pushI}{m\;y}\msgAGray{popI}{m\;y}\Pi_\Code{noI}^*}_{e_3}\;\;
+        \underbrace{\msgA{push}{x}\msgAGray{pushI}{n\;x}}_{e_1}\;\;
+        \underbrace{\Pi_\Code{noI}^*}_\text{recursion}\;\;
+        \underbrace{\msgA{pop}{x}\msgAGray{popI}{n\;x}}_{e_2}\;\;
+        \underbrace{\Pi_\Code{noI}^*}_{e_4}
+    \end{align*}}\noindent
+  Here, $\pi_\Code{stack}$ is divided into five parts, corresponding
+  to the four placeholders and the self-recursive call (i.e., $f\;()$)
+  in the template. The synthesizer then re-refines the abstract trace for $i$-fold
+  recursion unrolling after erasing all qualifiers from the abstract
+  trace: %
+  \vspace{-.4cm} \par\nobreak {\small %
+    \begin{align*}
+      \Pi_\Code{anyA}^*\msgCGray{pushI}\msgCGray{popI}&\;\underline{\epsilon}\;\Pi_\Code{anyA}^* \tag{0-fold unrolling}
+      \\\Pi_\Code{anyA}^*\msgCGray{pushI}\msgCGray{popI}\Pi_\Code{anyA}^*\;\underline{\msgCGray{pushI}\msgC{push}}&\underline{\msgCGray{popI}\msgC{pop}}\;\Pi_\Code{anyA}^* \tag{1-fold unrolling}
+      \\\Pi_\Code{anyA}^*\msgCGray{pushI}\msgCGray{popI}\Pi_\Code{anyA}^*\;\underline{\msgCGray{pushI}\msgC{push}\msgCGray{pushI}\msgC{push}}&\underline{\msgCGray{popI}\msgC{pop}\msgCGray{popI}\msgC{pop}}\;\Pi_\Code{anyA}^* \tag{2-fold unrolling}
+    \end{align*}}\noindent
+  This refinement ensures that multiple unfoldings remain well-typed,
+  which disallows an incorrect recursion template instantiation, as
+  shown below: %
+  \vspace{-.4cm} \par\nobreak {\small %
+    \begin{align*}
+      & \underbrace{\Pi_\Code{noI}^*\msgAGray{pushI}{m\;y}\msgAGray{popI}{m\;y}\Pi_\Code{noI}^*\msgA{push}{x}\msgAGray{pushI}{n\;x}}_{e_3}\;\;
+        \underbrace{\Pi_\Code{noI}^*}_{e_1}\;\;
+        \underbrace{\Pi_\Code{noI}^*}_\text{recursion}\;\;
+        \underbrace{\msgA{pop}{x}\msgAGray{popI}{n\;x}}_{e_2}\;\;
+        \underbrace{\Pi_\Code{noI}^*}_{e_4}
+    \end{align*}
+  } %
+  \noindent This instantiation will repeatedly perform $\eff{pop}$
+  events without any $\eff{push}$ events; its two-fold recursion
+  unrolling will therefore be rejected.  The final recursive program
+  is assembled by composing synthesized programs from these traces to
+  populate the template placeholders, thereby yielding the following
+  program:
+  
+  \begin{minted}[fontsize = \footnotesize, escapeinside=??, xleftmargin=10pt, linenos]{ocaml}
+let rec f () =
+  () ?$\oplus$?
+    let (x: int) = int_gen () in push x; (* e1 *)
+    f ();
+    let (z: int) = pop () in assert (x == z) (*e2 *)
+in f ()
+  \end{minted}
+\end{example}
