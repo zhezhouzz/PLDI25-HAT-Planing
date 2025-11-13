@@ -1,81 +1,92 @@
 \section{Implementation And Evaluation}\label{sec:impl}
 \newcommand{\ranint}{\underline{\Code{int\_gen\;()}}}
 
+\paragraph{\name}
 We have implemented a tool based on the above approach, called
-\name{}, that synthesizes effectful test generators from given \tyName{}s specification and property in SRE.
-The output program in our DSL can be compiled to OCaml code for testing abstract datatype library, interpreter that takes serialized inputs, and database.
-
-targets reactive distributed system models (i.e.,
-message-passing systems defined as a collection of actors). \name{}
-consists of approximately 14K lines of OCaml code and uses
-Z3~\cite{de2008z3} as its backend SMT solver.\footnote{The
+\name{}, that synthesizes effectful test generators from given
+\tyName{} specifications and safety properties.  The output program in
+our DSL can be transpiled to OCaml (Quickcheck) or P.  Our experiments
+use the OCaml transpilation to test effectful abstract datatype
+libraries, serializers, transformers, and interpreters, concurrent
+data structures and databases; we use the P target to test reactive
+distributed system models (i.e., message-passing systems defined as a
+collection of actors) by using the synthesized generator as a
+property-directed scheduler that replaces P's default random one.
+Notably, the same specification and synthesis strategy is used in both
+cases.  \name{} consists of approximately 14K lines of OCaml code and
+uses Z3~\cite{de2008z3} as its backend SMT solver.\footnote{The
   supplemental material provides additional explanation of our
-  experiments as well as a docker image that contains the source code
-  of \name{} and our benchmarks.}
+  experiments as well as a docker image that contains the \name{}
+  source code and benchmarks.}
 
 \paragraph{Evaluation setting} \name{} takes two inputs: a target
-safety property, expressed in symbolic LTL$_f$, and a handler context,
-$\Delta$, that captures the behavior of actors in terms of
-\PAT{}s. % \name{} includes signatures for a number of primitives in
-% $\Delta$ by default, including the pure operators listed in
-% \autoref{fig:term-syntax}.
-During synthesis, \name{} first negates the target property in order
-to capture unsafe traces (e.g., \ref{eqn:autoEx}), and then explores
-the space of possible controllers, looking for those that can guide
-executions towards those that are both unsafe and consistent with
-$\Delta$. Each controller synthesized by \autoref{algo:top-syn} fixes
-a particular message order for generable (i.e., environment) messages,
-so \name{} systematically explores the space of alternative orderings,
-returning the set of all controllers found within a user-provided time
-bound.
-% BD: Does my updated text accurately capture our search strategy?
+safety property, expressed as an SRE, and an operator context that
+contains \tyName{} specifications for the operators used in the SUT.
+During synthesis, \name{} decomposes the target property to build a
+generator consistent with the traces that the property accepts, but
+constrained to respect the history and future traces of the any
+effects it references.  Because operator types are interpreted
+underapproximately, there are potentially many valid synthesis choices
+that can be made for any given operator that are consistent with
+provided types.  Our implementation considers a union of well-typed
+synthesis candidates, the number of which is bounded by the amount of
+time allotted for synthesis (3 minutes in our experiments).
+Non-determinism also manifests in how recursive functions are unrolled
+- recall that in an underapproximate setting, the body of a recursive
+function need only be unrolled until it can be shown that the effects
+performed by the loop's continuation are justified by the effects
+performed within the loop body and its history trace.  \Code{Assume}
+statements in synthesized programs ensure that data dependencies among
+effectful operations are respected, while \Code{assert} statements are
+used to flag property violations.
 
-We evaluate our approach by integrating our synthesized controllers
-into the testing framework provided by P~\cite{DGJ+13,DQ17}, a state-machine based, actor-style programming language tailored for
-modeling distributed systems and testing user-defined safety and
-liveness properties.
-% implementing the operational semantics in
-% \autoref{fig:selected-semantics}, where the auxiliary handler
-% semantics ($\alpha \vDash \zevent{op}{\overline{c}} \Downarrow \beta$)
-% can be implemented as a random sampler to provide messages $\beta$
-% that align with handler specifications. However, to evaluate our
-% approach in a more realistic setting,
-In the P framework, actors are executable programs that communicate
-via message passing.  To test a system, P's runtime monitors message
-traffic between actors, checking that global safety and liveness
-properties are maintained. By default, P’s runtime scheduler
-systematically explores arbitrary message interleavings during
-execution.
+%% We evaluate our approach by integrating our synthesized controllers
+%% into the testing framework provided by P~\cite{DGJ+13,DQ17}, a
+%% state-machine based, actor-style programming language tailored for
+%% modeling distributed systems and testing user-defined safety and
+%% liveness properties.
+%% % implementing the operational semantics in
+%% % \autoref{fig:selected-semantics}, where the auxiliary handler
+%% % semantics ($\alpha \vDash \zevent{op}{\overline{c}} \Downarrow \beta$)
+%% % can be implemented as a random sampler to provide messages $\beta$
+%% % that align with handler specifications. However, to evaluate our
+%% % approach in a more realistic setting,
+%% In the P framework, actors are executable programs that communicate
+%% via message passing.  To test a system, P's runtime monitors message
+%% traffic between actors, checking that global safety and liveness
+%% properties are maintained. By default, P’s runtime scheduler
+%% systematically explores arbitrary message interleavings during
+%% execution.
 
-To test our synthesized controller with P handlers while also
-retaining scheduling control, we translate our controllers into a
-special P component that coordinates the messages between the actors
-under test. In this setup, all messages are routed to our controller,
-where they are buffered and then forwarded to the actual actors
-according to the order found in the synthesized output.  The order in
-which messages are forwarded from the controller is determined by
-$\mykw{obs}$ statements in the controller program, allowing it to
-control message scheduling.  The coordinator is also responsible for
-generating and sending messages from the environment (e.g., a logical
-user) to the actors under test, again respecting the order in which
-these messages appear in the synthesized program.  The assume
-statements in the translated coordinator ensure that generated
-messages always have the expected payloads; assertion failures
-indicate that the system under test did not encounter the potential
-bug in this execution, indicating the need for another attempt.
-% \BD{Say something about how we handle assertion failures.}
+%% To test our synthesized controller with P handlers while also
+%% retaining scheduling control, we translate our controllers into a
+%% special P component that coordinates the messages between the actors
+%% under test. In this setup, all messages are routed to our controller,
+%% where they are buffered and then forwarded to the actual actors
+%% according to the order found in the synthesized output.  The order in
+%% which messages are forwarded from the controller is determined by
+%% $\mykw{obs}$ statements in the controller program, allowing it to
+%% control message scheduling.  The coordinator is also responsible for
+%% generating and sending messages from the environment (e.g., a logical
+%% user) to the actors under test, again respecting the order in which
+%% these messages appear in the synthesized program.  The assume
+%% statements in the translated coordinator ensure that generated
+%% messages always have the expected payloads; assertion failures
+%% indicate that the system under test did not encounter the potential
+%% bug in this execution, indicating the need for another attempt.
+%% % \BD{Say something about how we handle assertion failures.}
 
 Our experimental evaluation addresses three research questions:
 \begin{itemize}
 \item[\textbf{Q1}:] Is \name{} \emph{expressive}? Can it synthesize
-  controllers for a diverse set of distributed protocols with
-  realistic safety and liveness properties?
+  generators for a diverse set of benchmarks with interesting
+  non-trivial structural and semantic safety properties?
 \item[\textbf{Q2}:] Is \name{} \emph{effective}? Do synthesized
-  controller programs enable more targeted exploration of the state
+  generators enable more targeted exploration of the state
   space to witness violations of provided safety properties than
   existing techniques?
 \item[\textbf{Q3}:] Is \name{} \emph{efficient}? Is it able to
-  synthesize meaningful controller programs in a reasonable amount
+  synthesize meaningful generators in a reasonable amount
   of time?
 \end{itemize} %
 
@@ -84,55 +95,65 @@ Our experimental evaluation addresses three research questions:
 \begin{table}[t!]
   \renewcommand{\arraystretch}{0.8}
   % \vspace*{-.1in}
-  \caption{\small Experimental results of using \name{} to synthesize
-  effectful test generators in OCaml. Benchmarks from prior
-  work are annotated with their source:
-  HAT~\cite{ZYDJ24}, the OCaml multicore PBT framework~\cite{OcamlMulticorePBT},
-  QuickCheck on IFC machines~\cite{pbt-ifc} and well-typed De Bruijn STLC programs~\cite{CoverageType}; as well as OLTP-Bench~\cite{OLTPBench}, an extensible testbed for benchmarking relational databases, and  MonkeyDB~\cite{MonkeyDB}, a mock storage system for testing weak isolation levels.
-  The baselines drawn from the original sources are labeled with $^{\dagger}$ if exists, otherwise we add a random generator.
-  \name{} can synthesize test generators consistent with provided specifications within a 3-minute time bound, we also terminate early if it finds 3 generators (t$_\text{total}$ is the average time to find a single
-  controller). We set a 30-minute bound for the baselines, although all cases that can find a bug do so within 10 seconds.}
+  \caption{\small Using \name{} to synthesize
+    effectful test generators in OCaml. Benchmarks from prior work are
+    annotated with their source: HAT~\cite{ZYDJ24}, the OCaml
+    multicore PBT framework~\cite{OcamlMulticorePBT}, QuickCheck on
+    IFC machines~\cite{pbt-ifc} and well-typed De Bruijn STLC
+    programs~\cite{CoverageType}; as well as
+    OLTP-Bench~\cite{OLTPBench}, an extensible testbed for
+    benchmarking relational databases, and MonkeyDB~\cite{MonkeyDB}, a
+    mock storage system for testing weak isolation levels.  The
+    baselines used from comparison are either from the original
+    sources if they exist (labeled with $^{\dagger}$), otherwise we
+    use Quickcheck's default random generator.  \name{} synthesized
+    correct-by-construction test generators for all benchmarks within
+    3 minutes; the number of generator variants synthesized is bounded
+    at 3.  We set a 30-minute bound for the baselines to find a property
+    violation.}
 \vspace*{-.1in}
 \footnotesize
 \setlength{\tabcolsep}{1.3pt}
-\begin{tabular}{c|P{4.7cm}||ccc||cc||c|ccc}
+\begin{tabular}{c|P{4.25cm}||ccc||cc||c|ccc}
   \toprule
   \multicolumn{2}{c||}{Benchmark} & \#$\eff{op}$ & \multicolumn{2}{c||}{\#qualifier} & \multicolumn{2}{c||}{\scriptsize \# Num. Executions} & t$_\text{total}$(s) & \#evt & \#refine & \#SMT \\
   \multicolumn{2}{c||}{} &  &uHAT &goal & {\scriptsize Clouseau} & {\scriptsize Baseline} &  &  \\
 \midrule
-\textsf{Stack}\cite{ZYDJ24} & {\scriptsize A pushed value cannot be popped.} & $6$ & $12$ & $3$ & $1.0$ & $31.9$ & $0.60$ & $15$ & $4$ & $98$\\
+\textsf{Stack}\cite{ZYDJ24} & {\scriptsize  Pushed values are dropped.} & $6$ & $12$ & $3$ & $1.0$ & $31.9$ & $0.60$ & $15$ & $4$ & $98$\\
 \midrule
 \textsf{Set}\cite{ZYDJ24} & {\scriptsize Missing inserted value.} & $7$ & $22$ & $3$ & $1.0$ & $22.1$ & $1.28$ & $12$ & $12$ & $255$\\
-\midrule
-\textsf{Filesystem}\cite{ZYDJ24} & {\scriptsize Access is allowed after parent path deletion.} & $7$ & $67$ & $4$ & $1.3$ & $2812.1$ & $6.02$ & $13$ & $14$ & $853$\\
 \midrule
 \midrule
 \textsf{Graph}\cite{ZYDJ24} & {\scriptsize A connected graph with at least $3$ nodes.} & $6$ & $24$ & $4$ & $1.0$ & {\tiny Timeout} & $16.61$ & $16$ & $16$ & $2114$\\
 \midrule
-\textsf{NFA}\cite{ZYDJ24} & {\scriptsize A NFA with at least $3$ edges.} & $8$ & $50$ & $4$ & $1.0$ & {\tiny Timeout} & $21.85$ & $26$ & $6$ & $5080$\\
+\textsf{NFA}\cite{ZYDJ24} & {\scriptsize NFA acceptor fails if a state has more than two outgoing
+  edges.} & $8$ & $50$ & $4$ & $1.0$ & {\tiny Timeout} & $21.85$ & $26$ & $6$ & $5080$\\
 \midrule
-\textsf{IFCStore}\cite{pbt-ifc} & {\scriptsize A IFC program that contains $\Code{Store}$ command.} & $8$ & $37$ & $2$ & $2.8$ & $4811.7^{\dagger}$ & $1.02$ & $8$ & $8$ & $160$\\
+\textsf{IFCStore}\cite{pbt-ifc} & {\scriptsize An IFC program leaks a secret if it contains a $\Code{Store}$ command.} & $8$ & $37$ & $2$ & $2.8$ & $4811.7^{\dagger}$ & $1.02$ & $8$ & $8$ & $160$\\
 \midrule
-\textsf{IFCAdd}\cite{pbt-ifc} & {\scriptsize A IFC program that contains $\Code{Add}$ command.} & $8$ & $37$ & $2$ & $1.6$ & $3383.4^{\dagger}$ & $0.96$ & $8$ & $8$ & $154$\\
+\textsf{IFCAdd}\cite{pbt-ifc} & {\scriptsize An IFC program leaks a secret if it contains an $\Code{Add}$ command.} & $8$ & $37$ & $2$ & $1.6$ & $3383.4^{\dagger}$ & $0.96$ & $8$ & $8$ & $154$\\
 \midrule
-\textsf{IFCLoad}\cite{pbt-ifc} & {\scriptsize A IFC program that contains $\Code{Load}$ command.} & $8$ & $37$ & $2$ & $15.4$ & $11293.7^{\dagger}$ & $5.76$ & $16$ & $18$ & $930$\\
+\textsf{IFCLoad}\cite{pbt-ifc} & {\scriptsize An IFC program leaks a secret if it contains a $\Code{Load}$ command.} & $8$ & $37$ & $2$ & $15.4$ & $11293.7^{\dagger}$ & $5.76$ & $16$ & $18$ & $930$\\
 \midrule
-\textsf{DeBruijn1}\cite{CoverageType} & {\scriptsize A $\Int$ typed De Bruijn STLC program.} & $10$ & $117$ & $4$ & $1.5$ & $634.0^{\dagger}$ & $40.38$ & $18$ & $26$ & $4765$\\
+\textsf{DeBruijn1}\cite{CoverageType} & {\scriptsize An STLC interpreter mis-evaluates given a
+  well-typed first-order STLC program using a de Brujin representation.} & $10$ & $117$ & $4$ & $1.5$ & $634.0^{\dagger}$ & $40.38$ & $18$ & $26$ & $4765$\\
 \midrule
-\textsf{DeBruijn2}\cite{CoverageType} & {\scriptsize A $\Int$ typed De Bruijn STLC program and all lambda variables should be used.} & $10$ & $118$ & $4$ & $1.4$ & {\tiny Timeout}$^{\dagger}$ & $91.73$ & $18$ & $31$ & $9034$\\
+\textsf{DeBruijn2}\cite{CoverageType} & {\scriptsize An STLC interpreter mis-evaluates given
+  a well-typed higher-order STLC program using a de Brujin representation.} & $10$ & $118$ & $4$ & $1.4$ & {\tiny Timeout}$^{\dagger}$ & $91.73$ & $18$ & $31$ & $9034$\\
 \midrule
 \midrule
-\textsf{HashTable}\cite{OcamlMulticorePBT} & {\scriptsize Updates are not visible to all threads.} & $13$ & $38$ & $4$ & $1.0$ & $2.5^{\dagger}$ & $0.76$ & $6$ & $6$ & $57$\\
+\textsf{Shopping}\cite{MonkeyDB} & {\scriptsize Added items to a cart are not visible.} & $10$ & $60$ & $3$ & $1.0$ & $20.0^{\dagger}$ & $22.10$ & $17$ & $30$ & $1269$\\
 \midrule
-\textsf{ReaderWriter} & {\scriptsize Read atomicity property violation.} & $8$ & $45$ & $3$ & $1.2$ & {\tiny Timeout} & $2.89$ & $15$ & $16$ & $423$\\
+\textsf{HashTable}\cite{OcamlMulticorePBT} & {\scriptsize A concurrent hashtable loses updates.} & $13$ & $38$ & $4$ & $1.0$ & $2.5^{\dagger}$ & $0.76$ & $6$ & $6$ & $57$\\
 \midrule
-\textsf{Shopping}\cite{MonkeyDB} & {\scriptsize Added items is not visible in the cart.} & $10$ & $60$ & $3$ & $1.0$ & $20.0^{\dagger}$ & $22.10$ & $17$ & $30$ & $1269$\\
+\textsf{ReaderWriter} & {\scriptsize Read atomicity violation.} & $8$ & $45$ & $3$ & $1.2$ & {\tiny Timeout} & $2.89$ & $15$ & $16$ & $423$\\
 \midrule
-\textsf{Courseware}\cite{MonkeyDB} & {\scriptsize Courses enrolled by students is not visible.} & $16$ & $106$ & $3$ & $1.0$ & $57.5^{\dagger}$ & $27.71$ & $18$ & $33$ & $1479$\\
+\textsf{Courseware}\cite{MonkeyDB} & {\scriptsize A database managing courses loses
+  enrollment updates.} & $16$ & $106$ & $3$ & $1.0$ & $57.5^{\dagger}$ & $27.71$ & $18$ & $33$ & $1479$\\
 \midrule
 \textsf{Twitter}\cite{MonkeyDB} & {\scriptsize Posted tweets are not visible to all followers.} & $16$ & $99$ & $3$ & $1.0$ & $6.3^{\dagger}$ & $61.96$ & $24$ & $24$ & $2339$\\
 \midrule
-\textsf{Smallbank}\cite{OLTPBench} & {\scriptsize Updated balance is not visible.} & $22$ & $162$ & $3$ & $1.9$ & {\tiny Timeout} & $163.55$ & $28$ & $29$ & $10263$\\
+\textsf{Smallbank}\cite{OLTPBench} & {\scriptsize Lost updates on balances.} & $22$ & $162$ & $3$ & $1.9$ & {\tiny Timeout} & $163.55$ & $28$ & $29$ & $10263$\\
 \bottomrule
 \end{tabular}                                
 \label{tab:evaluation}
@@ -145,21 +166,23 @@ Our experimental evaluation addresses three research questions:
   \renewcommand{\arraystretch}{0.8}
   % \vspace*{-.1in}
   \caption{\small Experimental results of using \name{} to synthesize
-    controllers for reactive distributed systems. Benchmarks from prior
-    work are annotated with their source:
-    P~\cite{DGJ+13}($^{\dagger}$), ModP~\cite{ModP}($^{\diamond}$) an
-    extension of P with support for modules, and
-    MessageChain~\cite{MessageChain}($^{\star}$), an automated verification tool for P.  We also include
-    a real-world model of a two-phase commit protocol
+    property-directed schedulers for reactive distributed
+    systems. Benchmarks from prior work are annotated with their
+    source: P~\cite{DGJ+13}($^{\dagger}$),
+    ModP~\cite{ModP}($^{\diamond}$) an extension of P with support for
+    modules, and MessageChain~\cite{MessageChain}($^{\star}$), an
+    automated verification tool for P.  We also include a real-world
+    model of a two-phase commit protocol
     (\textsf{Anon2PCModel}$^{\square}$) used by a major cloud vendor.
     The components under test are written in P, and handler
-    specifications are given as \PAT{}s.  \name{} can synthesize a set
-    of controllers, each of which specifies a distinct scheduling
+    specifications for the SUTs components (message-passing actors)
+    are given as \tyName{}s.  \name{} synthesizes a set
+    of schedulers, each of which specifies a distinct scheduling
     order for messages, all consistent with provided specifications.
-    We set a $2$ minute time bound for the synthesis procedure
+    We set a $3$ minute time bound for the synthesis procedure
     (t$_\text{total}$ is the average time to find a single
-    controller.)  We set a bound of 10K executions for the P
-    baselines.}
+    controller.)  We set a bound of 30 minute time bound for the P
+    baselines to generate a faulty execution.}
 \vspace*{-.1in}
 \footnotesize
 \setlength{\tabcolsep}{1.3pt}
@@ -168,50 +191,60 @@ Our experimental evaluation addresses three research questions:
   \multicolumn{2}{c||}{Benchmark} & \#$\eff{op}$ & \multicolumn{2}{c||}{\#qualifier} & \multicolumn{2}{c||}{\scriptsize \# Num. Executions} & t$_\text{total}$(s) & \#evt & \#refine & \#SMT \\
 \multicolumn{2}{c||}{} &  &uHAT &goal & {\scriptsize Clouseau} & {\scriptsize Baseline} &  &  \\
   \midrule
-  {\scriptsize\textsf{Database}} & {\scriptsize Read-Your-Writes policy.} & $4$ & $15$ & $3$ & $1$ & $6$ & $0.32$ & $6$ & $6$ & $49$\\
+  {\scriptsize\textsf{Database}} & {\scriptsize The database violates a read-your-writes policy.} & $4$ & $15$ & $3$ & $1$ & $6$ & $0.32$ & $6$ & $6$ & $49$\\
   \midrule
-  {\scriptsize\textsf{Firewall}}\cite{MessageChain} & {\scriptsize Internal requests in firewall eventually receive external responses.} & $5$ & $26$ & $4$ & $1$ & $10$ & $0.59$ & $10$ & $10$ & $222$\\
+  {\scriptsize\textsf{Firewall}}\cite{MessageChain} & {\scriptsize Requests generated inside the firewall are not propagated to the outside.} & $5$ & $26$ & $4$ & $1$ & $10$ & $0.59$ & $10$ & $10$ & $222$\\
   \midrule
-  {\scriptsize\textsf{RingLeaderElection}}\cite{MessageChain} & {\scriptsize Unique leader policy.} & $3$ & $14$ & $2$ & $1$ & $18$ & $0.83$ & $8$ & $8$ & $100$\\
+  {\scriptsize\textsf{RingLeaderElection}}\cite{MessageChain} & {\scriptsize Multiple leaders are elected.} & $3$ & $14$ & $2$ & $1$ & $18$ & $0.83$ & $8$ & $8$ & $100$\\
   \midrule
-  {\scriptsize\textsf{EspressoMachine}}\cite{DGJ+13} & {\scriptsize Error states of coffee machine should be notified to user.} & $13$ & $30$ & $1$ & $4$ & $4^{\dagger}$ & $0.44$ & $10$ & $10$ & $70$\\
+  {\scriptsize\textsf{BankServer}}\cite{DGJ+13} & {\scriptsize Withdrawals in excess of the available balance are allowed, violating strong consistency.} & $6$ & $42$ & $1$ & $1$ & $2^{\dagger}$ & $0.17$ & $5$ & $5$ & $27$\\
   \midrule
-  {\scriptsize\textsf{BankServer}}\cite{DGJ+13} & {\scriptsize Prevents withdrawals exceeding balance.} & $6$ & $42$ & $1$ & $1$ & $2^{\dagger}$ & $0.17$ & $5$ & $5$ & $27$\\
+  {\scriptsize\textsf{Simplified2PC}}\cite{DGJ+13} & {\scriptsize Transactions are not atomic.} & $9$ & $32$ & $5$ & $2$ & $6^{\dagger}$ & $1.03$ & $8$ & $8$ & $88$\\
   \midrule
-  {\scriptsize\textsf{Simplified2PC}}\cite{DGJ+13} & {\scriptsize Read-Your-Writes policy.} & $9$ & $32$ & $5$ & $2$ & $6^{\dagger}$ & $1.03$ & $8$ & $8$ & $88$\\
+  {\scriptsize\textsf{HeartBeat}}\cite{DGJ+13} & {\scriptsize A detector mistakenly records a node as failed although it is still responsive.} & $7$ & $31$ & $3$ & $1$ & $6^{\dagger}$ & $1.10$ & $14$ & $14$ & $145$\\
   \midrule
-  {\scriptsize\textsf{HeartBeat}}\cite{DGJ+13} & {\scriptsize If the node is alive, the detector will not report a false positive error.} & $7$ & $31$ & $3$ & $1$ & $6^{\dagger}$ & $1.10$ & $14$ & $14$ & $145$\\
+  {\scriptsize\textsf{ChainReplication}}\cite{ModP} & {\scriptsize Updates are lost.} & $7$ & $72$ & $4$ & $1$ & $500^{\dagger}$ & $19.24$ & $12$ & $169$ & $2054$\\
   \midrule
-  {\scriptsize\textsf{ChainReplication}}\cite{ModP} & {\scriptsize Read-Your-Writes policy.} & $7$ & $72$ & $4$ & $1$ & $500^{\dagger}$ & $19.24$ & $12$ & $169$ & $2054$\\
+  {\scriptsize\textsf{Paxos}}\cite{ModP} & {\scriptsize Logs are not correctly replicated.} & $10$ & $110$ & $2$ & $1$ & $667^{\dagger}$ & $23.70$ & $14$ & $77$ & $1763$\\
   \midrule
-  {\scriptsize\textsf{Paxos}}\cite{ModP} & {\scriptsize Unique leader policy.} & $10$ & $110$ & $2$ & $1$ & $667^{\dagger}$ & $23.70$ & $14$ & $77$ & $1763$\\
+  {\scriptsize\textsf{Raft}} & {\scriptsize Leader election is not fault-tolerant.} & $9$ & $39$ & $6$ & $1$ & {\tiny Timeout} & $26.84$ & $12$ & $78$ & $1262$\\
   \midrule
-  {\scriptsize\textsf{Raft}} & {\scriptsize The leader’s view should align with committed data.} & $9$ & $39$ & $6$ & $1$ & {\tiny Timeout} & $26.84$ & $12$ & $78$ & $1262$\\
-  \midrule
-  {\scriptsize\textsf{Kermit2PCModel}} & {\scriptsize The user and the database should have the same will view of stored data.} & $17$ & $113$ & $3$ & $1$ & $53^{\dagger}$ & $18.35$ & $16$ & $16$ & $1909$\\
+  {\scriptsize\textsf{Kermit2PCModel}} & {\scriptsize Atomicity violation.} & $17$ & $113$ & $3$ & $1$ & $53^{\dagger}$ & $18.35$ & $16$ & $16$ & $1909$\\
 \bottomrule
   \end{tabular}
-\label{tab:evaluation}
+\label{tab:evaluation2}
 % \vspace*{-.15in}
 \end{table}
 
-We have evaluated \name{} on a corpus of complex reactive system
-models written in P drawn from a variety of sources (described in the
-caption of \autoref{tab:evaluation}); all of the models except for
-\textsf{Database} and \textsf{Raft} were written by others
-(\textbf{Q1}). We test the correctness of these models against a
-number of consistency and safety properties, including the
-Read-Your-Writes (RYW) consistency policy described in
-\autoref{sec:overview}, eventual consistency, strong consistency, and
-unique leader invariants (as defined by \textsf{RingLeader} and
-\textsf{Paxos}). We introduce synthetic faults into these models
-manually and expose subtle bugs that can be triggered under specific
-message orderings or with specific input message contents.  
-%BD: Who inserted these bugs? Was it us or the authors of the models?
-While these are synthetic design bugs, they are nonetheless
-representative of real and plausible errors that can be introduced
-when designing these models, as was illustrated in
-\autoref{sec:overview}.
+We have evaluated \name{} on a diverse corpus of programs drawn from a
+variety of sources (described in the captions of
+\autoref{tab:evaluation} and~\autoref{tab:evaluation2}); all of the
+benchmarks except for \textsf{Database} and \textsf{Raft} were written
+by others (\textbf{Q1}).  Our benchmarks are grouped into four
+categories.  The first are data structure benchmarks (\textsf{Stack},
+\textsf{Filesystem}) where the test generator probes for violations of
+structural invariants.  The second are evaluators - programs that
+input serialized data, transform them into an internal AST
+representation, and then interpret them; we consider evaluators for
+data structures like graphs and automata (\textsf{Graph},
+\textsf{NFA}), information flow control machines, and simply-typed
+lambda-calculus, the latter two both described
+in~\autoref{sec:overview}.  The third are concurrent and database
+benchmarks (\textsf{Transaction}, \textsf{Shopping},
+\textsf{Courseware}, \textsf{Twitter}, \textsf{Smallbank}).  We
+evaluate these three classes of benchmarks by transpiling synthesized
+generators into OCaml, leveraging its Quickcheck library as
+needed. The SUT for each of these benchmarks is known to be buggy; in
+all cases we use implementations either available from prior sources
+directly (if the OCaml source was available), or by directly
+translating them into OCaml.  The fourth group of benchmarks shown
+in~\autoref{tab:evaluation2} considers applications involving various
+kinds of distributed protocols; these are executed using the P runtime
+environment, by transpiling synthesized generators written in our DSL
+into P's state machine modeling language.  Here as well, the protocol
+being tested is known to be faulty from the sources they were adopted
+from.
+
 
 %% For example, \textsc{RingLeaderElection}
 %% models a leader election algorithm.  Each message transmitted by the
@@ -235,82 +268,65 @@ when designing these models, as was illustrated in
 \autoref{tab:evaluation} divides the results of our experiments into
 four categories, separated by double bars. The first measures the
 complexity of benchmarks with respect to the number of distinct
-operators (\#$\eff{op}$) and the number of qualifiers used in \PAT{}
-specifications and the property expressed in symbolic LTL$_f$.  Our
-results show that we are able to specify controller-relevant behavior
-using anywhere from $3$ - $17$ different operators and $4$ - $73$
-different kinds of qualifiers (\textbf{Q1}).
+effectful operators (\#$\eff{op}$) and the number of qualifiers (i.e.,
+symbolic events) used in \tyName{} specifications and the property
+being tested.  For the benchmarks in~\autoref{tab:evaluation}, our
+results show that writing underapproximate specifications
+require anywhere from $6$ - $22$ different operators which occur in
+over 100 symbolic events for the most complex examples.  The second
+group of columns characterizes \name{}'s ability to discover a
+violation compared to the baseline (\textbf{Q2}).  To make the
+comparison objective, we execute generators in the two systems 10K
+times, and count the number of runs in which a fault was uncovered.
+For example, for \textsf{Stack}, using Quickcheck to generate random
+sequences of $\eff{push}$ and $\eff{pop}$ effects, resulted in an
+erroneous execution every 31.9 times on average; in contrast, every
+execution of the generator(s) synthesized by \name\ manifested the bug.
+Notably, even for benchmarks in which there is a customized generator
+available (e.g., \textsf{IFC} or \textsf{de Brujin}), \tyName{}-guided
+synthesis leads to significantly better outcomes.  A number of the
+concurrency benchmarks use MonkeyDB~\cite{MonkeyDB}, a mock storage
+system that can be used to find violations of database isolation
+properties.  Although it is specialized for this particular
+application class, and \name{} is not, evaluation results are
+comparable, with \name{} yielding generators that identify weak
+isolation violations modestly more effectively than the targeted
+baseline.  Similar conclusions apply to the P benchmarks shown
+in~\autoref{tab:evaluation2}.  For the simple benchmarks in this
+table, P's default scheduler, which performs enumerative state
+exploration to construct schedules, independently of the behaviors of
+the actors under test or the target property, or handwritten ones
+which inject additional actors to control input message generation and
+prevent uninteresting message orderings (e.g. \textsf{Simplified2PC}
+or \textsf{Heartbeat}), are effective and \name{}'s performance is
+comparable to these.  But, as in the previous set of experiments, for
+more complex benchmarks (e.g., \textsf{ChainReplication},
+\textsf{Paxos}), even manual specialization to generate interesting
+test sequences is significantly less effective than \name{}'s
+trace-guided synthesis approach.  Moreover, as indicated by the
+\textsf{Raft} numbers, a random exploration procedure, without
+manually engineered guidance, is simply too na\"{i}ve to find a
+violating execution.  As mentioned for the comparison to MonkeyDB, it
+is notable that \name{}'s performance on these P benchmarks are
+competitive, and in several cases, superior to handcrafted P
+schedulers, even though \name{} has no built-in knowledge of P's
+underlying programming model.
 
-The second group of columns describes characteristics of the
-controllers synthesized by \name, including the number of variables
-(\#var) in the program, the number of $\mykw{gen}$ (\#$\mykw{gen}$)
-and $\mykw{obs}$ (\#$\mykw{obs}$) messages, and assertions
-(\#$\mykw{assert}$) used in the program. Our synthesized controllers
-have anywhere from $1$ - $36$ variables, $5$ - $17$ messages in total,
-and $1$ - $14$ assertions.  Note that the size of synthesized programs
-is roughly proportional to the complexity of the benchmarks
-(\textbf{Q2}), where the number of qualifiers correlate with the
-number of variables and assertions.  As mentioned in
-\autoref{sec:synthesis}, our algorithm is biased towards synthesizing
-shorter controller programs, avoiding synthesizing messages that do
-not directly affect the property of interest.
-
-The third group of columns compares the performance results of our
-synthesized controller compared to two baselines.  The first (P+Rand)
-uses the default P controller to generate input messages and message
-orderings.  This baseline uses random input generation and enumerative
-state exploration to construct schedules, independently of the
-behaviors of the actors under test or the target property.  The second
-baseline (P+M) uses manually written variants of the original model
-which inject additional actors into the model to control input message
-generation and prevent uninteresting message
-orderings.\footnote{Benchmarks from Message Chain (\(^\star\)) as well
-  as the two benchmarks we authored (\textsf{Database} and
-  \textsf{Raft}) do not provide these refined models.}
-% BD: Explain where these components come from, use that to justify
-% why the benchmarks marked with "-" are missing.
-These components play a similar role to our synthesized controllers,
-albeit without the benefit of rigorous specifications to help guide
-their definitions.  The column shows the number of executions that
-were necessary to manifest a property violation for both baselines, as
-well as \name.  For the P baseline, we fix a bound on the number of
-executions to be explored to be 10K.  Our results demonstrate that
-\name{} consistently identifies faulty executions using only a small
-number of executions (fewer than 4 across all benchmarks).  As
-benchmark complexity increases, \name{}'s effectiveness grows more
-apparent when compared to the default P baseline (often by many orders
-of magnitude).  Indeed, for any of the benchmarks that only use
-deterministic handlers, i.e., handlers whose output messages are
-uniquely determined by its inputs, the synthesis procedure is always
-able to construct a controller that yields a property violating
-schedule in a single execution; for benchmarks that use internal
-non-determinism (e.g., \textsf{EspressoMachine} simulates a coffee
-machine that can non-deterministically fail because the machine runs
-out of water or beans), a small number of additional runs were
-required to explore different possible paths.  Not surprisingly,
-manually crafted P environments (P+M) can improve upon the
-purely random baseline, but even here may sometimes require hundreds
-of executions to manifest a bug (e.g., the \textsf{ChainReplication}
-and \textsf{Paxos} benchmarks), compared to the single execution that
-\name{} generates.  In summary, Clouseau synthesizes controllers that emit executions that trigger violations of the target property significantly more effectively than the two baselines (\textbf{Q2}).
-
-The last group of columns in \autoref{tab:evaluation} provides details
-on the cost of our synthesis procedure. The first column presents
-total synthesis time (t$_\text{total}$), which takes anywhere from
-$1.13$ to $60.39$ seconds (\textbf{Q3}); synthesis time is
-proportional to benchmark complexity, as reflected in the \#$\eff{op}$
-and \#qualifier columns.  The last three columns additionally analyze
-the behaviors of \name{} with respect to the number of SMT queries
-(\#SMT), as well as the number of forward synthesis (\#fw) and
-backward synthesis steps (\#bw) performed by the property refinement
-loop. Unsurprisingly, generating more SMT queries results in longer
-synthesis times; the number of these queries directly depends on the
-number of iterations of the property refinement loop (i.e., the sum of
-\#fw and \#bw).  Oftentimes, the number of forward and backward
-synthesis steps exceeds the total number of messages in the controller
-program because \name{} may need to backtrack when a wrong type or
-message interleaving is selected, which future iterations cannot
-resolve.
+The last group of columns in both tables provides details on the cost
+of our synthesis procedure. The first column presents total synthesis
+time (t$_\text{total}$), which takes anywhere from $.6$ to $165$
+seconds (\textbf{Q3}); synthesis time is roughly proportional to
+benchmark complexity, as reflected in the \#$\eff{op}$ and \#qualifier
+columns.  The last three columns additionally analyze the
+characteristics of \name{}'s synthesis procedure with respect to the
+number of SMT queries (\#SMT), as well as the number of
+refinement steps (\#refine); recall that the synthesis procedure uses
+a refinement loop to construct a more specialized underapproximation
+from \tyName{} specifications that are consistent with the provided
+safety property.  These numbers all correlate with each other, and
+serve as proxies for benchmark complexity.  Nonetheless, they indicate
+that even for the most challenging benchmarks, \name{} is able to
+synthesis an effective generator in a reasonable amount of time.
 
 \paragraph{Case study}
 To demonstrate that \name{} can be effective in real-world scenarios,
@@ -321,13 +337,14 @@ property for 2PC transactions, specifically that if there exists a key
 $\Code{k}$ updated within an active transaction $\Code{i}$, any
 successful read response asking its value should return the value last
 written to $\Code{k}$ made by that transaction. We can express a
-violation of this property in LTL$_f$ as: %
+violation of this property as the following SRE: %
 {\small
   \begin{align*}
-    \allA &\msgA{updateRsp}{\Code{tid}\;\Code{k}\;\Code{x}\;\Code{OK}}(\anyA\setminus\msgA{updateRsp}{\Code{tid}\;\Code{k}\;\Code{x}\;\Code{OK}})^*
-                \msgA{readRsp}{\Code{tid}\;\Code{k}\;\Code{x}\;\Code{OK}}\allA
+    \allA &\msgA{write}{\Code{tid}\;\Code{k}\;\Code{x}\;\Code{OK}}(\anyA\setminus\msgA{write}{\Code{tid}\;\Code{k}\;\Code{x}\;\Code{OK}})^*
+                \msgA{readRsp}{\iota\;\Code{tid}\;\Code{k}\;\Code{x}\;\Code{OK}}\;\allA
 \end{align*}}%
-\noindent where the field $\mathit{tid}$ represents the transaction id, while
+\SJ{Fix....}
+\noindent where the field $\mathit{tid}$ represents a transaction id, while
 other fields have the same meanings as in the example from
 \autoref{sec:intro}.  Generating a fault-inducing scenario requires
 (a) initiating a new transaction with transaction id $\Code{i}$, (b)

@@ -8,23 +8,28 @@
     \text{\textbf{Variables }}& \quad &\quad& x, y, z, \vnu, ...
     \\[-0.2em]\text{\textbf{Base Types}}& \quad & b  ::= \quad &  \Code{unit} ~|~ \Code{bool} ~|~ \Code{nat} ~|~ \Code{int} ~|~ \Code{id} ...
     \\[-0.2em]\text{\textbf{Basic Types}}& \quad & s  ::= \quad &  b ~|~ s\sarr s
-    \\\text{\textbf{Pure Operations}}& \quad & \primop ::= \quad & {+} ~|~ {-} ~|~ {==} ~|~ {<} ~|~ {\leq} ~|~ ...
-    \\[-0.2em]\text{\textbf{Constants }}& \quad &c ::= \quad & () ~|~ \mathbb{B} ~|~ \mathbb{Z} ~|~ ...
+    \\\text{\textbf{Pure Operations}}& \quad & \primop ::= \quad & {+} ~|~ {-} ~|~ {==} ~|~ {<} ~|~ {\leq} ~|~ \Code{rand\_int}~...
+    \\[-0.2em]\text{\textbf{Constants }}& \quad &c ::= \quad & () ~|~ \mathbb{B} ~|~ \mathbb{Z} ~|~ \mathbb{I}...
     \\[-0.2em]\text{\textbf{Qualifiers}}& \quad & \phi ::= \quad & c ~|~ x ~|~ \primop\;\overline{v} ~|~ \bot ~|~ \top  ~|~ \neg \phi ~|~ \phi \land \phi ~|~ \phi \lor \phi ~|~ \phi \impl \phi ~|~ \forall x{:}b.\, \phi
     \\[-0.2em]\text{\textbf{Effectful Operations}}& \quad & \eff{op} ::= \quad & \eff{put} ~|~ \eff{get} ~|~ \eff{readReq} ~|~ \eff{readRsp} ~|~ \eff{write} ~|~ \eff{push} ~|~ \eff{pop} ~|~ ...
     % \\\text{\textbf{Event Kinds}}& \quad & k ::= \quad & \eff{gen}
     % ~|~ \eff{obs}
-    \\[-0.2em]\text{\textbf{Events}} & \quad & m ::= \quad & \langle\eff{op}{\; \overline{v}}\rangle
       % ~|~ \reqOp{op}{\ensuremath{\overline{v}}} ~|~ \respOp{op}{\ensuremath{\iota}}
-    \\[-0.2em]\text{\textbf{Values }}& \quad & v ::= \quad & c ~|~ x ~|~ \zlam{x}{s}{e} ~|~ \zfix{f}{s}{x}{s}{e}
-    \\[-0.2em]\text{\textbf{Expressions}}& \quad & e ::=\quad & v ~|~ e
-    \oplus e ~|~ v\; v ~|~ \primop\; \overline{v} ~|~ m
-    ~|~\zlet{x{:}b}{e}{e} ~|~ \sassume{\phi} ~|~ \sassert{\phi}
-    \\[5pt]
+    \\[-0.2em]\text{\textbf{Values }}& \quad & v ::= \quad & c ~|~ x
+    ~|~ \zlam{x}{s}{e} ~|~ \zfix{f}{s}{x}{s}{e}
+    \\[-0.2em]\text{\textbf{Expressions}}& \quad & e ::=\quad & v ~|~
+    e \oplus e ~|~ v\; v ~|~ \primop\; \overline{v} ~|~ \eff{op}\;
+    \overline{v} ~|~\zlet{x{:}b}{e}{e} ~|~ \sassume{\phi} ~|~
+    \sassert{\phi}
+    \\[-0.2em]\text{\textbf{Events}} & \quad & m ::= \quad &
+    \langle\eff{op}{\; \overline{v}}\rangle \\
     \text{\textbf{Traces}} & \quad & \alpha ::= \quad & \emptr ~|~ m
     \;{::}\; \alpha ~|~ \alpha \listconcat \alpha
     \\[5pt]
-    \text{\textbf{Notations}} & \quad & e_1;e_2 \doteq \quad & \zlet{\_}{e_1}{e_2}
+    \text{\textbf{Notations}} & \quad & e_1;e_2 \doteq \quad &
+    \zlet{\_}{e_1}{e_2}  \\
+    & & \hspace{-2.5cm}\zlet{x{:}t}{\sassume{\phi(x)}}{e} \doteq \quad &
+    \zlet{x{:}t}{\Code{rand\_int ()}}{\sassume{\phi(x)}; e}
     %  \mykw{let}\;\eff{op}\;\overline{v}\;\mykw{in}\;e \doteq \zgen{op}{\overline{v}}{e} \qquad\qquad
   \end{alignat*}
 }
@@ -44,56 +49,62 @@ test produces appropriate responses. The syntax of \DSL{} is shown in
 \autoref{fig:term-syntax}; the calculus includes both pure and
 effectful operations ($\primop$ and $\eff{op}$), nondeterministic
 choices ($\oplus$), and $\mykw{assume}$ and $\mykw{assert}$ statements
-in the style of solver-aided languages~\cite{BC+10}. Effectful
-operations can be tagged as a request (\req{}), indicating that it
-should be handled asynchronously; performing this operation generates
-an id (given as $\iota$ in the syntax) that can then be subsequently
-used when performing a corresponding response operation (\resp{}).
+in the style of solver-aided languages~\cite{BC+10}. As we saw in
+\autoref{sec:overview}, asynchronous effects can be modeled as a pair
+of $\eff{opReq}$ / $\eff{opResp}$ operation, where the former
+generates an id (given as $\iota$ in the syntax) that can then be
+subsequently used when performing a corresponding response operation.
 %\autoref{fig:term-syntax} defines some shorthand notations used by our
 %examples, e.g., we use $e_1;e_2$ to simplify $\mykw{let}$-expressions
 %when the remaining program does not use the bound variable, i.e.,
 %$\zlet{\_}{e_1}{e_2}$.
+
+\begin{wrapfigure}{r}{.5\textwidth}
+  \vspace*{-0.2in}
+  \footnotesize
+  \begin{minipage}{.45\textwidth}
+    \begin{flalign*}
+    &\text{\textbf{Operator Semantics }}\
+    \fbox{$\vDash \primop(\overline{c}) \Downarrow c \quad \alpha \vDash \eff{op}(\overline{c}) \Downarrow c$} \\
+    & \text{\textbf{Operational Semantics }}\
+    \fbox{$
+    % \phi \Downarrow c \quad
+    \steptr{\alpha}{e}{\alpha}{e}$}
+\end{flalign*}
+\end{minipage}
+\\[5pt]
+\begin{center}
+  \begin{prooftree}
+    \hypo{\vDash \primop(\overline{c}) \Downarrow c'}
+    \infer1[\textsc{\small StPOp}]{
+      \steptr{\alpha}{\primop \; \overline{c}\;}{[\;]}{c'}
+    }
+  \end{prooftree}
+  \begin{prooftree}
+    \hypo{\alpha \vDash \eff{op}\overline{c} \Downarrow c'}
+    \infer1[\textsc{\small StEfOp}]{
+      \steptr{\alpha}{\eff{op}\; \overline{c}\;}{[\eff{op}\;\overline{c}\;c']}{c'}
+    }
+  \end{prooftree}
+  \end{center}
+  \vspace*{-.05in}
+    \caption{Selected reduction rules}
+    \label{fig:selected-semantics}
+  \vspace*{-.2in}
+\end{wrapfigure}
 \DSL{} is equipped with a small-step operational semantics similar to
-other calculii for trace-based type systems~\cite{ZYDJ24}; see
+other calculi for trace-based type systems~\cite{ZYDJ24}; selected
+reduction rules are shown in
 \autoref{fig:selected-semantics}.\footnote{The full set of reduction
   rules are included in the appendix.} The reduction relation
 $\steptr{\alpha}{e}{~\alpha'}{e'}$ constrains the output trace
 $\alpha'$ produced by executing $e$ based on a \textit{history trace}
 $\alpha$.  The evaluation of pure operations (rule \textsc{\small
-  StPureOp}) make no use of trace, either history or output.  The
-output trace of an effectful operation is an event whose payload
-contains both the arguments and the return value of the operation.
-
-\begin{figure}[htb!]
-  \vspace*{-0.1in}
-  {\footnotesize
-  \begin{flalign*}
-    &\text{\textbf{Operator Semantics }}\
-    \fbox{$\vDash \primop(\overline{c}) \Downarrow c \quad \alpha \vDash \eff{op}(\overline{c}) \Downarrow c$} &
-    \text{\textbf{Operational Semantics }}\
-    \fbox{$
-    % \phi \Downarrow c \quad
-    \steptr{\alpha}{e}{\alpha}{e}$}
-  \end{flalign*}
-  \begin{prooftree}
-    \hypo{\vDash \primop(\overline{c}) \Downarrow c'}
-    \infer1[\textsc{\small StPureOp}]{
-      \steptr{\alpha}{\primop(\overline{c})}{[\;]}{c'}
-    }
-  \end{prooftree}
-  \quad
-  \begin{prooftree}
-    \hypo{\alpha \vDash \eff{op}(\overline{c}) \Downarrow c'}
-    \infer1[\textsc{\small StEffOp}]{
-      \steptr{\alpha}{\eff{op}(\overline{c})}{[\zevent{op}{\overline{c}\;c'}]}{c'}
-    }
-  \end{prooftree}
-  }
-  \vspace*{-.05in}
-    \caption{Selected Operational Semantics.}
-    \label{fig:selected-semantics}
-  \vspace*{-.2in}
-  \end{figure}
+  StPureOp}) make no use of trace, either history or output. The
+result of an effectful operation, in contrast, can depend on the
+events that preceded it, and it produces an output trace containing an
+event whose payload contains both the arguments and return value of
+the operation.
 
 % \begin{example}[Auxiliary Operator Semantics]\label{ex:aux-semantics}
 % The auxiliary semantics of the $\eff{put}$ and $\eff{get}$ operators in Example~\ref{ex:sc} can be defined as follows:
@@ -177,30 +188,18 @@ which describe effectful computations.
 Pure refinement types are similar to those found in prior
 underapproximate refinement type systems~\cite{CoverageType}, and
 allow base types (e.g., {\Code{int}}) to be further constrained by a
-logical formula or qualifier.
-
-In contrast to traditional type systems where a pure type qualifier
-$\ort{b}{\phi}$ constrains every value a pure expresion \emph{may}
-evaluate to; the type qualifier $\urt{b}{\phi}$ constrains a subset of
-the values it \emph{must} evaluate to.  For example, the constant
-value $1$ can be assigned the types $\ort{\Int}{\vnu = 1}$ and
-$\ort{\Int}{0 < \vnu}$ -- the value 1 satisfies the constraint in both
-\emph{overapproximate} qualifiers -- but, 1 cannot be assigned the
-type, $\urt{\Int}{\vnu = 1 \lor \vnu = 2}$, since it cannot evaluate
-to both 1 and 2 as required by this \emph{underapproximate}
-qualifier. The term $1 \oplus 2 \oplus 3$, in contrast, does have this
+logical formula or qualifier. In contrast to traditional type systems
+where a pure type qualifier $\ort{b}{\phi}$ constrains every value a
+pure expresion \emph{may} evaluate to; the type qualifier
+$\urt{b}{\phi}$ constrains a subset of the values it \emph{must}
+evaluate to.  For example, the constant value $1$ can be assigned the
+types $\ort{\Int}{\vnu = 1}$ and $\ort{\Int}{0 < \vnu}$ -- the value 1
+satisfies the constraint in both \emph{overapproximate} qualifiers --
+but, 1 cannot be assigned the type,
+$\urt{\Int}{\vnu = 1 \lor \vnu = 2}$, since it cannot evaluate to both
+1 and 2 as required by this \emph{underapproximate} qualifier. The
+term $1 \oplus 2 \oplus 3$, in contrast, does have this
 underapproximate type.
-
-The figure also gives the definition of the type aliases
-that \autoref{sec:overview} used to limit user annotation burden.
-When the fields of an effectful operation are clear from context, we
-omit its arguments $\overline{x}$, e.g., $\textsf{Req}\,(\langle\textbf{write}\;|\;v
-  > 0\rangle)$ means $\textsf{Req}\,(\langle\textbf{write}\;\iota\;v\;|\;v > 0\rangle)$. We omit
-quantifiers with equality constraints, e.g.,
-$\langle\textbf{write}\;\iota\;v\;|\;\iota = 1 \land v = 3\rangle$, as
-$\reqOp{write}{1\;3}$; we also omit the top ($\top$) qualifier
-  in symbolic events and types.
-
 
 \begin{figure}[htb!]
 {\small
@@ -250,11 +249,25 @@ standard regex operators shown in \autoref{fig:type-syntax}, including
 union $A \lorA A$, sequence $A \seqA A$, and kleene star $A^*$
 operators.
 
+The figure also gives the definition of the type aliases that
+\autoref{sec:overview} used to limit user annotation burden.  When the
+fields of a symbolic event are clear from context, we omit its
+arguments $\overline{x}$, e.g.,
+$\langle\textbf{write}\;|\;v > 0\rangle$ means
+$\langle\textbf{write}\;\iota\;v\;|\;v > 0\rangle$. We omit
+quantifiers with equality constraints, e.g., writing
+$\langle\textbf{write}\;\iota\;v\;|\;\iota = 1 \land v = 3\rangle$, as
+$\msgA{write}{1\;3}$; we also omit the top ($\top$) qualifier in
+symbolic events and types.
+
+
+
 %% \BD{We need to describe ghost variables at some point. If we are not
 %%   going to use them in the intro+overview, we should explain that we
 %%   left them are implicit there.}
 
-\subsubsection{Example}\label{ex:stack-example}
+\begin{example}[Ghost Events]
+  \label{ex:stack-example}
   Consider an effectful stack library implemented as a fixed-size
   array whose elements grow monotonically.  An incorrect implementation
   that fails to grow the array when the stack is full may cause
@@ -270,29 +283,34 @@ operators.
   pairs of $\eff{push}$ and $\eff{pop}$ events. This can be expressed
   by the following \tyName{} specifications, using ghost events
   $\effGray{pushI}$ and $\effGray{popI}$ as shown below:
-  {\small\begin{align*} &\eff{push} :~ n{:}\Int \garr y{:}\Int \garr
-    x{:}\urt{\Int}{y < \vnu} \sarr
-    \uhat{\Code{Last}(\msgAGray{pushI}{n\;y})}{\Unit}{\msgA{push}{x}\msgAGray{pushI}{n{+}1\;x}}
-    \\&\eff{pop} :~ n{:}\Int \garr m{:}\Int \garr
-    \\[-0.4em]& \quad \uhat{\Code{Last}(\msgAGray{popI}{m\;\_}) \land
-      \Code{Last}(\msgAGray{pushI}{n\;\_}) \land
-      (\allA\msgAGray{pushI}{(n{-}m)\;x}\allA)}{x{:}\Int}{\msgA{pop}{x}\msgAGray{popI}{m{+}1\;
+  \vspace{-.4cm} \par\nobreak {\small %
+    \begin{align*} %
+      &\eff{push} :~ n{:}\Int \garr y{:}\Int \garr
+        x{:}\urt{\Int}{y < \vnu} \sarr
+        \uhat{\Code{Last}(\msgAGray{pushI}{n\;y})}{\Unit}{\msgA{push}{x}\seqA\msgAGray{pushI}{n{+}1\;x}}
+      \\
+      &\eff{pop} :~ n{:}\Int \garr m{:}\Int \garr \\[-0.4em]
+      & \quad
+        \uhat{\Code{Last}(\msgAGray{popI}{m\;\_}) \land
+        \Code{Last}(\msgAGray{pushI}{n\;\_}) \land
+        (\allA\seqA\msgAGray{pushI}{(n{-}m)\;x}\seqA\allA)}{x{:}\Int}{\msgA{pop}{x}\seqA\msgAGray{popI}{m{+}1\;
         x}}
-  \end{align*}}\noindent
- Intuitively, the $\effGray{pushI}$ and $\effGray{popI}$ ghost events are
- simply $\eff{push}$ and $\eff{pop}$ events equipped with indices to
- record the number of push and pop operations\footnote{For simplicity,
-   we assume the index starts from $1$, so the first push will be
-   recorded as $\msgAGray{pushI}{1\;x}$. We also omit unused variables
-   using the wildcard $\_$.}.  The signature for $\eff{push}$ requires
- that the new pushed value ($x$) is greater than the last pushed value
- ($y$), and adds a new ghost event $\effGray{pushI}$ with an
- incremented index (i.e., $\msgAGray{pushI}{n{+}1\;x}$).  The
- signature for $\eff{pop}$ also records the number of pop operations
- in the same way (i.e., $\msgAGray{popI}{m{+}1\;x}$); additionally, it
- requires the last popped value ($x$) to be equal to the
- $(n{-}m)^{th}$ pushed value, reflecting the ``last-in-first-out’'
- property of the stack.
+    \end{align*}}\noindent
+  Intuitively, the $\effGray{pushI}$ and $\effGray{popI}$ ghost events are
+  simply $\eff{push}$ and $\eff{pop}$ events equipped with indices that
+  record the number of push and pop operations.\footnote{For simplicity,
+    we assume the index starts from $1$, so the first push will be
+    recorded as $\msgAGray{pushI}{1\;x}$. We also omit unused variables
+    using the wildcard $\_$.}  The signature for $\eff{push}$ requires
+  that the new pushed value ($x$) is greater than the last pushed value
+  ($y$), and adds a new ghost event $\effGray{pushI}$ with an
+  incremented index (i.e., $\msgAGray{pushI}{n{+}1\;x}$).  The
+  signature for $\eff{pop}$ also records the number of pop operations
+  in the same way (i.e., $\msgAGray{popI}{m{+}1\;x}$); additionally, it
+  requires the last popped value ($x$) to be equal to the
+  $(n{-}m)^{th}$ pushed value, reflecting the ``last-in-first-out’'
+  property of the stack.
+\end{example}
 %%\end{example}
 %% \tyName{}s can only appear in the result type of a function, where
 %% they describe the effects performed when the function is evaluated.
@@ -533,20 +551,19 @@ traces, and admits underapproximation specialization.  The rule
 history traces to align with the actual calling context.  The
 application rule \textsc{TEffOp} requires the arguments of an
 effectful operator to be well-typed against its parameter types; it
-rcords the effect as an event in the future trace along with any
-additional ghost events ($F$).
-The nondeterministic choice operator is typed using the
-\textsc{TChoice} rule which merges the \tyName{}s of the two branches.
-The \textsc{TLet} rule requires the binding expression
-$e_1$ to generate the first part of its future trace $F_1$, with the
-rest of trace produced by the body expression $e_2$ under a new
-history that includes $F_1$.
-The typing rule for function (\textsc{TFun}) is standard, and the type
-rule for recursive functions is modeled after the corresponding IL
-rule, unrolling the recursion as needed.  The \textsc{FixBase} rule
-types any recursive function with a \tyName{} lacking reachability
-constraints (i.e., $\uhat{H}{\urt{b}{\bot}}{\emptyset}$). In contrast,
-the \textsc{FixInd} rule permits typing a recursive function with type
+records the effect as an event in the future trace along with any
+additional ghost events ($F$).  The nondeterministic choice operator
+is typed using the \textsc{TChoice} rule which merges the \tyName{}s
+of the two branches.  The \textsc{TLet} rule requires the binding
+expression $e_1$ to generate the first part of its future trace $F_1$,
+with the rest of trace produced by the body expression $e_2$ under a
+new history that includes $F_1$.  The typing rule for functions
+(\textsc{TFun}) is standard, while the rule for recursive functions is
+modeled after the corresponding IL rule, unrolling the recursion as
+needed.  The \textsc{FixBase} rule types any recursive function with a
+\tyName{} lacking reachability constraints (i.e.,
+$\uhat{H}{\urt{b}{\bot}}{\emptyset}$). In contrast, the
+\textsc{FixInd} rule permits typing a recursive function with type
 $t'$ by requiring it to have another type $t$, and by checking that
 its body can be assigned type $t'$ under the assumption that the
 function itself has type $t$.
@@ -557,52 +574,60 @@ function itself has type $t$.
 %% response are the same as those of a request in the history trace with
 %% the same id.
 
-\begin{example}[Operator Application Typing]\label{ex:operator-application-typing}
-  We present a typing derivation for a simple generator that generates $\eff{push}$ and $\eff{pop}$ operations using their signatures given in
-  Example~\ref{ex:stack-example}. Consider how we might type check the following expression:
+\begin{example}[Operator Application Typing]
+  \label{ex:operator-application-typing}
+  We present a typing derivation for a simple generator that generates
+  $\eff{push}$ and $\eff{pop}$ operations using the signatures from
+  Example~\ref{ex:stack-example}. Consider how we might type check the
+  following expression: %
   \vspace{-.4cm} \par\nobreak {\small %
     \begin{align*}
-      &\emptyset \vdash \zlet{x}{\Code{pos\_gen\;()}}{\eff{push}\;x; \eff{pop}} :
+      &\emptyset \vdash \zlet{x{:}\Code{int}}{\sassume{0 < x}}{\eff{push}\;x; \eff{pop}} :
       \\&\qquad \uhat{\msgAGray{pushI}{0\;0}\msgAGray{popI}{0\;0}}{x{:}\urt{\Int}{0 < \vnu}}{\msgA{push}{x}\msgAGray{pushI}{1\;x}\msgA{pop}{x}\msgAGray{popI}{1\;x}}
     \end{align*}}%
   \noindent
   The signature of the generator is a \tyName{} that assumes a history
-  trace in which the stack is empty (i.e., ghost events
-  $\effGray{pushI}$ and $\effGray{popI}$ are recorded with a $0$ index
-  and dummy value $0$).  The body of the generator pushes a postive
-  number $x$ using the generator \Code{pos\_gen} whose type is
-  $\urt{\Int}{0 < \vnu}$; this underapproximate refinement type
-  signifies that \Code{pos\_gen} is guaranteed to produce every
-  positive integer.  the generator then is expected to pop the
-  same value.   We can thus type check its two effectful operation
-  applications using the following judgement:
+  trace in which the stack is empty (i.e., the ghost events
+  $\effGray{pushI}$ and $\effGray{popI}$ both hold a $0$ index and a
+  dummy value).  The body of the generator generates a positive number
+  $x$ using $\mykw{assume}$; the underapproximate refinement type of
+  $x$ signifies that it must evaluate to every positive integer. The
+  generator then is expected to pop the same value.  We can thus type
+  check its two effectful operation applications using the following
+  judgement: %
   \vspace{-.4cm} \par\nobreak {\small %
     \begin{flalign*}
       &x{:}\urt{\Int}{0 < \vnu} \vdash \eff{push}\;x; \eff{pop} :
       \\&\qquad\qquad\ \uhat{\msgAGray{pushI}{0\;0}\msgAGray{popI}{0\;0}}{x{:}\urt{\Int}{0 < \vnu}}{\msgA{push}{x}\msgAGray{pushI}{1\;x}\msgA{pop}{x}\msgAGray{popI}{1\;x}}
     \end{flalign*}}%
   \noindent
-  Using the \textsc{TEffOp} rule to type the first $\eff{push}$ effect,
-  we retrieve the operator's types from the operator context $\Delta$:
+  Using the \textsc{TEffOp} rule to type the first $\eff{push}$
+  effect, we retrieve the operator's types from the operator context
+  $\Delta$:%
   \vspace{-.4cm} \par\nobreak {\small %
     \begin{flalign*}
       &... \vdash \eff{push} : n{:}\Int \garr y{:}\Int \garr &&
       \\[-0.2em]& \qquad\qquad\ \  x{:}\urt{\Int}{y < \vnu} \sarr
       \uhat{\Code{Last}(\msgAGray{pushI}{n\;y})}{\Unit}{\msgA{push}{x}\msgAGray{pushI}{n{+}1\;x}}  &&\text{(by \textsc{TOpCtx})}
-    \end{flalign*}}\noindent
-  We can then apply the subtyping rule (\textsc{SubG}) to allow us to instantiate the
-  ghost variable (e.g., $n \mapsto 0$ and $y \mapsto 0$).
-  The rule \textsc{TOpHis} can then be used to specialize a reachable history trace
-  ($\msgAGray{pushI}{0\;0}\msgAGray{popI}{0\;0}$) to align with the
-  actual calling context. Now, the future regex
-  $\msgA{push}{x}\msgAGray{pushI}{1\;x}$ is exactly aligned with the
-  prefix of the future trace of the target type:
-  \vspace{-.4cm} \par\nobreak {\small %
+    \end{flalign*}}\noindent We can then apply the subtyping rule
+  (\textsc{SubG}) to instantiate the signature's ghost variables
+  (e.g., $n \mapsto 0$ and $y \mapsto 0$): \vspace{-.4cm} \par\nobreak
+  {\small %
     \begin{flalign*}
       &... \vdash \eff{push} : x{:}\urt{\Int}{0 < \vnu} \sarr
       \uhat{\Code{Last}(\msgAGray{pushI}{0\;0})}{\Unit}{\msgA{push}{x}\msgAGray{pushI}{1\;x}} &&\text{(by \textsc{SubG})}
-      \\&... \vdash \eff{push} : x{:}\urt{\Int}{0 < \vnu} \sarr
-      \uhat{\msgAGray{pushI}{0\;0}\msgAGray{popI}{0\;0}}{\Unit}{\msgA{push}{x}\msgAGray{pushI}{1\;x}} &&\text{(by \textsc{TOpHis})}
+    \end{flalign*}}%
+  \noindent
+  The rule \textsc{TOpHis} can then be used to specialize its history
+  trace to align with that of the actual calling context
+  ($\msgAGray{pushI}{0\;0}\msgAGray{popI}{0\;0}$). Note that we do not
+  need to also specialize the future regex, since it is already a
+  prefix of the future trace of the target type: %
+  \vspace{-.4cm} \par\nobreak {\small %
+    \begin{flalign*}
+      &... \vdash \eff{push} : x{:}\urt{\Int}{0 < \vnu} \sarr
+      \uhat{\msgAGray{pushI}{0\;0}\msgAGray{popI}{0\;0}}{\Unit}{\msgA{push}{x}\msgAGray{pushI}{1\;x}}
+      &&\text{(by \textsc{TOpHis})}
     \end{flalign*}}%
   \noindent
   The rest of program is now typed via the following judgement:
@@ -611,21 +636,32 @@ function itself has type $t$.
       &x{:}\urt{\Int}{0 < \vnu}\vdash \eff{pop} : \uhat{\msgAGray{pushI}{0\;0}\msgAGray{popI}{0\;0}\msgA{push}{x}\msgAGray{pushI}{1\;x}}{x{:}\urt{\Int}{0 < \vnu}}{\msgA{pop}{x}\msgAGray{popI}{1\;x}} &&
     \end{align*}}%
   \noindent
-  As before, we can instantiate the ghost variable $n$ as $1$ and $m$ as $0$ via rule \textsc{SubG}, align the return type via rule \textsc{SubHF} and refine the history regex via the rule \textsc{TOpHis} as shown below:
+  As before, after looking up the type of $\eff{pop}$ using
+  \textsc{TOpCtx} (\ref{eqn:typing+l1}), we can instantiate the ghost variable $n$ as $1$
+  and $m$ as $0$ via \textsc{SubG} (\ref{eqn:typing+l2}), align the return type via
+  \textsc{SubHF} ((\ref{eqn:typing+l3}) and refine the history regex via the rule
+  \textsc{TOpHis} (\ref{eqn:typing+l4}): %
   \vspace{-.4cm} \par\nobreak {\footnotesize %
-    \begin{flalign*}
-      &... \vdash \eff{pop} : n{:}\Int \garr m{:}\Int \garr
+    \begin{flalign}
+      &... \vdash \eff{pop} : n{:}\Int \garr m{:}\Int \garr \notag
       \\[-0.2em]& \qquad\qquad\  \uhat{\Code{Last}(\msgAGray{popI}{m\;\_}) \land
       \Code{Last}(\msgAGray{pushI}{n\;\_}) \land
-      (\allA\msgAGray{pushI}{(n{-}m)\;x}\allA)}{x{:}\Int}{\msgA{pop}{x}\msgAGray{popI}{m{+}1\;x}} &&\text{(\textsc{TOpCtx})}
+      (\allA\msgAGray{pushI}{(n{-}m)\;x}\allA)}{x{:}\Int}{\msgA{pop}{x}\msgAGray{popI}{m{+}1\;x}}
+    && \tag*{\ding{172}}\label{eqn:typing+l1}
       \\&... \vdash \eff{pop} : \uhat{\Code{Last}(\msgAGray{popI}{0\;\_}) \land
       \Code{Last}(\msgAGray{pushI}{1\;\_}) \land
-      (\allA\msgAGray{pushI}{1\;x}\allA)}{x{:}\Int}{\msgA{pop}{x}\msgAGray{popI}{1\;x}} &&\text{(\textsc{SubG})}
+      (\allA\msgAGray{pushI}{1\;x}\allA)}{x{:}\Int}{\msgA{pop}{x}\msgAGray{popI}{1\;x}}
+    && \tag*{\ding{173}}\label{eqn:typing+l2}
       \\&... \vdash \eff{pop} : \uhat{\Code{Last}(\msgAGray{popI}{0\;\_}) \land
       \Code{Last}(\msgAGray{pushI}{1\;\_}) \land
-      (\allA\msgAGray{pushI}{1\;x}\allA)}{x{:}\urt{\Int}{0 < \vnu}}{\msgA{pop}{x}\msgAGray{popI}{1\;x}} &&\text{(\textsc{SubHF})}
-      \\&... \vdash \eff{pop} : \uhat{\msgAGray{pushI}{0\;0}\msgAGray{popI}{0\;0}\msgA{push}{x}\msgAGray{pushI}{1\;x}}{x{:}\urt{\Int}{0 < \vnu}}{\msgA{pop}{x}\msgAGray{popI}{1\;x}} &&\text{(\textsc{TOpHis})}
-    \end{flalign*}}%
+      (\allA\msgAGray{pushI}{1\;x}\allA)}{x{:}\urt{\Int}{0 <
+        \vnu}}{\msgA{pop}{x}\msgAGray{popI}{1\;x}} &&
+    \tag*{\ding{174}}\label{eqn:typing+l3}
+      \\&... \vdash \eff{pop} :
+      \uhat{\msgAGray{pushI}{0\;0}\msgAGray{popI}{0\;0}\msgA{push}{x}\msgAGray{pushI}{1\;x}}{x{:}\urt{\Int}{0
+          < \vnu}}{\msgA{pop}{x}\msgAGray{popI}{1\;x}} &&
+      \tag*{\ding{175}}\label{eqn:typing+l4}
+    \end{flalign}}%
   \noindent
 \end{example}
 
@@ -778,14 +814,15 @@ appear in the actual traces produced by operational semantics.  We
 define a erasure function $\eraseGhost{\alpha}$ to erase ghost events
 in a \tyName{} from the trace $\alpha$.
 
-\paragraph{Type denotations} Similar to other refinement type systems~\cite{JV21},
-types in $\DSL$ are denoted as their inhabitants (i.e., $\denot{t}$
-and $\denot{\tau}$).  The type context $\Gamma$
-is denoted as \emph{substitution} $\sigma$ (i.e., $[x_1\mapsto v_1,
-  x_2\mapsto v_2]$) that provides the assignments for binding
-variables in $\Gamma$ and the denotation (the denoted language) of
-SREs is a set of traces. Then, trace inclusion under a type context
-is defined as $\Gamma \vdash A \subseteq A' \doteq \forall \sigma \in
+\paragraph{Type denotations} Similar to other refinement type
+systems~\cite{JV21}, types in $\DSL$ are denoted as their inhabitants
+(i.e., $\denot{t}$ and $\denot{\tau}$).  The type context $\Gamma$ is
+denoted as a \emph{substitution} $\sigma$ (i.e.,
+$[x_1\mapsto v_1, x_2\mapsto v_2]$) that provides the assignments for
+binding variables in $\Gamma$ and the denotation (the denoted
+language) of SREs is a set of traces. Then, trace inclusion under a
+type context is defined as
+$\Gamma \vdash A \subseteq A' \doteq \forall \sigma \in
 \denot{\Gamma}. \denot{\sigma(A)} \subseteq \denot{\sigma(B)}$.  The
 type denotation of $\uhat{H}{x{:}\urt{b}{\phi}}{F}$ is defined as
 follows:

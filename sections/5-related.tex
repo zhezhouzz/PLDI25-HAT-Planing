@@ -8,29 +8,29 @@ Logic~\cite{OHP19} and related variants~\cite{LR+22,RBD+20,ZDS23}
 present compositional proof rules that enable verification of
 reachability (aka incorrectness) properties of first-order imperative
 programs; their primary motivation is to enable formal reasoning of
-program analysis tools such as Infer~\cite{DFLO19}.  Ideas related to
-these notions have also been incorporated into type
-systems~\cite{RW24,CoverageType,JY15,LPR26} for functional languages, but
-none of these efforts have considered their application to the
+(unsound) program analysis tools such as Infer~\cite{DFLO19}.  Ideas
+related to these notions have also been incorporated into type
+systems~\cite{RW24,CoverageType,JY15,LPR26} for functional languages,
+but none of these efforts have considered their application to the
 synthesis of effectful test generators of the kind proposed in this
-paper.  For example~\cite{CoverageType} uses underapproximation to typecheck
-that a PBT generator is \emph{complete} with respect to the functional
-inputs it generates to the SUT; ~\cite{LZ+25} considers an enumerative
-repair strategy to patch incomplete generators so that they become
-complete.  In our setting, we show how interpreting type
-specifications from the lens of underapproximation can guide a
-type-driven synthesis procedure to construct bespoke effectful test
-generators tailored to the property of interest, and cognizant of the
-behavior of the operators provided by the SUT.  As a mechanism to
-characterize underapproximate behavior, types identify
-\emph{sufficient} effectful constraints that any test input sequence
-produced by the generator \emph{must} satisfy based on these
+paper.  For example~\cite{CoverageType} uses underapproximation to
+typecheck that a PBT generator is \emph{complete} with respect to the
+functional inputs it generates to the SUT, while ~\cite{LZ+25}
+considers an enumerative repair strategy to patch incomplete
+generators so that they become complete.  In contrast, in this paper,
+we show how interpreting type specifications from the lens of
+underapproximation can guide a synthesis procedure to construct
+bespoke effectful test generators tailored to the property of
+interest, informed by the behavior of the operators provided by the
+SUT.  As a mechanism to characterize underapproximate behavior, types
+identify \emph{sufficient} effectful constraints that any test input
+sequence produced by the generator \emph{must} satisfy based on these
 specifications.
 
 \paragraph{{\it Specializing PBT Generators}}
 There has been significant prior work to make PBT implementations more
 effective, by providing tools that enable reasoning and customization
-of effect traces produced by test generator.  For example,
+of effect traces produced by a test generator.  For example,
 ~\citet{CP+09} describes a customizable user-level scheduler that uses
 Quviq QuickCheck's support for state machine models to implement
 deterministic replayable test inputs to an Erlang SUT.
@@ -44,9 +44,8 @@ these systems, \name's type-guided synthesis strategy yields
 generators influenced by both the global property of interest and the
 local \tyName{} specifications of the operations used by the SUT.
 Importantly, the synthesis procedure is guided by the history and
-future SREs of provided specifications to determine an ordering of
-effectful actions likely to manifest a violation of the target
-property.
+future SREs of provided specifications to determine a semantically
+meaningful ordering of effectful actions.
 
 %% TLA+~\cite{Lam02} is a specification language based on LTL for
 %% modeling finite-state distributed systems; the correctness of these
@@ -74,10 +73,10 @@ effect system.  Closest to our work are \emph{Hoare Automata Types}
 (\textsc{HAT}s)~\cite{ZYDJ24}, which integrate symbolic finite
 automata into a refinement type system. \textsc{HAT}s enable reasoning
 about stateful sequential programs structured as a functional core
-interacting with opaque effectful libraries.  \tyName{} revises
+interacting with opaque effectful libraries.  \tyName{} revise
 \textsc{HAT}s by viewing them as underapproximate specifications -
 every trace of effects accepted by the future regex in a \tyName{} is
-justified by a trace accepted by the history regex.
+justified by a trace accepted by its history regex.
 
 
 %% \paragraph{{\it Verification}} Formally proving the correctness of
@@ -139,9 +138,9 @@ generators.  Our key innovations are (i) the adaption of symbolic
 regular expressions, expressed as types, that define traces of
 effectful actions that occur before and after the execution of an
 expression, as underapproximate specifications, and (ii) the synthesis
-of bespoke generators, specialized to generate test input sequences,
-derived from these specifications.  Experimental results on a wide
-range of sequential, concurrent, and distributed applications,
-including real-world system models used in production, show that
-\name\ is significantly more effective in identifying test input
-sequences that falsify a property than existing state-of-the-art.
+of bespoke test generators derived from these specifications.
+Experimental results on a wide range of sequential, concurrent, and
+distributed applications, including real-world system models used in
+production, show that \name\ is significantly more effective in
+identifying test input sequences that falsify a property than the
+existing state-of-the-art.
