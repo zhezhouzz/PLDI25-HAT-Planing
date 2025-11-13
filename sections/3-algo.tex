@@ -167,7 +167,7 @@ specification \BD{The careful reader will notice we're using a very
 that it corresponds to a meaningful test generator by filtering out
 any empty traces (line $7$).
 
-\begin{example}[Refinement Process]\label{ex:refinement-process}
+\begin{example}[Abstract Trace Refinement]\label{ex:refinement-process}
   We illustrate the refinement process by showing how it derives a
   trace corresponding to the generator from in
   Example~\ref{ex:operator-application-typing}. Assume the refinement
@@ -204,7 +204,8 @@ ghost events, which will recover corresponding concrete events during
 further refinement.  For example, the \tyName{} of $\effGray{pushI}$
 is given below; it requires that a $\eff{pushI}$ event always occurs
 after a $\eff{push}$ event, unless it is an initialization event
-(i.e., $i = 0$): \vspace{-.4cm} \par\nobreak{\footnotesize %
+(i.e., $i = 0$): %
+\vspace{-.4cm} \par\nobreak{\footnotesize %
   \begin{align*}
     \Delta(\effGray{pushI}) \equiv &\; i{:}\Int\sarr x{:}\Int \sarr \uhat{\allA\msgC{push}}{\Unit}{\msgBGray{pushI}{i\;x}{i > 0}} \interty \uhat{(\anyA\setminus\msgCGray{pushI})^*}{\Unit}{\msgBGray{pushI}{i\;x}{i = 0}} \\
     \Delta(\effGray{popI}) \equiv &\; i{:}\Int\sarr x{:}\Int \sarr \uhat{\allA\msgC{pop}}{\Unit}{\msgBGray{popI}{i\;x}{i > 0}} \interty \uhat{(\anyA\setminus\msgCGray{popI})^*}{\Unit}{\msgBGray{popI}{i\;x}{i = 0}}
@@ -218,95 +219,92 @@ On the other hand, the $\msgAGray{popI}{m\;y}$ event in the abstract trace has i
 \end{example}
 
 \paragraph{Deriving a Generator}
-The second phase of our synthesis algorithm constructs a generator
-program from a set of abstract traces using \derive{}. This algorithm
-relies on a subroutine, \deriveTrace{}, that generates straightline
-programs without recursion.
-
-The trace update erase ghost variables:
+The second component of our synthesis algorithm, \derive{}, derives
+generators for each abstract trace in the set produced the refinement
+loop and then combines them using $\oplus$ to construct the final
+generator.  This process relies on a subroutine, \deriveTrace{}, that
+generates straightline programs without recursion by dropping by all
+ghost events and variables and then mapping each symbolic event to a
+corresponding effectful operation with appropriate arguments. So,
+given the following context and abstract trace:
 \begin{align*}
   (m{:}\urt{\Int}{\vnu = 0}, n{:}\urt{\Int}{\vnu = m{+}1}, y{:}\urt{\Int}{\top}, x{:}\urt{\Int}{\vnu > y}, \msgA{push}{x};\msgA{pop}{x})
 \end{align*}
-
+\noindent \deriveTrace{} will synthesize the following program:
 \begin{minted}[fontsize = \footnotesize, escapeinside=??, xleftmargin=10pt, linenos]{ocaml}
-  let (x: int) = int_gen () in assume (?$\exists m\;n\;y. m = 0 \land n = m{+}1 \land x > y$?) in push x; (* equal to assume true *)
+  let (x: int) = assume (?$\exists m\;n\;y. m = 0 \land n = m{+}1 \land x > y$?) in push x; (* equivalent to assume true *)
   let (z: int) = pop () in assert (x == z)
 \end{minted}
+\derive{} applies a sketch-style methodology to synthesize a recursive
+generator, using \deriveTrace{} to fill in the holes of a template
+recursive function definition. It does so by associating each of the
+holes in the template with a subsequence of the abstract trace,
+treating each occurence of a Kleene star in an abstract trace as a
+candidate placeholder for a recursive call. In order to ensure a
+particular partitioning is sensible, the algorithm simulates a bounded
+number of loop iterations to ensure a completed sketch is well-typed.
 
-Kleene stars ($\Pi^*$) in abstract traces are interpreted as recursion
-points. The synthesis algorithm $\derive$ non-deterministically either
-(i) generates a sequential program by eliminating all ghost events and
-the Kleene stars \footnote{The definition of $\derive$ is provided in
-  the \techreport{}.}, or (ii) synthesizes a recursive program by
-expanding the Kleene star using recursion. We employ a template-based
-strategy, in which the algorithm matches the given abstract trace with a
-template $T$, together with abstract traces for the recursion body
-($\Pi_{\Code{rec}}$), as well as its associated history ($\Pi_h$) and
-future ($\Pi_f$) traces. As dictated by \textsc{TFixInd}, the algorithm
-unrolls the recursive body up to a bounded depth and invokes
-refinement loop (lines 2-3 in \autoref{algo:top-syn}) to ensure that
-the unrolled abstract traces are well-typed. The synthesized programs
-for these three traces are then composed to instantiate the
-placeholders in the recursive template.
+% in abstract traces are interpreted as recursion
+% points. The synthesis algorithm $\derive$ non-deterministically either
+% (i) generates a sequential program by eliminating all ghost events and
+% the Kleene stars \footnote{The definition of $\derive$ is provided in
+%   the \techreport{}.}, or (ii) synthesizes a recursive program by
+% expanding the Kleene star using recursion. We employ a template-based
+% strategy, in which the algorithm matches the given abstract trace with a
+% template $T$, together with abstract traces for the recursion body
+% ($\Pi_{\Code{rec}}$), as well as its associated history ($\Pi_h$) and
+% future ($\Pi_f$) traces. As dictated by \textsc{TFixInd}, the algorithm
+% unrolls the recursive body up to a bounded depth and invokes
+% refinement loop (lines 2-3 in \autoref{algo:top-syn}) to ensure that
+% the unrolled abstract traces are well-typed. The synthesized programs
+% for these three traces are then composed to instantiate the
+% placeholders in the recursive template.
 
 \begin{example}[Recursion Template]
-  A representative template is a non-deterministic loop, whose form is
+  Consider the following template which defines and uses a recursive
+  function $f$ that calls itself once:
   $T \doteq \zlet{f}{\mykw{fix}\ f.\lambda ().\ () \oplus \boxed{e_1};
-    f\;(); \boxed{e_2}}{\boxed{e_3};f\;();\boxed{e_4}}$, allowing
-  $\Pi^*$ in the abstract trace to be matched. For instance, consider
-  the abstract trace $\pi_\Code{stack}$ shown in
-  Example~\ref{ex:refinement-process}: %
+    f\;(); \boxed{e_2}}{(\boxed{e_3};f\;();\boxed{e_4})}$. This
+  template includes a pair of holes before and after the recursive
+  call in the definition of $f$, and another pair around the top-level
+  call to $f$. We can build the following two program sketches by
+  mapping portions of $\pi_\Code{stack}$ from
+  Example~\ref{ex:refinement-process} to the four holes in $T$: %
   \vspace{-.4cm} \par\nobreak {\small %
     \begin{align*}
       &
         \underbrace{\Pi_\Code{noI}^*\msgAGray{pushI}{m\;y}\msgAGray{popI}{m\;y}\Pi_\Code{noI}^*}_{e_3}\;\;
         \underbrace{\msgA{push}{x}\msgAGray{pushI}{n\;x}}_{e_1}\;\;
-        \underbrace{\Pi_\Code{noI}^*}_\text{recursion}\;\;
+        \underbrace{\Pi_\Code{noI}^*}_\text{$f$\;()}\;\;
         \underbrace{\msgA{pop}{x}\msgAGray{popI}{n\;x}}_{e_2}\;\;
-        \underbrace{\Pi_\Code{noI}^*}_{e_4}
-    \end{align*}}\noindent
-  Here, $\pi_\Code{stack}$ is divided into five parts, corresponding
-  to the four placeholders and the self-recursive call (i.e., $f\;()$)
-  in the template. The synthesizer then re-refines the abstract trace for $i$-fold
-  recursion unrolling after erasing all qualifiers from the abstract
-  trace: %
-  \vspace{-.4cm} \par\nobreak {\small %
-    \begin{align*}
-      \Pi_\Code{anyA}^*\msgCGray{pushI}\msgCGray{popI}&\;\underline{\epsilon}\;\Pi_\Code{anyA}^* \tag{0-fold unrolling}
-      \\\Pi_\Code{anyA}^*\msgCGray{pushI}\msgCGray{popI}\Pi_\Code{anyA}^*\;\underline{\msgCGray{pushI}\msgC{push}}&\underline{\msgCGray{popI}\msgC{pop}}\;\Pi_\Code{anyA}^* \tag{1-fold unrolling}
-      \\\Pi_\Code{anyA}^*\msgCGray{pushI}\msgCGray{popI}\Pi_\Code{anyA}^*\;\underline{\msgCGray{pushI}\msgC{push}\msgCGray{pushI}\msgC{push}}&\underline{\msgCGray{popI}\msgC{pop}\msgCGray{popI}\msgC{pop}}\;\Pi_\Code{anyA}^* \tag{2-fold unrolling}
-    \end{align*}}\noindent
-  This refinement ensures that multiple unfoldings remain well-typed,
-  which disallows an incorrect recursion template instantiation, as
-  shown below: %
-  \vspace{-.4cm} \par\nobreak {\small %
-    \begin{align*}
+        \underbrace{\Pi_\Code{noI}^*}_{e_4} \\
       & \underbrace{\Pi_\Code{noI}^*\msgAGray{pushI}{m\;y}\msgAGray{popI}{m\;y}\Pi_\Code{noI}^*\msgA{push}{x}\msgAGray{pushI}{n\;x}}_{e_3}\;\;
         \underbrace{\Pi_\Code{noI}^*}_{e_1}\;\;
-        \underbrace{\Pi_\Code{noI}^*}_\text{recursion}\;\;
+        \underbrace{\Pi_\Code{noI}^*}_\text{$f$\;()}\;\;
         \underbrace{\msgA{pop}{x}\msgAGray{popI}{n\;x}}_{e_2}\;\;
         \underbrace{\Pi_\Code{noI}^*}_{e_4}
-    \end{align*}
-  } %
-  \noindent This instantiation will repeatedly perform $\eff{pop}$
-  events without any $\eff{push}$ events; its two-fold recursion
-  unrolling will therefore be rejected.  The final recursive program
-  is assembled by composing synthesized programs from these traces to
-  populate the template placeholders, thereby yielding the following
-  program:
-
+    \end{align*}}\noindent %
+  We can then simulate unrolling the recursive call in a solution to
+  each sketch by duplicating the subtraces labeled $e_1\; f\;()\;
+  e_2$ a bounded number of times and checking whether they are consistent with
+  $\pi_\Code{stack}$: doing so reveals that the second sketch would
+  not yield a valid solution, as the recursive call would repeatedly
+  perform $\eff{pop}$ events without any $\eff{push}$ events. The
+  first sketch, in contrast, is consistent with $\pi_\Code{stack}$;
+  using \deriveTrace{} to synthesize generators for each $e$ yields
+  the following generator:
   \begin{minted}[fontsize = \footnotesize, escapeinside=??, xleftmargin=10pt, linenos]{ocaml}
 let rec f () =
   () ?$\oplus$?
-    let (x: int) = int_gen () in push x; (* e1 *)
+    let (x: int) = int_gen () in push x; (* ?$e_1$? *)
     f ();
-    let (z: int) = pop () in assert (x == z) (*e2 *)
-in f ()
+    let (z: int) = pop () in assert (x == z) (* ?$e_2$? *)
+in (* ?$e_3$? *) f () (* ?$e_4$? *)
   \end{minted}
 \end{example}
 
-\begin{theorem}[Synthesis is Sound]
+\begin{theorem}[\autoref{algo:top-syn} is Sound]
   \label{theorem:algo-sound}
-  The generator synthesized by the algorithm is type-safe with
-  respect to our declarative typing rules.
+  Every generator synthesized by \autoref{algo:top-syn} is type-safe
+  with respect to our declarative typing system.
 \end{theorem}
