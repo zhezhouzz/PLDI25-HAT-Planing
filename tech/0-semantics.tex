@@ -1,120 +1,82 @@
 \section{Operational Semantics}\label{sec:tech:semantics}
 
-The auxiliary big-step reduction rules for effect operators and the
-small-step operational semantics of our core language are shown in
+The small-step operational semantics of our core language are shown in
 \autoref{fig:semantics}.
 
 \begin{figure}[t!]
     \vspace*{-0.1in}
     {\footnotesize
-    {\small
-    \begin{flalign*}
-    \text{\textbf{Events}} \ m ::= \  \zevent{op}{\overline{c}} &
-    \parbox{7cm}{\centering$\text{\textbf{capability}}\  \beta \in \mathcal{P}(m)$}  &
-    \text{\textbf{Traces}} \ \alpha ::= \ \emptr ~|~ m \;{::}\; \alpha ~|~ \alpha \listconcat \alpha &
-    \end{flalign*}
-    % \vspace*{-.2in}
-    % \begin{flalign*}
-    %   \text{\textbf{Term Concatenation }}\ \fbox{$e;e$} & \ 
-    %   \end{flalign*}
-    }
     \vspace*{-.15in}
-    % \begin{align*}
-    %   &(\zobs{\overline{x}}{op}{e}) ; e' \doteq \zobs{\overline{x}}{op}{(e;e')}
-    %   \quad
-    %   &(\zgen{op}{\overline{c}}{e}) ; e' \doteq \zgen{op}{\overline{c}}{(e;e')}
-    %   \\
-    %   &(\zassume{\overline{x}}{\phi}{e}) ; e' \doteq \zassume{\overline{x}}{\phi}{(e;e')}
-    %   \quad
-    %   &(\zassert{\phi}{e}) ; e' \doteq \zassert{\phi}{(e;e')}
-    %   \\
-    %   &(\zlet{x}{\primop\ \overline{v}}{e}) ; e' \doteq \zlet{x}{\primop\ \overline{v}}{(e;e')}
-    %   \quad
-    %   &(e_1 \oplus e_2) ; e' \doteq (e_1 ; e') \oplus (e_2 ; e')
-    %   \\
-    %   &(\zwhile{e_1}{e_2}) ; e' \doteq \zwhile{e_1}{(e_2;e')} \quad
-    %   &() ; e' \doteq e'
-    %   \end{align*}
-    %   \vspace*{-.15in}
     {\small\begin{flalign*}
       &\text{\textbf{Handler Semantics }}\ 
-      \fbox{$\alpha \vDash \zevent{op}{\overline{c}} \Downarrow \beta$} &
+      \fbox{$\alpha \vDash \zevent{op}{\overline{c}} \Downarrow c$ \quad $\primop(\overline{c}) \Downarrow c$} &
       \text{\textbf{Operational Semantics }}\ 
-      \fbox{$\phi \Downarrow c \quad \steptr{\alpha}{(\buf, e)}{\alpha}{(\buf, e)}$}
+      \fbox{$\steptr{\alpha}{e}{\alpha}{e}$}
     \end{flalign*}}
         \begin{prooftree}
-        \mhypo{50mm}
-        {$\buf = \{\zevent{op}{\overline{c}}\} \cup \buf_1 $ \quad
-          $\alpha \vDash \zevent{op}{\overline{c}} \Downarrow \buf_2$ \quad
-          $e' = e[\overline{x \mapsto c}]$
+        \mhypo{30mm}
+        {
+          $\alpha \vDash \zevent{op}{\overline{c}} \Downarrow c'$
         }
-          \infer1[\textsc{\small StObs}]{
-            \steptr{\alpha}{(\buf,
-              \zobs{\overline{x}}{op}{e})}{[\zevent{op}{\overline{c}}]}{(\buf_1
-              \cup \buf_2, e')}
+          \infer1[\textsc{\small StEfOp}]{
+            \steptr{\alpha}{\eff{op}\;\overline{c}}{[\zevent{op}{\overline{c}\;c'}]}{c'}
           }
         \end{prooftree}
           \quad
-        \begin{prooftree}
-          \hypo{\alpha \vDash \zevent{op}{\overline{c}} \Downarrow \beta' }
-          \infer1[\textsc{\small StGen}]{
-            \steptr{\alpha}{(\buf, \zgen{op}{\overline{c}}{e})}{[\zevent{op}{\overline{c}}]}{(\buf \cup \beta', e)}
-          }
-        \end{prooftree}
+          \mprooftr{35mm}{
+            $\primop\ \overline{c} \Downarrow c'$
+            }{StOp}
+            {$\steptr{\alpha}{\primop\ \overline{c}}{[]}{c'}$}
+            \quad
     \\[0.8em]
-    \mprooftr{58mm}{
-    $\phi\msubst{x}{c}\Downarrow \top$
+    \mprooftr{25mm}{
+    $\phi\Downarrow \top$
     }{StAssume}{
-    $\steptr{\alpha}{(\buf, \zassume{\overline{x}}{\phi}{e})}{[]}{(\buf, e\msubst{x}{c})}$
+    $\steptr{\alpha}{\sassume{\phi}}{[]}{()}$
     }
     \quad
-    \mprooftr{44mm}{$\phi \Downarrow \top$}{StAssert}{
-    $\steptr{\alpha}{(\buf, \zassert{\phi}{e})}{[]}{(\buf, e)}$
+    \mprooftr{25mm}{$\phi \Downarrow \top$}{StAssert}{
+    $\steptr{\alpha}{\sassert{\phi}}{[]}{()}$
+    }
+    \quad
+    \mprooftr{35mm}{$\phi \Downarrow \bot$}{StAssert}{
+    $\steptr{\alpha}{\sassert{\phi}}{[]}{\Code{raise\;Error}}$
     }
     \\[.8em]
-    \mprooftr{55mm}{
-    $\primop\ \overline{c} \Downarrow c_x$
-    }{StOp}
-    {$\steptr{\alpha}{(\buf, \zlet{x}{\primop\ \overline{c}}{e})}{[]}{(\buf, e\subst{x}{c_x})}$}
-    \quad
-    \\[0.8em]
     \mprooftr{65mm}{
-      $\steptr{\alpha}{(\buf, e_1)}{\alpha'}{(\buf', e_1')}$
+      $\steptr{\alpha}{e_1}{\alpha'}{e_1'}$
     }{StLetE1}{
-    $\steptr{\alpha}{(\buf, \zlet{y}{e_1}{e_2})}{\alpha'}{(\buf', \zlet{y}{e_1'}{e_2})}$
+    $\steptr{\alpha}{\zlet{y}{e_1}{e_2}}{\alpha'}{\zlet{y}{e_1'}{e_2}}$
     }\quad
     \mprooftr{35mm}{}{StChoice1}{
-    $\steptr{\alpha}{(\buf, e_1 \oplus e_2)}{[]}{(\buf, e_1)}$
+    $\steptr{\alpha}{(e_1 \oplus e_2)}{[]}{(e_1)}$
     }
     \\[0.8em]
     \mprooftr{55mm}{}{StLetE2}{
-    $\steptr{\alpha}{(\buf, \zlet{y}{v}{e_2})}{[]}{(\buf', e_2[y\mapsto v])}$
+    $\steptr{\alpha}{\zlet{y}{v}{e_2}}{[]}{e_2[y\mapsto v]}$
     }
     \quad
     \mprooftr{35mm}{}{StChoice2}{
-    $\steptr{\alpha}{(\buf, e_1 \oplus e_2)}{[]}{(\buf, e_2)}$
+    $\steptr{\alpha}{(e_1 \oplus e_2)}{[]}{(e_2)}$
     }
     \\[0.8em]
-    \mprooftr{90mm}{}{StAppLam}{
-    $\steptr{\alpha}{(\buf, \zlet{y}{\zlam{x}{s}{e_1}\ v_x}{e_2})}{[]}{(\buf, \zlet{y}{e_1[x\mapsto v_x]}{e_2})}$
+    \mprooftr{40mm}{}{StAppLam}{
+    $\steptr{\alpha}{\zlam{x}{s}{e_1}\ v_x}{[]}{e_1[x\mapsto v_x]}{e_2}$
     }
     \\[0.8em]
-    \mprooftr{120mm}{}{StAppFix}{
-    $\steptr{\alpha}{(\buf, \zlet{y}{\zfix{f}{s}{x}{s_x}{e_1}\ v_x}{e_2})}{[]}{(\buf,  \zlet{y}{(\zlam{f}{s}{e_1[x\mapsto v_x]}) \ (\zfix{f}{s}{x}{s_x}{e_1})}{e_2})}$
+    \mprooftr{80mm}{}{StAppFix}{
+    $\steptr{\alpha}{(\zfix{f}{s}{x}{s_x}{e_1})\ v_x}{[]}{(\zlam{f}{s}{e_1[x\mapsto v_x]}) \ (\zfix{f}{s}{x}{s_x}{e_1})}$
     }
 }
 \caption{Full Operational Semantics}
 \label{fig:semantics}
 \end{figure}
 
-The full operational semantics is shown in \autoref{fig:semantics}, where the semantics of while loop is defined in terms of term concatenation $e ; e'$.
-
 \newpage
 \section{Basic Typing Rules}\label{sec:tech:basic-typing}
 
 The basic typing rules of our core language and qualifiers are shown
-in \autoref{fig:basic-type-rules} and
-\autoref{fig:basic-qualifier-type-rules}. We use an auxiliary function
+in \autoref{fig:basic-type-rules}. We use an auxiliary function
 $\Code{Ty}$ to provide a basic type for the primitives of our language,
 e.g., constants, built-in operators, and data constructors.
 
@@ -122,7 +84,7 @@ e.g., constants, built-in operators, and data constructors.
  {\footnotesize
  {\small
 \begin{flalign*}
- &\text{\textbf{Basic Typing }} & \fbox{$\Gamma \basicvdash e : s$}
+ &\text{\textbf{Basic Typing }} & \fbox{$\Gamma \basicvdash e : s$ \quad $\Gamma \basicvdash \eff{op} : s$ \quad $\Gamma \basicvdash \primop : s$}
 \end{flalign*}}
 \\ \
 \begin{prooftree}
@@ -154,23 +116,16 @@ e.g., constants, built-in operators, and data constructors.
 \end{prooftree}
 \\[0.8em]
 \begin{prooftree}
-  \hypo{\Code{Ty}(\eff{op}) = \overline{s_i}{\sarr}s_x \quad \Gamma, \overline{x_i{:}s_x} \basicvdash e : \Unit}
-  \infer1[\textsc{BtObs}]{
-  \Gamma \basicvdash \zobs{\overline{x_i}}{op}{e} : \Unit
+  \hypo{\Code{Ty}(\eff{op}) = s}
+  \infer1[\textsc{BtEfOp}]{
+  \Gamma \basicvdash \eff{op} : s
   }
   \end{prooftree}
 \quad
 \begin{prooftree}
-\hypo{\Code{Ty}(\eff{op}) = \overline{s_i}{\sarr}s_x \quad \forall i. \Gamma \basicvdash v_i : s_i \quad \Gamma \basicvdash e : \Unit}
-\infer1[\textsc{BtGen}]{
-\Gamma \basicvdash \zgen{op}{\overline{v}}{e} : \Unit
-}
-\end{prooftree}
-\\[0.8em]
-\begin{prooftree}
-  \hypo{\Code{Ty}(\primop) = \overline{s_i}{\sarr}s_x \quad \forall i. \Gamma \basicvdash v_i : s_i \quad \Gamma, x{:}s_x \basicvdash e : \Unit}
-  \infer1[\textsc{BtPureOp}]{
-  \Gamma \basicvdash \zlet{x}{\primop\, \overline{v_i}}{e} : \Unit
+  \hypo{\Code{Ty}(\primop) = s}
+  \infer1[\textsc{BtPrimOp}]{
+  \Gamma \basicvdash \primop : s
   }
 \end{prooftree}
 \quad
@@ -183,39 +138,48 @@ e.g., constants, built-in operators, and data constructors.
 \end{prooftree}
 \\[0.8em]
 \begin{prooftree}
-\hypo{\Gamma, \overline{x{:}b} \basicvdash \phi : \Code{bool} \quad \Gamma, \overline{x{:}b} \basicvdash e : \Unit}
-\infer1[\textsc{BtAssume}]{
-\Gamma \basicvdash \zassume{\overline{x{:}b}}{\phi}{e} : \Unit
-}
-\end{prooftree}
+  \hypo{\Gamma \basicvdash \eff{op}: \overline{b_i}\sarr b \quad \forall i.\Gamma \basicvdash c_i : b_i}
+  \infer1[\textsc{BtEfOpApp}]{
+  \Gamma \basicvdash \eff{op}\;\overline{c_i} : b
+  }
+  \end{prooftree}
 \quad
 \begin{prooftree}
-\hypo{\Gamma \basicvdash \phi : \Code{bool} \quad \Gamma \basicvdash e : \Unit}
-\infer1[\textsc{BtAssert}]{
-\Gamma \basicvdash \zassert{\phi}{e} : \Unit
+\hypo{\Gamma \basicvdash \primop: \overline{s_i}\sarr s \quad \forall i.\Gamma \basicvdash v_i : s_i}
+\infer1[\textsc{BtPrimOpApp}]{
+\Gamma \basicvdash \primop\,\overline{v_i} : s
 }
 \end{prooftree}
 \\[0.8em]
 \begin{prooftree}
-  \hypo{\Gamma\basicvdash e : \Unit \quad \Gamma \basicvdash e' : \Unit}
+\hypo{\Gamma \basicvdash \phi : \Code{bool}}
+\infer1[\textsc{BtAssume}]{
+\Gamma \basicvdash \sassume{\phi} : \Unit
+}
+\end{prooftree}
+\quad
+\begin{prooftree}
+\hypo{\Gamma \basicvdash \phi : \Code{bool}}
+\infer1[\textsc{BtAssert}]{
+\Gamma \basicvdash \sassert{\phi} : \Unit
+}
+\end{prooftree}
+\\[0.8em]
+\begin{prooftree}
+  \hypo{\Gamma\basicvdash e : s \quad \Gamma,y{:}s \basicvdash e' : s}
   \infer1[\textsc{BtLetE}]{
-  \Gamma \basicvdash \zlet{x{:}\Unit}{e}{e'} : \Unit
+  \Gamma \basicvdash \zlet{y}{e}{e'} : s
   }
 \end{prooftree}
   \quad
 \begin{prooftree}
-  \hypo{\Gamma \basicvdash v_1 : s\sarr s' \quad \Gamma \basicvdash v_2 : s \quad \Gamma, x{:}s' \basicvdash e : \Unit}
+  \hypo{\Gamma \basicvdash v_1 : s\sarr s' \quad \Gamma \basicvdash v_2 : s}
   \infer1[\textsc{BtApp}]{
-  \Gamma \basicvdash \zlet{x{:}s}{v_1\;v_2}{e} : \Unit
+  \Gamma \basicvdash v_1\;v_2 : \Unit
   }
 \end{prooftree}
 }
-\caption{Basic Typing Rules}
-    \label{fig:basic-type-rules}
-\end{figure}
-
-\begin{figure}[th!]
- {\footnotesize
+{\footnotesize
  {\small
 \begin{flalign*}
  &\text{\textbf{Basic Qualifier Typing }} & \fbox{$\Gamma \basicvdash \phi: s$}
@@ -290,6 +254,6 @@ e.g., constants, built-in operators, and data constructors.
 }
 \end{prooftree}
 }
-\caption{Basic Qualifier Typing Rules}
-    \label{fig:basic-qualifier-type-rules}
+\caption{Basic Typing Rules and Qualifier Typing Rules}
+    \label{fig:basic-type-rules}
 \end{figure}

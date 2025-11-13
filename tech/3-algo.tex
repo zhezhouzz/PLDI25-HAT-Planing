@@ -10,7 +10,7 @@ synthesis. The first of these, $\normPlan$, converts a SRE formula into a set of
     \lCase{$\emptyset$}{ \Return{$\emptyset$} }
     \lCase{$\epsilon$}{ \Return{$\{\epsilon\}$} }
     \lCase{$\msg{op}{\phi}$}{ \Return{$\{\msg{op}{\phi}\}$} }
-    \lCase{$A_1 \seqA A_2$}{ \Return{$\{ \Pi_1 \seqA \Pi_2 ~|~ \Pi_1 \in \normPlan(A_1) \land \Pi_2 \in \normPlan(A_2) \}$}}
+    \lCase{$A_1 \seqA A_2$}{ \Return{$\{ \pi_1 \seqA \Pi_2 ~|~ \Pi_1 \in \normPlan(A_1) \land \Pi_2 \in \normPlan(A_2) \}$}}
     \lCase{$A_1 \lorA A_2$}{ \Return{$\normPlan(A_1) \cup \normPlan(A_2)$}}
     \lCase{$A^*$}{\Return{$\{ A^* \}$}}
   }
