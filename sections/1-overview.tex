@@ -144,10 +144,10 @@ interpreted as an underapproximation of the possible behaviors of the
 SUT, it establishes a clear dependence between $\eff{write}$
 and asynchronous $\eff{readReq}$/$\eff{readRsp}$ operations that should be respected by any
 trace which contains these events.  This \tyName{} uses
-\Code{LAST}($\eff{evt}$) as an alias for the following regex:
+\Code{LAST}($\msgA{op}{v}$) as an alias for the following regex:
 \vspace{-.4cm} \par\nobreak {\small %
   \begin{align*}
-    \Code{LAST}(\eff{evt}) \equiv \allA\;\seqA\; \eff{evt}\;\seqA\; (\anyA \setminus \eff{evt})^*
+    \Code{LAST}(\msgA{op}{v}) \equiv \allA\;\seqA\; \msgA{op}{v}\;\seqA\; (\anyA \setminus \eff{op})^*
   \end{align*}
 }\vspace{-.5cm} \par\nobreak\noindent %
 An implementation of $\eff{readResp}$ that does not satisfy this type
@@ -163,11 +163,11 @@ following SRE:\footnote{SREs are implicitly universally quantified
   \end{align}
 }
 \vspace{-.5cm} \par\nobreak\noindent where
-\Code{FIRST}($\eff{evt}$) as an alias for the following regex:
+\Code{FIRST}($\msgA{op}{v}$) as an alias for the following regex:
 \vspace{-.5cm} \par\nobreak {\small %
   \begin{align*}
-    \Code{FIRST}(\eff{evt})   \equiv (\anyA \setminus \eff{evt})^*\;
-    \seqA \; \eff{evt}\; \seqA \; \allA;
+    \Code{FIRST}(\msgA{op}{v})   \equiv (\anyA \setminus \eff{op})^*\;
+    \seqA \; \msgA{op}{v}\; \seqA \; \allA;
   \end{align*}
 }\vspace{-.5cm} \par\nobreak\noindent %
 A violation of this property can be manifested by a test

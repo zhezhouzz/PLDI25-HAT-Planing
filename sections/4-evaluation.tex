@@ -148,7 +148,7 @@ Name & Property &   &uHAT &goal & {\scriptsize Clouseau} & {\scriptsize Baseline
 \midrule
 \textsf{HashTable}\cite{OcamlMulticorePBT} & {\scriptsize No updates to a concurrent hashtable are every lost.} & $13$ & $38$ & $4$ & $1.0$ & $2.5^{\dagger}$ & $0.76$ & $6$ & $6$ & $57$\\
 \midrule
-\textsf{ReaderWriter} & {\scriptsize Asynchronous read operations are logically atomic.} & $8$ & $45$ & $3$ & $1.2$ & {\tiny Timeout} & $2.89$ & $15$ & $16$ & $423$\\
+\textsf{Transaction} & {\scriptsize Asynchronous read operations are logically atomic.} & $8$ & $45$ & $3$ & $1.2$ & {\tiny Timeout} & $2.89$ & $15$ & $16$ & $423$\\
 \midrule
 \textsf{Courseware}\cite{MonkeyDB} & {\scriptsize Every student enrolled in a course exists in the
   enrollment database for that course.} & $16$ & $106$ & $3$ & $1.0$ & $57.5^{\dagger}$ & $27.71$ & $18$ & $33$ & $1479$\\
@@ -175,7 +175,7 @@ Name & Property &   &uHAT &goal & {\scriptsize Clouseau} & {\scriptsize Baseline
     modules, and MessageChain~\cite{MessageChain}($^{\star}$), an
     automated verification tool for P.  We also include a real-world
     model of a two-phase commit protocol
-    (\textsf{Anon2PCModel}$^{\square}$) used by a major cloud vendor.
+    (\textsf{AnonReadAtomicity}$^{\square}$) used by a major cloud vendor.
     The components under test are written in P, and handler
     specifications for the SUTs components (message-passing actors)
     are given as \tyName{}s.  \name{} synthesizes a set

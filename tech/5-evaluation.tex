@@ -2,10 +2,6 @@
 \section{Evaluation Details}\label{sec:tech:evaluation}
 
 \autoref{tab:evaluation-detail} and \autoref{tab:evaluation-detail2} lists the details for the experimental results in our evaluation section, which include the number of local variables (\#var), the number of effectful operations (\#$\mykw{eff}$), the number of assertions (\#$\mykw{assert}$), and the number of executions for both random generator and manual written test generators.
-The complete benchmark suite and source code of \name{} are available at the following anonymous link:
-\href{https://anonymous.4open.science/r/PLDI25-submission-sp-7D3E}{https://anonymous.4open.science/r/PLDI25-submission-sp-7D3E}
-
-A Docker image is also provided on Zenodo: \href{https://zenodo.org/records/14166696}{https://zenodo.org/records/14166696}
 
 \begin{table}[t!]
   \renewcommand{\arraystretch}{0.8}
@@ -41,7 +37,7 @@ Benchmark & \#$\eff{op}$ & \multicolumn{2}{c||}{\#qualifier} & \#var &\#$\mykw{e
  \midrule
  \textsf{HashTable}\cite{OcamlMulticorePBT} & $13$ & $38$ & $4$ & $6$ & $6$ & $2$ & $1.0$ & {\tiny Timeout} & $64.8$ & $0.76$ & $57$ & $6$\\
  \midrule
- \textsf{ReaderWriter} & $8$ & $45$ & $3$ & $25$ & $15$ & $12$ & $1.2$ & {\tiny Timeout} & - & $2.89$ & $423$ & $16$\\
+ \textsf{Transaction} & $8$ & $45$ & $3$ & $25$ & $15$ & $12$ & $1.2$ & {\tiny Timeout} & - & $2.89$ & $423$ & $16$\\
  \midrule
  \textsf{Shopping}\cite{MonkeyDB} & $10$ & $60$ & $3$ & $31$ & $17$ & $11$ & $1.0$ & $20.0$ & {\tiny Timeout} & $22.10$ & $1269$ & $30$\\
  \midrule
@@ -85,7 +81,7 @@ Benchmark & \#$\eff{op}$ & \multicolumn{2}{c||}{\#qualifier} & \#var &\#$\mykw{e
 \midrule
 {\scriptsize\textsf{Raft}} & $9$ & $39$ & $6$ & $21$ & $2$$10$ & $10$ & $1.0$ & {\tiny Timeout} & - & $26.84$ & $1262$ & $78$\\
 \midrule
-{\scriptsize\textsf{Kermit2PCModel}} & $17$ & $113$ & $3$ & $37$ & $5$$11$ & $12$ & $1.0$ & $53.0$ & - & $18.35$ & $1909$ & $16$\\
+{\scriptsize\textsf{AnonReadAtomicity}} & $17$ & $113$ & $3$ & $37$ & $5$$11$ & $12$ & $1.0$ & $53.0$ & - & $18.35$ & $1909$ & $16$\\
 \bottomrule
 \end{tabular}
 \label{tab:evaluation-detail2}
