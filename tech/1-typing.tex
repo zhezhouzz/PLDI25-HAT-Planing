@@ -116,10 +116,10 @@ $\Gamma,x{:}t \wellfoundedvdash F$
 \quad
 \begin{prooftree}
   \hypo{
-    \Gamma, \effGray{op}{:}s \wellfoundedvdash \tau
+    \Gamma, \effGray{op}{:}s \wellfoundedvdash t
   }
-  \infer1[\textsc{WfuHAT}]{
-  \Gamma \wellfoundedvdash \effGray{op}:s\garr \tau
+  \infer1[\textsc{WfGEvent}]{
+  \Gamma \wellfoundedvdash \effGray{op}:s\garr t
   }
   \end{prooftree}
 \\[.8em]
@@ -130,7 +130,7 @@ $\Gamma,x{:}t \wellfoundedvdash F$
 \hypo{
 \Gamma, x{:}\eraserf{t_x} \wellfoundedvdash \tau
 }
-\infer2[\textsc{WfArr}]{
+\infer2[\textsc{WfEfArr}]{
 \Gamma \wellfoundedvdash x{:}t_x \sarr \tau
 }
 \end{prooftree}
@@ -140,10 +140,10 @@ $\Gamma,x{:}t \wellfoundedvdash F$
 \Gamma \wellfoundedvdash \tau
 }
 \hypo{
-\Gamma, x{:}b \wellfoundedvdash \tau
+\Gamma, x{:}b \wellfoundedvdash t
 }
 \infer2[\textsc{WfGArr}]{
-\Gamma \wellfoundedvdash x{:}b \garr \tau
+\Gamma \wellfoundedvdash x{:}b \garr t
 }
 \end{prooftree}
 \quad
@@ -243,29 +243,29 @@ $\Gamma, x{:}t_2 \vdash \tau_1 <: \tau_2$
 \quad
 \begin{prooftree}
 \hypo{
-\Gamma, x{:}\urt{b}{\top} \vdash \tau_1 <: \tau_2
+\Gamma, x{:}\urt{b}{\top} \vdash t_1 <: t_2
 }
 \infer1[\textsc{SubGRight}]{
-\Gamma \vdash \tau_1 <: x{:}b\garr \tau_2
+\Gamma \vdash t_1 <: x{:}b\garr t_2
 }
 \end{prooftree}
 \quad
 \begin{prooftree}
 \hypo{
 \parbox{30mm}{\center
-  $\Gamma \wellfoundedvdash \tau[x\mapsto v]$
+  $\Gamma \wellfoundedvdash t[x\mapsto v]$
 }
 }
 \infer1[\textsc{SubG}]{
-\Gamma \vdash x{:}b\garr \tau <: \tau[x\mapsto v]
+\Gamma \vdash x{:}b\garr t <: t[x\mapsto v]
 }
 \end{prooftree}
 \\[.8em]
 \begin{prooftree}
   \hypo{
-    \Gamma \vdash \tau_1 <: \tau_2}
-  \infer1[\textsc{SubGEvt}]{
-  \Gamma \vdash \effGray{op}:s\garr \tau_1 <: \effGray{op}:s\garr \tau_2
+    \Gamma \vdash t_1 <: t_2}
+  \infer1[\textsc{SubGEvent}]{
+  \Gamma \vdash \effGray{op}:s\garr t_1 <: \effGray{op}:s\garr t_2
   }
   \end{prooftree}
 \quad

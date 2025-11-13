@@ -1,53 +1,92 @@
 \newpage
 \section{Evaluation Details}\label{sec:tech:evaluation}
 
-\autoref{tab:bench} lists the details for the benchmarks used in our evaluation section. The complete benchmark suite and source code of \name{} are available at the following anonymous link:
+\autoref{tab:evaluation-detail} and \autoref{tab:evaluation-detail2} lists the details for the experimental results in our evaluation section, which include the number of local variables (\#var), the number of effectful operations (\#$\mykw{eff}$), the number of assertions (\#$\mykw{assert}$), and the number of executions for both random generator and manual written test generators.
+The complete benchmark suite and source code of \name{} are available at the following anonymous link:
 \href{https://anonymous.4open.science/r/PLDI25-submission-sp-7D3E}{https://anonymous.4open.science/r/PLDI25-submission-sp-7D3E}
 
 A Docker image is also provided on Zenodo: \href{https://zenodo.org/records/14166696}{https://zenodo.org/records/14166696}
 
-
-\begin{table}[ht!]
+\begin{table}[t!]
   \renewcommand{\arraystretch}{0.8}
   % \vspace*{-.1in}
-  \caption{\small Detail explanation of benchmarks.}
+  \caption{\small Detail results of table \ref{tab:evaluation}.}
 \vspace*{-.1in}
 \footnotesize
-\setlength{\tabcolsep}{2.3pt}
-\begin{tabular}{p{2.0cm}||p{4.7cm}|p{4.5cm}|p{2.0cm}}
+\setlength{\tabcolsep}{3.3pt}
+\begin{tabular}{c||ccc||ccc||ccc||c|cc}
   \toprule
- Benchmark & Model description & Property to be violated & synthetic fault \\
-            &                  &                         & injected into models\\
+Benchmark & \#$\eff{op}$ & \multicolumn{2}{c||}{\#qualifier} & \#var &\#$\mykw{eff}$ & \#$\mykw{assert}$ & \multicolumn{3}{c||}{\scriptsize \# Num. Executions} & t$_\text{total}$(s) & \#SMT & \#refine  \\
+ &  &uHAT &goal & & & & {\scriptsize Clouseau} & {\scriptsize Random} & {\scriptsize Manual} &  &  \\
  \midrule
-\textsf{Database} & The simplified database used as the running example in \autoref{sec:overview} & \textbf{RYW}: Read-Your-Writes policy described in \autoref{sec:overview}  & Remove atomicity check \\
+ \textsf{Stack}\cite{ZYDJ24} & $6$ & $12$ & $3$ & $12$ & $15$ & $4$ & $1.0$ & $31.9$ & - & $0.60$ & $98$ & $4$\\
+ \midrule
+ \textsf{Set}\cite{ZYDJ24} & $7$ & $22$ & $3$ & $7$ & $12$ & $4$ & $1.0$ & $22.1$ & - & $1.28$ & $255$ & $12$\\
+ \midrule
+ \textsf{Filesystem}\cite{ZYDJ24} & $7$ & $67$ & $4$ & $11$ & $13$ & $8$ & $1.3$ & $2812.1$ & - & $6.02$ & $853$ & $14$\\
+ \midrule
+ \textsf{Graph}\cite{ZYDJ24} & $6$ & $24$ & $4$ & $5$ & $16$ & $5$ & $1.0$ & {\tiny Timeout} & - & $16.61$ & $2114$ & $16$\\
+ \midrule
+ \textsf{NFA}\cite{ZYDJ24} & $8$ & $50$ & $4$ & $7$ & $26$ & $6$ & $1.0$ & {\tiny Timeout} & - & $21.85$ & $5080$ & $6$\\
+ \midrule
+ \textsf{IFCAdd}\cite{pbt-ifc} & $8$ & $37$ & $2$ & $10$ & $8$ & $6$ & $1.6$ & {\tiny Timeout} & $3383.4$ & $0.96$ & $154$ & $8$\\
+ \midrule
+ \textsf{IFCStore}\cite{pbt-ifc} & $8$ & $37$ & $2$ & $10$ & $8$ & $6$ & $2.8$ & {\tiny Timeout} & $5049.1$ & $1.02$ & $160$ & $8$\\
+ \midrule
+ \textsf{IFCLoad}\cite{pbt-ifc} & $8$ & $37$ & $2$ & $20$ & $16$ & $12$ & $15.4$ & {\tiny Timeout} & $11293.7$ & $5.76$ & $930$ & $18$\\
+ \midrule
+ \textsf{DeBruijn1}\cite{CoverageType} & $10$ & $117$ & $4$ & $10$ & $18$ & $12$ & $1.5$ & {\tiny Timeout} & $634.0$  & $40.38$ & $4765$ & $26$\\
+ \midrule
+ \textsf{DeBruijn2}\cite{CoverageType} & $10$ & $118$ & $4$ & $10$ & $18$ & $14$ & $1.4$ & {\tiny Timeout} & {\tiny Timeout} & $91.73$ & $9034$ & $31$\\
+ \midrule
+ \textsf{HashTable}\cite{OcamlMulticorePBT} & $13$ & $38$ & $4$ & $6$ & $6$ & $2$ & $1.0$ & {\tiny Timeout} & $64.8$ & $0.76$ & $57$ & $6$\\
+ \midrule
+ \textsf{ReaderWriter} & $8$ & $45$ & $3$ & $25$ & $15$ & $12$ & $1.2$ & {\tiny Timeout} & - & $2.89$ & $423$ & $16$\\
+ \midrule
+ \textsf{Shopping}\cite{MonkeyDB} & $10$ & $60$ & $3$ & $31$ & $17$ & $11$ & $1.0$ & $20.0$ & {\tiny Timeout} & $22.10$ & $1269$ & $30$\\
+ \midrule
+ \textsf{Courseware}\cite{MonkeyDB} & $16$ & $106$ & $3$ & $34$ & $18$ & $12$ & $1.0$ & $57.5$ & {\tiny Timeout} & $27.71$ & $1479$ & $33$\\
+ \midrule
+ \textsf{Twitter}\cite{MonkeyDB} & $16$ & $99$ & $3$ & $46$ & $24$ & $16$ & $1.0$ & $6.3$ & {\tiny Timeout} & $61.96$ & $2339$ & $24$\\
+ \midrule
+ \textsf{Smallbank}\cite{MonkeyDB} & $22$ & $162$ & $3$ & $69$ & $28$ & $22$ & $1.9$ & {\tiny Timeout} & - & $163.55$ & $10263$ & $29$\\
+ \bottomrule
+ \end{tabular}
+\label{tab:evaluation-detail}
+\end{table}
+
+\begin{table}[t!]
+  \renewcommand{\arraystretch}{0.8}
+  % \vspace*{-.1in}
+  \caption{\small Detail results of table \ref{tab:evaluation2}.}
+\vspace*{-.1in}
+\footnotesize
+\setlength{\tabcolsep}{3.3pt}
+\begin{tabular}{c||ccc||ccc||ccc||c|cc}
+  \toprule
+Benchmark & \#$\eff{op}$ & \multicolumn{2}{c||}{\#qualifier} & \#var &\#$\mykw{eff}$ & \#$\mykw{assert}$ & \multicolumn{3}{c||}{\scriptsize \# Num. Executions} & t$_\text{total}$(s) & \#SMT & \#refine \\
+ &  &uHAT &goal & & & & {\scriptsize Clouseau} & {\scriptsize Random} & {\scriptsize Manual} &  &  \\
+ \midrule
+ {\scriptsize\textsf{Database}} & $4$ & $15$ & $3$ & $6$ & $3$$3$ & $4$ & $1.0$ & $5.6$ & - & $0.32$ & $49$ & $6$\\
+ \midrule
+{\scriptsize\textsf{Firewall}}\cite{MessageChain} & $5$ & $26$ & $4$ & $12$ & $2$$8$ & $9$ & $1.0$ & $10.0$ & - & $0.59$ & $222$ & $10$\\
 \midrule
-\textsf{EspressoMachine} & The user interacts with a coffee machine
-                           through its control panel, where the panel must correctly interpret user inputs and handler errors from coffee machine. & \textbf{Strong Consistency}: The user, panel, and underline coffee machine should have a consistent view of the state of the machine. Precisely, if the coffee machine is in a state ``run out of water'', the user should get notification.  & Remove error forwarding in panel machine \\
+{\scriptsize\textsf{RingLeaderElection}}\cite{MessageChain} & $3$ & $14$ & $2$ & $12$ & $2$$6$ & $7$ & $1.0$ & $17.7$ & - & $0.83$ & $100$ & $8$\\
 \midrule
-\textsf{Simplified2PC} & A simplified version of a two-phase commit protocol (2PC), where we assume transactions have a single update operation.  & \textbf{RYW}: Read-Your-Writes policy & Original implementation doesn't guarantee RYW \\
+{\scriptsize\textsf{BankServer}}\cite{DGJ+13} & $6$ & $42$ & $1$ & $15$ & $2$$3$ & $5$ & $1.0$ & $40.5$ & $2.2$ & $0.17$ & $27$ & $5$\\
 \midrule
-\textsf{HeartBeat} & A failure detector that sends heartbeat messages
-                     to a node to make sure it is alive; it reports
-                     an error only when the node doesn't reply for
-                     multiple rounds, taking into account network packet
-                     lost. & \textbf{Eventual Consistency}: The node and detector should have the same view of state of node (alive or crashed) eventually. Precisely, if the node is alive, the detector will not report a false positive error. & Specify a timer-based protocol that can cause a false positive error. \\
+{\scriptsize\textsf{Simplified2PC}}\cite{DGJ+13} & $9$ & $32$ & $5$ & $7$ & $2$$6$ & $5$ & $2.1$ & $125.0$ & $5.8$ & $1.03$ & $88$ & $8$\\
 \midrule
-\textsf{BankServer} & The user interacts with a bank to withdraw money from their accounts, where the balance is stored in another database component. & \textbf{Strong Consistency}: The bank and underline store should have consistent view of balance of accounts. Precisely, bank should disallows users from withdraw an amount greater than their current balance. & remove negative balance check in bank machine \\
+{\scriptsize\textsf{HeartBeat}}\cite{DGJ+13} & $7$ & $31$ & $3$ & $9$ & $4$$10$ & $9$ & $1.0$ & $70.9$ & $6.0$ & $1.10$ & $145$ & $14$\\
 \midrule
-\textsf{RingLeaderElection} & Ring election algorithm where a group nodes are interconnected in a ring-like structure.  & \textbf{Unique Leader Policy:} there can only be a unique node that announces itself as leader. & Omit a node comparison equality check \\
+{\scriptsize\textsf{ChainReplication}}\cite{ModP} & $7$ & $72$ & $4$ & $24$ & $4$$8$ & $9$ & $1.0$ & $588.2$ & $500.0$ & $19.24$ & $2054$ & $169$\\
 \midrule
-\textsf{Firewall} & A set of internal and external nodes communicating
-                    through a firewall. Firewall should block message from an external node, unless this node has received message from internal nodes previously. The firewall actually keep a whitelist of external nodes that can communicate with internal nodes. & \textbf{Liveness:} if an internal node sends a message to an external node, it will eventually be able communicate with an external node. & modify the whitelist updating logic.  \\
+{\scriptsize\textsf{Paxos}}\cite{ModP} & $10$ & $110$ & $2$ & $36$ & $4$$10$ & $13$ & $1.0$ & {\tiny Timeout} & $666.7$ & $23.70$ & $1763$ & $77$\\
 \midrule
-\textsf{ChainReplication} & Chain replication protocol\cite{RS04}. & \textbf{RYW:} Read-Your-Writes policy. & Remove log recovery logic after node crash  \\
+{\scriptsize\textsf{Raft}} & $9$ & $39$ & $6$ & $21$ & $2$$10$ & $10$ & $1.0$ & {\tiny Timeout} & - & $26.84$ & $1262$ & $78$\\
 \midrule
-\textsf{Paxos} & Paxos protocol\cite{Lam02a}. & \textbf{Unique Leader Policy:} there are multiple proposers accepted as leaders. This will additionally violates the Paxos agreement policy, i.e.,  two distinct learners cannot learn different values. & A wrong node comparison in leader election logic \\
-\midrule
-\textsf{Raft} & Raft algorithm\cite{OO14}. & \textbf{Strong Consistency:} The leader's view should align with committed data, i.e., if a log entry is committed, then it should also be present in the leader's log. & Incorrect log recovery logic after node crash\\
-\midrule
-\textsf{Anno2PCModel} & Case study in \autoref{sec:impl} & \textbf{Strong Consistency:} the user and the database  should have the same will view of stored data, as explained in  the case study in \autoref{sec:impl} & Omit buffered transaction update logic  \\
+{\scriptsize\textsf{Kermit2PCModel}} & $17$ & $113$ & $3$ & $37$ & $5$$11$ & $12$ & $1.0$ & $53.0$ & - & $18.35$ & $1909$ & $16$\\
 \bottomrule
 \end{tabular}
-\label{tab:bench}
-% \vspace*{-.15in}
+\label{tab:evaluation-detail2}
 \end{table}
