@@ -2,20 +2,25 @@
 \section{Auxiliary Functions for Synthesis}\label{sec:tech:algo}
 
 This section describes three auxiliary functions used for generator
-synthesis. The first of these, $\normPlan$, converts a SRE formula into a set of abstract traces. The second, $\termDerive$, generates a straitline program from a refined abstract trace. The third, $\S{synRecursion}$, generates a recursive program with the help of a recursion template.
+synthesis. The first of these, $\normPlan$, converts a SRE formula
+into a set of abstract traces. The second, $\termDerive$, generates a
+straightline program from a single refined abstract trace. The third,
+$\S{synRecursion}$, generates a recursive program using a recursion
+template. \BD{We need to double check that the names of the three
+  synthesis functions are consistent with the main text. }
 
 \begin{algorithm}[t!]
   \Procedure{$\normPlan(A) := $}{
   \Match{$A$}{
     \lCase{$\emptyset$}{ \Return{$\emptyset$} }
     \lCase{$\epsilon$}{ \Return{$\{\epsilon\}$} }
-    \lCase{$\msg{op}{\phi}$}{ \Return{$\{\msg{op}{\phi}\}$} }
+    \lCase{$\msg{op}{\phi}$}{ \Return{$\{\msg{op}{\phi}^\bot\}$} }
     \lCase{$A_1 \seqA A_2$}{ \Return{$\{ \pi_1 \seqA \pi_2 ~|~ \pi_1 \in \normPlan(A_1) \land \pi_2 \in \normPlan(A_2) \}$}}
     \lCase{$A_1 \lorA A_2$}{ \Return{$\normPlan(A_1) \cup \normPlan(A_2)$}}
     \Case{$A^*$}{
       \Match{$\normPlan(A)$}{
         \lCase{$\emptyset$}{ \Return{$\emptyset$} }
-        \lCase{$\bigcup \msg{op}{\phi}$}{ \Return{$\{(\bigcup \msg{op}{\phi})^*\}$} }
+        \lCase{$\bigcup \msg{op}{\phi}$}{ \Return{$\{[\overline{\msg{op}{\phi}^\bot}])^*\}$} }
         \lCase{$\Pi$}{ \Return{$\{ \pi_1 \listconcat \pi_2 \listconcat \cdots \listconcat \pi_n ~|~ \pi_i \in \Pi \}$} }
       }
     }
@@ -25,13 +30,20 @@ synthesis. The first of these, $\normPlan$, converts a SRE formula into a set of
   \label{algo:norm}
 \end{algorithm}
 
-\paragraph{Normalization} 
-As shown in \autoref{algo:norm}, the function $\normPlan$ recursively translates the input
-SRE into a set of abstract traces. It divides $A \lorA A'$ into multiple abstract traces, and leaves the Kleene star over multiple singleton events unchanged.
+\paragraph{Normalization}
+The SRE normalization function $\normPlan{}$, shown in
+\autoref{algo:norm}, recursively translates an input SRE into a set of
+abstract traces. It divides $A \lorA A'$ into multiple abstract
+traces, and leaves the Kleene star over multiple singleton events
+unchanged. \BD{We should add a minimization step to
+  $\normPlan{}$. What does the very last case (line 12) corresponds to
+  in the current grammar? The main text says that TermDerive filters
+  out ghost events and variables, but it does not look like that is
+  the case. Which version is right?}.
 
-\begin{lemma}\label{lemma:norm-sound}[Normalization is sound ]
-  The normalized result has the same denotation as the input SRE,
-  that is, for all SRE $A$ and set of traces $\{\pi_i\}$, {\small
+\begin{lemma}\label{lemma:norm-sound}[Normalization is sound]
+  The normalized result has the same denotation as the input SRE, that
+  is, for all SRE $A$ and set of traces $\{\overline{\pi}\}$, {\small
     $\denot{A} = \bigcup_{i} \denot{\pi_i}$}
 \end{lemma}
 
@@ -68,16 +80,21 @@ SRE into a set of abstract traces. It divides $A \lorA A'$ into multiple abstrac
     \label{algo:term-derive}
   \end{algorithm}
 
-\paragraph{Term Derivation} The term derivation function
-\(\S{TermDerive}\) is shown in \autoref{algo:term-derive}. It first
-converts the input type context into \(\mykw{assume}\) statements over
-the corresponding qualifiers in pure refinement types (line 5), then
-derives the abstract trace with the help of the \(\S{DeriveTrace}\), which
-recursively transforms this list into a generator program. 
-The kleene star is dropped (line 9), 
-the ghost event is converted into an \(\mykw{assume}\) expression (line 14), and 
-concrete event is converted into effectful operation invocation (line 16-21).
-Note that the arguments of the effectful operation are provided by $\mykw{assume}$ and the return value need to be checked by $\mykw{assert}$ (line 21).
+  \paragraph{Term Derivation} The term derivation function
+  \(\S{TermDerive}\) is shown in \autoref{algo:term-derive}. It first
+  converts the input type context into \(\mykw{assume}\) statements
+  that use the type qualifiers attached to each variable (line 5), and
+  then derives the abstract trace with the help of the
+  \(\S{DeriveTrace}\), which recursively transforms the abstract trace
+  into a straightline generator program.  Any Kleene stars are dropped
+  (line 9), ghost events are converted into \(\mykw{assume}\)
+  expressions (line 14), and concrete events are converted into
+  effectful operations (line 16-21).  Note that the arguments of the
+  effectful operation are provided by $\mykw{assume}$ and the values
+  they return are always checked by $\mykw{assert}$ (line 21).
+  \BD{Why do we add asserts over return values instead of assumes?
+    \tyName{}s underapproximations, so it's a bit odd to flag
+    inconsistent behaviors as errors ...}
 
 \begin{algorithm}[t!]
   \Procedure{$\S{SynRecursion}(\Gamma, \Pi, \Code{UnrollingBound}) := $}{
@@ -91,15 +108,19 @@ Note that the arguments of the effectful operation are provided by $\mykw{assume
   \label{algo:syn-recursion}
 \end{algorithm}
 
-\paragraph{Recursion Synthesis} Kleene stars ($\Pi^*$) in abstract traces are interpreted as recursion
-points. The synthesis algorithm can synthesize a recursive program by
-expanding the Kleene star using recursion. As shwon in \autoref{algo:syn-recursion}, we employ a template-based
-strategy, in which the algorithm matches the given abstract trace with a
-template $T$, together with a set of abstract traces $\{\pi_i\}$ that are matched from the orginal trace. As dictated by \textsc{TFixInd}, the algorithm
-unrolls the recursive body up to a bounded depth and invokes
-refinement loop (lines 3 in \autoref{algo:syn-recursion}) to ensure that
-the unrolled abstract traces are well-typed.
-Finally, the synthesized program is instantiated by the template with derived programs from these abstract traces.
+\paragraph{Recursion Synthesis} Kleene stars ($\Pi^*$) in abstract
+traces are interpreted as recursion points. The synthesis algorithm
+can synthesize a recursive program by expanding the Kleene star using
+recursion. As shown in \autoref{algo:syn-recursion}, we employ a
+template-based strategy, in which the algorithm matches the given
+abstract trace with a template $T$, together with a set of abstract
+traces $\{\pi_i\}$ that are matched from the orginal trace. As
+dictated by \textsc{TFixInd}, the algorithm unrolls the recursive body
+up to a bounded depth and invokes refinement loop (lines 3 in
+\autoref{algo:syn-recursion}) to ensure that the unrolled abstract
+traces are well-typed.  Finally, the synthesized program is
+instantiated by the template with derived programs from these abstract
+traces.
 
 \begin{example}[Recursion Template]
   A representative template is a non-deterministic loop, whose form is
@@ -146,7 +167,7 @@ Finally, the synthesized program is instantiated by the template with derived pr
   is assembled by composing synthesized programs from these traces to
   populate the template placeholders, thereby yielding the following
   program:
-  
+
   \begin{minted}[fontsize = \footnotesize, escapeinside=??, xleftmargin=10pt, linenos]{ocaml}
 let rec f () =
   () ?$\oplus$?
