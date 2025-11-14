@@ -85,7 +85,9 @@
 \newcommand{\sloop}{\mykw{loop}}
 \newcommand{\zassume}[3]{\mykw{let}\ {#1} = \mykw{assume}\ {#2} \  \mykw{in}\ {#3}}
 \newcommand{\zassert}[2]{\mykw{let}\ \mykw{assert}\ {#1} \  \mykw{in}\ {#2}}
-\newcommand{\zwhile}[2]{\mykw{let}\ \mykw{while}(*)\{{#1}\}\ \mykw{in}\ {#2}}
+\newcommand{\zwhile}[2]{\mykw{let}\ \mykw{while}(*)\{{#1}\}\
+  \mykw{in}\ {#2}}
+\newcommand{\ranint}{\underline{\Code{int\_gen\;()}}}
 % \newcommand{\zwhile}[3]{\mykw{let}\ \mykw{while}({#1})\{{#2}\}\ \mykw{in}\ {#3}}
 % \newcommand{\zwhile}[3]{\mykw{let}\ \mykw{do}\{{#2}\}\ \mykw{while}({#1})\ \mykw{in}\ {#3}}
 \newcommand{\zloop}[2]{\mykw{let}\ \mykw{loop}\{{#1}\} \ \mykw{in}\ {#2}}
@@ -654,6 +656,7 @@
 \newcommand{\refineLoop}{\textcolor{CobaltBlue}{\Code{RefineLoop}}}
 \newcommand{\synRec}{\textcolor{CobaltBlue}{\Code{SynRecursion}}}
 \newcommand{\derive}{\textcolor{CobaltBlue}{\Code{DeriveTerm}}}
+\newcommand{\deriveTrace}{\textcolor{CobaltBlue}{\Code{DeriveTrace}}}
 \newcommand{\compile}{\textcolor{CobaltBlue}{\Code{Compile}}}
 \newcommand{\Mfw}{\Theta_\Code{fw}}
 \newcommand{\Mbw}{\Theta_\Code{bw}}
