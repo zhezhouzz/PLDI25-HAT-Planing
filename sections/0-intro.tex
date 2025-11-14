@@ -161,7 +161,7 @@ provided specifications when performing effects.
 % interesting inputs thus implement a novel form of angelic
 % non-determinism~\cite{BC+10} where underapproximation is used to
 % intelligently inform SUT input generation.
-\begin{wrapfigure}{l}{.65\textwidth}
+\begin{wrapfigure}{l}{.6\textwidth}
   \centering
   \includegraphics[width=0.98\linewidth]{figures/clouseau-workflow.drawio.png}
   \vspace*{-.1in}
@@ -175,7 +175,7 @@ provided specifications when performing effects.
 Along with the property of interest, these specifications drive the
 synthesis of a test generator in \name{}'s DSL, which is then
 transpiled into different testing frameworks; thus far, we have
-implemented Quickcheck~\cite{CH00} (OCaml) and P~\cite{DGJ+13}
+implemented QCheck~\cite{QCheck} (OCaml) and P~\cite{DGJ+13}
 targets.\footnote{For P, the generator replaces the default (random)
   scheduler.}  Synthesized test generator programs are guaranteed to
 produce test sequences that respect the underapproximate
