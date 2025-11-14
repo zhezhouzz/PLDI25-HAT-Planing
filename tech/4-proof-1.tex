@@ -417,17 +417,3 @@ The case can be directly proved by Lemma~\ref{lemma:subtyping}.
 \end{enumerate}
 \end{proof}
 
-
-
-
-
-
-
-
-% According to well-formed handler context Lemma~\ref{lemma:built-in-typing-sub}, as well as assumption \ref{found:1-1} and \ref{found:1-2}, we have
-% {\footnotesize\begin{alignat}{2}
-% &\forall \sigma \in \denot{\Gamma}. \forall \alpha_h \in \denot{\sigma(H)}. \forall \overline{c \in \denotation{\sigma(t)}}. \forall \alpha_f \in \denot{\sigma(A \seqA F)}. \sigma(\phi)\msubst{y}{c} \impl \exists \overline{\alpha_i}. \exists \overline{m_i}.\; \notag
-% \\&\quad \alpha_1 \listconcat [m_1] \listconcat ... [m_{n}] \listconcat \alpha_{n+1} = \alpha_f \land \alpha_h \vDash \zevent{op}{\overline{c}} \Downarrow \{m_i\} \land \forall \eff{op_i}. \eff{op_i} \in \Theta' \iff \exists \overline{c_i}.m_i = \zevent{op_i}{\overline{c_i}} \ptag{Lemma~\ref{lemma:built-in-typing-sub}} \label{found:1-9}
-% \\&\forall \sigma \in \denot{\Gamma}. \forall \alpha_h \in \denot{\sigma(H)}. \forall \alpha_f \in \denot{\sigma(A \seqA F)}. \exists \overline{\alpha_i}. \exists \overline{m_i}.\; \notag
-% \\&\quad \alpha_1 \listconcat [m_1] \listconcat ... [m_{n}] \listconcat \alpha_{n+1} = \alpha_f \land \alpha_h \vDash \zevent{op}{\overline{c}} \Downarrow \{m_i\} \land \forall \eff{op_i}. \eff{op_i} \in \Theta' \iff \exists \overline{c_i}.m_i = \zevent{op_i}{\overline{c_i}} \ptag{\ref{found:1-9}, \ref{found:1-7}, and \ref{found:1-8}} \label{found:1-10}
-% \end{alignat}}\noindent

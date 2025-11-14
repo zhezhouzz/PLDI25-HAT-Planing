@@ -1,10 +1,84 @@
+\section{Details in Overview}\label{sec:tech:details-overview}
+
+We introduce how to use \tyName to specify the well-typedness of the De Bruijn STLC example introduced in the overview section.
+
+\begin{figure}[th!]
+  \begin{minted}[xleftmargin=5pt, numbersep=4pt, linenos = true,  escapeinside=??]{OCaml}
+    type ty = Int | Arr of ty * ty
+    type serialized_term = Const of int | Var of int | Abs of ty | EndAbs
+                         | App | AppL | AppR
+  \end{minted}
+  \vspace*{-.1in}
+  \caption{STLC terms in a serialized form.}
+  \label{fig:stlc-syntax}
+  \vspace*{-.1in}
+\end{figure}
+
+We explicitly define the syntax of the serialized STLC terms in \autoref{fig:stlc-syntax}. The definitions of constants and variables are standard, and variables
+carry their de Bruijn index. However, the usual function abstraction
+constructor ``$\Code{Abs\;\mykw{of}\;ty * term}$'' is now represented
+by two operations, ``$\Code{Abs\;\mykw{of}\;ty}$'' and
+``$\Code{EndAbs}$'', where the function body is the term that is
+generated between them. Similarly, the typical application constructor
+``$\Code{App\;\mykw{of}\;term * term}$'' is now captured by three
+operations: ``$\Code{App}$'', ``$\Code{AppL}$'', and ``$\Code{AppR}$''.
+Here, ``$\Code{App}$'' begins the application, ``$\Code{AppL}$'' marks the beginning of
+the argument, and ``$\Code{AppR}$'' signals the end of the application.
+
+An example of a serialized STLC term is shown below, where we color
+the corresponding parts of the term and the serialized term for better
+readability.
+\begin{align*}
+  \text{\textcolor{gray}{STLC term:}} \quad & \textcolor{blue}{(\lambda \Int}. \textcolor{orange}{[0]} \textcolor{blue}{)}\; \textcolor{DeepGreen}{3} \\
+  \text{\textcolor{gray}{serialized STLC term:}} \quad & \eff{app}; \textcolor{blue}{\zevent{abs}{\Int}}; \textcolor{orange}{\zevent{var}{0}}; \textcolor{blue}{\eff{endAbs}}; \eff{appL}; \textcolor{DeepGreen}{\zevent{const}{3}}; \eff{appR}
+\end{align*}
+\noindent
+We denote de Bruijn indices with ``$[...]$'' to distinguish them from
+constants. The interpreter accepts a
+serialized lambda term and evaluates it to a value. In the example
+above, the input sequence should be reduced as $(\lambda \Int. [0])\;3
+\hookrightarrow 3$.
+
+\begin{figure}[t!]
+  {\footnotesize
+    \begin{align*}
+      \eff{const} :~ &  x{:}\Int\sarr \uhat{\allA}{\Unit}{\msgA{const}{x}\msgAGray{ty}{\CInt}} \\
+      \eff{appR} :~ & \uhat{\allA\msgC{app}\allA  \msgAGray{ty}{\Code{Arr}(t_1, t_2)}  \msgC{appL}  \allA  \msgAGray{ty}{t_1}  }{\Unit}{\msgC{appR}  \msgAGray{ty}{t_2}} \\
+      \eff{endAbs} :~ & \uhat{\allA\msgAGray{depth}{d}\msgA{abs}{t_2}\msgAGray{depth}{d+1}\allA  \msgAGray{ty}{t_1}}{\Unit}{ \msgC{endAbs}\msgAGray{depth}{d}
+        \msgAGray{putTy}{\Code{Arr}(t_1,t_2)}} \\
+      \eff{var} :~ &  i{:}\urt{\Int}{\vnu \geq 0} \sarr \uhat{\underbrace{\allA\msgA{abs}{t}\msgAGray{depth}{d}(\anyA\setminus\msgC{endAbs})^*}_\text{type $t$ at the $d$ level is open}\underbrace{\msgAGray{depth}{d + i}}_\text{current level is $d + i$} }{\Unit}{\msgA{var}{i}\msgAGray{putTy}{t}  \allA}
+    \end{align*}
+  }
+  \caption{\tyName{} specifications of STLC operations. } %
+  \label{fig:stlc-spec}
+\end{figure}
+
+The types for STLC operations are shown in \autoref{fig:stlc-spec}. The type for $\eff{const}$ has no constraint on its prefix trace
+($\allA$), but records a $\textcolor{gray}{\eff{ty}}$ event in
+the trace that records the type of the output of the $\eff{const}$
+expression as $\Code{Int}$. The arguments to a ghost event are either
+serialized terms (like $\Code{Int}$) or ghost variables.
+Type-checking a trace using ghost events involves solving constraints
+over their arguments based on algebraic axiomatizations, examples of
+which are given below. The history and future regex of the $\eff{appR}$ type in
+\autoref{fig:stlc-spec} characterizes both the syntax and well-typing
+constraints of an STLC function application. It requires that (a)
+prior to evaluating a function argument ($\eff{appL}$), the type of
+the abstraction is \Code{Arr(t$_1$,t$_2$)}, i.e., the abstraction
+being applied is a function type ($\msgAGray{ty}{\Code{Arr}(t_1,t_2)}$); (b) after the argument is evaluated, its type is
+  determined to be \Code{t$_1$} ($\msgAGray{ty}{t_1}$); and (c)
+  the type of the application's result is \Code{t$_2$}
+  ($\msgAGray{ty}{t_2}$).
+
+The de Bruijn index constraint is captured via the $\eff{\textcolor{gray}{depth}}$ operation in the \tyName{}s of the $\eff{endAbs}$ and $\eff{var}$ operations. In addition to the well-typing constraint, the \tyName{} of the $\eff{endAbs}$ operation maintains the depth of nested function abstractions using $\eff{\textcolor{gray}{depth}}$. Specifically, its history regex obtains the current depth ($\msgAGray{depth}{d}$), increases it by one at the beginning of the function body, and restores it after the $\eff{endAbs}$ event.
+On the other hand, a valid index $i$ in $\eff{var}$ must be derived from an open abstraction at some depth in the prefix trace. The history regex of the $\eff{var}$ operation precisely characterizes this constraint: the abstraction at depth $d$ must be open ($\allA\msgA{abs}{t}\msgAGray{depth}{d}(\anyA\setminus\msgC{endAbs})^*$), and the current depth must be $d + i$.
+
 \section{Operational Semantics}\label{sec:tech:semantics}
 
 The small-step operational semantics of our core language are shown in
 \autoref{fig:semantics}.
 
 \begin{figure}[t!]
-    \vspace*{-0.1in}
     {\footnotesize
     \vspace*{-.15in}
     {\small\begin{flalign*}
