@@ -61,7 +61,6 @@ performing a corresponding response operation.
 %$\zlet{\_}{e_1}{e_2}$.
 
 \begin{wrapfigure}{r}{.5\textwidth}
-  \vspace*{-0.2in}
   \footnotesize
   \begin{minipage}{.45\textwidth}
     \begin{flalign*}
@@ -202,7 +201,29 @@ $\urt{\Int}{\vnu = 1 \lor \vnu = 2}$, since it cannot evaluate to both
 term $1 \oplus 2 \oplus 3$, in contrast, does have this
 underapproximate type.
 
-\begin{figure}[htb!]
+\paragraph{Underapproximate Hoare Automata Types}
+
+Similar to other recent trace-based type systems~\cite{ZYDJ24}, \DSL{}
+uses \emph{Symbolic Finite Automata} (SFAs)~\cite{Vea13,
+  SFA-minimization, SFA-Transducers} to qualify the traces generated
+by effectful computations; in contrast to those prior works, the
+\tyName{}s in $\DSL{}$ use SFAs to \emph{underapproximate} the set of effects
+that a program must produce. A \tyName{} $\uhat{H}{x{:}t}{F}$ consists
+of a pure refinement type $t$ and two SFAs: a \emph{history} SFA $H$
+that constrains the history trace under which a term is executed, and a
+\emph{future} SFA $A$ that describes a subset of the events that it
+must generate as a result. \tyName{}s represents SFAs using symbolic
+regular expressions (SREs), but in principle could support any
+encoding of SFAs, e.g., Symbolic LTL$_f$~\cite{LTLf}. SREs support
+\emph{symbolic events}, $\msgB{op}{\overline{x}}{\phi}$, atomic
+predicates that describes an effectful operation {$\eff{op}$} whose
+arguments $\overline{x}$ satisfy the qualifier $\phi$. SREs provide a
+convenient language for writing SFAs, supporting versions of the
+standard regex operators shown in \autoref{fig:type-syntax}, including
+union $A \lorA A$, sequence $A \seqA A$, and Kleene star $A^*$
+operators.
+
+\begin{figure}[tb!]
 {\small
 \begin{alignat*}{2}
     % \\\text{\textbf{Symbolic Event}}& \quad &se  ::= \quad & \msgB{op}{\overline{x}}{\phi}
@@ -226,39 +247,14 @@ underapproximate type.
 \vspace*{-.2in}
 \end{figure}
 
-
-\paragraph{Underapproximate Hoare Automata Types}
-
-Similar to other recent trace-based type systems~\cite{ZYDJ24}, \DSL{}
-uses \emph{Symbolic Finite Automata} (SFAs)~\cite{Vea13,
-  SFA-minimization, SFA-Transducers} to qualify the traces generated
-by effectful computations; in contrast to those prior works, the
-\tyName{}s in $\DSL{}$ use SFAs to \emph{underapproximate} the set of effects
-that a program must produce. A \tyName{} $\uhat{H}{x{:}t}{F}$ consists
-of a pure refinement type $t$ and two SFAs: a \emph{history} SFA $H$
-that constrains the history trace under which a term is executed, and a
-\emph{future} SFA $A$ that describes a subset of the events that it
-must generate as a result. \tyName{}s represents SFAs using symbolic
-regular expressions (SREs), but in principle could support any
-encoding of SFAs, e.g., Symbolic LTL$_f$~\cite{LTLf}. SREs support
-\emph{symbolic events}, $\msgB{op}{\overline{x}}{\phi}$, atomic
-predicates that describes an effectful operation {$\eff{op}$} whose
-arguments $\overline{x}$ satisfy the qualifier $\phi$. SREs provide a
-convenient language for writing SFAs, supporting versions of the
-standard regex operators shown in \autoref{fig:type-syntax}, including
-union $A \lorA A$, sequence $A \seqA A$, and Kleene star $A^*$
-operators.
-
 The figure also gives the definition of the type aliases that
 \autoref{sec:overview} used to limit user annotation burden.  When the
 fields of a symbolic event are clear from context, we omit its
-arguments $\overline{x}$, e.g.,
-$\langle\eff{push}\;|\;v > 0\rangle$ means
-$\langle\eff{push}\;v\;|\;v > 0\rangle$. We omit
-quantifiers with equality constraints, e.g., writing
-$\langle\eff{push}\;v\;|\;v = 3\rangle$, as
-$\msgA{push}{3}$, and the top ($\top$) qualifier in
-symbolic events and types.
+arguments $\overline{x}$, e.g., $\langle\eff{push}\;|\;v > 0\rangle$
+means $\langle\eff{push}\;v\;|\;v > 0\rangle$. We omit quantifiers
+with equality constraints, e.g., writing
+$\langle\eff{push}\;v\;|\;v = 3\rangle$, as $\msgA{push}{3}$, and the
+top ($\top$) qualifier in symbolic events and types.
 
 
 
@@ -274,9 +270,10 @@ symbolic events and types.
   $\eff{push}$ operations to be dropped.  To detect this violation, we
   need to explore traces of the following form, where the last pop
   operation raises an ``empty stack'' exception:
-  \vspace{-.4cm} \par\nobreak {\small\begin{align*}
-    \zevent{push}{1};\zevent{push}{2}; \zevent{push}{3}; \zevent{pop}{2}; \zevent{pop}{1};\textcolor{red}{\zevent{pop}{?}}
-  \end{align*}}\vspace{-.5cm} \par\nobreak\noindent
+  \vspace{-.6cm} \par\nobreak {\small%
+    \begin{align*}
+      \zevent{push}{1};\zevent{push}{2}; \zevent{push}{3}; \zevent{pop}{2}; \zevent{pop}{1};\textcolor{red}{\zevent{pop}{?}}
+    \end{align*}}\noindent
   Because we would like the \tyName{} specifications for $\eff{push}$
   and $\eff{pop}$ to guide the synthesis of a test generator, they
   should be interpreted as underapproximations, consisting of nested
@@ -303,7 +300,7 @@ symbolic events and types.
     operations.   The signature for $\eff{push}$ requires
   that the new pushed value ($x$) is greater than the last pushed value
   ($y$), and adds a new ghost event $\effGray{pushI}$ with an
-  incremented index (i.e., $\msgAGray{pushI}{n{+}1\;x}$).  
+  incremented index (i.e., $\msgAGray{pushI}{n{+}1\;x}$).
   The
   signature for $\eff{pop}$ also records the number of pop operations
   in the same way (i.e., $\msgAGray{popI}{m{+}1\;x}$); additionally, it
@@ -833,13 +830,14 @@ A term $e$ inhabits $\uhat{H}{x{:}\urt{b}{\phi}}{F}$ iff, for trace $\alpha_f$ a
 $\alpha_h$ produces $\alpha_f$.
 \footnote{The details of these definition can be found in our \techreport{}.}
 Our formulation constitutes a trace-based analogue of IL~\cite{OHP19}, in which effects are modeled as program state transitions:
-\vspace{-.4cm} \par\nobreak {\small\begin{align*}
-  [P]\; e\; [Q] \doteq \forall s_\Code{post} \in \denot{Q}. \exists s_\Code{pre} \in \denot{P}. (s_\Code{pre}, e) \Downarrow s_\Code{post}
-\end{align*}}\noindent
+\vspace{-.4cm} \par\nobreak {\small %
+  \begin{align*}
+    [P]\; e\; [Q] \doteq \forall s_\Code{post} \in \denot{Q}. \exists s_\Code{pre} \in \denot{P}. (s_\Code{pre}, e) \Downarrow s_\Code{post}
+  \end{align*}}\noindent
 A notable distinction between these two presentations is that we
 characterize $F$ as the set of \emph{newly produced} traces rather
 than the full post-execution trace, reflecting our trace-based
-compositional type rules. This formulation additionally avoids
+type rules. This formulation additionally avoids
 redundant prefixes inherited from the execution history.
 
 % In contrast to incorrectness logic~\cite{OHP19}, which explicitly models effects via program states, our latent effect semantics require executions to terminate with an empty capability context. Permitting termination with a non-empty capability (e.g., $\{\eff{readRsp}\}$) would leave latent effects from asynchronous actions (such as $\eff{readReq}$) unobserved. Thus, we explicitly denote the \tyName with term and its continuation $e_f$ to capture the entire execution. The $\beta$ and $\beta'$ are the capability before and after execution of $e$; since it is always valid to add unused capability to both sides, thus this denotation is parameterized by capability context $\Theta_A$ and $\Theta_F$.

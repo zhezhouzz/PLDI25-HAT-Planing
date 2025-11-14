@@ -199,7 +199,7 @@ traces (line $7$).
   \begin{align*}
     &(m{:}\urt{\Int}{\vnu = 0}, n{:}\urt{\Int}{\top},y{:}\urt{\Int}{\top},x{:}\urt{\Int}{\top}, \\
     &\qquad\qquad \Pi_\Code{any}^* \msgAGray{popI}{m\;y}^\bot \Pi_\Code{noPopI}^* \msgAGray{pushI}{n\;x}^\bot \Pi_\Code{noI}^* \msgA{pop}{x}^\top\msgAGray{popI}{m\;x}^\bot)
-  \end{align*}} \vspace{-.4cm} \par\nobreak\noindent 
+  \end{align*}} \vspace{-.4cm} \par\nobreak\noindent
 The new variables in the type context require $m = 0$, as
 mentioned in Example~\ref{ex:sre-norm}.  Although the \tyName{} of
 $\eff{pop}$ does not explicitly add any new $\eff{push}$ or
@@ -236,7 +236,7 @@ given the following context and abstract trace:
 \end{align*}
 }\noindent \deriveTrace{} will synthesize the following program:
 \begin{minted}[fontsize = \footnotesize, escapeinside=??, xleftmargin=10pt, linenos]{ocaml}
-  let (x: int) = assume (?$\exists m\;n\;y. m = 0 \land n = m{+}1 \land x > y$?) in push x; (* equivalent to assume true *)
+  let (x: int) = ?$\mykw{assume}\; (\exists m\;n\;y. m = 0 \land n = m{+}1 \land x > y)$? in push x; (* equivalent to assume true *)
   let (z: int) = pop () in assert (x == z)
 \end{minted}
 \derive{} applies a sketch-style methodology to synthesize a recursive
