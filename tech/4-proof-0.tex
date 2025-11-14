@@ -1,0 +1,405 @@
+\newpage
+\section{Proofs}\label{sec:tech:proof}
+
+We omit the completely standard proof that basic typing
+\(\basicvdash e : s\) is sound, assuming that all terms and qualifiers
+in our typing rules and theorems are type-safe. Before presenting the
+proof of the fundamental theorem and type soundness, we introduce
+several useful lemmas.
+
+\subsection{Lemmas}
+
+\subsubsection{Denotations}
+
+\begin{lemma}\label{lemma:lastA-denot}[Denotation of singleton modality] For all symbolic event $\msgB{op}{\overline{x_i}}{\phi}$ and values $\overline{v_i}$,
+{\small\begin{align*}
+    \phi\msubst{x_i}{v_i} \implies
+    [\zevent{op}{\overline{v_i}}] \in \denot{\msgB{op}{\overline{x_i}}{\phi}}
+\end{align*}}
+\end{lemma}
+
+\begin{lemma}\label{lemma:seqA-denot}[Denotation of concatenation] For all automata $A_1$ and $A_2$ and trace $\alpha$,
+{\small\begin{align*}
+    \alpha \in \denot{A_1 \seqA A_2} \iff (\exists \alpha_1\;\alpha_2. \alpha = \alpha_1 \listconcat \alpha_2 \land \alpha_1 \in \denot{A_1} \land \alpha_2 \in \denot{A_2})
+\end{align*}}
+\end{lemma}
+
+% \begin{lemma}\label{lemma:choice-denot}[Denotation of choice] For all term $e_1$ and $e_2$ and \PAT $\tau$,
+% {\small\begin{align*}
+%     e_1 \in \denot{\tau} \land e_2 \in \denot{\tau} \impl e_1 \oplus e_2 \in \denot{\tau}
+% \end{align*}}
+% \end{lemma}
+
+\begin{lemma}\label{lemma:pure-denot}[Denotation of pure computation] For all term $e_1$ and $e_2$ and \PAT $\tau$,
+{\small\begin{align*}
+    (\forall \alpha. \msteptr{\alpha}{e}{[]}{e'}) \impl
+   e'\in \denot{\tau} \impl e \in \denot{\tau}
+\end{align*}}
+\end{lemma}
+
+\subsubsection{Subtyping}
+
+\begin{lemma}\label{lemma:pure-subtyping}[Pure Subtyping Soundness] For Given type context $\Gamma$ and well-formed pure refinement type $t_1$ and $t_2$:
+  $\Gamma \vdash t_1 <: t_2 \implies \forall \sigma_2 \in \denot{\Gamma}.\exists \sigma_1 \in \denot{\Gamma}. \denot{\sigma_2(t_2)} \subseteq \denot{\sigma_1(t_1)}$
+\end{lemma}
+
+\begin{lemma}\label{lemma:inclusion}[Inclusion] For Given type context $\Gamma$ and well-formed regex $H_1$ and $H_2$:
+  $\Gamma \vdash H_1 \subseteq H_2 \implies \forall \sigma_2 \in \denot{\Gamma}.\exists \sigma_1 \in \denot{\Gamma}. \denot{\sigma_2(H_2)} \subseteq \denot{\sigma_1(H_1)}$
+\end{lemma}
+
+\begin{lemma}\label{lemma:subtyping}[Subtyping Soundness] For Given type context $\Gamma$ and well-formed \PAT $\tau_1$ and $\tau_2$:
+  $\Gamma \vdash \tau_1 <: \tau_2 \implies \forall \sigma_2 \in \denot{\Gamma}.\exists \sigma_1 \in \denot{\Gamma}. \denot{\sigma_2(\tau_2)} \subseteq \denot{\sigma_1(\tau_1)}$
+\end{lemma}
+
+\subsubsection{Substitution}
+
+\begin{lemma}[Substitution Lemma]\label{lemma:subt} For Given type context $\Gamma$, variable $x$, well-formed pure refinement type $t$,\PAT $\tau$ and term $e$:
+  $\Gamma, x{:}t \vdash e : \tau \impl \forall v. \Gamma \vdash v : t \impl \Gamma, x{:}t \vdash e[x\mapsto v] : \tau[x\mapsto v]$
+\end{lemma}
+
+\subsubsection{Type Contexts}
+
+In the \autoref{sec:language}, we defined the well-formedness of effectful operator typing context, we also define the well-formedness of pure operator typing context.
+
+\begin{definition}[Well-formed pure operator typing context]
+  \label{lemma:built-in-pure-typing}
+  The operator typing context $\Delta$ is well-formed
+  iff the semantics of every pure operator $\eff{op}$ is
+  consistent with the type $\overline{x{:}b_{\I{x}}}\garr
+  \overline{y{:}t_{\I{y}}}\sarr t$ provided by $\Delta$.
+  \vspace{-.4cm} \par\nobreak {\small\begin{align*}
+\overline{\forall
+      x{:}b_{\I{x}}}.\; \overline{\forall y \in \denotation{t_{\I{y}}}}.\; \forall c \in \denotation{t}. c' \in \denotation{t_{\I{x}}\msubst{y}{c}} \impl \primop (c) \Downarrow c'
+  \end{align*}} \vspace{-.4cm} \par\nobreak\noindent
+\end{definition}
+
+The typing relation is defined mutually recursively between values, terms and operators, that is:
+
+\begin{theorem}\label{theorem:fundamental-full}[Pure Fundamental Theorem] For Given type context $\Gamma$, term $e$ and value $v$:
+  $\Gamma \vdash v: t \implies \forall \sigma \in \denot{\Gamma}. \sigma(v) \in \denot{\sigma(t)}$ and
+  $\Gamma \vdash e : \tau \implies \forall \sigma \in \denot{\Gamma}. \sigma(e) \in \denot{\sigma(\tau)}$ and 
+  $\Gamma \vdash \eff{op} : t \implies \forall \sigma \in \denot{\Gamma}. \sigma(\lambda \overline{x}.\eff{op}\; \overline{x}) \in \denot{\sigma(t)}$ and 
+  $\Gamma \vdash \primop : \overline{y{:}t_i}\sarr t \implies \forall \sigma \in \denot{\Gamma}. \sigma(\lambda \overline{x}.\primop\; \overline{x}) \in \denot{\sigma(t)}$.
+\end{theorem}
+
+\begin{proof} We proceed by induction over our type judgment $\Gamma \vdash e : \tau$ and $\Gamma \vdash v : t$, which has cases proved as following:
+\begin{enumerate}[label=Case]
+\item:
+{\footnotesize
+\mprooftr{25mm}
+{$\eraserf{\Gamma} \basicvdash c : b$}
+{TConst}
+{$\Gamma \vdash c : \urt{b}{\vnu = c}$}
+\ \\ \ \\}
+Since the constant $c$ is closed, we have $\sigma(c) = c$ for any substitution $\sigma$. By the semantics of evaluation, $\msteptr{\alpha}{c}{[]}{c}$ holds trivially. Therefore, $c \in \denot{\urt{b}{\vnu = c}}$ directly by the definition of type denotation. This concludes the case.
+\item:
+{\footnotesize
+\mprooftr{25mm}
+{$\eraserf{\Gamma} \basicvdash x : b$}
+{TVar}
+{$\Gamma \vdash x : \urt{b}{\vnu = x}$}
+\ \\ \ \\}
+Since the variable $x$ is will typed under the context $\Gamma$ in the basic type system, thus there exists a pure refinement type $t$ such that $(x, t) \in \Gamma$. The denotation of $\Gamma$ will always contains a substitution $\sigma$ such that $\sigma = \sigma'[x\mapsto v]$ where $v \in \denot{\sigma(t)}$. Therefore, $\sigma(x) = v$, and $\sigma(x) \in \denot{\urt{b}{\vnu = v}}$. This concludes the case.
+\item:
+{\footnotesize
+\mprooftr{22mm}{
+ $\Gamma, x{:}t_x\vdash e : \tau$
+}{TFun}{
+ $\Gamma\vdash \zzlam{x}{e} : x{:}t_x\sarr \tau$}
+\ \\ \ \\}
+According to the assumption of this case and the hypothesis, we know:
+{\footnotesize\begin{alignat}{2}
+  \setcounter{equation}{0}
+  &\Gamma, x{:}t_x\vdash e : \tau \ptag{assumption} \label{found:1-1} \\
+  &\forall \sigma \in \denot{\Gamma, x{:}t_x}. \sigma(e) \in \denot{\sigma(\tau)} \ptag{induction hypothesis} \label{found:1-2} \\
+  &\sigma =\sigma'[x\mapsto v] \quad \text{where} \quad \sigma' \denot{\Gamma} \land v \in \denot{\sigma'(t_x)} \ptag{denotation of type context and \ref{found:1-2}} \label{found:1-3} \\
+  &\sigma'(e[x\mapsto v]) \in \denot{\sigma(\tau)} \ptag{by \ref{found:1-2} and \ref{found:1-3} and Lemma~\ref{lemma:subt}} \label{found:1-4} \\
+  &\forall \alpha. \msteptr{\alpha}{\zzlam{x}{e}\;v}{[]}{e[x\mapsto v]} \ptag{by the semantics of evaluation} \label{found:1-5} \\
+  &\sigma'(\zzlam{x}{e}\;v) \in \denot{\sigma(\tau)} \ptag{by \ref{found:1-4} and \ref{found:1-5} and Lemma~\ref{lemma:pure-denot}} \label{found:1-6}
+  \end{alignat}}\noindent
+Then, the conclusion is consistent with the denotation definition, thus the case is proved.
+\item:
+{\footnotesize
+\mprooftr{47mm}{
+}{TFixBase}{
+ $\Gamma\vdash \zzfix{f}{x}{e} : \overline{x{:}s}\sarr\uhat{H}{\urt{b}{\bot}}{\emptyset}$}
+\ \\ \ \\}
+Any function can have a empty return type for free, thus the case is proved.
+\item:
+{\footnotesize
+\mprooftr{27mm}{
+ $\Gamma\vdash \zzfix{f}{x}{e} : t$ \quad
+ $\Gamma, f{:}t\vdash \zzlam{x}{e} : t'$
+}{TFixInd}{
+ $\Gamma\vdash \zzfix{f}{x}{e} : t'$}
+\ \\ \ \\}
+We inline the recursion function $f$ within its body, then this case is reduced to the case of function typing.
+\item:
+{\footnotesize
+\mprooftr{20mm}
+{$\Gamma\vdash v : t$}
+{TRet}
+{$\Gamma\vdash v : \uhat{H}{t}{\epsilon}$}
+\ \\ \ \\}
+According to the assumption of this case and the hypothesis, we know:
+{\footnotesize\begin{alignat}{2}
+  \setcounter{equation}{0}
+  &\Gamma\vdash v : t \ptag{assumption} \label{found:2-1} \\
+  &\forall \sigma \in \denot{\Gamma}. \sigma(v) \in \denot{\sigma(t)} \ptag{induction hypothesis} \label{found:2-2} \\
+  &\forall \alpha.\msteptr{\alpha}{v}{[]}{v} \ptag{by the semantics of evaluation} \label{found:2-3}
+  \end{alignat}}\noindent
+Then, the conclusion is consistent with the denotation definition, thus the case is proved.
+\item:
+{\footnotesize
+\mprooftr{35mm}
+{
+$\Gamma\vdash e_1 : \tau_1$ \quad $\Gamma\vdash e_2 : \tau_2$}
+{TChoice}
+{$\Gamma\vdash e_1 \oplus e_2 : \tau_1 \interty \tau_2$}
+\ \\ \ \\}
+According to the assumption of this case and the hypothesis, we know:
+{\footnotesize\begin{alignat}{2}
+  \setcounter{equation}{0}
+  &\Gamma\vdash e_1 : \tau_1 \ptag{assumption} \label{found:3-1} \\
+  &\forall \sigma \in \denot{\Gamma}. \sigma(e_1) \in \denot{\sigma(\tau_1)} \ptag{induction hypothesis} \label{found:3-2} \\
+  &\Gamma\vdash e_2 : \tau_2 \ptag{assumption} \label{found:3-3} \\
+  &\forall \sigma \in \denot{\Gamma}. \sigma(e_2) \in \denot{\sigma(\tau_2)} \ptag{induction hypothesis} \label{found:3-4} \\
+  &\forall \alpha.\msteptr{\alpha}{e_1 \oplus e_2}{[]}{e_1} \ptag{by the semantics of evaluation} \label{found:3-5} \\
+  &\forall \alpha.\msteptr{\alpha}{e_1 \oplus e_2}{[]}{e_2} \ptag{by the semantics of evaluation} \label{found:3-6} \\
+  &\sigma(e_1 \oplus e_2) \in \denot{\sigma(\tau_1)} \ptag{by \ref{found:3-2} and \ref{found:3-5} and Lemma~\ref{lemma:pure-denot}} \label{found:3-7} \\
+  &\sigma(e_1 \oplus e_2) \in \denot{\sigma(\tau_2)} \ptag{by \ref{found:3-4} and \ref{found:3-6} and Lemma~\ref{lemma:pure-denot}} \label{found:3-8} \\
+  &\sigma(e_1 \oplus e_2) \in \denot{\sigma(\tau_1 \interty \tau_2)} \ptag{by definition of denotation} \label{found:3-9}
+  \end{alignat}}\noindent
+Then, the conclusion is consistent with the denotation definition, thus the case is proved.
+\item:
+{\footnotesize
+\mprooftr{18mm}
+{$\Gamma \vdash v : t$ \quad
+$\Gamma \vdash t <: t'$}
+{TPureSub}
+{$\Gamma \vdash v : t'$}
+\ \\ \ \\}
+According to the assumption of this case and the hypothesis, we know:
+{\footnotesize\begin{alignat}{2}
+  \setcounter{equation}{0}
+  &\Gamma\vdash v : t \ptag{assumption} \label{found:4-1} \\
+  &\forall \sigma \in \denot{\Gamma}. \sigma(v) \in \denot{\sigma(t)} \ptag{induction hypothesis} \label{found:4-2} \\
+  &\Gamma\vdash t <: t' \ptag{assumption} \label{found:4-3} \\
+  &\sigma(v) \in \denot{\sigma(t')} \ptag{by \ref{found:4-2} and \ref{found:4-3} and Lemma~\ref{lemma:pure-subtyping}} \label{found:4-4}
+  \end{alignat}}\noindent
+Then, the conclusion is consistent with the denotation definition, thus the case is proved.
+\item:
+{\footnotesize
+\mprooftr{18mm}
+{$\Gamma \vdash e : \tau$ \quad
+$\Gamma \vdash \tau <: \tau'$}
+{TSub}
+{$\Gamma \vdash e : \tau'$}
+\ \\ \ \\}
+According to the assumption of this case and the hypothesis, we know:
+{\footnotesize\begin{alignat}{2}
+  \setcounter{equation}{0}
+  &\Gamma\vdash e : \tau \ptag{assumption} \label{found:5-1} \\
+  &\forall \sigma \in \denot{\Gamma}. \sigma(e) \in \denot{\sigma(\tau)} \ptag{induction hypothesis} \label{found:5-2} \\
+  &\Gamma\vdash \tau <: \tau' \ptag{assumption} \label{found:5-3} \\
+  &\sigma(e) \in \denot{\sigma(\tau')} \ptag{by \ref{found:5-2} and \ref{found:5-3} and Lemma~\ref{lemma:subtyping}} \label{found:5-4}
+  \end{alignat}}\noindent
+Then, the conclusion is consistent with the denotation definition, thus the case is proved.
+\item:
+{\footnotesize
+\mprooftr{38mm}
+{$\Gamma \vdash \eff{op} : \overline{x{:}t_x}\sarr\uhat{H}{t}{F}$ \quad
+$\Gamma,\overline{x{:}t_x} \vdash H' \subseteq H$
+\quad
+$\Gamma,\overline{x{:}t_x} \not\vdash H' \subseteq \emptyset$}
+{TOpHis}
+{$\Gamma\vdash \eff{op} : \overline{x{:}t_x}\sarr\uhat{H'}{t}{F}$}
+\ \\ \ \\}
+According to the assumption of this case and the hypothesis, we know:
+{\footnotesize\begin{alignat}{2}
+  \setcounter{equation}{0}
+  &\Gamma \vdash \eff{op} : \overline{x{:}t_x}\sarr\uhat{H}{t}{F} \ptag{assumption} \label{found:6-1} \\
+  &\forall \sigma \in \denot{\Gamma}. \sigma(\lambda \overline{x}.\eff{op}\;\overline{x}) \in \denot{\sigma(\overline{x{:}t_x}\sarr\uhat{H}{t}{F})} \ptag{induction hypothesis} \label{found:6-2} \\
+  &\Gamma,\overline{x{:}t_x} \vdash H' \subseteq H \ptag{assumption} \label{found:6-3} \\
+  &\forall \sigma \in \denot{\Gamma}. \sigma(H') \subseteq \sigma(H) \ptag{by \ref{found:6-3} and Lemma~\ref{lemma:inclusion}} \label{found:6-4} \\
+  &\sigma(\lambda \overline{x}.\eff{op}\;\overline{x}) \in \denot{\sigma(\overline{x{:}t_x}\sarr\uhat{H'}{t}{F})} \ptag{by \ref{found:6-2} and \ref{found:6-4} and definition~\ref{lemma:built-in-typing} } \label{found:6-4}
+  \end{alignat}}\noindent
+Then, the conclusion is consistent with the denotation definition, thus the case is proved.
+\item:
+{\footnotesize
+\mprooftr{17mm}
+{$\Delta(\primop) = t$}
+{TPureOp}
+{$\Gamma \vdash \primop : t$}
+\ \\ \ \\}
+Can be derived directly from the definition of well-formedness of pure operator typing context (Definition~\ref{lemma:built-in-pure-typing}).
+\item:
+{\footnotesize
+\mprooftr{15mm}
+{$\Delta(\eff{op}) = t$}
+{TOpCtx}
+{$\Gamma\vdash \eff{op} : t$}
+\ \\ \ \\}
+Can be derived directly from the definition of well-formedness of operator typing context (Definition~\ref{lemma:built-in-typing}).
+\item:
+{\footnotesize
+\mprooftr{58mm}
+  {
+  $\Gamma \vdash \eff{op} : \overline{x_i{:}t_i}\sarr \uhat{H}{t}{\msgA{op}{\overline{x_i}} \seqA F}$ \quad
+  $\forall i. \;\Gamma \vdash v_i : t_i$}
+  {TEffOp}
+  {$\Gamma\vdash \eff{op}{\;\overline{v_i}} : \uhat{H}{t}{\msgA{op}{\overline{v_i}} \seqA F}$}
+\ \\ \ \\}
+According to the assumption of this case and the hypothesis, we know:
+{\footnotesize\begin{alignat}{2}
+  \setcounter{equation}{0}
+  &\Gamma \vdash \eff{op} : \overline{x_i{:}t_i}\sarr \uhat{H}{t}{\msgA{op}{\overline{x_i}} \seqA F} \ptag{assumption} \label{found:7-1} \\
+  &\forall \sigma \in \denot{\Gamma}. \sigma(\lambda \overline{x}.\eff{op}\;\overline{x}) \in \denot{\sigma(\overline{x_i{:}t_i}\sarr \uhat{H}{t}{\msgA{op}{\overline{x_i}} \seqA F})} \ptag{induction hypothesis} \label{found:7-2} \\
+  &\forall i. \;\Gamma \vdash v_i : t_i \ptag{assumption} \label{found:7-3} \\
+  &\forall i.\forall \sigma \in \denot{\Gamma}. \sigma(v_i) \in \denot{\sigma(t_i)} \ptag{induction hypothesis} \label{found:7-4} \\
+  &\forall \alpha. \msteptr{\alpha}{(\lambda \overline{x}.\eff{op}\;\overline{x}) \; \overline{v_i}}{[]}{\eff{op}\; \overline{v_i}}\ptag{by the semantics of evaluation} \label{found:7-5} \\
+  &\sigma((\lambda \overline{x}.\eff{op}\;\overline{x}) \; \overline{v_i}) \in \denot{\sigma(\uhat{H}{t}{\msgA{op}{\overline{v_i}} \seqA F})} \ptag{by  \ref{found:7-5} and denotation definition} \label{found:7-6} \\
+  &\sigma(\eff{op}\; \overline{v_i}) \in \denot{\sigma(\uhat{H}{t}{\msgA{op}{\overline{v_i}} \seqA F})} \ptag{by \ref{found:7-5} and \ref{found:7-6} and Lemma~\ref{lemma:pure-denot}} \label{found:7-7}
+  \end{alignat}}\noindent
+Then, the conclusion is consistent with the denotation definition, thus the case is proved.
+\item:
+{\footnotesize
+\mprooftr{52mm}
+{
+$\Gamma \vdash \primop : \overline{y{:}t_i}\sarr t$ \quad
+$\forall i. \Gamma \vdash v_i : t_i$
+}
+{TOpApp}
+{$\Gamma\vdash \primop\ \overline{v} : t$}
+\ \\ \ \\}
+According to the assumption of this case and the hypothesis, we know:
+{\footnotesize\begin{alignat}{2}
+  \setcounter{equation}{0}
+  &\Gamma \vdash \primop : \overline{y{:}t_i}\sarr t \ptag{assumption} \label{found:8-1} \\
+  &\forall \sigma \in \denot{\Gamma}. \sigma(\lambda \overline{x}.\primop\;\overline{x}) \in \denot{\sigma(\overline{y{:}t_i}\sarr t)} \ptag{induction hypothesis} \label{found:8-2} \\
+  &\forall i. \;\Gamma \vdash v_i : t_i \ptag{assumption} \label{found:8-3} \\
+  &\forall i.\forall \sigma \in \denot{\Gamma}. \sigma(v_i) \in \denot{\sigma(t_i)} \ptag{induction hypothesis} \label{found:8-4} \\
+  &\forall \alpha. \msteptr{\alpha}{(\lambda \overline{y}.\primop\;\overline{y}) \; \overline{v_i}}{[]}{\primop\; \overline{v_i}}\ptag{by the semantics of evaluation} \label{found:8-5} \\
+  &\sigma((\lambda \overline{y}.\primop\;\overline{y}) \; \overline{v_i}) \in \denot{\sigma(t)} \ptag{by  \ref{found:8-5} and denotation definition} \label{found:8-6} \\
+  &\sigma(\primop\; \overline{v_i}) \in \denot{\sigma(t)} \ptag{by \ref{found:8-5} and \ref{found:8-6} and Lemma~\ref{lemma:pure-denot}} \label{found:8-7}
+  \end{alignat}}\noindent
+Then, the conclusion is consistent with the denotation definition, thus the case is proved.
+\item:
+{\footnotesize
+\mprooftr{30mm}{
+  $\Gamma v_1 : x{:}t_2 \sarr \tau$ \quad
+  $\Gamma \vdash v_2 : t_2$
+ }{TAppEff}{
+  $\Gamma\vdash v_1 v_2 : \tau[x\mapsto v_2]$}
+\ \\ \ \\}
+According to the assumption of this case and the hypothesis, we know:
+{\footnotesize\begin{alignat}{2}
+  \setcounter{equation}{0}
+  &\Gamma \vdash v_1 : x{:}t_2 \sarr \tau \ptag{assumption} \label{found:9-1} \\
+  &\forall \sigma \in \denot{\Gamma}. \sigma(v_1) \in \denot{\sigma(x{:}t_2 \sarr \tau)} \ptag{induction hypothesis} \label{found:9-2} \\
+  &\Gamma \vdash v_2 : t_2 \ptag{assumption} \label{found:9-3} \\
+  &\forall \sigma \in \denot{\Gamma}. \sigma(v_2) \in \denot{\sigma(t_2)} \ptag{induction hypothesis} \label{found:9-4} \\
+  &\sigma(v_1 \; v_2) \in \denot{\sigma(\tau[x\mapsto v_2])} \ptag{by definition of denotation land Lemma~\ref{lemma:subt}} \label{found:9-6}
+  \end{alignat}}\noindent
+Then, the conclusion is consistent with the denotation definition, thus the case is proved.
+\end{enumerate}
+\end{proof}
+
+\subsection{Type Soundness}
+
+The type soundness can be proved by fundamental theorem directly.
+
+\begin{corollary}[Type Soundness]
+  \label{theorem:sound} A generator \(e\) that satisfies
+  \(\emptyset \vdash e : \uhat{\epsilon}{\Unit}{F}\) must produce all
+  traces accepted by $F$, i.e.,
+  $\forall \alpha \in
+  \denot{F}. \msteptr{[]}{e}{\eraseGhost{\alpha}}{()}$.
+\end{corollary}
+\begin{proof} According to the fundamental theorem, we have
+{\footnotesize\begin{alignat}{2}
+  \setcounter{equation}{0}
+  &\emptyset \vdash e : \uhat{\epsilon}{\Unit}{F} \ptag{assumption} \label{sound:1} \\
+  &\forall \sigma \in \denot{\emptyset}. \sigma(e) \in \denot{\sigma(\uhat{\epsilon}{\Unit}{F})} \ptag{by Theorem~\ref{theorem:fundamental-full} and \ref{sound:1}} \label{sound:2} \\
+  &\forall \alpha_f \in \denot{F}. \exists \alpha_h \in \denot{\epsilon}. \msteptr{\alpha_h}{e}{\eraseGhost{\alpha_f}}{()} \ptag{by \ref{sound:2} and denotation definition} \label{sound:3} \\
+  &\alpha_f \in \denot{\epsilon} \iff \alpha_f = [\;] \ptag{by  denotation definition} \label{sound:4} \\
+  &\forall \alpha_f \in \denot{F}. \msteptr{\epsilon}{e}{\eraseGhost{\alpha_f}}{()} \ptag{by \ref{sound:3} and \ref{sound:4} and denotation definition} \label{sound:5}
+  \end{alignat}}\noindent
+The the soundness is proved.
+\end{proof}
+
+
+\subsection{Synthesis is Sound}
+
+As discussed in \autoref{sec:synthesis}, our synthesis algorithm first
+refines the input property to a set of realizable abstract
+traces and then uses the \(\S{TermDerive}\) function to translate these
+traces into a controller program. We introduce a concept of realizability of abstract traces which stand as a bridge between Algorithm~\ref{algo:refine} and Algorithm~\ref{algo:term-derive}.
+
+\begin{definition}[Symbolic event consistent with trace]
+  \label{def:real-event-def}
+  A symbolic event $\msg{op}{\phi}$ in abstract trace $\pi$ (i.e.,
+  $\pi = \pi_h \seqA \msg{op}{\phi} \seqA \pi \seqA \seqA \pi_f$, where $\pi$ is a sequence of ghost events) is
+  \emph{consistent} with the trace,
+  denoted as $\Gamma \vdash_{R} \msg{op}{\phi} \in \pi$, iff {\small\begin{align*}
+    &\Gamma \vdash \eff{op} : \overline{x{:}t_x}\sarr \uhat{\pi_h}{x:t}{\msg{op}{\phi}\seqA\pi}
+\end{align*}}\noindent
+\end{definition}
+
+\begin{definition}[Realizability]
+  \label{def:real-trace-def}
+  An abstract trace $\pi$ is realizable under type context $\Gamma$ iff all concrete events in $\pi$ are consistent with $\pi$ under context $\Gamma$, denoted as $\Gamma \vdash_{R} \pi$.
+\end{definition}
+
+We now prove that the refined event in Algorithm~\ref{algo:refine} is consistent with the trace.
+
+\begin{lemma}[Refined event is consistent with trace]
+  \label{lemma:real-event}
+  The refined event in Algorithm~\ref{algo:refine} is consistent with the trace.
+\end{lemma}
+\begin{proof}
+  Assume Algorithm~\ref{algo:refine} refines the event $\msg{op}{\phi}$ in the trace $\pi_h \seqA \msg{op}{\phi} \seqA \pi \seqA \seqA \pi_f$. We then have $\pi_h \subseteq H$ and $\msg{op}{\phi} \seqA \pi \subseteq F$ (line 4 and line 5 in Algorithm~\ref{algo:refine}), where $H$ and $F$ are the history and future regex of the \tyName{} of $\eff{op}$. According to the rule \textsc{TOpHis}, which allows for a smaller history regex, and the rule \textsc{TSub}, which allows for a smaller future regex, we have that $\msg{op}{\phi}$ is consistent with the trace.
+\end{proof}
+
+Next, we show that all results of Algorithm~\ref{algo:refine} are realizable traces.
+
+\begin{lemma}[Refined traces are realizable]
+  \label{lemma:real-trace}
+Assume $(\Gamma, \pi)$ is a result of Algorithm~\ref{algo:refine}. Then $\pi$ is realizable under $\Gamma$, denoted as $\Gamma \vdash_{R} \pi$.
+\end{lemma}
+\begin{proof}
+By contradiction. If $\pi$ is not realizable under $\Gamma$, then there exists a concrete event in $\pi$ that is not consistent with $\Gamma$. However, according to Lemma~\ref{lemma:real-event}, the refined event is consistent with the trace, which leads to a contradiction.
+\end{proof}
+
+Now we prove the derived program is type-safe if the refined trace is realizable.
+
+\begin{lemma}[Result of $\S{TraceDerive}$ is type-safe]
+  \label{lemma:trace-derive-sound}
+  The program derived by $\S{TraceDerive}$ is type-safe if the input trace $\pi$ is realizable under the input type context $\Gamma$.
+\end{lemma}
+\begin{proof}
+Assume the synthesized program is $e$.
+Since $\S{TraceDerive}$ drops ghost events, we have $\forall \alpha.\, \msteptr{\alpha}{e}{[]}{()}$. Therefore, there exists a trace $\alpha'$ that fills the ghost events back into $\alpha$ and is also consistent with the abstract trace $\pi$:
+\begin{align*}
+  \exists \alpha'.\, \eraseGhost{\alpha'} = \alpha \land \exists \sigma \in \denot{\Gamma}.\, \alpha' \in \sigma(\pi)
+\end{align*}
+Then, we know $e \in \denot{\sigma{\uhat{\epsilon}{\Unit}{\pi}}}$. Thus, according to the fundamental theorem, the derived program is type-safe.
+\end{proof}
+
+\begin{theorem}[Derived program of $\S{TermDerive}$ is type-safe]
+  \label{theorem:term-derive-sound}
+  If the recursion template is type-safe, then the program derived by ($\S{TermDerive}$) is type-safe if all input traces are realizable under their corresponding input type contexts.
+\end{theorem}
+\begin{proof}
+  Since every program derived by $\S{TraceDerive}$ is type-safe, and the recursion template guarantees that the template after filling the holes is also type-safe, each program derived by $\S{TermDerive}$ is type-safe.
+  According to the rule \textsc{TChoice}, the union ($\oplus$) of all derived programs is also type-safe.
+\end{proof}
+
+\begin{theorem}[Synthesis is Sound]
+  \label{theorem:algo-sound-ap}
+  Every generator synthesized by \autoref{algo:top-syn} is type-safe
+  with respect to our declarative typing system.
+\end{theorem}
+\begin{proof}
+  According to Lemma~\ref{lemma:real-trace} and Lemma~\ref{lemma:trace-derive-sound}, all refined traces are realizable and all derived programs are type-safe. Then, by Theorem~\ref{theorem:term-derive-sound}, the synthesized program is type-safe.
+\end{proof}
