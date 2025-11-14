@@ -510,26 +510,25 @@ a meaningful underapproximate precondition.
   \vspace*{-.15in}
   \end{figure}
 
-The type system also uses a semantic subtyping relation tailored for
-underapproximation; \autoref{fig:selected-typing-rules} presents the
-key subtyping rule for \tyName{}s.  The rule \textsc{SubG} allows the
-instantiation of a ghost variable in a \tyName{} into well-formed
-types. The rule \textsc{SubHF} uses an auxiliary inclusion relation on
-SREs $\Gamma \vdash A \subseteq A$ to relate the history and future
-regexes of two \tyName{}s under the current type context $\Gamma$, as
-well as the return type using the standard subtyping relation on pure
-refinement types. Notably, because our typing judgements are
-underapproximate, this subtyping relation is covariant in the history
-regex and contravariant in the future regex, yielding behavior similar
-to the reverse rule of consequence found in Incorrectness Logic
-(IL)~\cite{OHP19}.  Informally, the rule allows specialization of the
-history trace (i.e., $H_1 \subseteq H_2$) and generalization of the
-future trace (i.e., $F_2 \subseteq F_1$).  In other words, we can
-always replace a \tyName{} triple with one that can justify more
-behaviors (aka future traces) with fewer witnesses (aka history
-traces).  Since the future automata in a \tyName{} can refer to the
-pure value it returns, the inclusion check between the future automata
-extends the typing context with a binding for the return value.
+  The type system also uses a semantic subtyping relation tailored for
+  underapproximation; \autoref{fig:selected-typing-rules} presents the
+  key subtyping rule for \tyName{}s.  The rule \textsc{SubG} allows
+  the instantiation of a ghost variable in a \tyName{} into
+  well-formed types. The rule \textsc{SubHF} uses an auxiliary
+  inclusion relation on SREs $\Gamma \vdash A \subseteq A$ to relate
+  the history and future regexes of two \tyName{}s under the current
+  type context $\Gamma$, as well as the return type using the standard
+  subtyping relation on pure refinement types. Notably, because our
+  typing judgements are underapproximate, this subtyping relation is
+  covariant in the history regex and contravariant in the future
+  regex, yielding behavior similar to the reverse rule of consequence
+  found in Incorrectness Logic (IL)~\cite{OHP19}.  Like that rule,
+  \textsc{SubHF} allows us to strengthen a postcondition (i.e., shrink
+  the future trace), and weaken the precondition (i.e., enlarge the
+  history trace).  Since the future automata in a \tyName{} can refer
+  to the pure value it returns, the inclusion check between the future
+  automata extends the typing context with a binding for the return
+  value.
 
 A subset of our typing rules is shown in
 \autoref{fig:selected-typing-rules}.\footnote{The complete set of

@@ -214,11 +214,12 @@ after a $\eff{push}$ event, unless it is an initialization event
     \Delta(\effGray{pushI}) \equiv &\; i{:}\Int\sarr x{:}\Int \sarr \uhat{\allA\msgC{push}}{\Unit}{\msgBGray{pushI}{i\;x}{i > 0}} \interty \uhat{(\anyA\setminus\msgCGray{pushI})^*}{\Unit}{\msgBGray{pushI}{i\;x}{i = 0}} \\
     \Delta(\effGray{popI}) \equiv &\; i{:}\Int\sarr x{:}\Int \sarr \uhat{\allA\msgC{pop}}{\Unit}{\msgBGray{popI}{i\;x}{i > 0}} \interty \uhat{(\anyA\setminus\msgCGray{popI})^*}{\Unit}{\msgBGray{popI}{i\;x}{i = 0}}
   \end{align*}}\vspace{-.4cm} \par\nobreak\noindent
-On the other hand, the $\msgAGray{popI}{m\;y}$ event in the abstract trace has index $m = 0$, and the algorithm can smartly determine that there is no previous $\eff{pop}$ event in this case. It is because the merge result of the first intersected type of $\effGray{popI}$ fails the non-emptiness check, where $m > 0 \land m = 0$ is unsatisfiable. Finally, this trace will be refined to one that consistent with the program shown in Example~\ref{ex:operator-application-typing}:
+On the other hand, the $\msgAGray{popI}{m\;y}$ event in the abstract trace has index $m = 0$, and the algorithm can smartly determine that there is no previous $\eff{pop}$ event in this case. It is because the merge result of the first intersected type of $\effGray{popI}$ fails the non-emptiness check, where $m > 0 \land m = 0$ is unsatisfiable. Finally, this trace will be refined to one consistent with the program shown in Example~\ref{ex:operator-application-typing}:
 \vspace{-.4cm} \par\nobreak{\small %
   \begin{align*}
     &(m{:}\urt{\Int}{\vnu = 0}, n{:}\urt{\Int}{\vnu = m{+}1}, y{:}\urt{\Int}{\top}, x{:}\urt{\Int}{\vnu > y},
-    \\&\qquad\qquad\Pi_\Code{noI}^*\msgAGray{pushI}{m\;y}\msgAGray{popI}{m\;y}\Pi_\Code{noI}^*\msgA{push}{x}\msgAGray{pushI}{n\;x}\Pi_\Code{noI}^*\msgA{pop}{x}\msgAGray{popI}{n\;x}\Pi_\Code{any}^*) \tag{$\pi_\Code{stack}$}\label{prop:stackTrace}
+    \\&\qquad\qquad\Pi_\Code{noI}^* \seqA \msgAGray{pushI}{m\;y}^\bot
+    \seqA \msgAGray{popI}{m\;y}^\bot \seqA \Pi_\Code{noI}^* \seqA \msgA{push}{x}^\bot \seqA \msgAGray{pushI}{n\;x}^\bot \seqA \Pi_\Code{noI}^* \seqA \msgA{pop}{x}^\top \seqA \msgAGray{popI}{n\;x}^\bot \seqA \Pi_\Code{any}^*) \tag{$\pi_\Code{stack}$}\label{prop:stackTrace}
   \end{align*}}\vspace{-.4cm} \par\nobreak\noindent
 \end{example}
 
@@ -231,9 +232,11 @@ generates straightline programs without recursion by dropping by all
 ghost events and variables and then mapping each symbolic event to a
 corresponding effectful operation with appropriate arguments. So,
 given the following context and abstract trace:
-\vspace{-.4cm} \par\nobreak{\small\begin{align*}
-  (m{:}\urt{\Int}{\vnu = 0}, n{:}\urt{\Int}{\vnu = m{+}1}, y{:}\urt{\Int}{\top}, x{:}\urt{\Int}{\vnu > y}, \msgA{push}{x};\msgA{pop}{x})
-\end{align*}
+\vspace{-.4cm} \par\nobreak{\small%
+  \begin{align*} (m{:}\urt{\Int}{\vnu = 0}, n{:}\urt{\Int}{\vnu =
+      m{+}1}, y{:}\urt{\Int}{\top}, x{:}\urt{\Int}{\vnu > y},
+    \msgA{push}{x} \seqA \msgA{pop}{x})
+  \end{align*}
 }\noindent \deriveTrace{} will synthesize the following program:
 \begin{minted}[fontsize = \footnotesize, escapeinside=??, xleftmargin=10pt, linenos]{ocaml}
   let (x: int) = ?$\mykw{assume}\; (\exists m\;n\;y. m = 0 \land n = m{+}1 \land x > y)$? in push x; (* equivalent to assume true *)
@@ -282,7 +285,7 @@ number of loop iterations to ensure a completed sketch is well-typed.
         \underbrace{\Pi_\Code{noI}^*}_\text{$f$\;()}\;\;
         \underbrace{\msgA{pop}{x}\msgAGray{popI}{n\;x}}_{e_2}\;\;
         \underbrace{\Pi_\Code{noI}^*}_{e_4}
-      \\[-0.3em]
+      \\[5pt]
       & \underbrace{\Pi_\Code{noI}^*\msgAGray{pushI}{m\;y}\msgAGray{popI}{m\;y}\Pi_\Code{noI}^*\msgA{push}{x}\msgAGray{pushI}{n\;x}}_{e_3}\;\;
         \underbrace{\Pi_\Code{noI}^*}_{e_1}\;\;
         \underbrace{\Pi_\Code{noI}^*}_\text{$f$\;()}\;\;
