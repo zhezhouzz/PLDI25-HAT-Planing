@@ -74,7 +74,6 @@ $\mykw{assert}$ statements to flag property violations.
 %% indicate that the system under test did not encounter the potential
 %% bug in this execution, indicating the need for another attempt.
 %% % \BD{Say something about how we handle assertion failures.}
-
 Our experimental evaluation addresses three research questions:
 \begin{itemize}
 \item[\textbf{Q1}:] Is \name{} \emph{expressive}? Can it synthesize
@@ -234,10 +233,11 @@ for data structures like graphs and automata (\textsf{Graph},
 lambda-calculus, the latter two both described
 in~\autoref{sec:overview}.  The third are concurrent and database
 benchmarks (\textsf{Transaction}, \textsf{Shopping},
-\textsf{Courseware}, \textsf{Twitter}, \textsf{Smallbank}).
-Violations of these properties manifest in specific configurations
+\textsf{Courseware}, \textsf{Twitter}, \textsf{Smallbank}) that test
+properties related to consistency and synchronization. 
+Property violations in any of these categories only manifest in specific configurations
 (e.g., a violating test case for \textsf{NFA} involves constructing an
-automata containing nodes with more than two outgoing edges).  We
+automata containing multiple nodes with more than two outgoing edges).  We
 evaluate these three classes of benchmarks by transpiling synthesized
 generators into OCaml, leveraging its QCheck library as
 needed. The SUT for each of these benchmarks is known to be buggy; in
@@ -313,10 +313,10 @@ test sequences is significantly less effective than \name{}'s
 trace-guided synthesis approach.  Moreover, as indicated by the
 \textsf{Raft} numbers, a random exploration procedure, without
 manually engineered guidance, is too na\"{i}ve to find a violating
-execution.  As mentioned for the comparison to MonkeyDB, it is notable
-that \name{}'s performance on these P benchmarks is competitive, and
-in several cases, superior to handcrafted P schedulers, even though
-\name{} has no built-in knowledge of P's underlying programming model.
+execution.  It is notable that here too, \name{}'s performance on
+these P benchmarks is competitive, and in several cases, superior to
+handcrafted P schedulers, even though \name{} has no built-in
+knowledge of P's underlying programming model.
 
 The last group of columns in both tables provide details on the cost
 of our synthesis procedure. The first column presents total synthesis
@@ -334,16 +334,15 @@ In general, these numbers correlate with each other, and serve as
 rough proxies for benchmark complexity.  They indicate that even for
 the most challenging benchmarks, \name{} is able to synthesis an
 effective generator in a reasonable amount of time.
-
 \paragraph{Case study}
 To demonstrate that \name{} can be effective in real-world scenarios,
 we have applied it to \textsf{AnonReadAtomicity}, a distributed
 transaction system in use at a major cloud provider, where
 asynchronous reads are expected to execute atomically, as discussed
 in~\autoref{sec:overview}. The property to be checked requires that if
-there exists a key $\Code{k}$ updated within an active transaction
-$\Code{i}$, any successful read response asking its value should
-return the value last written to $\Code{k}$ made by that transaction.
+there exists a key $\Code{k}$ updated within an active transaction,
+any successful read response asking its value should return the value
+last written to $\Code{k}$ made by that transaction.
 %% We can express a
 %% violation of this property as the following SRE: %
 %% {\small
