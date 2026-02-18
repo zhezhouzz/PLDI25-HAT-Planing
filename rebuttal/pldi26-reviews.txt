@@ -1,0 +1,213 @@
+Review #68A
+Overall merit
+B. 
+OK paper, but I will not champion it.
+
+Reviewer expertise
+Y. 
+I am knowledgeable in the area, though not an expert.
+
+Paper summary
+This paper presents an approach for synthesizing PBT test generators based on under-approximate effect types. The approach centers around 1) these effect types and 2) a synthesis algorithm that synthesizes a generator given a property-to-test and effect type annotations for available operations. The effect types, dubbed uHATs for short, take the shape e : [H] t [F], where H and F are trace predicates (and t is a simple value type), and have the interpretation that for all execution traces a satisfying F after evaluating e, there exists a trace b satisfying H such that e steps b to a; in other words, H captures sufficient conditions to produce traces satisfying F as a result of evaluating e.
+
+Given a trace predicate describing a property to check, and uHATs for all operations on the interface of a SUT, the paper describes a synthesis algorithm that produces a random test generator that efficiently explores the space of valid traces (according to the operation uHATs) that are relevant for the property. The test generator does so by producing sequences of operation invocations that 1) is valid according to the operation uHATs, and 2) should satisfy the property of interest. Hence, the test generator is guided by the operation uHATs to only generate relevant, valid traces.
+
+The paper evaluates an implementation of its approach (dubbed Closeau) on a variety of buggy programs drawn from the literature, and the results demonstrate that Closeau is able to generate tests triggering the bugs in all programs in fewer executions than SOTA test generators.
+
+Strengths
+This paper presents a promising approach to a difficult problem, and is overall thoughtfully-written. In my view, its primary strengths are:
+
+uHATs appear to be a novel and effective abstraction for modularly reasoning about the effect interactions of different operations.
+The paper's synthesis algorithm to produce test generators demonstrates a compelling application of uHATs for an interesting and challenging problem.
+The paper evaluates its approach on a diverse set of benchmarks drawn from the literature and its results look highly promising.
+Weaknesses
+The paper has two main weaknesses, the first of which strikes me as rather fundamental and the second is about presentation.
+
+The effectiveness of this approach seems to depend critically on the quality of manually-written uHATs for operations, but the paper does not discuss or evaluate this at all.
+The example section is difficult to follow.
+Expanding on these in more detail:
+
+1: It seems that the effectiveness of this approach depends heavily on the quality of often non-obvious hand-crafted under-approximate uHATs types for operations. E.g. the push and store operation types from section 2 are far from obvious (to me)---they describe constraints that don't clearly derive from the spec being tested nor the operations at hand, suggesting significant freedom/creativity necessary to craft them---and the approach seems to depend critically on the shape/quality of these types. This makes me wonder about bias introduced by the uHATs used in the evaluation: i.e. how would the results in the evaluation look for uHATs types written by a non-expert who only has a reasonable understanding of 1) the SUT and 2) the property of interest? On the other hand, the SOTA PBT systems the evaluation compares against also presumably suffer from the same issue in the sense that they use manually-crafted and tuned generation strategies targeted at discovering bugs in the benchmark SUTs. All that said, a discussion of the sensitivity of this approach to the quality of uHATs types, and the quality of those used in the evaluation, is warranted and missing. Given the critical importance of these factors in the paper's proposed approach, and the apparent freedom in design of the types, the lack of such discussion strikes me as a significant oversight in the paper.
+
+2: The example section requires more exposition to be understandable. While the read atomicity example is clear, the IFC example is very difficult to follow. In particular, the uHATs provided for push and store impose constraints that do not align with what I would characterize as the "obvious" functional correctness properties of the operations, but the section does not explain how they were formulated besides a brief remark about avoiding uninteresting traces. Then, the property to test constrains lvl in a mysterious way (why must both pushes have the same level?), and the generator generates traces of a particular shape that is not explained at all (why can "high" pushes only be generated with different x and y?). The third example, STLC terms, describes a uHAT but doesn't explain what operation the uHAT describes nor is it at all clear from context (is the idea that it's for an add-lambda operation or something like that? But that doesn't seem to make sense, because the discussion is about generating test terms; is the type for the generator?). Given that the section should provide a high level overview of the key ideas of the paper, I consider it a significant weakness of the writing that I found it perhaps the most confusing section.
+
+Detailed comments for authors
+The introduction claims that the paper's fourth contribution is its evaluation, but that is not an independent novel scientific contribution of the paper---it is evidence to validate/support the paper's contributions 1-3. I do not believe it should be listed as a contribution.
+
+L326: typo "space of terms used to synthesis a test" --> "synthesize"
+
+L379: typo, I think the second {v: int}^o should be {v: int}^u and the description should say "in both over- and under-approximate qualifiers"
+
+L555: typo I'm fairly sure, \sigma(B) should be \sigma(A')
+
+Also L556: \phi[v \mapsto v] should be \phi[x \mapsto v]?
+
+L594: typo "that each element of the represents"
+
+L763: typo "of the any effects"
+
+Questions for author response
+Can you tell us about the uHATs used in the evaluation? For example, a few of the many questions I have about them: How "obvious" are they? Could they be written by a lightly-trained average developer? How does the creativity and complexity involved in crafting those uHATs compare to manually writing custom test generators in existing PBT frameworks?
+
+Review #68B
+Overall merit
+A. 
+Good paper. I will champion it.
+
+Reviewer expertise
+Y. 
+I am knowledgeable in the area, though not an expert.
+
+Paper summary
+The paper introduces uHats (underapproximate Hoare Automata Types) that capture sufficient history conditions as SREs under which an expression is guaranteed to produce certain effect traces. The key idea is to use these underapproximate specifications to synthesize property-directed effectful test generators. They implement this as tool, Clouseau, that accepts uHat signatures for effectful APIs and an SRE describing the target property, and mechanically derives a well-typed generator in a DSL that can target OCaml/QCheck and P. They provide give a formal calculus, typing rules, and a soundness theorem. The paper evaluates across data structure, interpreter/serializer, database, and distributed-protocol benchmarks, often outperforming default/random baselines and sometimes competing with handwritten generators/schedulers.
+
+Strengths
+Interpreting Hoare automata-like trace qualifiers underapproximately and using them to guide synthesis is a innovative angle that complements recent work on incorrectness logic/typing and trace-based effect systems.
+The sequence (uHat specs + property SRE -> abstract-trace refinement -> recursion-sketch derivation) is well-articulated and backed by formal typing and denotational interpretations tied to the operational semantics.
+Evaluation results include OCaml/QCheck benchmarks (data structures, graphs, NFAs, IFC, STLC) and P models (banking, 2PC, Paxos, Raft-like scenarios), with a cloud-vendor case study on read atomicity.
+Ghost events elegantly encode latent structure (e.g., stack indices, abstraction depth) that would otherwise require bespoke, ad‑hoc generator logic. The synthesis pipeline recovers the needed concrete operations from these ghosts.
+Weaknesses
+uHATs are a great idea, but I would have liked to see how much work or human effort goes into writing such specifications.
+Detailed comments for authors
+line 236: "ouputs" -> "outputs" line 415: should it have push(3)?
+
+Questions for author response
+How hard is it for users to craft correct and effective uHats in practice? Could you share a short set of guidelines and a few “bad vs. good” uHat examples showing their impact on synthesis (time and success)?
+What happens when a uHAT used as a spec for synthesizing a generator is wrong? In overapproximate specs, the synthesis procedure does not find a solution, but what happens here?
+Review #68C8d
+Overall merit
+B. 
+OK paper, but I will not champion it.
+
+Reviewer expertise
+Y. 
+I am knowledgeable in the area, though not an expert.
+
+Paper summary
+This paper proposes an under-approximating type and effect system called under-approximating Hoare automata types (uHats). Expressions are characterized by Hoare-style triples with symbolic regular expressions (SREs) for pre- and post-conditions that describe trace effects. Roughly, if the pre-condition is satisfied, it is sufficient to guarantee a trace described by the post-condition is generated by executing the expression. The paper then goes on to show that these uHats can guide a synthesis procedure for property-based testing generators. These generators non-deterministically produce inputs to test a system. Such inputs often need to satisfy complex preconditions and writing effective generators is a well-known challenge for PBT systems. The paper argues that uHats are a good fit for specifying effectful generator pre- and post-conditions that can then be used to automatic construct correct-by-construction generators.
+
+The paper presents uHats, a generator DSL with a uHat-based type system, a synthesis procedure that synthesizes a generator from a given uHat, and an evaluation of this approach applied to several existing PBT techniques and domains.
+
+Strengths
+The paper has a creative idea at its core: interpreting Hats in an under-approximating way forms a useful specification of PBT generators, using uHats as sufficient conditions for reachability of effect traces, not safety properties.
+
+The technical contribution seems significant: the paper provides a formal DSL, typing discipline, and a refinement loop that repeatedly merges operator uHats into a property trace and derives recursive generators.
+
+Empirical results are promising: there are significant gains in generating faulty executions over the baselines.
+
+Weaknesses
+The paper relies upon angelic execution and no unreachable traces, which seems perfectly reasonable for the formal development, but may lead to pragmatic issues that don't appear to be addressed in the paper.
+
+It remains unclear to me what the relationship is between precision and generator effectiveness is.
+
+Detailed comments for authors
+The core contribution of using under-approximating trace types to specify and synthesize effectful generators is significant, insightful, and appears technically sound with a promising empirical evaluation. I think my biggest concerns have to do with usability aspects of the approach -- the technical parts all seem very well thought out. For a testing framework, it seems to require users to use a sophisticated (and unusual) specification language that can have surprising effects on all the downstream mechanisms that may be difficult to build a good mental model for.
+
+Trivial stuff:
+
+Section 3.1: seems to be a typo in the pure type qualifier 
+{
+v
+:
+b
+}
+o
+{v:b} 
+o
+  since it is missing the qualifier. See also the "can be assigned types 
+{
+v
+:
+i
+n
+t
+}
+o
+{v:int} 
+o
+  and 
+{
+v
+:
+i
+n
+t
+}
+o
+{v:int} 
+o
+ " which are identical and missing qualifiers that presumably distinguish them.
+
+Questions for author response
+What happens when a specification is wrong or certain histories are unreachable?
+
+Is it possible to quantify anything about the impact of specification precision on generator effectiveness? What is the iterative refinement process like for a user of this tool to get things "right"?
+
+When a generator fails to be synthesized, what feedback is provided? What is the debugging process like?
+
+Review #68D
+Overall merit
+B. 
+OK paper, but I will not champion it.
+
+Reviewer expertise
+Z. 
+I am not an expert. My evaluation is that of an informed outsider.
+
+Paper summary
+This paper introduces Underapproximate Hoare Automata Types (uHats), a type abstraction for underapproximating effectful computations via symbolic trace specifications. The key idea is to leverage underapproximate trace specifications—expressed as symbolic regular expressions (SREs)—to guide the synthesis of effectful test generators for black-box systems. The algorithms proposed are implemented in the system Clouseau which is evaluated on a rich suite of examples.
+
+Strengths
+The paper brings together a number of interesting ideas to solve an important problem
+The paper provides many motivating examples, and the evaluation is a good suite of examples.
+Detailed comments for authors
+Here what appear to be a few typos.
+
+line 365-366. The text says rule "StPureOp" but figure 3 has the rule as StPOp.
+line 378/379. ".. type 
+{
+v
+:
+i
+n
+t
+}
+o
+{v:int} 
+o
+  and 
+{
+v
+:
+i
+n
+t
+}
+o
+{v:int} 
+o
+  ..." Are these two type supposed to be the same?
+line 388/389. "... future SFA 
+A
+A ...". Should 
+A
+A be 
+F
+F?
+lines 488 and 489, footnotes 7 and 8. I don't think you need two footnotes to say the same thing in sentences that are 2 paragraphs apart.
+line 555. Perhaps 
+B
+B is supposed to be 
+A
+′
+A 
+′
+ .
+line 580. Reference to "Theorem 3.5" but there is no such theorem. Did you mean Corollary 3.5?
+Questions for author response
+In figure 2, what is the last operation when defining traces 
+α
+α?
+Is the full uHat type system required for synthesis correctness, or could synthesis operate purely at the SRE level?
+How much manual effort was required to write the uHat specifications compared to writing handwritten generators?
+Can the approach handle concurrency interleavings beyond sequential traces (e.g., partial orders)?
