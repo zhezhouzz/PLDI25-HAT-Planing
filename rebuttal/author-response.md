@@ -8,7 +8,7 @@ We begin by clarifying the concerns shared by all reviewers, namely, the user ef
 
 ## Shared Concern: The Quality Sensitivity of uHat Specifications and Corresponding User Effort
 
-As pointed out by R.A, `the effectiveness of our approach depends on the quality of  manually-written uHats for effectful operators... on the other hand, the SOTA PBT systems the evaluation  compares against also presumably suffer from the same issue`. In general, in order to bias test exploration toward desirable cases within a huge search space, both our approach and existing methods require test developers to have their knowledge about the SUT reflected in the structure of test generators.  Specifically, this not only includes  `obvious functional correctness properties of the operations` (as mentioned by R.A), but also search bias strategies that guide the test generator to focus on interesting configurations.  uHATs allow the formal expression of these insights and inform an automated synthesis procedure from them, unlike existing systems which directly bake these properties into the implementation (and which must  therefore 'manually-craft and tune generation strategies' (R.A)).  We revisit the three motivating examples in Section 2 to illustrate these points of difference and also show weaker versions of uHats in these examples to explain the corresponding outcomes in Clouseau.
+As pointed out by R.A, `the effectiveness of our approach depends on the quality of  manually-written uHats for effectful operators... on the other hand, the SOTA PBT systems the evaluation  compares against also presumably suffer from the same issue`. In general, in order to bias test exploration toward desirable cases within a huge search space, both our approach and existing methods require test developers to have their knowledge about the SUT reflected in the structure of test generators.  Specifically, this not only includes  `obvious functional correctness properties of the operations` (as mentioned by R.A), but also search bias strategies that guide the test generator to focus on interesting configurations.  uHATs allow the formal expression of these insights and inform an automated synthesis procedure from them, unlike existing systems which directly bake these properties into the implementation (and which must  therefore `manually-craft and tune generation strategies` (R.A)).  We revisit the three motivating examples in Section 2 to illustrate these points of difference and also show weaker versions of uHats in these examples to explain the corresponding outcomes in Clouseau.
 
 ### Example 1: Atomicity
 
@@ -22,10 +22,12 @@ This specification only requires that there exists a written value $v$ before th
 
 $\texttt{let\;x\;=\;int\_gen\;()\;in}\;\textbf{write}\;\texttt{x\;in}$
 $\texttt{let\;y\;=\;int\_gen\;()\;in}\;\textbf{write}\;\texttt{y\;in}$
-$\texttt{let\;\_\;=}\;\textbf{readReq}\texttt{\;in\;let\;z\;=}\;\textbf{readResp}\;\texttt{i1\;in}$
-$\texttt{assert\;(z\;==\;x || z == y) }$
+$\texttt{let\;i\;=}\;\textbf{readReq}\texttt{\;in\;let\;z\;=}\;\textbf{readResp}\;\texttt{i\;in}$
+$\texttt{assert\;(z\;==\;x || z\;==\;y) }$
 
-It initiates two writes followed by a read, and asserts that the read value must be one of the two previously written ones. Because this weaker specification fails to capture the core property of read atomicity, its derived generators explore obviously safe cases, and would fail to detect read atomicity violations. Note that the generator shown on lines 220–225 can also be synthesized from this weaker specification.  Thus, an imprecise specification simply means that our synthesis algorithm has less guidance on the structure of the generators it produces.  In the limit, the weakest specification for a given problem results in synthesized generators simply performing random test exploration. 
+It initiates two writes followed by a read, and asserts that the read value must be one of the two previously written ones. 
+Notably, although this program is type-safe according to the weaker uHAT, it would not be allowed by the original specification, which requires the read value to be the last one.
+Because this weaker specification fails to capture the core property of read atomicity, its derived generators explore obviously safe cases, and would fail to detect read atomicity violations. On the other hand, the generator shown on lines 220–225 can also be synthesized from this weaker specification.  Thus, an imprecise specification simply means that our synthesis algorithm has less guidance on the structure of the generators it produces.  In the limit, the weakest specification for a given problem results in synthesized generators simply performing random test exploration. 
 
 ### Example 2: Information-Flow Control
 
