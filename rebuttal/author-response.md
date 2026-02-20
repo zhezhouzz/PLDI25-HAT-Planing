@@ -66,11 +66,11 @@ Two properties of sensible STLC terms that facilitate test exploration are that 
 1. **well-formed**: an abstraction needs to be closed after it is opened, terms are closed, etc. to avoid terms that would be rejected by the STLC parser;
 2. **well-typed**: to avoid it being rejected by the STLC type checker.
 
-The specification on line 307 encodes only the first property, while the more precise specification that encodes both is shown in Figure 8 of the supplementary material. The weaker specification gives the synthesized test generator freedom to produce well-formed but ill-typed STLC terms (e.g., $3\;3$).  To go beyond these properties and handle more sophisticated notations like de Brujin indices as described in the paper, requires additional constraints on the specification, manifested in the specification as ghost variables that track abstraction depth (as discussed on line 306 - 314).
+The specification on line 307 encodes only the first property, while the more precise specification that encodes both is shown in Figure 8 of the supplementary material. The weaker specification gives the synthesized test generator freedom to produce well-formed but ill-typed STLC terms (e.g., $3\;3$).  To go beyond these properties and handle more sophisticated notations like de Brujin indices as described in the paper, requires additional constraints on the specification, manifested in the specification as ghost variables that track abstraction depth (as discussed on lines 306 - 314).
 
 ### Summary
 
-Taken together, these three examples demonstrate that, as in prior PBT frameworks [20], the effectiveness of our approach depends on the test engineers encoding desired properties and search biases when formulating the design and implementation of the test generator.  In contrast to prior work, Clouseau allows both of these to be expressed formally and compositionally using uHATs, so that synthesized generators are both informed by and guaranteed to adhere to this knowledge. Thus, weak specifications simply result in less effective generators, a scenario no different than faced by PBT developers today.
+Taken together, these three examples demonstrate that, as in prior PBT frameworks [20], the effectiveness of our approach depends on test engineers' insights about the desirable properties and search biases of test generators.  In contrast to prior work, Clouseau allows both of these to be expressed formally and compositionally using uHATs, and the synthesized generators are both informed by and guaranteed to adhere to this knowledge. Thus, weak specifications simply result in less effective generators, a scenario no different than the one faced by PBT developers today.
 
 ## Summary of Proposed Changes
 
@@ -80,7 +80,7 @@ Concretely, we propose to implement the following changes in the revision, in or
 
 - We will clarify the explanation of our motivating examples in Section 2 (Reviewer A).
 
-- To empirically evaluate the impact of uHAT quality, we will additionally evaluate Clousseau using low-quality uHATs for all benchmarks in our evaluation. These new uHATs will encode weaker properties, similar to the examples above. The complete set of uHATs used in our evaluation will be included in the updated supplemental materials. (Reviewer B)
+- To empirically evaluate the impact of uHAT quality, we will additionally evaluate Clousseau using low-quality uHATs for all benchmarks in our evaluation. These new uHATs will encode weaker properties, similar to the examples above. We will include the complete set of uHATs used in our evaluation in the updated supplemental material. (Reviewer B)
 
 - We will restructure the list of contributions to exclude the evaluation study as our fourth contribution (Reviewer A).
 
@@ -96,7 +96,7 @@ Concretely, we propose to implement the following changes in the revision, in or
 
 - Q: Could they be written by a lightly-trained average developer?
 
-- A: As anecdotal evidence in the affirmative, the uHATs for the $\texttt{HashTable}$ and $\texttt{Courseware}$ benchmarks in Figure 1 were written by an undergraduate student, and the $\texttt{Smallbank}$ and $\texttt{Twitter}$ benchmarks by two first-year PhD students, each within several person-hours. All three students were new to our uHAT specification language and had no knowledge of our synthesis algorithm. However, they were still able to encode their knowledge about the SUT as uHATs to successfully test these benchmarks.
+- A: As anecdotal evidence in the affirmative, the uHATs for the $\texttt{HashTable}$ and $\texttt{Courseware}$ benchmarks in Figure 1 were written by an undergraduate student, and those for $\texttt{Smallbank}$ and $\texttt{Twitter}$ by two first-year PhD students. All three students were new to our uHAT specification language and had no knowledge of our synthesis algorithm. After a couple of hands-on training sessions, each was able to independently encode their knowledge about the SUT as uHATs, requiring only a few person-hours to complete all the benchmarks.
 
 #### Reviewer B
 
