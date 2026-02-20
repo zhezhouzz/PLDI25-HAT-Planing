@@ -49,7 +49,7 @@ In contrast to the specification at L266, this specification allows the synthesi
 
 On the other hand, a weaker specification of $\textbf{store}$ might omit the bias on address values (which is captured in the original spec at L267 via the **isAddr** predicate):
 
-$\textbf{store}: [\bullet^* \cdot \langle \textbf{push}\;\mathit{lvl\;x_1\;y_2} \rangle \cdot (\bullet \setminus \langle \textbf{store} \rangle )^* \cdot \langle \textbf{push}\;\mathit{lvl\;x_2\;y_2} \rangle ]\texttt{unit}[\langle \textbf{store} \rangle]$
+$\textbf{store}: [\bullet^* \cdot \langle \textbf{push}\;\mathit{lvl\;x_1\;y_1} \rangle \cdot (\bullet \setminus \langle \textbf{store} \rangle )^* \cdot \langle \textbf{push}\;\mathit{lvl\;x_2\;y_2} \rangle ]\texttt{unit}[\langle \textbf{store} \rangle]$
 
 This change causes the synthesized generator to produce invalid addresses that trigger out-of-range memory errors, greatly reducing test efficiency.
 
