@@ -2,14 +2,14 @@
 \label{sec:synthesis}
 
 Given an SRE $A$ describing some property of a black-box system under
-test, \autoref{theorem:sound} ensures that a well-typed test generator
+test, Corollary~\ref{theorem:sound} ensures that a well-typed test generator
 program $\emptyset \vdash e : \uhat{\epsilon}{\Unit}{F}$ \emph{must}
 be able to produce \emph{every} trace $\alpha$ that is consistent with
 both $F$ and $A$, i.e. $\alpha \in F \land A$. Thus, the high-level
 goal of our synthesis procedure is to find a generator that a) uses
 effectful operators in a way that is consistent with the temporal and
 data-dependency constraints captured by their specifications in
-$\Delta$, and b) has a \tyName{} whose future automata shares a
+$\Delta$, and b) has a \tyName{} whose future automaton shares a
 meaningful overlap with $A$. Our synthesis algorithm simultaneously
 solves both problems by using a loop, depicted in
 \autoref{fig:syn-gen}, to iteratively \emph{refine} the target SRE
@@ -19,9 +19,9 @@ a single event in an element of this set and adds events before and
 after that event so that its dependences are satisfied, ensuring that
 the corresponding operator in a synthesized program is well-typed. Our
 loop also employs a regex non-emptiness check to ensure that each
-element of the represents a generator that produces at least one
+element of this set represents a generator that produces at least one
 feasible trace. After the refinement loop has finished, a well-typed
-generator programs can be mechanically extracted using the refined
+generator program can be mechanically extracted using the refined
 property as a template.
 
 \begin{figure}[h!]

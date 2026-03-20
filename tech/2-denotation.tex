@@ -77,7 +77,7 @@
   \\ &\denot{ \effGray{op}{:}s\garr t } &&\doteq \{ e ~|~ 
     \emptyset \basicvdash e : \eraserf{t} \land 
     e\in\denot{ t } \}
-  \\[-.8em] &\denot{\uhat{H}{x{:}\urt{b}{\phi}}{F}} &&\doteq \{e ~|~ \emptyset \basicvdash e : b \land \forall v{:}b. \phi[v\mapsto v] \impl \forall \alpha_f \in \denot{F[x\mapsto v]}. \exists \alpha_h \in\denot{H[x\mapsto v]}. \msteptr{\eraseGhost{\alpha_h}}{e}{\eraseGhost{\alpha_f}}{v} \}
+  \\[-.8em] &\denot{\uhat{H}{x{:}\urt{b}{\phi}}{F}} &&\doteq \{e ~|~ \emptyset \basicvdash e : b \land \forall v{:}b. \phi[x\mapsto v] \impl \forall \alpha_f \in \denot{F[x\mapsto v]}. \exists \alpha_h \in\denot{H[x\mapsto v]}. \msteptr{\eraseGhost{\alpha_h}}{e}{\eraseGhost{\alpha_f}}{v} \}
   \\[-.4em] &\denot{\uhat{H}{x{:}t}{F}} &&\doteq \{e ~|~ \emptyset \basicvdash e : \eraserf{t} \land \forall v\in\denot{t}. \forall \alpha_f \in \denot{F}. \exists \alpha_h \in\denot{H}. \msteptr{\eraseGhost{\alpha_h}}{e}{\eraseGhost{\alpha_f}}{v} \}
   \\ &\denot{ \tau_1 \interty \tau_2 } &&\doteq \denot{\tau_1} \cap \denot{\tau_2}
 \end{align*}

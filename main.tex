@@ -289,6 +289,7 @@
 % \citestyle{acmauthoryear}
 \bibliography{bibliography}
 
+\ifdefined\showappendix
 \newpage
 \appendix
 \subfile{tech/outlines}
@@ -300,6 +301,8 @@
 % \subfile{tech/4-proof-2}
 % \subfile{tech/4-proof-3}
 \subfile{tech/5-evaluation}
+\else
+\fi
 
 \end{document}
 \endinput
