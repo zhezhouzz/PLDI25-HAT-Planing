@@ -18,7 +18,9 @@ uses Z3~\cite{de2008z3} as its backend SMT solver.\footnote{The
   % source code and benchmarks.
 }
 
-\paragraph{Evaluation setting} \name{} takes two inputs: a target
+\paragraph{Evaluation setting} \name{} takes two inputs\footnote{%
+  \cbnewadding{%
+  As anecdotal evidence in the affirmative, the \tyName{}s for the $\textsc{HashTable}$ and $\textsc{Courseware}$ benchmarks in \autoref{tab:evaluation} were written by an undergraduate student, and those for $\textsc{Smallbank}$ and $\textsc{Twitter}$ by two first-year PhD students. All three students were new to our \tyName{} specification language and had no knowledge of our synthesis algorithm. After a couple of hands-on training sessions, each was able to independently encode their knowledge about the SUT as \tyName{}s, requiring only a few person-hours to complete all the benchmarks. }}: a target
 property, expressed as an SRE, and an operator context that contains
 \tyName{} specifications for the operators used in the SUT.  During
 synthesis, \name{} decomposes the target property to build a generator
@@ -38,6 +40,15 @@ amount of time allotted for synthesis (3 minutes in our experiments).
 Synthesized generators use $\mykw{assume}$ statements to ensure that
 data dependencies among effectful operations are respected and use
 $\mykw{assert}$ statements to flag property violations.
+\cbnewadding{%
+  Like other PBT setups that rely on precondition-style filtering, our
+  evaluation adopts an \emph{angelic} reading of $\mykw{assume}$: when
+  the SUT or runtime rejects a candidate trace (e.g., the interpreter
+  aborts on an ill-typed fragment), we treat that run as uninformative
+  and \emph{retry} with a fresh sample rather than counting it toward a
+  found violation.  This matches how generators are typically used in
+  practice and avoids conflating specification imprecision with genuine
+  safety failures.}
 
 %% We evaluate our approach by integrating our synthesized controllers
 %% into the testing framework provided by P~\cite{DGJ+13,DQ17}, a
@@ -74,7 +85,7 @@ $\mykw{assert}$ statements to flag property violations.
 %% indicate that the system under test did not encounter the potential
 %% bug in this execution, indicating the need for another attempt.
 %% % \BD{Say something about how we handle assertion failures.}
-Our experimental evaluation addresses three research questions:
+Our experimental evaluation addresses four research questions:
 \begin{itemize}
 \item[\textbf{Q1}:] Is \name{} \emph{expressive}? Can it synthesize
   generators for a diverse set of benchmarks with interesting
@@ -86,9 +97,12 @@ Our experimental evaluation addresses three research questions:
 \item[\textbf{Q3}:] Is \name{} \emph{efficient}? Is it able to
   synthesize meaningful generators in a reasonable amount
   of time?
+  \cbnewadding{\item[\textbf{Q4}:] Is \name{} \emph{sensitive}? Is it able to
+  synthesize meaningful generators for benchmarks with weaker specifications?}
 \end{itemize} %
 
 \newcolumntype{P}[1]{>{\centering\arraybackslash}p{#1}}
+\newcommand{\timeout}{{\tiny Timeout}}
 
 \begin{table}[t!]
   \renewcommand{\arraystretch}{0.8}
@@ -108,11 +122,11 @@ Our experimental evaluation addresses three research questions:
     correct-by-construction test generators for all benchmarks within
     3 minutes; the number of generator variants synthesized is bounded
     at 3.  We set a 30-minute bound for the baselines to find a
-    property violation.}
+    property violation. }
   \vspace*{-.1in} \footnotesize
 %\multicolumn{2}{c||}{} &
 \setlength{\tabcolsep}{1.3pt}
-\begin{tabular}{c|P{4.8cm}||ccc||cc||c|ccc}
+\begin{tabular}{c|P{4.6cm}||ccc||cc||c|ccc}
   \toprule
   \multicolumn{2}{c||}{Benchmark} & \#$\eff{op}$ & \multicolumn{2}{c||}{\#qualifier} & \multicolumn{2}{c||}{\scriptsize \# Num. Executions} & t$_\text{total}$(s) & \#evt & \#refine & \#SMT \\
   \midrule
@@ -125,43 +139,47 @@ Name & Property &   &uHAT &goal & {\scriptsize Clouseau} & {\scriptsize Baseline
 \textsf{Filesystem}\cite{ZYDJ24} & {\scriptsize A valid file path only contains non-deleted entries.} & $7$ & $67$ & $4$ & $1.3$ & $2812.1$ & $6.02$ & $13$ & $14$ & $853$\\
 \midrule
 \midrule
-\textsf{Graph}\cite{ZYDJ24} & {\scriptsize A serialized stream of nodes and edges is re-constituted to
-  form a fully-connected graph.} & $6$ & $24$ & $4$ & $1.0$ & {\tiny Timeout} & $16.61$ & $16$ & $16$ & $2114$\\
+\textsf{Graph}\cite{ZYDJ24} & {\scriptsize A serialized stream of nodes and edges is restored to
+  form a fully-connected graph.} & $6$ & $24$ & $4$ & $1.0$ & \timeout{} & $16.61$ & $16$ & $16$ & $2114$\\
 \midrule
-\textsf{NFA}\cite{ZYDJ24} & {\scriptsize An NFA reaches a final state for every string in the language it accepts.} & $8$ & $50$ & $4$ & $1.0$ & {\tiny Timeout} & $21.85$ & $26$ & $6$ & $5080$\\
+\textsf{NFA}\cite{ZYDJ24} & {\scriptsize An NFA reaches a final state for every string in the language it accepts.} & $8$ & $50$ & $4$ & $1.0$ & \timeout{} & $21.85$ & $26$ & $6$ & $5080$\\
 \midrule
 \textsf{IFCStore}\cite{pbt-ifc} & {\scriptsize A well-behaved IFC program containing a $\Code{Store}$ command never leaks a secret.} & $8$ & $37$ & $2$ & $2.8$ & $4811.7^{\dagger}$ & $1.02$ & $8$ & $8$ & $160$\\
 \midrule
 \textsf{IFCAdd}\cite{pbt-ifc} & {\scriptsize A well-behaved IFC program containing an $\Code{Add}$ command never leaks a secret.} & $8$ & $37$ & $2$ & $1.6$ & $3383.4^{\dagger}$ & $0.96$ & $8$ & $8$ & $154$\\
 \midrule
-\textsf{IFCLoad}\cite{pbt-ifc} & {\scriptsize A well-behaved IFC program containing a $\Code{Load}$ command never leaks a secret.} & $8$ & $37$ & $2$ & $15.4$ & $11293.7^{\dagger}$ & $5.76$ & $16$ & $18$ & $930$\\
+\textsf{IFCLoad1}\cite{pbt-ifc} & {\scriptsize A well-behaved IFC program containing a $\Code{Load}$ command never leaks a secret.} & $8$ & $37$ & $2$ & $15.4$ & $11293.7^{\dagger}$ & $5.76$ & $16$ & $18$ & $930$\\
+\midrule
+\cbnewadding{\textsf{IFCLoad2}\cite{pbt-ifc}} & \cbnewadding{{\scriptsize \textsf{IFCLoad1} without searching bias (cf. \autoref{sec:overview}).}} & \cbnewadding{$8$} & \cbnewadding{$33$} & \cbnewadding{$2$} & \cbnewadding{$115.4$} & \cbnewadding{$11293.7^{\dagger}$} & \cbnewadding{$4.83$} & \cbnewadding{$16$} & \cbnewadding{$18$} & \cbnewadding{$754$}\\
 \midrule
 \textsf{DeBruijn1}\cite{CoverageType} & {\scriptsize An STLC interpreter correctly evaluates a
-  well-typed first-order STLC program that uses a de Brujin representation.} & $10$ & $117$ & $4$ & $1.5$ & $634.0^{\dagger}$ & $40.38$ & $18$ & $26$ & $4765$\\
+\emph{well-typed first-order} STLC program that uses a de Brujin representation.} & $10$ & $117$ & $4$ & $1.5$ & $634.0^{\dagger}$ & $40.38$ & $18$ & $26$ & $4765$\\
 \midrule
 \textsf{DeBruijn2}\cite{CoverageType} & {\scriptsize An STLC interpreter correctly evaluates a
-  a well-typed higher-order STLC program that uses a de Brujin representation.} & $10$ & $118$ & $4$ & $1.4$ & {\tiny Timeout}$^{\dagger}$ & $91.73$ & $18$ & $31$ & $9034$\\
+\emph{well-typed higher-order} STLC program that uses a de Brujin representation.} & $10$ & $118$ & $4$ & $1.4$ & \timeout{}$^{\dagger}$ & $91.73$ & $18$ & $31$ & $9034$\\
+\midrule
+\cbnewadding{\textsf{DeBruijn3}\cite{CoverageType}} & \cbnewadding{{\scriptsize \textsf{DeBruijn2} with \emph{untyped higher-order} programs (cf. \autoref{sec:overview}).}} & \cbnewadding{$10$} & \cbnewadding{$107$} & \cbnewadding{$4$} & \cbnewadding{\timeout{}} & \cbnewadding{\timeout{}$^{\dagger}$} & \cbnewadding{$3.23$} & \cbnewadding{$7$} & \cbnewadding{$22$} & \cbnewadding{$957$}\\
 \midrule
 \midrule
 \textsf{Shopping}\cite{MonkeyDB} & {\scriptsize All items added to a cart can be checked-out.} & $10$ & $60$ & $3$ & $1.0$ & $20.0^{\dagger}$ & $22.10$ & $17$ & $30$ & $1269$\\
 \midrule
 \textsf{HashTable}\cite{OcamlMulticorePBT} & {\scriptsize No updates to a concurrent hashtable are every lost.} & $13$ & $38$ & $4$ & $1.0$ & $2.5^{\dagger}$ & $0.76$ & $6$ & $6$ & $57$\\
 \midrule
-\textsf{Transaction} & {\scriptsize Asynchronous read operations are logically atomic.} & $8$ & $45$ & $3$ & $1.2$ & {\tiny Timeout} & $2.89$ & $15$ & $16$ & $423$\\
+\textsf{Transaction1} & {\scriptsize Asynchronous read operations are logically atomic.} & $8$ & $45$ & $3$ & $1.2$ & \timeout{} & $2.89$ & $15$ & $16$ & $423$\\
+\midrule
+\cbnewadding{\textsf{Transaction2}} & \cbnewadding{{\scriptsize \textsf{Transaction1} with weaker specs (cf. \autoref{sec:overview}).}} & \cbnewadding{$8$} & \cbnewadding{$40$} & \cbnewadding{$3$} & \cbnewadding{\timeout{}} & \cbnewadding{\timeout{}} & \cbnewadding{$2.24$} & \cbnewadding{$15$} & \cbnewadding{$15$} & \cbnewadding{$372$}\\
 \midrule
 \textsf{Courseware}\cite{MonkeyDB} & {\scriptsize Every student enrolled in a course exists in the
   enrollment database for that course.} & $16$ & $106$ & $3$ & $1.0$ & $57.5^{\dagger}$ & $27.71$ & $18$ & $33$ & $1479$\\
 \midrule
 \textsf{Twitter}\cite{MonkeyDB} & {\scriptsize Posted tweets are visible to all followers.} & $16$ & $99$ & $3$ & $1.0$ & $6.3^{\dagger}$ & $61.96$ & $24$ & $24$ & $2339$\\
 \midrule
-\textsf{Smallbank}\cite{OLTPBench} & {\scriptsize Account updates are strongly consistent.} & $22$ & $162$ & $3$ & $1.9$ & {\tiny Timeout} & $163.55$ & $28$ & $29$ & $10263$\\
+\textsf{Smallbank}\cite{OLTPBench} & {\scriptsize Account updates are strongly consistent.} & $22$ & $162$ & $3$ & $1.9$ & \timeout{} & $163.55$ & $28$ & $29$ & $10263$\\
 \bottomrule
 \end{tabular}
 \label{tab:evaluation}
 \vspace*{-.15in}
 \end{table}
-
-
 
 \begin{table}[t!]
   \renewcommand{\arraystretch}{0.8}
@@ -209,7 +227,7 @@ Name & Property &   &uHAT &goal & {\scriptsize Clouseau} & {\scriptsize Baseline
   \midrule
   {\scriptsize\textsf{Paxos}}\cite{ModP} & {\scriptsize Logs are correctly replicated.} & $10$ & $110$ & $2$ & $1.0$ & $667.7^{\dagger}$ & $23.70$ & $14$ & $77$ & $1763$\\
   \midrule
-  {\scriptsize\textsf{Raft}} & {\scriptsize Leader election is robust to faults.} & $9$ & $39$ & $6$ & $1.0$ & {\tiny Timeout} & $26.84$ & $12$ & $78$ & $1262$\\
+  {\scriptsize\textsf{Raft}} & {\scriptsize Leader election is robust to faults.} & $9$ & $39$ & $6$ & $1.0$ & \timeout{} & $26.84$ & $12$ & $78$ & $1262$\\
   \midrule
   {\scriptsize\textsf{AnonReadAtomicity}} & {\scriptsize Read Atomicity is preserved.} & $17$ & $113$ & $3$ & $1.0$ & $53.3^{\dagger}$ & $18.35$ & $16$ & $16$ & $1909$\\
 \bottomrule
@@ -249,7 +267,7 @@ kinds of distributed protocols; these are executed using the P runtime
 environment, by transpiling synthesized generators written in our DSL
 into P's state machine modeling language.  Here as well, the protocol
 being tested is known to be faulty from the sources they were adopted
-from.
+from. \cbnewadding{The \textsf{IFCLoad2}, \textsf{DeBruijn3}, and \textsf{Transaction2} benchmarks are variants of the original ones with weaker specifications; we omit them untils the detailed discussion at the end of this section (\textbf{Q4}).}
 
 
 %% For example, \textsc{RingLeaderElection}
@@ -366,3 +384,25 @@ violation.  A version of the benchmark in which this sequence
 structure is enforced manually discovers the violation in 53
 executions, while \name{}'s version can uncover the violation on all
 of its executions.
+
+\cbnewadding{ \paragraph{Input Quality Sensitiveness} The effectiveness and the efficiency of
+\name{} depend on the quality of the user-supplied \tyName{}
+specifications. As discussed in \autoref{sec:overview},
+Overly loose \tyName{}s offer synthesis little guidance; in the limit, exploration approaches random testing.
+To quantify \name{}'s sensitivity to specification quality, we ran an
+additional study on our OCaml and P benchmarks, keeping the SUT and the
+global property fixed while weakening only the \tyName{}s of
+individual operators.
+\autoref{tab:evaluation} reports the outcome for the three motivating
+examples from \autoref{sec:overview}\footnote{The full results are given in the supplemental material.}.
+The weakening following the description in \autoref{sec:overview}, for example, \textsf{IFCLoad2} weakens the ``valid address'' constraint (i.e., $\I{isAddr}$) from the original specification.
+We consider such specifications \emph{lower-quality} because their lack of guidance increases the risk that \name{} will synthesize generators misaligned with SUT's intended behavior.
+Under these weaker specifications, average synthesis time (t$_\text{total}$) decreases by $18.18\%$ on average, and by $78.07\%$ in the extreme case (\textsc{ChainReplication}). However, $26.9\%$ (7 out of 26) of the benchmarks time out; the remaining benchmarks show an increasing retry rate (\#Num. Executions), by $1.9\times$ on average and $7.5\times$ in the extreme case (\textsc{IFCLoad}).}
+
+\cbnewadding{We learn from the experimental results that this sensitivity reflects a rough split between basic correctness and search bias. Weakening basic correctness therefore affects \name{} more severely (e.g.,\textsf{DeBruijn3} generates untyped STLC programs to test an interpreter with type-checking): synthesized generators tend to yield large volumes of executions that are poorly matched to how the SUT is meant to be exercised, so obtaining an informative witness
+may require far more effort or time out entirely.
+Conversely, if basic correctness constraints are too strong overall, the synthesizer may not find effective test generators; in the extreme, conflicting \tyName{}s across operators leave synthesis without a solution.
+Weakening only search biases is comparatively benign (e.g.,
+\textsf{IFCLoad2}), mainly increasing retries before a bug is found, and
+because weaker specifications often shorten synthesis, that loss of
+testing efficiency is sometimes an acceptable trade-off.}

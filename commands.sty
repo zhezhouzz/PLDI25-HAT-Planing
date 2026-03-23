@@ -116,10 +116,14 @@
   }
 
 \newcommand{\submissionMode}{true}
+% \newcommand{\diffmode}{true}
 
 \ifdefined\diffmode
-\newcommand{\cbnewadding}[1]{
-\cbstart{\textcolor{blue}{#1}}\cbend}
+% In diff mode: new text is marked with changebars + blue; removed text is struck through.
+\newcommand{\cbnewadding}[1]{%
+  \cbstart{\textcolor{blue}{#1}}\cbend}
+\newcommand{\cbremoved}[1]{\leavevmode\sout{#1}}
+\newcommand{\itemcbremoved}[1]{\item \cbremoved{#1}}
 \newcommand{\cbst}{\cbstart}
 \newcommand{\cbed}{\cbend}
 \newcommand{\cbcontent}[1]{\textcolor{blue}{#1}}
@@ -127,6 +131,8 @@
 \else
 \ifdefined\submissionMode
 \newcommand{\cbnewadding}[1]{{#1}}
+\newcommand{\cbremoved}[1]{}
+\newcommand{\itemcbremoved}[1]{}
 \newcommand{\cbst}{}
 \newcommand{\cbed}{}
 \newcommand{\cbcontent}[1]{{#1}}
@@ -134,12 +140,16 @@
 \else
 \ifdefined\originalmode
 \newcommand{\cbnewadding}[1]{{#1}}
+\newcommand{\cbremoved}[1]{}
+\newcommand{\itemcbremoved}[1]{}
 \newcommand{\cbst}{}
 \newcommand{\cbed}{}
 \newcommand{\cbcontent}[1]{{#1}}
 \newcommand{\techreport}{technical report~\cite{FullVersion}\xspace }
 \else
 \newcommand{\cbnewadding}[1]{{#1}}
+\newcommand{\cbremoved}[1]{}
+\newcommand{\itemcbremoved}[1]{}
 \newcommand{\cbst}{}
 \newcommand{\cbed}{}
 \newcommand{\cbcontent}[1]{{#1}}

@@ -15,3 +15,6 @@ _minted/*
 _minted-main/
 sections/auto/
 sections/_region_.tex
+*.cb
+*.cb2
+table-diff.txt
