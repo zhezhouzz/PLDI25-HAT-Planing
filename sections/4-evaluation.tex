@@ -12,15 +12,9 @@ collection of actors) by using the synthesized generator as a
 property-directed scheduler that replaces P's default random one.
 Notably, the same specification and synthesis strategy is used in both
 cases.  \name{} consists of approximately 14K lines of OCaml code and
-uses Z3~\cite{de2008z3} as its backend SMT solver.\footnote{The
-  supplemental material provides detail results of our
-  experiments. % as well as a docker image that contains the \name{}
-  % source code and benchmarks.
-}
+uses Z3~\cite{de2008z3} as its backend SMT solver.
 
-\paragraph{Evaluation setting} \name{} takes two inputs\footnote{%
-  \cbnewadding{%
-  As anecdotal evidence in the affirmative, the \tyName{}s for the $\textsc{HashTable}$ and $\textsc{Courseware}$ benchmarks in \autoref{tab:evaluation} were written by an undergraduate student, and those for $\textsc{Smallbank}$ and $\textsc{Twitter}$ by two first-year PhD students. All three students were new to our \tyName{} specification language and had no knowledge of our synthesis algorithm. After a couple of hands-on training sessions, each was able to independently encode their knowledge about the SUT as \tyName{}s, requiring only a few person-hours to complete all the benchmarks. }}: a target
+\paragraph{Evaluation setting} \name{} takes two inputs: a target
 property, expressed as an SRE, and an operator context that contains
 \tyName{} specifications for the operators used in the SUT.  During
 synthesis, \name{} decomposes the target property to build a generator
@@ -97,8 +91,9 @@ Our experimental evaluation addresses four research questions:
 \item[\textbf{Q3}:] Is \name{} \emph{efficient}? Is it able to
   synthesize meaningful generators in a reasonable amount
   of time?
-  \cbnewadding{\item[\textbf{Q4}:] Is \name{} \emph{sensitive}? Is it able to
-  synthesize meaningful generators for benchmarks with weaker specifications?}
+  \cbnewadding{\item[\textbf{Q4}:] Is \name{} \emph{robust}? Is it able to
+    synthesize meaningful generators for benchmarks even when provided with weaker
+    specifications than necessary?}
 \end{itemize} %
 
 \newcolumntype{P}[1]{>{\centering\arraybackslash}p{#1}}
@@ -167,7 +162,7 @@ Name & Property &   &uHAT &goal & {\scriptsize Clouseau} & {\scriptsize Baseline
 \midrule
 \textsf{Transaction1} & {\scriptsize Asynchronous read operations are logically atomic.} & $8$ & $45$ & $3$ & $1.2$ & \timeout{} & $2.89$ & $15$ & $16$ & $423$\\
 \midrule
-\cbnewadding{\textsf{Transaction2}} & \cbnewadding{{\scriptsize \textsf{Transaction1} with weaker specs (cf. \autoref{sec:overview}).}} & \cbnewadding{$8$} & \cbnewadding{$40$} & \cbnewadding{$3$} & \cbnewadding{\timeout{}} & \cbnewadding{\timeout{}} & \cbnewadding{$2.24$} & \cbnewadding{$15$} & \cbnewadding{$15$} & \cbnewadding{$372$}\\
+\cbnewadding{\textsf{Transaction2}} & \cbnewadding{{\scriptsize \textsf{Transaction1} without read atomicity enforcement (cf. \autoref{sec:overview}).}} & \cbnewadding{$8$} & \cbnewadding{$40$} & \cbnewadding{$3$} & \cbnewadding{\timeout{}} & \cbnewadding{\timeout{}} & \cbnewadding{$2.24$} & \cbnewadding{$15$} & \cbnewadding{$15$} & \cbnewadding{$372$}\\
 \midrule
 \textsf{Courseware}\cite{MonkeyDB} & {\scriptsize Every student enrolled in a course exists in the
   enrollment database for that course.} & $16$ & $106$ & $3$ & $1.0$ & $57.5^{\dagger}$ & $27.71$ & $18$ & $33$ & $1479$\\
@@ -236,11 +231,17 @@ Name & Property &   &uHAT &goal & {\scriptsize Clouseau} & {\scriptsize Baseline
 \vspace*{-.15in}
 \end{table}
 
-We have evaluated \name{} on a diverse corpus of programs drawn from a
+We have evaluated \name{} on a diverse corpus of programs\footnote{The
+  supplemental material provides detail results of our
+  experiments. % as well as a docker image that contains the \name{}
+  % source code and benchmarks.
+} drawn from a
 variety of sources (described in the captions of
 \autoref{tab:evaluation} and~\autoref{tab:evaluation2}); all of the
 benchmarks except for \textsf{Database} and \textsf{Raft} were written
-by others (\textbf{Q1}).  Our benchmarks are grouped into four
+by others (\textbf{Q1}).\footnote{%
+  \cbnewadding{%
+  As anecdotal evidence in the affirmative, the \tyName{}s for the $\textsc{HashTable}$ and $\textsc{Courseware}$ benchmarks in \autoref{tab:evaluation} were written by an undergraduate student, and those for $\textsc{Smallbank}$ and $\textsc{Twitter}$ by two first-year PhD students. All three students were new to our \tyName{} specification language and had no knowledge of our synthesis algorithm. After a couple of hands-on training sessions, each was able to independently encode their knowledge about the SUT as \tyName{}s, requiring only a few person-hours to complete all the benchmarks. }}  Our benchmarks are grouped into four
 categories.  The first are data structure benchmarks (\textsf{Stack},
 \textsf{Set}, \textsf{Filesystem}) where the test generator probes for
 violations of structural invariants.  The second are evaluators -
@@ -267,7 +268,8 @@ kinds of distributed protocols; these are executed using the P runtime
 environment, by transpiling synthesized generators written in our DSL
 into P's state machine modeling language.  Here as well, the protocol
 being tested is known to be faulty from the sources they were adopted
-from. \cbnewadding{The \textsf{IFCLoad2}, \textsf{DeBruijn3}, and \textsf{Transaction2} benchmarks are variants of the original ones with weaker specifications; we omit them untils the detailed discussion at the end of this section (\textbf{Q4}).}
+from. \cbnewadding{The \textsf{IFCLoad2}, \textsf{DeBruijn3}, and \textsf{Transaction2} benchmarks are variants of the original ones with weaker specifications; we provide
+additional discussion of these at the end of this section (\textbf{Q4}).}
 
 
 %% For example, \textsc{RingLeaderElection}
@@ -385,24 +387,40 @@ structure is enforced manually discovers the violation in 53
 executions, while \name{}'s version can uncover the violation on all
 of its executions.
 
-\cbnewadding{ \paragraph{Input Quality Sensitiveness} The effectiveness and the efficiency of
-\name{} depend on the quality of the user-supplied \tyName{}
-specifications. As discussed in \autoref{sec:overview},
-Overly loose \tyName{}s offer synthesis little guidance; in the limit, exploration approaches random testing.
-To quantify \name{}'s sensitivity to specification quality, we ran an
-additional study on our OCaml and P benchmarks, keeping the SUT and the
-global property fixed while weakening only the \tyName{}s of
-individual operators.
-\autoref{tab:evaluation} reports the outcome for the three motivating
-examples from \autoref{sec:overview}\footnote{The full results are given in the supplemental material.}.
-The weakening following the description in \autoref{sec:overview}, for example, \textsf{IFCLoad2} weakens the ``valid address'' constraint (i.e., $\I{isAddr}$) from the original specification.
-We consider such specifications \emph{lower-quality} because their lack of guidance increases the risk that \name{} will synthesize generators misaligned with SUT's intended behavior.
-Under these weaker specifications, average synthesis time (t$_\text{total}$) decreases by $18.18\%$ on average, and by $78.07\%$ in the extreme case (\textsc{ChainReplication}). However, $26.9\%$ (7 out of 26) of the benchmarks time out; the remaining benchmarks show an increasing retry rate (\#Num. Executions), by $1.9\times$ on average and $7.5\times$ in the extreme case (\textsc{IFCLoad}).}
+\cbnewadding{ \paragraph{Specification Quality Robustness} \name{}'s
+  effectiveness depends on the quality of user-supplied \tyName{}
+  specifications.  To quantify \name{}'s robustness to specification
+  quality, we ran an additional study on our OCaml and P benchmarks,
+  keeping the SUT and the global property fixed while weakening the
+  \tyName{} specifications of individual operators in the SUT.
+  \autoref{tab:evaluation} summarizes the outcomes for the three
+  motivating examples presented in~\autoref{sec:overview}\footnote{
+  Details for the full set of benchmarks are provided in the supplemental material.}.  The
+  specifications are weakened following the description in
+  \autoref{sec:overview}, for example, \textsf{IFCLoad2} eliminates
+  the ``valid address'' constraint (i.e., $\I{isAddr}$) from the
+  original specification.  We consider such specifications
+  \emph{lower-quality} because their lack of guidance increases the
+  risk that \name{} will synthesize generators misaligned with SUT's
+  intended behavior.  Under these weaker specifications, average
+  synthesis time (t$_\text{total}$) decreases by $18.18\%$ on average,
+  and by $78.07\%$ in the extreme case
+  (\textsc{ChainReplication}). However, $26.9\%$ (7 out of 26) of the
+  benchmarks time out; the remaining benchmarks show an increasing
+  retry rate (\#Num. Executions), by $1.9\times$ on average and
+  $7.5\times$ in the extreme case (\textsc{IFCLoad2}).}
 
-\cbnewadding{We learn from the experimental results that this sensitivity reflects a rough split between basic correctness and search bias. Weakening basic correctness therefore affects \name{} more severely (e.g.,\textsf{DeBruijn3} generates untyped STLC programs to test an interpreter with type-checking): synthesized generators tend to yield large volumes of executions that are poorly matched to how the SUT is meant to be exercised, so obtaining an informative witness
-may require far more effort or time out entirely.
-Conversely, if basic correctness constraints are too strong overall, the synthesizer may not find effective test generators; in the extreme, conflicting \tyName{}s across operators leave synthesis without a solution.
-Weakening only search biases is comparatively benign (e.g.,
-\textsf{IFCLoad2}), mainly increasing retries before a bug is found, and
-because weaker specifications often shorten synthesis, that loss of
-testing efficiency is sometimes an acceptable trade-off.}
+\cbnewadding{Our ablation study reveals that weakening basic
+  correctness properties severely impacts \name's effectiveness
+  (e.g.,\textsf{DeBruijn3} generates untyped STLC programs to test an
+  interpreter with type-checking).  This is because generators
+  synthesized from such specification yield a large number of
+  executions that are poorly matched to how the SUT is meant to be
+  exercised; obtaining an informative witness may thus require far
+  more effort or time out entirely.  Converesely, weakening search
+  biases is comparatively benign (e.g., the synthesized generator for
+  \textsf{IFCLoad2} still finds read atomicity violations), primarily
+  manifesting as increased retries before a bug is found.  On the
+  other hand, because weaker specifications can lead to shorter
+  synthesis times, this loss of testing efficiency may sometimes be an
+  acceptable trade-off.}
