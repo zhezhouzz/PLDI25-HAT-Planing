@@ -165,13 +165,13 @@ provided specifications when performing effects.
   \centering
   \includegraphics[width=0.98\linewidth]{figures/clouseau-workflow.drawio.png}
   \vspace*{-.1in}
-  \caption{\name\ workflow}
+  \caption{\name{} workflow}
   \label{fig:workflow}
   \vspace*{-.2in}
 \end{wrapfigure}
 
 \autoref{fig:workflow} depicts the workflow of our system, named
-\name.  The relevant APIs of the SUT are specified using \tyName{}s.
+\name{}.  The relevant APIs of the SUT are specified using \tyName{}s.
 Along with the property of interest, these specifications drive the
 synthesis of a test generator in \name{}'s DSL, which is then
 transpiled into different testing frameworks; thus far, we have
@@ -201,7 +201,7 @@ This paper makes the following contributions:
   tested, to generate well-typed test generators.
   \cbnewadding{%
     We also evaluate this procedure experimentally, comparing the generators
-    synthesized by \name\ to state-of-the-art baselines on benchmarks whose bugs
+    synthesized by \name{} to state-of-the-art baselines on benchmarks whose bugs
   require deep (effectful) semantic and structural properties of the
   target SUT to surface.}
 
@@ -215,12 +215,12 @@ This paper makes the following contributions:
 
 The rest of the paper is organized as follows.  \autoref{sec:overview}
 provides additional motivation and examples.  ~\autoref{sec:formal}
-presents the operational semantics and type system for the \name\  DSL.
+presents the operational semantics and type system for the \name{} DSL.
 ~\autoref{sec:synthesis} describes the synthesis algorithm. A detailed
 evaluation study over a broad range of diverse benchmarks drawn from
 the domains given above is given in ~\autoref{sec:impl}; these include
 generating tests for semantically complex data structure properties
-such as well-typed simply-typed lambda calculus terms using de Brujin
+such as well-typed simply-typed lambda calculus terms using de Bruijn
 indices, as well as real-world distributed protocols deployed in
 industry.  Secs.~\ref{sec:related} and~\ref{sec:conc} present
 related work and conclusions.

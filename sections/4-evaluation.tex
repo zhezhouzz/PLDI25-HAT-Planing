@@ -145,20 +145,20 @@ Name & Property &   &uHAT &goal & {\scriptsize Clouseau} & {\scriptsize Baseline
 \midrule
 \textsf{IFCLoad}\cite{pbt-ifc} & {\scriptsize A well-behaved IFC program containing a $\Code{Load}$ command never leaks a secret.} & $8$ & $37$ & $2$ & $15.4$ & $11293.7^{\dagger}$ & $5.76$ & $16$ & $18$ & $930$\\
 \midrule
-\cbnewadding{\textsf{IFCLoad}$_{\mathsf{W}}$\cite{pbt-ifc}} & \cbnewadding{{\scriptsize \textsf{IFCLoad} without searching bias (cf. \autoref{sec:overview}).}} & \cbnewadding{$8$} & \cbnewadding{$33$} & \cbnewadding{$2$} & \cbnewadding{$115.4$} & \cbnewadding{$11293.7^{\dagger}$} & \cbnewadding{$4.83$} & \cbnewadding{$16$} & \cbnewadding{$18$} & \cbnewadding{$754$}\\
+\cbnewadding{\textsf{IFCLoad}$_{\mathsf{W}}$\cite{pbt-ifc}} & \cbnewadding{{\scriptsize \textsf{IFCLoad} without search bias (cf. \autoref{sec:overview}).}} & \cbnewadding{$8$} & \cbnewadding{$33$} & \cbnewadding{$2$} & \cbnewadding{$115.4$} & \cbnewadding{$11293.7^{\dagger}$} & \cbnewadding{$4.83$} & \cbnewadding{$16$} & \cbnewadding{$18$} & \cbnewadding{$754$}\\
 \midrule
 \textsf{DeBruijn1}\cite{CoverageType} & {\scriptsize An STLC interpreter correctly evaluates a
-\emph{well-typed first-order} STLC program that uses a de Brujin representation.} & $10$ & $117$ & $4$ & $1.5$ & $634.0^{\dagger}$ & $40.38$ & $18$ & $26$ & $4765$\\
+\emph{well-typed first-order} STLC program that uses a de Bruijn representation.} & $10$ & $117$ & $4$ & $1.5$ & $634.0^{\dagger}$ & $40.38$ & $18$ & $26$ & $4765$\\
 \midrule
 \textsf{DeBruijn2}\cite{CoverageType} & {\scriptsize An STLC interpreter correctly evaluates a
-\emph{well-typed higher-order} STLC program that uses a de Brujin representation.} & $10$ & $118$ & $4$ & $1.4$ & \timeout{}$^{\dagger}$ & $91.73$ & $18$ & $31$ & $9034$\\
+\emph{well-typed higher-order} STLC program that uses a de Bruijn representation.} & $10$ & $118$ & $4$ & $1.4$ & \timeout{}$^{\dagger}$ & $91.73$ & $18$ & $31$ & $9034$\\
 \midrule
 \cbnewadding{\textsf{DeBruijn2}$_{\mathsf{W}}$\cite{CoverageType}} & \cbnewadding{{\scriptsize \textsf{DeBruijn2} with \emph{untyped higher-order} programs (cf. \autoref{sec:overview}).}} & \cbnewadding{$10$} & \cbnewadding{$107$} & \cbnewadding{$4$} & \cbnewadding{\timeout{}} & \cbnewadding{\timeout{}$^{\dagger}$} & \cbnewadding{$3.23$} & \cbnewadding{$7$} & \cbnewadding{$22$} & \cbnewadding{$957$}\\
 \midrule
 \midrule
 \textsf{Shopping}\cite{MonkeyDB} & {\scriptsize All items added to a cart can be checked-out.} & $10$ & $60$ & $3$ & $1.0$ & $20.0^{\dagger}$ & $22.10$ & $17$ & $30$ & $1269$\\
 \midrule
-\textsf{HashTable}\cite{OcamlMulticorePBT} & {\scriptsize No updates to a concurrent hashtable are every lost.} & $13$ & $38$ & $4$ & $1.0$ & $2.5^{\dagger}$ & $0.76$ & $6$ & $6$ & $57$\\
+\textsf{HashTable}\cite{OcamlMulticorePBT} & {\scriptsize No updates to a concurrent hashtable are ever lost.} & $13$ & $38$ & $4$ & $1.0$ & $2.5^{\dagger}$ & $0.76$ & $6$ & $6$ & $57$\\
 \midrule
 \textsf{Transaction} & {\scriptsize Asynchronous read operations are logically atomic.} & $8$ & $45$ & $3$ & $1.2$ & \timeout{} & $2.89$ & $15$ & $16$ & $423$\\
 \midrule
@@ -311,7 +311,7 @@ the generator(s) synthesized by \name\ manifested the bug.  Notably,
 even for benchmarks in which there is a sophisticated customized
 generator available\footnote{We used the artifacts available in their
   publication as the baseline.} (e.g., \textsf{IFC} or \textsf{de
-  Brujin}), \tyName{}-guided synthesis leads to significantly better
+  Bruijn}), \tyName{}-guided synthesis leads to significantly better
 outcomes.  We use MonkeyDB~\cite{MonkeyDB}, a mock storage system that
 can be used to find violations of database isolation properties, as
 the baseline for a number of the concurrency benchmarks.  Although it
@@ -411,14 +411,14 @@ of its executions.
   $7.5\times$ in the extreme case (\textsc{IFCLoad}$_{\mathsf{W}}$).}
 
 \cbnewadding{Our ablation study reveals that weakening basic
-  correctness properties severely impacts \name's effectiveness
-  (e.g.,\textsf{DeBruijn2}$_{\mathsf{W}}$ generates untyped STLC programs to test an
+  correctness properties severely impacts \name{}'s effectiveness
+  (e.g., \textsf{DeBruijn2}$_{\mathsf{W}}$ generates untyped STLC programs to test an
   interpreter with type-checking).  This is because generators
-  synthesized from such specification yield a large number of
+  synthesized from such specifications yield a large number of
   executions that are poorly matched to how the SUT is meant to be
   exercised; obtaining an informative witness may thus require far
-  more effort or time out entirely.  Converesely, weakening search
-  biases is comparatively benign (e.g., the synthesized generator for
+  more effort or time out entirely.  Conversely, weakening search bias
+  is comparatively benign (e.g., the synthesized generator for
   \textsf{IFCLoad}$_{\mathsf{W}}$ still finds EENI violations), primarily
   manifesting as increased retries before a bug is found.  On the
   other hand, because weaker specifications can lead to shorter

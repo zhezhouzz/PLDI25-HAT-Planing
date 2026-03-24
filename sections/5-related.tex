@@ -40,7 +40,7 @@ preemption bounding.  Quickstrom~\cite{Quickstrom} uses specifications
 of possible actions expressed in its Specstrom specification language,
 a dialect of LTL, to dynamically choose the next input that the
 generator should provide for interactive applications.  In contrast,
-\name's type-guided synthesis strategy yields
+\name{}'s type-guided synthesis strategy yields
 generators influenced by both the global property of interest and the
 local \tyName{} specifications of the operations used by the SUT.
 Importantly, the synthesis procedure is guided by the history and
@@ -73,7 +73,7 @@ effect system.  Closest to our work are \emph{Hoare Automata Types}
 (\textsc{HAT}s)~\cite{ZYDJ24}, which integrate symbolic finite
 automata into a refinement type system. \textsc{HAT}s enable reasoning
 about stateful sequential programs structured as a functional core
-interacting with opaque effectful libraries.  \tyName{} revise
+interacting with opaque effectful libraries.  \tyName{}s revise
 \textsc{HAT}s by viewing them as underapproximate specifications -
 every trace accepted by the future regex in a \tyName{} is
 justified by a trace accepted by its history.
@@ -134,13 +134,13 @@ justified by a trace accepted by its history.
 \section{Conclusions}\label{sec:conc}
 
 This paper proposes trace-guided synthesis of effectful PBT
-generators.  Our key innovations are (i) the adaption of symbolic
+generators.  Our key innovations are (i) the adaptation of symbolic
 regular expressions, expressed as types, that define traces of
 effectful actions that occur before and after the execution of an
 expression, as underapproximate specifications, and (ii) the synthesis
 of bespoke test generators derived from these specifications.
 Experimental results on a wide range of sequential, concurrent, and
 distributed applications, including real-world system models used in
-production, show that \name\ is significantly more effective in
+production, show that \name{} is significantly more effective in
 identifying test input sequences that falsify a property than the
 existing state-of-the-art.

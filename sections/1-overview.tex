@@ -83,7 +83,7 @@ halts program execution if the formula $\phi$ fails to hold.
   incorporates features about the SUT that can guide a test generator
   to focus on interesting configurations.  Similar observations guide
   the design of prior PBT frameworks~\cite{pbt-ifc}; notably,
-  \tyName{}s allow this knowledge to stated formally and
+  \tyName{}s allow this knowledge to be stated formally and
   compositionally, informing our automated synthesis procedure and
   ensuring conformance by the generators it synthesizes, without the
   need to \emph{manually craft and tune generation strategies}
@@ -156,12 +156,12 @@ trace which contains these events.  This \tyName{} uses
     \Code{LAST}(\msgA{op}{v}) \equiv \allA\;\seqA\; \msgA{op}{v}\;\seqA\; (\anyA \setminus \msgC{op})^*
   \end{align}
 }\vspace{-.5cm} \par\nobreak\noindent %
-An implementation of $\eff{readResp}$ that does not satisfy this type
+An implementation of $\eff{readRsp}$ that does not satisfy this type
 could yield a trace in which a response to a request yields a
 different value than previously seen by the transaction, thus exposing
 a read atomicity violation.  This safety property is captured by the
 following SRE:\footnote{SREs are implicitly universally quantified
-  over any free variables occuring in them.}%
+  over any free variables occurring in them.}%
 \vspace{-.4cm} \par\nobreak {\small %
   \begin{align}
     &\Code{LAST}(\msgA{write}{v})\; \seqA\; \msgA{readReq}{\iota}\; \seqA\; \allA\seqA\msgA{readRsp}{\iota\;v}\seqA\allA
@@ -170,7 +170,7 @@ following SRE:\footnote{SREs are implicitly universally quantified
 }
 \vspace{-.5cm} \par\nobreak\noindent
 A violation of this property can be manifested by a test
-generator that perform sequences of synchronous $\eff{write}$ and
+generator that performs sequences of synchronous $\eff{write}$ and
 asynchronous $\eff{read}$ effects in search of an offending trace
 similar to the one given above.
 
@@ -201,7 +201,7 @@ captured by ``$\allA$'' in the specification, following the
 $\msgA{readReq}{\iota}$ event in the history trace of $\eff{readRsp}$.
 This behavior is subsumed by the recursive call to
 \Code{transaction\_gen} at line 5.  The $\eff{readReq}$ effect at line
-4 matches the $\msgA{readResp}{\iota}$ event and the $\eff{write}$
+4 matches the $\msgA{readRsp}{\iota}$ event and the $\eff{write}$
 operations on line 3 are synthesized from the $\msgA{write}{v}$ event
 that precedes the $\EvtNoArgs{readReq}$ in the history trace; since $v$
 is unconstrained in the specification, it is instantiated by a call
@@ -228,7 +228,7 @@ We can provide a weaker specification that encodes only
 \cbnewadding{This specification only requires that there is a value $v$ written
   before the read request: the value returned by a read response need
   not be the \emph{last} value written before the corresponding request.
-  The following generator is also type-safe respect to this weaker specification:}
+  The following generator is also type-safe with respect to this weaker specification:}
   \begin{minted}[fontsize = \footnotesize, escapeinside=??, xleftmargin=18pt, linenos]{ocaml}
   let x = int_gen () in let _ = ?$\eff{write}$? x in
   let y = int_gen () in let _ = ?$\eff{write}$? y in
@@ -241,7 +241,7 @@ We can provide a weaker specification that encodes only
   weaker uHAT, it is not allowed by the original specification, which
   requires the read value to be the last one. Because this weaker
   specification does not capture the core property of read atomicity,
-  generators synthesized from this spectication may produce benign
+  generators synthesized from this specification may produce benign
   test cases that would not surface read atomicity violations.
   Nonetheless, the generator $\Code{transaction\_gen}$ can also be
   derived from this weaker specification.  Thus, an imprecise
@@ -392,7 +392,7 @@ this property and the \tyName{} specifications for $\eff{push}$ and $\eff{store}
   There is only one effectful operation, namely
   $\eff{token} : \Code{String} \to \Code{unit}$.}
   Unlike these earlier efforts, we consider
-  terms in which variables are represented by their de Brujin
+  terms in which variables are represented by their de Bruijn
   index~\cite{DeBruijn}. Consider a SUT that fails to correctly
   increment the index during substitution under a lambda abstraction,
   leading to incorrect variable capture. %
@@ -422,13 +422,13 @@ the correct use of de Bruijn indices we need to express the relation
 between indices and abstraction depth.  To do so, we introduce a
 \emph{ghost} event $\effGray{depth}$ that tracks the current
 abstraction depth;  as we describe
-in the following sections, ghost events carry a payload that enable
+in the following sections, ghost events carry a payload that enables
 establishing additional dependencies with other events beyond those involving
 the effects parameters and result that can still be efficiently checked using
 our type system.  Here, $\eff{token}$ is an effect that appends its
 argument to a serialized string that is eventually passed to the
 interpreter being tested.    A \tyName{} specification to track depth can
-  be now given as follows:
+  now be given as follows:
   \vspace{-.4cm} \par\nobreak {\small %
     \begin{align*}
       \effLR{\Code{LAST}(\msgAGray{depth}{d}) \seqA\;
@@ -474,7 +474,7 @@ interpreter being tested.    A \tyName{} specification to track depth can
     gives the synthesized test generator freedom to produce
     well-formed but ill-typed STLC terms.  Although this specification
     does not prohibit generation of ill-typed terms, it nonetheless
-    correctly encodes the structure of Brujin indices through the use
+    correctly encodes the structure of Bruijn indices through the use
     of ghost variables that track abstraction depth.}
 
 
@@ -488,7 +488,7 @@ interpreter being tested.    A \tyName{} specification to track depth can
 %% onto the IFC stack is later used as a memory address.
 %% The same predicate may play either role depending on the testing setup.
 %% In the STLC example, if the interpreter type-checks first and
-%% rejects ill-typed fragments immediately, well-typedness behaves as basic correctness; otherwise, it is treated as search bias since well-typed programs may more likely to trigger the potentail substitution error.
+%% rejects ill-typed fragments immediately, well-typedness behaves as basic correctness; otherwise, it is treated as search bias since well-typed programs are more likely to trigger potential substitution errors.
 %% }
 
 

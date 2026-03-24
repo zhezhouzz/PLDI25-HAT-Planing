@@ -122,15 +122,15 @@ Name & Property &   &uHAT &goal & {\scriptsize Clouseau} & {\scriptsize Baseline
 \textsf{IFCLoad}\cite{pbt-ifc} & {\scriptsize A well-behaved IFC program containing a $\Code{Load}$ command never leaks a secret.} & $8$ & $33$ & $2$ & $115.4$ & $4278.3^{\dagger}$ & $5.01$ & $16$ & $18$ & $754$\\
 \midrule
 \textsf{DeBruijn1}\cite{CoverageType} & {\scriptsize An STLC interpreter correctly evaluates a
-  well-typed first-order STLC program that uses a de Brujin representation.} & $10$ & $106$ & $4$ & {\tiny Timeout} & $303.6^{\dagger}$ & $3.03$ & $7$ & $22$ & $857$\\
+  well-typed first-order STLC program that uses a de Bruijn representation.} & $10$ & $106$ & $4$ & {\tiny Timeout} & $303.6^{\dagger}$ & $3.03$ & $7$ & $22$ & $857$\\
 \midrule
 \textsf{DeBruijn2}\cite{CoverageType} & {\scriptsize An STLC interpreter correctly evaluates a
-  a well-typed higher-order STLC program that uses a de Brujin representation.} & $10$ & $107$ & $4$ & {\tiny Timeout} & {\tiny Timeout}$^{\dagger}$ & $3.32$ & $7$ & $22$ & $957$\\
+  a well-typed higher-order STLC program that uses a de Bruijn representation.} & $10$ & $107$ & $4$ & {\tiny Timeout} & {\tiny Timeout}$^{\dagger}$ & $3.32$ & $7$ & $22$ & $957$\\
 \midrule
 \midrule
 \textsf{Shopping}\cite{MonkeyDB} & {\scriptsize All items added to a cart can be checked-out.} & $10$ & $58$ & $3$ & $1.0$ & $20.0^{\dagger}$ & $18.57$ & $17$ & $30$ & $1174$\\
 \midrule
-\textsf{HashTable}\cite{OcamlMulticorePBT} & {\scriptsize No updates to a concurrent hashtable are every lost.} & $13$ & $33$ & $4$ & $1.0$ & $2.5^{\dagger}$ & $0.84$ & $6$ & $6$ & $56$\\
+\textsf{HashTable}\cite{OcamlMulticorePBT} & {\scriptsize No updates to a concurrent hashtable are ever lost.} & $13$ & $33$ & $4$ & $1.0$ & $2.5^{\dagger}$ & $0.84$ & $6$ & $6$ & $56$\\
 \midrule
 \textsf{Transaction} & {\scriptsize Asynchronous read operations are logically atomic.} & $8$ & $40$ & $3$ & {\tiny Timeout} & {\tiny Timeout} & $2.61$ & $15$ & $15$ & $372$\\
 \midrule
@@ -201,7 +201,7 @@ Name & Property &   &uHAT &goal & {\scriptsize Clouseau} & {\scriptsize Baseline
 % \midrule
 % \textsf{Shopping}\cite{MonkeyDB} & {\scriptsize All items added to a cart can be checked-out.} & $10$ & $60$ & $3$ & $1.0$ & $20.0^{\dagger}$ & $22.10$ & $17$ & $30$ & $1269$\\
 % \midrule
-% \textsf{HashTable}\cite{OcamlMulticorePBT} & {\scriptsize No updates to a concurrent hashtable are every lost.} & $13$ & $38$ & $4$ & $1.0$ & $2.5^{\dagger}$ & $0.76$ & $6$ & $6$ & $57$\\
+% \textsf{HashTable}\cite{OcamlMulticorePBT} & {\scriptsize No updates to a concurrent hashtable are ever lost.} & $13$ & $38$ & $4$ & $1.0$ & $2.5^{\dagger}$ & $0.76$ & $6$ & $6$ & $57$\\
 % \midrule
 % \textsf{Transaction} & {\scriptsize Asynchronous read operations are logically atomic.} & $8$ & $45$ & $3$ & $1.2$ & \timeout{} & $2.89$ & $15$ & $16$ & $423$\\
 % \midrule
