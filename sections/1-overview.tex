@@ -212,7 +212,8 @@ are generated.  The assertion comparing \Code{y} with \Code{x}
 determines if a violation (i.e., if the read result is different from
 the first written value) occurs.
 
-\cbnewadding{% We can provide a weaker specification that encodes only
+\cbnewadding{% 
+We can provide a weaker specification that encodes only
   a basic correctness property (i.e., read responses can only return
   values written before its matching request) that makes no assumption
   about \emph{which} write the response is paired against:}

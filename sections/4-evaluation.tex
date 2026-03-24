@@ -120,8 +120,8 @@ Our experimental evaluation addresses four research questions:
     property violation. }
   \vspace*{-.1in} \footnotesize
 %\multicolumn{2}{c||}{} &
-\setlength{\tabcolsep}{1.3pt}
-\begin{tabular}{c|P{4.6cm}||ccc||cc||c|ccc}
+\setlength{\tabcolsep}{0.55pt}
+\begin{tabular}{c|P{5.1cm}||ccc||cc||c|ccc}
   \toprule
   \multicolumn{2}{c||}{Benchmark} & \#$\eff{op}$ & \multicolumn{2}{c||}{\#qualifier} & \multicolumn{2}{c||}{\scriptsize \# Num. Executions} & t$_\text{total}$(s) & \#evt & \#refine & \#SMT \\
   \midrule
@@ -143,9 +143,9 @@ Name & Property &   &uHAT &goal & {\scriptsize Clouseau} & {\scriptsize Baseline
 \midrule
 \textsf{IFCAdd}\cite{pbt-ifc} & {\scriptsize A well-behaved IFC program containing an $\Code{Add}$ command never leaks a secret.} & $8$ & $37$ & $2$ & $1.6$ & $3383.4^{\dagger}$ & $0.96$ & $8$ & $8$ & $154$\\
 \midrule
-\textsf{IFCLoad1}\cite{pbt-ifc} & {\scriptsize A well-behaved IFC program containing a $\Code{Load}$ command never leaks a secret.} & $8$ & $37$ & $2$ & $15.4$ & $11293.7^{\dagger}$ & $5.76$ & $16$ & $18$ & $930$\\
+\textsf{IFCLoad}\cite{pbt-ifc} & {\scriptsize A well-behaved IFC program containing a $\Code{Load}$ command never leaks a secret.} & $8$ & $37$ & $2$ & $15.4$ & $11293.7^{\dagger}$ & $5.76$ & $16$ & $18$ & $930$\\
 \midrule
-\cbnewadding{\textsf{IFCLoad2}\cite{pbt-ifc}} & \cbnewadding{{\scriptsize \textsf{IFCLoad1} without searching bias (cf. \autoref{sec:overview}).}} & \cbnewadding{$8$} & \cbnewadding{$33$} & \cbnewadding{$2$} & \cbnewadding{$115.4$} & \cbnewadding{$11293.7^{\dagger}$} & \cbnewadding{$4.83$} & \cbnewadding{$16$} & \cbnewadding{$18$} & \cbnewadding{$754$}\\
+\cbnewadding{\textsf{IFCLoad}$_{\mathsf{W}}$\cite{pbt-ifc}} & \cbnewadding{{\scriptsize \textsf{IFCLoad} without searching bias (cf. \autoref{sec:overview}).}} & \cbnewadding{$8$} & \cbnewadding{$33$} & \cbnewadding{$2$} & \cbnewadding{$115.4$} & \cbnewadding{$11293.7^{\dagger}$} & \cbnewadding{$4.83$} & \cbnewadding{$16$} & \cbnewadding{$18$} & \cbnewadding{$754$}\\
 \midrule
 \textsf{DeBruijn1}\cite{CoverageType} & {\scriptsize An STLC interpreter correctly evaluates a
 \emph{well-typed first-order} STLC program that uses a de Brujin representation.} & $10$ & $117$ & $4$ & $1.5$ & $634.0^{\dagger}$ & $40.38$ & $18$ & $26$ & $4765$\\
@@ -153,16 +153,16 @@ Name & Property &   &uHAT &goal & {\scriptsize Clouseau} & {\scriptsize Baseline
 \textsf{DeBruijn2}\cite{CoverageType} & {\scriptsize An STLC interpreter correctly evaluates a
 \emph{well-typed higher-order} STLC program that uses a de Brujin representation.} & $10$ & $118$ & $4$ & $1.4$ & \timeout{}$^{\dagger}$ & $91.73$ & $18$ & $31$ & $9034$\\
 \midrule
-\cbnewadding{\textsf{DeBruijn3}\cite{CoverageType}} & \cbnewadding{{\scriptsize \textsf{DeBruijn2} with \emph{untyped higher-order} programs (cf. \autoref{sec:overview}).}} & \cbnewadding{$10$} & \cbnewadding{$107$} & \cbnewadding{$4$} & \cbnewadding{\timeout{}} & \cbnewadding{\timeout{}$^{\dagger}$} & \cbnewadding{$3.23$} & \cbnewadding{$7$} & \cbnewadding{$22$} & \cbnewadding{$957$}\\
+\cbnewadding{\textsf{DeBruijn2}$_{\mathsf{W}}$\cite{CoverageType}} & \cbnewadding{{\scriptsize \textsf{DeBruijn2} with \emph{untyped higher-order} programs (cf. \autoref{sec:overview}).}} & \cbnewadding{$10$} & \cbnewadding{$107$} & \cbnewadding{$4$} & \cbnewadding{\timeout{}} & \cbnewadding{\timeout{}$^{\dagger}$} & \cbnewadding{$3.23$} & \cbnewadding{$7$} & \cbnewadding{$22$} & \cbnewadding{$957$}\\
 \midrule
 \midrule
 \textsf{Shopping}\cite{MonkeyDB} & {\scriptsize All items added to a cart can be checked-out.} & $10$ & $60$ & $3$ & $1.0$ & $20.0^{\dagger}$ & $22.10$ & $17$ & $30$ & $1269$\\
 \midrule
 \textsf{HashTable}\cite{OcamlMulticorePBT} & {\scriptsize No updates to a concurrent hashtable are every lost.} & $13$ & $38$ & $4$ & $1.0$ & $2.5^{\dagger}$ & $0.76$ & $6$ & $6$ & $57$\\
 \midrule
-\textsf{Transaction1} & {\scriptsize Asynchronous read operations are logically atomic.} & $8$ & $45$ & $3$ & $1.2$ & \timeout{} & $2.89$ & $15$ & $16$ & $423$\\
+\textsf{Transaction} & {\scriptsize Asynchronous read operations are logically atomic.} & $8$ & $45$ & $3$ & $1.2$ & \timeout{} & $2.89$ & $15$ & $16$ & $423$\\
 \midrule
-\cbnewadding{\textsf{Transaction2}} & \cbnewadding{{\scriptsize \textsf{Transaction1} without read atomicity enforcement (cf. \autoref{sec:overview}).}} & \cbnewadding{$8$} & \cbnewadding{$40$} & \cbnewadding{$3$} & \cbnewadding{\timeout{}} & \cbnewadding{\timeout{}} & \cbnewadding{$2.24$} & \cbnewadding{$15$} & \cbnewadding{$15$} & \cbnewadding{$372$}\\
+\cbnewadding{\textsf{Transaction}$_{\mathsf{W}}$} & \cbnewadding{{\scriptsize \textsf{Transaction} without read atomicity enforcement (cf. \autoref{sec:overview}).}} & \cbnewadding{$8$} & \cbnewadding{$40$} & \cbnewadding{$3$} & \cbnewadding{\timeout{}} & \cbnewadding{\timeout{}} & \cbnewadding{$2.24$} & \cbnewadding{$15$} & \cbnewadding{$15$} & \cbnewadding{$372$}\\
 \midrule
 \textsf{Courseware}\cite{MonkeyDB} & {\scriptsize Every student enrolled in a course exists in the
   enrollment database for that course.} & $16$ & $106$ & $3$ & $1.0$ & $57.5^{\dagger}$ & $27.71$ & $18$ & $33$ & $1479$\\
@@ -268,7 +268,7 @@ kinds of distributed protocols; these are executed using the P runtime
 environment, by transpiling synthesized generators written in our DSL
 into P's state machine modeling language.  Here as well, the protocol
 being tested is known to be faulty from the sources they were adopted
-from. \cbnewadding{The \textsf{IFCLoad2}, \textsf{DeBruijn3}, and \textsf{Transaction2} benchmarks are variants of the original ones with weaker specifications; we provide
+from. \cbnewadding{The \textsf{IFCLoad}$_{\mathsf{W}}$, \textsf{DeBruijn2}$_{\mathsf{W}}$, and \textsf{Transaction}$_{\mathsf{W}}$ benchmarks are variants of the original ones with weaker specifications; we provide
 additional discussion of these at the end of this section (\textbf{Q4}).}
 
 
@@ -397,7 +397,7 @@ of its executions.
   motivating examples presented in~\autoref{sec:overview}\footnote{
   Details for the full set of benchmarks are provided in the supplemental material.}.  The
   specifications are weakened following the description in
-  \autoref{sec:overview}, for example, \textsf{IFCLoad2} eliminates
+  \autoref{sec:overview}, for example, \textsf{IFCLoad}$_{\mathsf{W}}$ eliminates
   the ``valid address'' constraint (i.e., $\I{isAddr}$) from the
   original specification.  We consider such specifications
   \emph{lower-quality} because their lack of guidance increases the
@@ -408,18 +408,18 @@ of its executions.
   (\textsc{ChainReplication}). However, $26.9\%$ (7 out of 26) of the
   benchmarks time out; the remaining benchmarks show an increasing
   retry rate (\#Num. Executions), by $1.9\times$ on average and
-  $7.5\times$ in the extreme case (\textsc{IFCLoad2}).}
+  $7.5\times$ in the extreme case (\textsc{IFCLoad}$_{\mathsf{W}}$).}
 
 \cbnewadding{Our ablation study reveals that weakening basic
   correctness properties severely impacts \name's effectiveness
-  (e.g.,\textsf{DeBruijn3} generates untyped STLC programs to test an
+  (e.g.,\textsf{DeBruijn2}$_{\mathsf{W}}$ generates untyped STLC programs to test an
   interpreter with type-checking).  This is because generators
   synthesized from such specification yield a large number of
   executions that are poorly matched to how the SUT is meant to be
   exercised; obtaining an informative witness may thus require far
   more effort or time out entirely.  Converesely, weakening search
   biases is comparatively benign (e.g., the synthesized generator for
-  \textsf{IFCLoad2} still finds read atomicity violations), primarily
+  \textsf{IFCLoad}$_{\mathsf{W}}$ still finds EENI violations), primarily
   manifesting as increased retries before a bug is found.  On the
   other hand, because weaker specifications can lead to shorter
   synthesis times, this loss of testing efficiency may sometimes be an
