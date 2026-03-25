@@ -75,24 +75,23 @@ halts program execution if the formula $\phi$ fails to hold.
 \subsection{Examples}
 
 \cbnewadding{%
-  In order to bias test exploration toward desirable
-  execution paths within a huge search space, test developers
-  typically embed domain knowledge about the SUT into specialized test
-  generators.  This knowledge includes not only \emph{basic
-    correctness properties} SUT operations must respect, but also
-  incorporates features about the SUT that can guide a test generator
-  to focus on interesting configurations.  Similar observations guide
-  the design of prior PBT frameworks~\cite{pbt-ifc}; notably,
-  \tyName{}s allow this knowledge to be stated formally and
-  compositionally, informing our automated synthesis procedure and
-  ensuring conformance by the generators it synthesizes, without the
-  need to \emph{manually craft and tune generation strategies}
-  directly into test generator implementations.  The next three
-  examples, drawn from different domains, highlight this point. We
-  show both weak \tyName{}s that express only basic correctness
-  properties as well as more precise specifications that are
-  sufficient to guide the synthesizer to output more effective
-  generators. }
+  In order to bias test exploration toward desirable execution paths
+  within a huge search space, test developers typically embed domain
+  knowledge about the SUT into specialized test generators.  This
+  knowledge includes not only \emph{basic correctness properties} SUT
+  operations must respect, but also incorporates features of the SUT
+  that can help a test generator focus on interesting configurations.
+  While similar observations guide the design of prior PBT
+  frameworks~\cite{pbt-ifc},\tyName{}s allow this knowledge to be
+  stated formally and compositionally. These specifications inform our
+  automated synthesis procedure and ensure conformance by the
+  generators it synthesizes, without the need to \emph{manually craft
+    and tune generation strategies} directly into test generator
+  implementations.  The following three examples, drawn from different
+  domains, highlight this point. We show both weak \tyName{}s that
+  express only basic correctness properties as well as more precise
+  specifications that are sufficient to guide the synthesizer to
+  produce more effective generators. }
 
 
 \paragraph{Read Atomicity}
@@ -124,7 +123,7 @@ execution that violates read atomicity\footnote{For simplicity, we
   the second read response witnesses the value of a write performed by another
   transaction that was issued after its matching request.   We are
   interested in surfacing executions like these from \tyName{}
-  specifications. 
+  specifications.
 
   The following \tyName{} type on $\eff{readRsp}$
   operations admits executions that satisfy read atomicity:
@@ -138,13 +137,13 @@ This type specifies that the response to a previously issued
 asynchronous $\eff{readReq}$ operation can return a value $v$, if the
 last committed write prior to the request wrote the value $v$. (Here,
 $\iota$ and $v$ are treated as implicitly quantified ghost variables;
-we make this notion precise in~\autoref{sec:formal}.) 
+we make this notion precise in~\autoref{sec:formal}.)
 \cbnewadding{%
   Note that this specification also encodes a simple
-  correctness property requiring read responses to be correlated to
-  read requests with the same tag $\iota$ and write operations that
-  occurred before the request.  Enforcing read atomicity constrains
-  the write operation visible to a response.}
+  correctness property requiring read responses to correspond to
+  a prior read request with the same tag $\iota$ and to reflect a write operation that
+  occurred before the request.  A store that enforces read atomicity
+  further constrains the write operations visible to a response.}
 Because this specification is
 interpreted as an underapproximation of the possible behaviors of the
 SUT, it establishes a clear dependence between $\eff{write}$
@@ -212,22 +211,21 @@ are generated.  The assertion comparing \Code{y} with \Code{x}
 determines if a violation (i.e., if the read result is different from
 the first written value) occurs.
 
-\cbnewadding{% 
-We can provide a weaker specification that encodes only
-  a basic correctness property (i.e., read responses can only return
-  values written before its matching request) that makes no assumption
-  about \emph{which} write the response is paired against:}
-\vspace{-.4cm} \par\nobreak
-\cbnewadding{{\small %
+\cbnewadding{%
+  Alternatively, we can provide a weaker specification that encodes
+  the more basic correctness property that read responses can only
+  return values written before its matching request, making no
+  assumptions about \emph{which} write the response is paired with:}
+\vspace{-.4cm} \par\nobreak \cbnewadding{{\small %
   \begin{align*}
     &\eff{readRsp}:
       \effLR{\allA\;\seqA\;\msgA{write}{v}\seqA\;\;\allA\;\seqA\;\msgA{readReq}{\iota}\;\seqA\;
       \allA}\urt{\Code{int}}{\vnu = v}\effLR{\msgA{readRsp}{\iota\;v}}
   \end{align*}}}
 \vspace{-.5cm} \par\nobreak\noindent
-\cbnewadding{This specification only requires that there is a value $v$ written
-  before the read request: the value returned by a read response need
-  not be the \emph{last} value written before the corresponding request.
+\cbnewadding{This specification only requires that the value $v$ returned
+  by the read response is \emph{some} value written before the
+  read was requested: it need not be the \emph{last} value written before the corresponding request.
   The following generator is also type-safe with respect to this weaker specification:}
   \begin{minted}[fontsize = \footnotesize, escapeinside=??, xleftmargin=18pt, linenos]{ocaml}
   let x = int_gen () in let _ = ?$\eff{write}$? x in
@@ -235,21 +233,21 @@ We can provide a weaker specification that encodes only
   let i = ?$\eff{readReq}$? in let z = ?$\eff{readResp}$? i in
   ?$\mykw{assert}$? (z == x || z == y)
   \end{minted}
-\cbnewadding{ It initiates two writes followed by a read, and asserts
-  that the read value must be one of the two previously written
-  ones. Notably, although this program is type-safe according to the
-  weaker uHAT, it is not allowed by the original specification, which
-  requires the read value to be the last one. Because this weaker
-  specification does not capture the core property of read atomicity,
-  generators synthesized from this specification may produce benign
-  test cases that would not surface read atomicity violations.
-  Nonetheless, the generator $\Code{transaction\_gen}$ can also be
-  derived from this weaker specification.  Thus, an imprecise
-  specification simply means that our synthesis algorithm has less
-  guidance on the structure of the generators it produces. In the
-  limit, a specification that places no constraints on the operations
-  of the system under test results in synthesized generators that
-  simply perform random test exploration.  }
+  \cbnewadding{This generator issues two writes followed by a read,
+    and asserts that the read value must be one of the two previously
+    written ones. Notably, although this program is type-safe
+    according to the weaker uHAT, it is not allowed by the original
+    specification, which requires the read value to be the last
+    one. Because this weaker specification does not capture the core
+    property of read atomicity, generators synthesized from this
+    specification may produce benign test cases that would not surface
+    read atomicity violations.  Nonetheless, the generator
+    $\Code{transaction\_gen}$ can also be derived from this weaker
+    specification.  Thus, an imprecise specification simply means that
+    our synthesis algorithm has less guidance on the structure of the
+    generators it produces. In the limit, a specification that places
+    no constraints on the operations of the system under test results
+    in synthesized generators that simply perform random testing. }
 %\end{example}
 
 % \begin{example}[Strong Consistency]\label{ex:sc}
@@ -315,17 +313,18 @@ to store the $\Code{L}$ value (1).  The goal of a PBT generator is to
 generate input sequences like these to determine if an IFC machine
 implementation will fault prior to the $\eff{store}$ being executed.
 
-\cbnewadding{
-  To avoid synthesizing generators that produce uninteresting test
-  programs, we would like the executions they induce to: (1) exercise a noninterference correctness property
-   -  two input programs must be indistinguishable at the low security
-  level (e.g., $\textbf{push}(\texttt{L}, 1)$ and
-  $\textbf{push}(\texttt{L}, 2)$ are distinguishable); (2) bias search to
-  avoid constructing executions that expose uninteresting secrets
-  (e.g., $\zevent{push}{\Code{H}, \langle 1, 1\rangle}$) that stores a high security
-  value at the same address in both executions, or push values to invalid addresses (e.g.,
-  $\zevent{push}{\Code{L},\langle -1, -1\rangle}$).  The following \tyName{} specification addresses
-  both concerns:}
+\cbnewadding{ To avoid synthesizing generators that produce
+  uninteresting test programs, we would like the executions they
+  induce to: (1) exercise a noninterference correctness property - two
+  input programs must be indistinguishable at the low security level
+  (e.g., $\textbf{push}(\texttt{L}, 1)$ and
+  $\textbf{push}(\texttt{L}, 2)$ are distinguishable); (2) bias the
+  search to avoid programs that expose uninteresting secrets, for
+  example by storing a high security value at the same address in both
+  executions (e.g., $\zevent{push}{\Code{H}, \langle 1, 1\rangle}$),
+  or pushing values to invalid addresses (e.g.,
+  $\zevent{push}{\Code{L},\langle -1, -1\rangle}$).  The following
+  \tyName{} specification addresses both concerns:}
 %% \cbremoved{To avoid generators that could produce uninteresting test programs
 %% that cannot violate non-interference (e.g.,
 %% $\zevent{push}{\Code{L}, \langle 0, 1 \rangle}$), operate over invalid
@@ -360,8 +359,9 @@ this property and the \tyName{} specifications for $\eff{push}$ and $\eff{store}
 \end{minted}
 
 \cbnewadding{%
-  On the other hand, the following specifications only guarantees that tests exercise noninterference but imposes no
-  additional constraints on diversity of secret inputs or address validity:
+  On the other hand, the following specifications only guarantee that
+  tests exercise noninterference, and do not impose any additional
+  constraints on the diversity of secret inputs or address validity:%
   {\small %
   \begin{align*}
     \eff{push} ~:~
@@ -381,22 +381,19 @@ this property and the \tyName{} specifications for $\eff{push}$ and $\eff{store}
 %\end{example}
 %\begin{example}[De Bruijn Index]  \label{ex:de-bruijn-index}
 \paragraph{STLC Terms}
-  Our final example applies our approach to the
-  well-studied~\cite{BeginnerLuck,CoverageType,FQL24} problem of using PBT
-  to test the correctness of an interpreter for simply-typed lambda
-  calculus (STLC) terms.
-  \cbnewadding{%
-  The SUT in this example is an STLC interpreter, and
-  the synthesized test generator produces a family of \emph{serialized}
-  STLC terms, i.e., sequences of string tokens.
-  There is only one effectful operation, namely
-  $\eff{token} : \Code{String} \to \Code{unit}$.}
-  Unlike these earlier efforts, we consider
-  terms in which variables are represented by their de Bruijn
-  index~\cite{DeBruijn}. Consider a SUT that fails to correctly
-  increment the index during substitution under a lambda abstraction,
-  leading to incorrect variable capture. %
-  \vspace{-.4cm} \par\nobreak {\small %
+Our final example applies our approach to the
+well-studied~\cite{BeginnerLuck,CoverageType,FQL24} problem of using
+PBT to test the correctness of an interpreter for simply-typed lambda
+calculus (STLC) terms.  \cbnewadding{%
+  The SUT in this example is an STLC interpreter, and the synthesized
+  test generator produces a family of \emph{serialized} STLC terms,
+  i.e., sequences of string tokens, using a single effectful
+  operation, $\eff{token} : \Code{String} \to \Code{unit}$.}  Unlike
+these earlier efforts, we consider terms in which variables are
+represented by their de Bruijn index~\cite{DeBruijn}. Consider a SUT
+that fails to correctly increment the index during substitution under
+a lambda abstraction, leading to incorrect variable capture. %
+\vspace{-.4cm} \par\nobreak {\small %
   \begin{align*}
     \text{\textsc{Reduction rule}:} \quad & (\lambda t. e)\; v \hookrightarrow e [0 \mapsto v]\\
     \text{\textsc{Incorrect substitution}:} \quad & (\lambda t. e)[n \mapsto v] = \lambda t. (e[\textcolor{red}{n} \mapsto v]) \quad \textcolor{red}{\xmark} \text{ \textcolor{gray}{should be $n + 1$}}
@@ -462,23 +459,23 @@ interpreter being tested.    A \tyName{} specification to track depth can
   function $\Code{abs\_gen}$ parameterized by the current depth $d$,
   ensuring correct tracking of abstraction nesting.
 
-  \cbnewadding{ Two properties of sensible STLC terms that facilitate
-    test exploration are that the token sequence corresponds to a term
-    that is both: (i) \emph{well-formed}: an abstraction needs to be
-    closed after it is opened, terms are closed, etc. to avoid terms
-    that would be rejected by the STLC parser; and (ii)
-    \emph{well-typed}: to avoid it being rejected by the STLC type
+  \cbnewadding{In order to facilitate test exploration, token
+    sequences should correspond to STLC terms that are both: (1)
+    \emph{well-formed}: all opened lambda abstractions need to
+    eventually be closed and all variables in a term should be bound,
+    so that terms are not immediately rejected by the parser; and (2)
+    \emph{well-typed}: to avoid terms that are discarded by the type
     checker.  The specification given above encodes only the first
-    property; a more precise specification that encodes both is
-    provided in the supplementary material. The weaker specification
-    gives the synthesized test generator freedom to produce
-    well-formed but ill-typed STLC terms.  Although this specification
-    does not prohibit generation of ill-typed terms, it nonetheless
-    correctly encodes the structure of Bruijn indices through the use
-    of ghost variables that track abstraction depth.}
+    property, and thus permit a synthesized test generator to produce
+    well-formed but ill-typed STLC terms. A more precise specification
+    that encodes both conditions is provided in the supplementary
+    material. Although this weaker specification does not prohibit the
+    generation of ill-typed terms, it nonetheless correctly encodes
+    the structure of Bruijn indices, using the ghost variable $d$ to
+    track abstraction depth.}
 
 
-%SJ: removing as it seems redundant with what we've already said.  
+%SJ: removing as it seems redundant with what we've already said.
 %% \cbnewadding{\paragraph{Summary} As shown in the examples above, \tyName{}s often combine
 %% (1)~\emph{basic correctness}, e.g., IFC example requires the two input programs to be indistinguishable at the low security level; otherwise, it violates the precondition of EENI and test exploration stops even before the IFC machine is executed.
 %% (2)~\emph{search biases}, e.g., biasing integers
@@ -502,5 +499,3 @@ interpreter being tested.    A \tyName{} specification to track depth can
   significant leeway on the level of precision captured: less precise
   underapproximations simply lead to (potentially) less effective
   generators.
-
-
