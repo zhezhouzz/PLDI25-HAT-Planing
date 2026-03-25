@@ -1,0 +1,1232 @@
+\newpage
+\section{Benchmark Specifications Explanation}\label{sec:tech:bench-explain}
+
+% Match paper SREGen / starA(anyA - ...) idiom: Kleene iteration over complement of a pattern set.
+\newcommand{\SNegStar}[1]{{\bigl(\compA{#1}\bigr)^{\ast}}}
+\newcommand{\SNegStarU}[2]{{\bigl(\anyA \setminus ({#1} \cup {#2})\bigr)^{\ast}}}
+\newcommand{\SNegStarUU}[3]{{\bigl(\anyA \setminus ({#1} \cup {#2} \cup {#3})\bigr)^{\ast}}}
+\newcommand{\SNegStarUUU}[4]{{\bigl(\anyA \setminus ({#1} \cup {#2} \cup {#3} \cup {#4})\bigr)^{\ast}}}
+\newcommand{\SNegStarTri}[3]{{\bigl(\anyA \setminus ({#1} \cup {#2} \cup {#3})\bigr)^{\ast}}}
+\newcommand{\SNegStarExcl}[1]{{\bigl(\anyA \setminus ({#1})\bigr)^{\ast}}}
+
+This appendix lists the global safety property and the \tyName{}s for every benchmark used in our evaluation. Each of them consistent of a short description, the global property, \tyName{}, and the weakened \tyName{}.
+
+\paragraph{Weakening strategy.}
+We tie this appendix to \autoref{sec:overview} and to the weakening study in our evaluation: we fix the SUT and the global property, and relax \tyName{}s to measure how ``lower-quality'' specs affect \name{}. We use two weakening strategies:
+\begin{itemize}
+  \item weakening qualifiers directly: For a refinement type $\urt{b}{\phi}$ or a symbolic event $\msg{ev}{\phi}$, we replace the qualifier $\phi$ with a weaker $\phi'$ such that $\phi' \implies \phi$. Concretely, this can drop conjuncts or weaken predicates to $\top$.
+  \item merge intersected types: In \tyName{}, we use intersection types to represent different situations an operation may face. For example, an initialized system (i.e., $H_1 = \allA \seqA \msgA{init} \seqA \allA$) and an uninitialized system (i.e., $H_2 = (\anyA \setminus \msgA{init})^*$) yield two intersected \tyName{}s with different history automata:
+  \begin{align*}
+    \uhat{H_1}{\urt{b}{\phi_1}}{F_1} \interty \uhat{H_2}{\urt{b}{\phi_2}}{F_2}
+  \end{align*}\noindent
+  One weakening step merges them into a single case:
+  \begin{align*}
+    \uhat{H_1 \lorA H_2}{\urt{b}{\phi_1 \lor \phi_2}}{F_1 \lorA F_2}
+  \end{align*}\noindent
+  This approach is sound because it additionally allows ``when $H_1$ holds, $F_2$ happens'' and ``when $H_2$ holds, $F_1$ happens'', compared to the original intersected \tyName{}s.
+\end{itemize}
+The weakened \tyName{}s are presented in the following sections according to these two patterns; thus, we omit most of the details of the weakening process.
+
+\paragraph{Representation conventions.}
+For synchronous benchmarks we often split one logical operation $\eff{ev}(\I{args},\I{return})$ into $\eff{evReq}(\I{args})$ and $\eff{evRsp}(\I{return})$, matching request/response APIs. Global properties are given in the form that the test generator is instructed to falsify (negated safety). Futures in each clause relate events across the trace and carry search bias; see \textsc{Stack} for a concrete instance.
+
+\newpage
+\subsubsection*{Stack}
+Consider an effectful stack implemented with a fixed-size array. An incorrect implementation that fails to grow the array when the stack is full may drop $\eff{push}$ operations. To expose this bug, we ask whether traces of the following form raise an exception:
+\begin{align*}
+   \zevent{push}{0};\zevent{push}{4};\zevent{push}{7};\zevent
+   {pop}{7};\zevent{pop}{4};\textcolor{red}{\zevent{pop}{\_} 
+   \quad \text{Exception!}}
+\end{align*}
+\noindent
+The implementation uses an underlying array of length $2$ and mistakenly raises an ``stack is empty'' exception even though element $0$ should still be on the stack. In this benchmark we split $\eff{pop}$ into $\eff{popReq}$ and $\eff{popRsp}$; $\eff{push}$ has no return value, so we only model $\eff{pushReq}$ and omit $\eff{pushRsp}$.
+The global property characterizes popping ``away'' a pushed value \(y\) without observing \(\msg{popRsp}{\I{elem} = y}\), and then observing an empty stack---modeling loss of the last pushed element.
+\vspace{-.35cm}\par\nobreak{\small
+\begin{align*}
+  & \allA \seqA \msg{pushReq}{\I{elem} = y} \seqA
+    \SNegStar{\msg{popRsp}{\I{elem} = y}} \seqA
+    \msg{isEmpRsp}{\mathit{isEmpty} }
+\end{align*}}
+\vspace{-.4cm}\par\nobreak\noindent
+The \tyName{} comprises the following clauses:
+\vspace{-.35cm}\par\nobreak{\small
+\begin{align*}
+  \eff{pushReq} ~:~{}
+  &  y{:}\Int \sarr \effLR{\allA}\,\Code{unit}\,\effLR{\msg{pushReq}{\I{elem} = y} \seqA \allA \seqA \msg{popReq}{\true} \seqA \allA}
+  \\
+  \eff{initStackReq} ~:~{}
+  & \effLR{\allA}\,\Code{unit}\,\effLR{\msg{initStackReq}{\true} \seqA \allA}
+  \\
+  \eff{popReq} ~:~{}
+  & \effLR{\allA}\,\Code{unit}\,\effLR{\msg{popReq}{\true} \seqA \msg{popRsp}{\true} \seqA \allA}
+  \\
+  \eff{popRsp} ~:~{}
+  & x{:}\Int \sarr \effLR{\allA}\,\urt{\Code{int}}{\I{elem} = x}\,\effLR{\SNegStar{\msg{pushReq}{\true}}}
+  \\
+  \eff{isEmpReq} ~:~{}
+  & \effLR{\allA}\,\Code{unit}\,\effLR{\msg{isEmpReq}{\true} \seqA \msg{isEmpRsp}{\true} \seqA \allA}
+  \\
+  \eff{isEmpRsp} ~:~{}
+  & z{:}\Bool \sarr \effLR{\allA}\,\urt{\Code{bool}}{\mathit{isEmpty} = z}\,\effLR{\msg{isEmpRsp}{\mathit{isEmpty} = z} \seqA \allA}
+\end{align*}}
+\vspace{-.4cm}\par\nobreak\noindent
+The future automaton in the $\eff{pushReq}$ \tyName{} describes not only $\eff{pushReq}$ itself, but also obligates a later $\eff{popReq}$. That encodes a pairing constraint between $\eff{push}$ and $\eff{pop}$, and acts as a search bias for this benchmark. Similarly, the future of $\eff{popRsp}$ forbids any later $\eff{pushReq}$, so along such traces the stack depth changes monotonically. The weakened \tyName{} drops these biases, yielding specifications that give the synthesizer less guidance.
+
+\newpage
+\subsubsection*{Set} This benchmark shares a similar setting with \textsf{Stack}, where we have an effectful set implemented with a fixed-size array. An incorrect implementation that fails to grow the array when the set is full may drop $\eff{insert}$ operations. In this benchmark, we use a ghost event to explicitly track the size of the set. 
+Then, the error is that, after initialization and insertion of \(y\), a \emph{mismatched} delete request (\(\neg(\I{elem}=y)\)) should not appear in a realistic violation scenario tied to size discipline; the global property targets a bad delete-generation path right after insert. Precisely, the global property is given by the following:
+\vspace{-.35cm}\par\nobreak{\small
+\begin{align*}
+  & \msg{initSet}{\true} \seqA \allA \seqA \msg{insert}{\I{elem} = y} \seqA
+    \allA \seqA \msg{delReq}{\neg(\I{elem} = y)} \seqA \allA
+\end{align*}}
+\vspace{-.4cm}\par\nobreak\noindent
+The \tyName{} are shown below:
+\vspace{-.35cm}\par\nobreak{\small
+\begin{align*}
+  \eff{initSet} ~:~{}
+  & \effLR{\allA}\,\Code{unit}\,\effLR{\msg{initSet}{\true} \seqA \msgGray{size}{\mathit{sz} = 0} \seqA \allA}
+  \\
+  \eff{insert} ~:~{}
+  & x{:}\Int \sarr \effLR{\SNegStar{\msg{insert}{\I{elem} \ge x}} \seqA \msgGray{size}{\mathit{sz} = i}}\,\Code{unit}\,
+    \\&  \effLR{\msg{insert}{\I{elem} = x} \seqA \allA \seqA \msg{delReq}{\I{elem} = x} \seqA \allA}
+  \\
+  \eff{delReq} ~:~{}
+  & x{:}\Int \sarr \effL{}\SNegStar{\msg{delReq}{\I{elem} = x}} \seqA \msg{insert}{\I{elem} = x} \seqA \SNegStar{\msg{delReq}{\I{elem} = x}} \seqA 
+  \\& \quad \msgGray{size}{\mathit{sz} = i+1}\effR{}\,\Code{unit}\,
+    \effLR{\msg{delReq}{\I{elem} = x} \seqA \msg{delRsp}{\true} \seqA \msgGray{size}{\mathit{sz} = i} \seqA \allA}
+  \\
+  \eff{delRsp} ~:~{}
+  & r{:}\Bool \sarr \effLR{\allA}\,\urt{\Code{bool}}{\mathit{res} = r}\,\effLR{\allA}
+  \\
+  \eff{isEmpReq} ~:~{}
+  & \effLR{\allA}\,\Code{unit}\,\effLR{\msg{isEmpReq}{\true} \seqA \msg{isEmpRsp}{\true} \seqA \allA}
+  \\
+  \effGray{size} ~:~{}
+  & i{:}\Int \sarr \effLR{\allA}\,\urt{\Code{int}}{\mathit{sz} = i}\,\effLR{\allA}
+  \\
+  \eff{isEmpRsp} ~:~{}
+  & b{:}\Bool \sarr \effLR{\allA}\,\urt{\Code{bool}}{\mathit{isEmpty} = b}\,\effLR{\msg{isEmpRsp}{\mathit{isEmpty} = b} \seqA \allA}
+\end{align*}}
+\vspace{-.4cm}\par\nobreak\noindent
+The weakened \tyName{} drops much of the \(\eff{delReq}\) precondition chain: histories no longer enforce the fine-grained ``no repeated delete / size bookkeeping'' pattern, and a typical relaxation widens the precondition to \(\allA \seqA \msg{insert}{\I{elem} = x} \seqA \allA\).
+
+\newpage
+\subsubsection*{Filesystem}
+Consider a path-tree API with create/delete/exists operations. Here deleting a non-empty directory reportedly succeeds, yet a child path still appears to exist---a path-metadata inconsistency our property surfaces. Thus, the global property is given by the following:
+\vspace{-.35cm}\par\nobreak{\small
+\begin{align*}
+  & \allA \seqA \msg{delReq}{\I{path} = \mathit{parent}(\I{chp})} \seqA
+    \msg{delRsp}{\mathit{succ} } \seqA \allA \seqA
+  \\&
+    \msg{extReq}{\I{path} = \I{chp}} \seqA
+    \msg{extRsp}{\mathit{exists} } \seqA \allA
+\end{align*}}
+\vspace{-.4cm}\par\nobreak\noindent
+The \tyName{} is defined as follows:
+\vspace{-.35cm}\par\nobreak{\small
+\begin{align*}
+  \eff{initReq} ~:~{}
+  & \effLR{\allA}\,\Code{unit}\,\effLR{\msgC{initReq}\seqA \SNegStar{\msg{initReq}{\true}}}
+  \\
+  \eff{crtReq} ~:~{}
+  & p{:}\mathsf{Path} \garr c{:}\urt{\mathsf{Byte}}{\I{isRoot}(\mathit{parent}(p))} \sarr
+  \\ & \quad
+    \effLR{\SNegStar{\msg{crtReq}{\I{path}=\mathit{parent}(p) \land \I{isDir}(\I{content})}}}\,\Code{unit}\,
+    \\& \effLR{\msgA{crtReq}{p\;c} \seqA \msg{crtRsp}{\neg\mathit{succ}} \seqA \allA} \interty
+  \\
+  & p{:}\mathsf{Path} \garr c{:}\urt{\mathsf{Byte}}{\neg\,\I{isRoot}(p)} \sarr
+  \\ & \quad
+    \effLR{\msgC{initReq}\seqA \SNegStar{\msgA{delReq}{p}} \seqA \msg{crtReq}{\I{path}=p} \seqA \msg{crtRsp}{\mathit{succ}} \seqA \SNegStar{\msgA{delReq}{p}}}\,\Code{unit}\,
+  \\ & \quad
+    \effLR{\msgA{crtReq}{p\;c} \seqA \msg{crtRsp}{\neg\mathit{succ}} \seqA \allA} \interty
+  \\
+  & p{:}\mathsf{Path} \garr c{:}\urt{\mathsf{Byte}}{\neg\,\I{isRoot}(\mathit{parent}(p))} \sarr
+  \\ & \quad
+    \effL{}\allA \seqA \msg{crtReq}{\I{path}=\mathit{parent}(p) \land \I{isDir}(\I{content})} \seqA \msg{crtRsp}{\mathit{succ}} \seqA 
+  \\ & \quad \SNegStar{\msg{delReq}{\I{path}=\mathit{parent}(p)}}\effR{}\,\Code{unit}\,
+    \effLR{\msgA{crtReq}{p\;c} \seqA \msg{crtRsp}{\mathit{succ}} \seqA \allA \seqA \msgA{delReq}{p} \seqA \allA} \interty
+  \\
+  & p{:}\mathsf{Path} \garr c{:}\urt{\mathsf{Byte}}{\I{isRoot}(\mathit{parent}(p))} \sarr
+  \\ & \quad
+    \effLR{\allA}\,\Code{unit}\,
+    \effLR{\msgA{crtReq}{p\;c} \seqA \msg{crtRsp}{\mathit{succ}} \seqA \allA \seqA \msg{crtReq}{\I{path}=\mathit{parent}(p)} \seqA \allA \seqA \msgA{delReq}{p} \seqA \allA}
+  \\
+  \eff{crtRsp} ~:~{}
+  & s{:}\Bool \sarr \effLR{\allA}\,\urt{\Code{bool}}{\mathit{succ}=s}\,\effLR{\allA}
+  \\
+  \eff{delReq} ~:~{}
+  & p{:}\urt{\mathsf{Path}}{\I{isRoot}(p)} \sarr \effLR{\allA}\,\Code{unit}\,
+    \effLR{\msgA{delReq}{p} \seqA \msg{delRsp}{\neg\mathit{succ}} \seqA \allA} \interty
+  \\
+  & p{:}\urt{\mathsf{Path}}{\neg\,\I{isRoot}(p)} \sarr
+  \\ & \quad
+    \effLR{\allA \seqA \msgA{delReq}{p} \seqA \SNegStar{\msg{crtReq}{\I{path}=p}}}\,\Code{unit}\,
+    \effLR{\msgA{delReq}{p} \seqA \msg{delRsp}{\neg\mathit{succ}} \seqA \allA} \interty
+  \\
+  & p{:}\urt{\mathsf{Path}}{\neg\,\I{isRoot}(p)} \sarr
+  \\ & \quad
+    \effLR{\msgC{initReq}\seqA \SNegStar{\msgA{delReq}{p}} \seqA \msg{crtReq}{\I{path}=p} \seqA \msg{crtRsp}{\mathit{succ}} \seqA \SNegStar{\msgA{delReq}{p}}}\,\Code{unit}\,
+  \\ & \quad
+    \effLR{\msgA{delReq}{p} \seqA \msg{delRsp}{\mathit{succ}} \seqA \SNegStar{\msg{crtReq}{\true}}}
+  \\
+  \eff{delRsp} ~:~{}
+  & s{:}\Bool \sarr \effLR{\allA}\,\urt{\Code{bool}}{\mathit{succ}=s}\,\effLR{\allA}
+  \\
+  \eff{extReq} ~:~{}
+  & p{:}\urt{\mathsf{Path}}{\I{isRoot}(p)} \sarr \effLR{\allA}\,\Code{unit}\,
+    \effLR{\msgA{extReq}{p} \seqA \msg{extRsp}{\mathit{exists}} \seqA \allA} \interty
+  \\
+  & p{:}\urt{\mathsf{Path}}{\neg\,\I{isRoot}(p)} \sarr
+  \\ & \quad
+    \effLR{\allA \seqA \msgA{delReq}{p} \seqA \SNegStar{\msg{crtReq}{\I{path}=p}}}\,\Code{unit}\,
+    \effLR{\msgA{extReq}{p} \seqA \msg{extRsp}{\neg\mathit{exists}} \seqA \allA} \interty
+  \\
+  & p{:}\urt{\mathsf{Path}}{\neg\,\I{isRoot}(p)} \sarr
+  \\ & \quad
+    \effLR{\allA \seqA \msg{crtReq}{\I{path}=p} \seqA \msg{crtRsp}{\mathit{succ}} \seqA \SNegStar{\msgA{delReq}{p}}}\,\Code{unit}\,
+    \effLR{\msgA{extReq}{p} \seqA \msg{extRsp}{\mathit{exists}} \seqA \allA}
+  \\
+  \eff{extRsp} ~:~{}
+  & e{:}\Bool \sarr \effLR{\allA}\,\urt{\Code{bool}}{\mathit{exists}=e}\,\effLR{\allA}
+\end{align*}}
+\vspace{-.4cm}\par\nobreak\noindent
+The weakened \tyName{} merges intersected types across the create/delete/exists clauses and drops or weakens predicates such as \(\I{isDir}(\I{content})\) on paths, paralleling the weakened study in the evaluation.
+
+\newpage
+\subsubsection*{Graph}
+Consider a dynamic graph with fresh nodes and directed edges. Two edges \(x\!\to\!y\) and \(y\!\to\!z\) are added (with side conditions on \(\I{isStart}\)). A bug in the underlying program can only be detected on a connected graph, which is captured by the following global property:
+\vspace{-.35cm}\par\nobreak{\small
+\begin{align*}
+  & \allA \seqA \msg{addE}{\I{st}=x \land \I{ed}=y \land \neg\,\I{isStart}(\I{st})} \seqA \allA \seqA
+  \\&\quad \msg{addE}{\I{st}=y \land \I{ed}=z} \seqA \allA \seqA
+    \msg{isConnReq}{\true} \seqA \msg{isConnRsp}{\mathit{isConn} }
+\end{align*}}
+\vspace{-.4cm}\par\nobreak\noindent
+The \tyName{} comprises the following clauses:
+\vspace{-.35cm}\par\nobreak{\small
+\begin{align*}
+  \eff{init} ~:~{}
+  & \effLR{\allA}\,\Code{unit}\,\effLR{\SNegStar{\msg{init}{\true}}}
+  \\
+  \eff{newNReq} ~:~{}
+  & \effLR{\msg{init}{\true}\seqA\allA}\,\Code{unit}\,
+    \effLR{\msg{newNReq}{\true}\seqA\msg{newNRsp}{\true}\seqA\allA}
+  \\
+  \eff{newNRsp} ~:~{}
+  & x{:}\Int \sarr \effLR{\SNegStar{\msg{newNRsp}{\true}}}\,\urt{\Code{int}}{\I{nid}=x \land \I{isStart}(x)}\,\effLR{\allA} \interty
+  \\
+  & x{:}\Int \sarr \effLR{\SNegStar{\msg{newNRsp}{\true}}\seqA\msg{newNRsp}{\neg(\I{nid}=x)}\seqA\SNegStar{\msg{newNRsp}{\I{nid}=x}}}\,\\ &\urt{\Code{int}}{\I{nid}=x \land \neg\,\I{isStart}(x)}\,\effLR{\allA\seqA\msg{addE}{\I{ed}=x}\seqA\allA}
+  \\
+  \eff{addE} ~:~{}
+  & x{:}\Int \garr y{:}\urt{\Int}{x\neq y} \sarr \effLR{\allA\seqA\msg{newNRsp}{\I{nid}=x}\seqA\allA\seqA\msg{newNRsp}{\I{nid}=y}\seqA\allA}\,\Code{unit}\,
+    \\ &\effLR{\msg{addE}{\I{st}=x\land\I{ed}=y\land\neg\,\I{isStart}(y)} \seqA \SNegStar{\msg{addE}{\I{st}=x\land\I{ed}=y}}}
+  \\
+  \eff{isConnReq} ~:~{}
+  & \effLR{\allA}\,\Code{unit}\,\effLR{\msg{isConnReq}{\true}\seqA\msg{isConnRsp}{\true}\seqA\allA}
+  \\
+  \eff{isConnRsp} ~:~{}
+  & v{:}\Bool \sarr \effLR{\allA}\,\urt{\Code{bool}}{\mathit{isConn}=v}\,\effLR{\msg{isConnRsp}{\mathit{isConn}=v}\seqA\allA}
+\end{align*}}
+\vspace{-.4cm}\par\nobreak\noindent
+The \tyName{} requires a node is either the initial node, or connected from another node. The weakened \tyName{} merges two intersected types of \(\eff{newNRsp}\) and loosens \(\I{nid}/\I{isStart}\) constraints.
+
+\newpage
+\subsubsection*{NFA} This benchmark has a similar setting to \textsf{Graph} but requires the graph to be a well-formed NFA with at least three edges. Then, the global property is:
+\vspace{-.35cm}\par\nobreak{\small
+\begin{align*}
+  & \allA \seqA \msg{addE}{\true} \seqA \allA \seqA \msg{addE}{\true} \seqA \allA \seqA
+    \msg{addE}{\true} \seqA \allA \seqA
+    \msg{isNFARsp}{\mathit{isNFA} }
+\end{align*}}
+\vspace{-.4cm}\par\nobreak\noindent
+The \tyName{} is:
+\vspace{-.35cm}\par\nobreak{\small
+\begin{align*}
+  \eff{init} ~:~{}
+  & \effLR{\allA}\,\Code{unit}\,\effLR{\SNegStar{\msg{init}{\true}}}
+  \\
+  \eff{newNReq} ~:~{}
+  & \effLR{\msg{init}{\true}\seqA\allA}\,\Code{unit}\,
+    \effLR{\msg{newNReq}{\true}\seqA\msg{newNRsp}{\true}\seqA\allA} 
+  \\
+  \eff{newNRsp} ~:~{}
+  & x{:}\Int \sarr \effLR{\SNegStar{\msg{newNRsp}{\true}}}\,\urt{\Code{int}}{\I{nid}=x}\,\effLR{\allA} \interty
+  \\
+  & x{:}\Int \sarr \effLR{\SNegStar{\msg{newNRsp}{\true}}\seqA\msg{newNRsp}{\neg(\I{nid}=x)}\seqA\SNegStar{\msg{newNRsp}{\I{nid}=x}}}\,  \\ & \urt{\Code{int}}{\I{nid}=x}\,\effLR{\allA\seqA\msg{addE}{\I{ed}=x}\seqA\allA}
+  \\
+  \eff{setInitN} ~:~{}
+  & x{:}\Int \sarr \effLR{\allA\seqA\msg{newNRsp}{\I{nid}=x}\seqA\allA}\,\Code{unit}\,\effLR{\msg{setInitN}{\I{nid}=x}\seqA\SNegStar{\msg{setInitN}{\true}}}
+  \\
+  \eff{setFinalN} ~:~{}
+  & x{:}\Int \sarr \effLR{\allA\seqA\msg{newNRsp}{\I{nid}=x}\seqA\allA}\,\Code{unit}\,\effLR{\msg{setFinalN}{\I{nid}=x}\seqA\SNegStar{\msg{setFinalN}{\true}}}
+  \\
+  \eff{addE} ~:~{}
+  & x{:}\Int \garr c{:}\urt{\mathsf{char}}{\true} \garr y{:}\urt{\Int}{x\neq y} \sarr
+  \\ & \quad
+    \effLR{\allA\seqA\msg{newNRsp}{\I{nid}=x}\seqA\allA\seqA\msg{newNRsp}{\I{nid}=y}\seqA\allA\seqA\msg{addE}{\I{ed}=x}}\,\Code{unit}\,
+  \\ & \quad
+    \effLR{\msg{addE}{\I{st}=x\land\I{ch}=c\land\I{ed}=y}\seqA\SNegStar{\msg{addE}{\I{st}=x\land\I{ch}=c}}} \interty
+  \\
+  & x{:}\Int \garr c{:}\urt{\mathsf{char}}{\true} \garr y{:}\urt{\Int}{x\neq y} \sarr
+  \\ & \quad
+    \effLR{\allA\seqA\msg{setInitN}{\I{nid}=x}\seqA\allA\seqA\msg{newNRsp}{\I{nid}=y}\seqA\allA}\,\Code{unit}\,
+  \\ & \quad
+    \effLR{\msg{addE}{\I{st}=x\land\I{ch}=c\land\I{ed}=y}\seqA\SNegStar{\msg{addE}{\I{st}=x\land\I{ch}=c}}} \interty
+  \\
+  & x{:}\Int \garr c{:}\urt{\mathsf{char}}{\true} \garr y{:}\urt{\Int}{x\neq y} \sarr
+  \\ & \quad
+    \effLR{\allA\seqA\msg{newNRsp}{\I{nid}=y}\seqA\allA\seqA\msg{newNRsp}{\I{nid}=x}\seqA\allA\seqA\msg{addE}{\I{ed}=x}}\,\Code{unit}\,
+  \\ & \quad
+    \effLR{\msg{addE}{\I{st}=x\land\I{ch}=c\land\I{ed}=y}\seqA\SNegStar{\msg{addE}{\I{st}=x\land\I{ch}=c}}}
+  \\
+  \eff{isNFAReq} ~:~{}
+  & \effLR{\allA}\,\Code{unit}\,\effLR{\msg{isNFAReq}{\true}\seqA\msg{isNFARsp}{\true}\seqA\allA}
+  \\
+  \eff{isNFARsp} ~:~{}
+  & v{:}\Bool \sarr \effLR{\allA\seqA\msg{setFinalN}{\true}\seqA\allA}\,\urt{\Code{bool}}{\mathit{isNFA}=v}\,\effLR{\allA}
+\end{align*}}
+\vspace{-.4cm}\par\nobreak\noindent
+The weakened \tyName{} merges intersected types of \(\eff{newNRsp}\) and \(\eff{addE}\), and relaxes ordering constraints on \(\msg{addE}{\cdot}\).
+
+\newpage
+\subsubsection*{IFC} As introduced in \autoref{sec:overview}, we would like to test the ENNI property, where we are interested in the implementation of the IFC machine over different operators; thus, the global properties vary the offending primitive (\(\eff{store}/\eff{add}/\eff{load}\)) across three goals.
+Then, the global properties are
+\vspace{-.35cm}\par\nobreak{\small
+\begin{align*}
+  & \allA \seqA \msg{store}{\true} \seqA \allA \seqA \msg{enniRsp}{\mathit{enni}}
+  \\
+  & \allA \seqA \msg{add}{\true} \seqA \allA \seqA \msg{enniRsp}{\mathit{enni}}
+  \\
+  & \allA \seqA \msg{load}{\true} \seqA \allA \seqA \msg{enniRsp}{\mathit{enni}}
+\end{align*}}
+\vspace{-.4cm}\par\nobreak\noindent
+The \tyName{} is defined as (here \(\mathit{addr}\) abbreviates \(\I{isAddr}\)):
+\vspace{-.35cm}\par\nobreak{\small
+\begin{align*}
+  \eff{push} ~:~{}
+  & l{:}\Bool \garr x{:}\urt{\Int}{\true} \garr y{:}\urt{\Int}{\true} \sarr \effLR{\SNegStar{\msgGray{depth}{\true}}}\,\Code{unit}\,
+  \\ & \quad
+    \effLR{\msgB{push}{\I{low}\;\I{e_l}\;\I{e_r}}{\I{low}=l\land\I{e_l}=x\land\I{e_r}=y\land\mathit{addr}(\I{e_l})\land\mathit{addr}(\I{e_r})}\seqA\msgGray{depth}{\mathit{depth}=1}\seqA\allA} \interty
+  \\
+  & d{:}\Int \garr l{:}\Bool \garr x{:}\urt{\Int}{\true} \garr y{:}\urt{\Int}{\true} \sarr \effLR{\allA\seqA\msgGray{depth}{\mathit{depth}=d}}\,\Code{unit}\,
+  \\ & \quad
+    \effLR{\msgB{push}{\I{low}\;\I{e_l}\;\I{e_r}}{\I{low}=l\land\I{e_l}=x\land\I{e_r}=y\land\mathit{addr}(\I{e_l})\land\mathit{addr}(\I{e_r})}\seqA\msgGray{depth}{\mathit{depth}=d+1}\seqA\allA}
+  \\
+  \eff{pop} ~:~{}
+  & d{:}\urt{\Int}{d>0} \sarr \effLR{\allA\seqA\msgGray{depth}{\mathit{depth}=d \land d>0}}\,\Code{unit}\,
+    \effLR{\msg{pop}{\true}\seqA\msgGray{depth}{\mathit{depth}=d-1}\seqA\allA}
+  \\
+  \eff{load} ~:~{}
+  & d{:}\urt{\Int}{d>0} \sarr \effLR{\allA\seqA\msg{store}{\true}\seqA\msg{push}{\true}\seqA\msgGray{depth}{\mathit{depth}=d \land d>0}}\,\Code{unit}\,
+  \\ & \quad
+    \effLR{\msg{load}{\true}\seqA\msgGray{depth}{\mathit{depth}=d}\seqA\allA\seqA\msg{store}{\true}\seqA\allA}
+  \\
+  \eff{store} ~:~{}
+  & d{:}\urt{\Int}{d>1} \sarr \effLR{\allA\seqA\msg{push}{\true}\seqA\msgGray{depth}{\mathit{depth}=d \land d>1}}\,\Code{unit}\,
+    \\& \effLR{\msg{store}{\true}\seqA\msgGray{depth}{\mathit{depth}=d-2}\seqA\allA} \interty
+  \\
+  & d{:}\urt{\Int}{d>1} \sarr \effLR{\allA\seqA\msgGray{depth}{\mathit{depth}=d \land d>1}}\,\Code{unit}\,
+    \\ & \effLR{\msg{store}{\true}\seqA\msgGray{depth}{\mathit{depth}=d-2}\seqA\allA}
+  \\
+  \eff{add} ~:~{}
+  & d{:}\urt{\Int}{d>1} \sarr \effLR{\allA\seqA\msgGray{depth}{\mathit{depth}=d \land d>1}}\,\Code{unit}\,
+    \\& \effLR{\msg{add}{\true}\seqA\msgGray{depth}{\mathit{depth}=d-1}\seqA\allA}
+  \\
+  \eff{enniReq} ~:~{}
+  & \effLR{\allA}\,\Code{unit}\,\effLR{\msg{enniReq}{\true}\seqA\msg{enniRsp}{\mathit{enni}}\seqA\allA}
+  \\
+  \eff{enniRsp} ~:~{}
+  & v{:}\Bool \sarr \effLR{\allA}\,\urt{\Code{bool}}{\mathit{enni}=v}\,\effLR{\allA}
+  \\
+  \effGray{depth} ~:~{}
+  & d{:}\Int \sarr \effLR{\allA}\,\urt{\Code{int}}{\mathit{depth}=d}\,\effLR{\allA}
+\end{align*}}
+\vspace{-.4cm}\par\nobreak\noindent
+Here we use a ghost event $\effGray{depth}$ to record the current depth of the IFC stack.
+The weakened \tyName{} relaxes the \(\I{low}/\I{e_l}/\I{e_r}\) coupling on \(\msgB{push}{\cdots}{\cdots}\) toward weaker implications and merges the intersected types of the two \(\eff{store}\) clauses under looser stack-depth premises.
+
+\subsubsection*{DeBruijn STLC} The setting of this benchmark is already discussed in the beginning of this appendix (cf. \autoref{sec:tech:details-overview}). The weakened \tyName{} removes all type-related constraints to enable the generator to produce all untyped STLC programs.
+
+\newpage
+
+\subsubsection*{Hashtable}
+Consider a string-keyed hash table with find/replace that is accessible to multiple threads; we want to detect the concurrency error. Concretely, there is a situation that, after \(\msg{repReq}{\I{key}=k,\I{vl}=v_2}\) with no further \(\eff{addReq}/\eff{repReq}\) on \(k\), a \(\eff{findRsp}\) may still disagree with \(v_2\)---the property captures that mismatch. Then, the global property is defined as:
+\vspace{-.35cm}\par\nobreak{\small
+\begin{align*}
+  & \allA \seqA \msg{repReq}{\I{key}=k \land \I{vl}=v_2} \seqA
+  \\&\quad \SNegStarU{\msg{addReq}{\I{key}=k}}{\msg{repReq}{\I{key}=k}} \seqA
+    \msg{findRsp}{\I{key}=k \land \neg(\I{vl}=v_2)}
+\end{align*}}
+\vspace{-.4cm}\par\nobreak\noindent
+The \tyName{} comprises the following clauses:
+\vspace{-.35cm}\par\nobreak{\small
+\begin{align*}
+  \eff{addReq} ~:~{}
+  & k{:}\Int,\; v{:}\Int \sarr \effLR{\msg{initReq}{\true}\seqA\allA}\,\Code{unit}\,\effLR{\msg{addReq}{\I{key}=k\land\I{vl}=v}\seqA\allA}
+  \\
+  \eff{findReq} ~:~{}
+  & k{:}\Int \sarr 
+  \effL{} \allA\seqA\msg{repReq}{\I{key}=k\land\I{vl}=v_1}\seqA 
+    \\& \SNegStarUUU{\msg{rmReq}{\I{key}=k}}{\msg{clReq}{\true}}{\msg{repReq}{\I{key}=k}}{\msg{addReq}{\I{key}=k}} \effR{} 
+    \\&\,\Code{unit}\, 
+    \effLR{\msg{findReq}{\I{key}=k}\seqA\msg{findRsp}{\I{key}=k\land\I{vl}=v_1}\seqA\allA}
+  \\
+  \eff{repReq} ~:~{}
+  & k{:}\Int,\; v{:}\Int \sarr \effLR{\allA\seqA\msg{addReq}{\I{key}=k}\seqA\SNegStar{\msg{rmReq}{\I{key}=k}}}\,\Code{unit}\,
+  \\&\quad \effLR{\msg{repReq}{\I{key}=k\land\I{vl}=v}\seqA\allA}
+\end{align*}}
+\vspace{-.4cm}\par\nobreak\noindent
+The weakened \tyName{} shortens \(\eff{findReq}\) / \(\eff{repReq}\) precondition chains substantially.
+
+\subsubsection*{Transaction} As explained in the read atomicity example in \autoref{sec:overview}.
+
+\newpage
+
+\subsubsection*{DataBase Setting}
+The four benchmarks below share the same assumption about the underlying database. We adopt the weak isolation levels of MonkeyDB~\cite{MonkeyDB}, which exposes four APIs:
+\begin{align*}
+  &\eff{begin} : \Unit \sarr \Code{tid}
+  \\&\eff{put}: \Code{tid} \sarr \Code{key} \sarr \Code{value} \sarr \Unit
+  \\&\eff{commit}: \Code{tid} \sarr \Code{cid}
+  \\&\eff{get}: \Code{tid} \sarr \Code{key} \sarr \Code{tid} \times \Code{cid} \times \Code{value} 
+\end{align*}
+\noindent
+Calling $\eff{begin}$ starts a new transaction, and the engine returns a fresh transaction identifier. Each of $\eff{put}$, $\eff{get}$, and $\eff{commit}$ takes that $\Code{tid}$ so the store can tell which transaction is running. The $\eff{put}$ operation updates the value stored at a key in the usual way. The $\eff{commit}$ operation closes the transaction named by the supplied id; the engine assigns a monotonic \emph{commit id} $\Code{cid}$ that records commit order. For $\eff{get}$, the result bundles the read value with the ($\Code{tid}$,$\Code{cid}$) pair of the writer whose commit produced it; tracking $\Code{cid}$ is what lets us state weak isolation. Under causal consistency (CC), for example, reads must be justified by a transaction that commits before the reader commits. Concretely, CC is captured by:
+\vspace{-.35cm}\par\nobreak{\small
+\begin{align*}
+  \eff{begin} ~:~{}
+  & i{:}\Int \sarr \effLR{\SNegStar{\msg{begin}{\I{tid}\geq i}}}\,\Code{unit}\,
+    \effLR{\msg{begin}{\I{tid}=i}\seqA\allA}
+  \\
+  \eff{put} ~:~{}
+  & i{:}\Int \sarr k{:}\Code{Key} \sarr z{:}\Code{Value} \sarr \effLR{\allA\seqA\msg{begin}{\I{tid}=i}\seqA\SNegStar{\msg{commit}{\I{tid}=i}}}
+  \\&\quad \Code{unit}\,
+    \effLR{\msg{put}{\I{tid}=i\land\I{key}=k\land\I{vl}=z}\seqA\allA}
+  \\
+  \eff{commit} ~:~{}
+  & j{:}\Int \garr i{:}\Int \sarr \effLR{\SNegStar{\msg{commit}{\I{tid}=i \lor \I{cid}\geq j}}\seqA\msg{begin}{\I{tid}=i}\seqA\SNegStar{\msg{commit}{\I{tid}=i \lor \I{cid}\geq j}}}
+  \\&\quad \Code{unit}\,
+    \effLR{\msg{commit}{\I{tid}=i\land\I{cid}=j}\seqA\SNegStarU{\msg{put}{\I{tid}=i}}{\msg{get}{\I{tid}=i}}}
+  \\&(\texttt{Causal Consistency:}) \quad 
+  \\\eff{get} ~:~{}
+  & p{:}\Int\garr q{:}\Int \garr z{:}\Code{Value} \garr i{:}\Int \sarr k{:}\Code{Key} \sarr {}
+  \\ & \quad
+    \effLR{\allA\seqA\msgA{put}{p\;k\;z}\seqA\SNegStar{\msg{put}{\I{tid}=i\land\I{key}=k}}\seqA\msgA{commit}{p\;q}\seqA\SNegStar{\msg{put}{\I{tid}=i\land\I{key}=k}}}
+  \\ & \quad
+  \Code{unit}\,\effLR{\msg{get}{\I{tid}=i\land\I{key}=k\land\I{prevTid}=p\land\I{prevCid}=q\land\I{vl}=z}\seqA\SNegStar{\msg{commit}{\I{tid}=i\land\I{cid} < p}}}
+\end{align*}}
+\vspace{-.4cm}\par\nobreak\noindent
+These clauses force $\Code{tid}$ and $\Code{cid}$ to increase monotonically, allow $\eff{commit}$ only after the matching $\eff{begin}$, and pair commits with transactions. Weak isolation shows up chiefly in $\eff{get}$: its history automaton may justify a read from any earlier committed writer, not necessarily the latest. If the current transaction $T_i$ observes writer $T_p$ at commit id $q$, the future automaton blocks committing $T_i$ with any $\Code{cid}<q$, so $T_i$ cannot commit ahead of $T_p$. Read committed (RC) keeps the same surface API but weakens the \tyName{} for $\eff{get}$:
+\vspace{-.35cm}\par\nobreak{\small
+\begin{align*}
+  &(\texttt{Read Committed:}) \quad 
+  \\\eff{get} ~:~{}
+  & p{:}\Int\garr q{:}\Int \garr z{:}\Code{Value} \garr i{:}\Int \sarr k{:}\Code{Key} \sarr {} 
+  \\ & \quad
+    \effLR{\allA\seqA\msgA{put}{p\;k\;z}\seqA\SNegStar{\msg{put}{\I{tid}=i\land\I{key}=k}}\seqA\msgA{commit}{p\;q}\seqA\SNegStar{\msg{commit}{\true}}}
+  \\ & \quad
+  \Code{unit}\,\effLR{\msg{get}{\I{tid}=i\land\I{key}=k\land\I{prevTid}=p\land\I{prevCid}=q\land\I{vl}=z}\seqA\allA}
+\end{align*}}
+\vspace{-.4cm}\par\nobreak\noindent
+Here the history forces $T_p$ to be the latest committed writer on the key (nothing commits after $\msgA{commit}{p\;q}$). Unlike CC, the future adds no further restriction. In the four benchmarks below we take CC as the default \tyName{}; weakening yields RC.
+
+\newpage
+\subsubsection*{Shopping cart} This is a benchmark from MonkeyDB~\cite{MonkeyDB}, which is a simple shopping cart system. The system allows users to add and delete items to their cart, and the cart is stored in the database. The global property is committing \(\msg{put}{\I{key}=x,\I{vl}=y}\) should rule out a later \(\msg{get}{\cdot}\) that reads a stale list (\(\neg(\I{vl}=y)\)), that is
+\vspace{-.35cm}\par\nobreak{\small
+\begin{align*}
+  & \allA \seqA \msg{put}{\I{key}=x \land \I{vl}=y} \seqA
+    \SNegStar{\msg{put}{\I{key}=x}} \seqA
+    \msg{get}{\I{key}=x \land \neg(\I{vl}=y)} \seqA \allA
+\end{align*}}
+\vspace{-.4cm}\par\nobreak\noindent
+The \tyName{} comprises the following clauses (\(\mathit{emp}\), \(\mathit{cons}\), and \(\mathit{remove}\) are the axiomatized list operations):
+\vspace{-.35cm}\par\nobreak{\small
+\begin{align*}
+  &(\texttt{Causal Consistency Specification is omitted}) \quad 
+  \\
+  \eff{addItemReq} ~:~{}
+  & i{:}\Int\garr l{:}\List[\Int] \garr x{:}\Int \sarr y{:}\Int \sarr \effLR{\allA}\,\Code{unit}\,
+  \\ & \quad
+    \effL{}\msg{addItemReq}{\I{user}=x\land\I{item}=y}\seqA\msg{begin}{\I{tid}=i}\seqA \allA \seqA
+  \\ & \quad \msg{get}{\I{tid}=i\land\I{key}=x\land\I{vl}=l}\seqA\allA\seqA\msg{put}{\I{tid}=i\land\I{key}=x\land\I{vl}=\mathit{cons}(y,l)}\seqA
+  \\ & \quad \SNegStar{\msg{put}{\I{key}=x}}\seqA\msg{commit}{\I{tid}=i}\seqA\msg{addItemRsp}{\true}\seqA\allA\effLR{}
+  \\
+  \eff{addItemRsp} ~:~{}
+  & \effLR{\allA}\,\Code{unit}\,\effLR{\allA}
+  \\
+  \eff{deleteItemReq} ~:~{}
+  & {:}\Int\garr l{:}\List[\Int] \garr x{:}\Int \sarr y{:}\Int \sarr \effLR{\allA}\,\Code{unit}\,
+  \\ & \quad
+    \effL{}\msg{deleteItemReq}{\I{user}=x\land\I{item}=y}\seqA\msg{begin}{\I{tid}=i}\seqA \allA \seqA
+  \\ & \quad \msg{get}{\I{tid}=i\land\I{key}=x\land\I{vl}=l}\seqA\allA\seqA\msg{put}{\I{tid}=i\land\I{key}=x\land\I{vl}=\mathit{remove}(y,l)}\seqA
+  \\ & \quad  \SNegStar{\msg{put}{\I{key}=x}}\seqA\msg{commit}{\I{tid}=i}\seqA\msg{deleteItemRsp}{\true}\seqA\allA\effR{}
+  \\
+  \eff{deleteItemRsp} ~:~{}
+  & \effLR{\allA}\,\Code{unit}\,\effLR{\allA}
+\end{align*}}
+\vspace{-.4cm}\par\nobreak\noindent
+These clauses encode the underlying database steps used by $\eff{addItem}$ and $\eff{deleteItem}$: read the prior cart (a list of item ids) and write back an update. The $\allA$ gaps between those operations admit other trace events (e.g.\ $\eff{put}$ from concurrent transactions). They also forbid \emph{two uncommitted transactions from updating the same key}---the same ``write-write conflict'' that InnoDB-style engines reject. The constraint appears in the future as the pattern ``$\msg{put}{\I{key}=x \land \ldots}\SNegStar{\msg{put}{\I{key}=x}}\msg{commit}{\ldots}$'': after one transaction touches key $x$, no second transaction may write $x$ until the first commits. For the weakened \tyName{}, we switch the MonkeyDB layer to RC as above; the cart operations themselves are unchanged.
+
+\newpage
+\subsubsection*{Courseware} This is a benchmark from MonkeyDB~\cite{MonkeyDB}, where courseware is a system allow student to add and drop courses. The global property is the violation of strong consistency:
+\vspace{-.35cm}\par\nobreak{\small
+\begin{align*}
+  & \allA \seqA \msg{put}{\I{key}=x \land \I{vl}=y} \seqA
+    \SNegStar{\msg{put}{\I{key}=x}} \seqA
+   \msg{get}{\I{key}=x \land \neg(\I{vl}=y)} \seqA \allA
+\end{align*}}
+\vspace{-.4cm}\par\nobreak\noindent
+The \tyName{} is defined as follows (\(\mathit{emp}\), \(\mathit{cons}\), and \(\mathit{remove}\) are as in the Shopping cart benchmark):
+\vspace{-.35cm}\par\nobreak{\small
+\begin{align*}
+  &(\texttt{Causal Consistency Specification is omitted}) \quad 
+  \\
+  \eff{regStuReq} ~:~{}
+  & i{:}\Int \garr x{:}\Int \sarr \effLR{\SNegStarExcl{\msg{regStuReq}{\true} \cup \msg{get}{\I{key}=x} \cup \msg{put}{\I{key}=x}}}\,\Code{unit}\,
+  \\ & \quad
+    \effL{}\msg{regStuReq}{\I{user}=x}\seqA\msg{begin}{\I{tid}=i}\seqA \allA \seqA \msg{put}{\I{tid}=i\land\I{key}=x\land\mathit{emp}(\I{vl})} \seqA \allA \seqA
+    \\& \quad \msg{put}{\I{tid}=i\land\I{key}=x\land\I{vl}}\seqA\msg{commit}{\I{tid}=i}\seqA \allA\seqA\msg{regStuRsp}{\true}\seqA
+    \\& \quad \SNegStar{\msg{regStuReq}{\true}}\effR{}
+  \\
+  \eff{regStuRsp} ~:~{}
+  & \effLR{\allA}\,\Code{unit}\,\effLR{\allA}
+  \\
+  \eff{crtCourseReq} ~:~{}
+  & i{:}\Int,\; x{:}\Int \sarr \effLR{\allA}\,\Code{unit}\,
+    \effL{}\msg{crtCourseReq}{\I{course\_id}=x}\seqA\msg{begin}{\I{tid}=i}\seqA\allA\seqA 
+    \\& \quad \msg{putCourses}{\I{tid}=i\land\I{key}=x\land\I{vl}}\seqA\allA\seqA\msg{commit}{\I{tid}=i}\seqA\msg{crtCourseRsp}{\true}\seqA\allA\effR{}
+  \\
+  \eff{crtCourseRsp} ~:~{}
+  & \effLR{\allA}\,\Code{unit}\,\effLR{\allA}
+  \\
+  \eff{enrStuReq} ~:~{}
+  & i{:}\Int \garr l{:}\List[\Int] \garr x{:}\Int \sarr y{:}\Int  \sarr \effLR{\allA}\,\Code{unit}\,
+  \\ & \quad
+    \effL{}\msg{enrStuReq}{\I{user}=x\land\I{item}=y}\seqA\msg{begin}{\I{tid}=i}\seqA\allA\seqA
+  \\ & \quad \msg{get}{\I{tid}=i\land\I{key}=x\land\I{vl}=l}\seqA\allA\seqA\msg{put}{\I{tid}=i\land\I{key}=x\land\I{vl}=\mathit{cons}(y,l)}\seqA
+  \\ & \quad \SNegStar{\msg{put}{\I{key}=x}}\seqA\msg{commit}{\I{tid}=i}\seqA\msg{enrStuRsp}{\true}\seqA\allA\effR{}
+  \\
+  \eff{enrStuRsp} ~:~{}
+  & \effLR{\allA}\,\Code{unit}\,\effLR{\allA}
+  \\
+  \eff{unenrStuReq} ~:~{}
+  & i{:}\Int \garr l{:}\List[\Int] \garr x{:}\Int \sarr y{:}\Int  \sarr \effLR{\allA}\,\Code{unit}\,
+  \\ & \quad
+    \effL{}\msg{unenrStuReq}{\I{user}=x\land\I{item}=y}\seqA\msg{begin}{\I{tid}=i}\seqA\allA\seqA 
+    \\ & \quad \msg{get}{\I{tid}=i\land\I{key}=x\land\I{vl}=l}\seqA\allA\seqA\msg{put}{\I{tid}=i\land\I{key}=x\land\I{vl}=\mathit{remove}(y,l)}\seqA
+  \\ & \quad \SNegStar{\msg{put}{\I{key}=x}}\seqA\msg{commit}{\I{tid}=i}\seqA\msg{unenrStuRsp}{\true}\seqA\allA\effR{}
+  \\
+  \eff{unenrStuRsp} ~:~{}
+  & \effLR{\allA}\,\Code{unit}\,\effLR{\allA}
+\end{align*}}
+\vspace{-.4cm}\par\nobreak\noindent
+These clauses encode the underlying database steps used by courseware's API, which is similar to the \textsf{Shopping} benchmark. They also forbid \emph{two uncommitted transactions from updating the same key}---the same ``write-write conflict'' that InnoDB-style engines reject. For the weakened \tyName{}, we switch the MonkeyDB layer to RC as above; the cart operations themselves are unchanged.
+
+\newpage
+\subsubsection*{Twitter} This is a benchmark from MonkeyDB~\cite{MonkeyDB}, modeling social follow sets and timelines on top of the transactional store. The global property is a violation of strong consistency: after observing follows list $\ell$ for user \(u\), with no further \(\eff{put}\) between, a later \(\eff{get}\) may read a different set.
+\vspace{-.35cm}\par\nobreak{\small
+\begin{align*}
+  & \allA \seqA \msg{get}{\I{user}=u \land \I{fls}=\ell} \seqA
+    \SNegStar{\msg{put}{\I{user}=u}} \seqA
+    \msg{get}{\I{user}=u \land \neg(\I{fls}=\ell)} \seqA \allA
+\end{align*}}
+\vspace{-.4cm}\par\nobreak\noindent
+The \tyName{} is defined as follows (\(\mathit{emp}\), \(\mathit{cons}\), and \(\mathit{remove}\) are as in the Shopping cart benchmark):
+\vspace{-.35cm}\par\nobreak{\small
+\begin{align*}
+  &(\texttt{Causal Consistency Specification is omitted}) \quad
+  \\
+  \eff{followReq} ~:~{}
+  & i{:}\Int,\garr\ell{:}\List[\Int]\garr u{:}\Int \sarr f{:}\Int \sarr \effLR{\allA}\,\Code{unit}\,
+  \\ & \quad
+    \effL{}\msg{followReq}{\I{user}=u\land\I{follow\_o}=f}\seqA\msg{begin}{\I{tid}=i}\seqA\msg{get}{\I{tid}=i\land\I{user}=u\land\I{fls}=\ell}\seqA \allA \seqA
+  \\ & \quad \msg{put}{\I{tid}=i\land\I{user}=u\land\I{fls}=\mathit{cons}(f,\ell)}\seqA\SNegStar{\msg{put}{\I{user}=u}}\seqA
+  \\ & \quad \msg{commit}{\I{tid}=i}\seqA\msg{followRsp}{\true}\seqA\allA\effR{}
+  \\
+  \eff{followRsp} ~:~{}
+  & \effLR{\allA}\,\Code{unit}\,\effLR{\allA}
+  \\
+  \eff{unfollowReq} ~:~{}
+  & i{:}\Int,\garr\ell{:}\List[\Int]\garr u{:}\Int \sarr f{:}\Int \sarr \effLR{\allA}\,\Code{unit}\,
+  \\ & \quad
+    \effL{}\msg{unfollowReq}{\I{user}=u\land\I{unfollow\_o}=f}\seqA\msg{begin}{\I{tid}=i}\seqA
+    \\ & \quad \msg{get}{\I{tid}=i\land\I{user}=u\land\I{fls}=\ell}\seqA \allA \seqA
+  \\ & \quad \msg{put}{\I{tid}=i\land\I{user}=u\land\I{fls}=\mathit{remove}(f,\ell)}\seqA\SNegStar{\msg{put}{\I{user}=u}}\seqA
+  \\ & \quad \msg{commit}{\I{tid}=i}\seqA\msg{unfollowRsp}{\true}\seqA\allA\effR{}
+  \\
+  \eff{unfollowRsp} ~:~{}
+  & \effLR{\allA}\,\Code{unit}\,\effLR{\allA}
+  \\
+  \eff{postTweetReq} ~:~{}
+  & i{:}\Int,\garr\ell{:}\List[\Int]\garr u{:}\Int \sarr f{:}\Int \sarr \effLR{\allA}\,\Code{unit}\,
+  \\ & \quad
+    \effL{}\msg{postTweetReq}{\I{user}=u\land\I{tweet}=\tau}\seqA\msg{begin}{\I{tid}=i}\seqA
+    \\ & \quad\msg{getT}{\I{tid}=i\land\I{user}=u\land\I{tweets}=\ell}\seqA \allA \seqA
+  \\ & \quad \msg{putT}{\I{tid}=i\land\I{user}=u\land\I{tweets}=\mathit{cons}(\tau,\ell)}\seqA\SNegStar{\msg{putT}{\I{user}=u}}\seqA
+  \\ & \quad\msg{commit}{\I{tid}=i}\seqA\msg{postTweetRsp}{\true}\seqA\allA\effR{}
+  \\
+  \eff{postTweetRsp} ~:~{}
+  & \effLR{\allA}\,\Code{unit}\,\effLR{\allA}
+  \\
+  \eff{timelineReq} ~:~{}
+  & i{:}\Int,\garr\ell{:}\List[\Int]\garr u{:}\Int \sarr \effLR{\allA}\,\Code{unit}\,
+  \\ & \quad
+    \effL{}\msg{timelineReq}{\I{user}=u}\seqA\msg{begin}{\I{tid}=i}\seqA\msg{getT}{\I{tid}=i\land\I{user}=u\land\I{tweets}=\ell}\seqA
+    \\ & \quad\msg{timelineRsp}{\I{tweets}=\ell}\seqA\allA\effR{}
+  \\
+  \eff{timelineRsp} ~:~{}
+  & \effLR{\allA}\,\Code{unit}\,\effLR{\allA}
+\end{align*}}
+\vspace{-.4cm}\par\nobreak\noindent
+These specifications mirror the Shopping-style pattern: each API issues \(\eff{begin}/\eff{commit}\) around reads and updates of the underlying rows, with \(\SNegStar{\msg{put}{\I{user}=u}}\) / \(\SNegStar{\msg{putT}{\I{user}=u}}\) forbidding write--write conflicts on those projections. For the weakened \tyName{}, we switch the MonkeyDB layer to RC as above; the Twitter operations themselves are unchanged.
+
+\newpage
+\subsubsection*{SmallBank} This is a benchmark from MonkeyDB~\cite{MonkeyDB}, implementing the SmallBank workload (accounts, checking, and savings) on the transactional store. The global property is a violation of strong consistency: two reads of checking balance \(b\) for customer \(c\) with no \(\msg{putC}{\I{cm}=c}\) in between should agree, yet a later read may disagree.
+\vspace{-.35cm}\par\nobreak{\small
+\begin{align*}
+  & \allA \seqA \msg{getC}{\I{cm}=c \land \I{bal}=b} \seqA
+    \SNegStar{\msg{putC}{\I{cm}=c}} \seqA
+    \msg{getC}{\I{cm}=c \land \neg(\I{bal}=b)} \seqA \allA
+\end{align*}}
+\vspace{-.4cm}\par\nobreak\noindent
+The \tyName{} is defined as follows:
+\vspace{-.35cm}\par\nobreak{\small
+\begin{align*}
+  &(\texttt{Causal Consistency Specification is omitted}) \quad
+  \\
+  \eff{openAReq} ~:~{}
+  & i{:}\Int,\; n{:}\Int,\; c{:}\Int \sarr \effLR{\SNegStarExcl{\msg{openAReq}{\I{name}=n} \cup \msg{openAReq}{\I{cm}=c}}}\,\Code{unit}\,
+  \\ & \quad
+    \effL{}\msg{openAReq}{\I{name}=n\land\I{cm}=c}\seqA\msg{begin}{\I{tid}=i}\seqA\msg{putA}{\I{tid}=i\land\I{name}=n\land\I{cm}=c}\seqA
+  \\ & \quad \msg{putS}{\I{tid}=i\land\I{cm}=c\land\I{bal}=0}\seqA\msg{putC}{\I{tid}=i\land\I{cm}=c\land\I{bal}=0}\seqA
+  \\ & \quad \msg{commit}{\I{tid}=i}\seqA\msg{openARsp}{\true}\seqA\allA\effR{}
+  \\
+  \eff{openARsp} ~:~{}
+  & \effLR{\allA}\,\Code{unit}\,\effLR{\allA}
+  \\
+  \eff{amalReq} ~:~{}
+  & i{:}\Int,\; c_0{:}\Int,\; c_1{:}\Int \sarr \effLR{\allA\seqA\msg{openAReq}{\I{cm}=c_0\lor\I{cm}=c_1}\seqA\allA\seqA\msg{openAReq}{\I{cm}=c_0\lor\I{cm}=c_1}\seqA\allA}\,\Code{unit}\,
+  \\ & \quad
+    \effL{}\msg{amalReq}{\I{cm0}=c_0\land\I{cm1}=c_1}\seqA\msg{begin}{\I{tid}=i}\seqA\msg{getS}{\I{tid}=i\land\I{cm}=c_0}\seqA
+  \\ & \quad \msg{getC}{\I{tid}=i\land\I{cm}=c_0}\seqA\msg{getC}{\I{tid}=i\land\I{cm}=c_1}\seqA \allA \seqA
+  \\ & \quad \msg{putS}{\I{tid}=i\land\I{cm}=c_0\land\I{bal}=0}\seqA\msg{putC}{\I{tid}=i\land\I{cm}=c_0\land\I{bal}=0}\seqA\msg{putC}{\I{tid}=i\land\I{cm}=c_1}\seqA
+  \\ & \quad \SNegStarExcl{\msg{putS}{\I{cm}=c_0} \cup \msg{putC}{\I{cm}=c_0} \cup \msg{putC}{\I{cm}=c_1}}\seqA\msg{commit}{\I{tid}=i}\seqA\msg{amalRsp}{\true}\seqA\allA\effR{}
+  \\
+  \eff{amalRsp} ~:~{}
+  & \effLR{\allA}\,\Code{unit}\,\effLR{\allA}
+  \\
+  \eff{balanceReq} ~:~{}
+  & i{:}\Int,\; n{:}\Int,\; c{:}\Int,\; b_s{:}\Int,\; b_c{:}\Int \sarr \effLR{\allA\seqA\msg{openAReq}{\I{name}=n\land\I{cm}=c}\seqA\allA}\,\Code{unit}\,
+  \\ & \quad
+    \effL{}\msg{balanceReq}{\I{name}=n}\seqA\msg{begin}{\I{tid}=i}\seqA\msg{getA}{\I{tid}=i\land\I{name}=n\land\I{cm}=c}\seqA
+  \\ & \quad \msg{getS}{\I{tid}=i\land\I{cm}=c\land\I{bal}=b_s}\seqA\msg{getC}{\I{tid}=i\land\I{cm}=c\land\I{bal}=b_c}\seqA \allA \seqA
+  \\ & \quad \msg{commit}{\I{tid}=i}\seqA\msg{balanceRsp}{\I{bal}=b_s+b_c}\seqA\allA\effR{}
+  \\
+  \eff{balanceRsp} ~:~{}
+  & \effLR{\allA}\,\Code{unit}\,\effLR{\allA}
+  \\
+  \eff{depositReq} ~:~{}
+  & i{:}\Int,\; n{:}\Int,\; c{:}\Int,\; b{:}\Int,\; a{:}\Int \sarr \effLR{\allA\seqA\msg{openAReq}{\I{name}=n\land\I{cm}=c}\seqA\allA}\,\Code{unit}\,
+  \\ & \quad
+    \effL{}\msg{depositReq}{\I{name}=n\land\I{amt}=a}\seqA\msg{begin}{\I{tid}=i}\seqA\msg{getA}{\I{tid}=i\land\I{name}=n\land\I{cm}=c}\seqA
+  \\ & \quad \msg{getC}{\I{tid}=i\land\I{cm}=c\land\I{bal}=b}\seqA \allA \seqA\msg{putC}{\I{tid}=i\land\I{cm}=c}\seqA
+  \\ & \quad \SNegStar{\msg{putC}{\I{cm}=c}}\seqA\msg{commit}{\I{tid}=i}\seqA\msg{depositRsp}{\true}\seqA\allA\effR{}
+  \\
+  \eff{depositRsp} ~:~{}
+  & \effLR{\allA}\,\Code{unit}\,\effLR{\allA}
+  \\
+  \eff{sendReq} ~:~{}
+  & i{:}\Int,\; s{:}\Int,\; d{:}\Int,\; b_s{:}\Int,\; b_d{:}\Int,\; a{:}\Int \sarr {}
+  \\ & \quad
+    \effLR{\allA\seqA\msg{openAReq}{\I{cm}=s\lor\I{cm}=d}\seqA\allA\seqA\msg{openAReq}{\I{cm}=s\lor\I{cm}=d}\seqA\allA}\,\Code{unit}\,
+  \\ & \quad
+    \effL{}\msg{sendReq}{\I{srcid}=s\land\I{destid}=d\land\I{amt}=a}\seqA\msg{begin}{\I{tid}=i}\seqA
+  \\ & \quad \msg{getC}{\I{tid}=i\land\I{cm}=s\land\I{bal}=b_s}\seqA\msg{getC}{\I{tid}=i\land\I{cm}=d\land\I{bal}=b_d}\seqA \allA \seqA
+  \\ & \quad \msg{putC}{\I{tid}=i\land\I{cm}=s\land\I{bal}=b_s-a}\seqA\msg{putC}{\I{tid}=i\land\I{cm}=d\land\I{bal}=b_d+a}\seqA
+  \\ & \quad \SNegStarUU{\msg{putC}{\I{cm}=s}}{\msg{putC}{\I{cm}=d}}\seqA\msg{commit}{\I{tid}=i}\seqA\msg{sendRsp}{\true}\seqA\allA\effR{}
+  \\
+  \eff{sendRsp} ~:~{}
+  & \effLR{\allA}\,\Code{unit}\,\effLR{\allA}
+  \\
+\end{align*}}
+\vspace{-.4cm}\par\nobreak\noindent
+
+\vspace{-.35cm}\par\nobreak{\small
+  \begin{align*}
+  \eff{transReq} ~:~{}
+  & i{:}\Int,\; n{:}\Int,\; c{:}\Int,\; b{:}\Int,\; a{:}\Int \sarr \effLR{\allA\seqA\msg{openAReq}{\I{name}=n\land\I{cm}=c}\seqA\allA}\,\Code{unit}\,
+  \\ & \quad
+    \effL{}\msg{transReq}{\I{name}=n\land\I{amt}=a}\seqA\msg{begin}{\I{tid}=i}\seqA\msg{getA}{\I{tid}=i\land\I{name}=n\land\I{cm}=c}\seqA
+  \\ & \quad \msg{getS}{\I{tid}=i\land\I{cm}=c\land\I{bal}=b}\seqA \allA \seqA\msg{putS}{\I{tid}=i\land\I{cm}=c\land\I{bal}=b+a}\seqA
+  \\ & \quad \SNegStar{\msg{putS}{\I{cm}=c}}\seqA\msg{commit}{\I{tid}=i}\seqA\msg{transRsp}{\true}\seqA\allA\effR{}
+  \\
+  \eff{transRsp} ~:~{}
+  & \effLR{\allA}\,\Code{unit}\,\effLR{\allA}
+  \\
+  \eff{writeCReq} ~:~{}
+  & i{:}\Int,\; n{:}\Int,\; c{:}\Int,\; a{:}\Int \sarr \effLR{\allA\seqA\msg{openAReq}{\I{name}=n\land\I{cm}=c}\seqA\allA}\,\Code{unit}\,
+  \\ & \quad
+    \effL{}\msg{writeCReq}{\I{name}=n\land\I{amt}=a}\seqA\msg{begin}{\I{tid}=i}\seqA\msg{getA}{\I{tid}=i\land\I{name}=n\land\I{cm}=c}\seqA
+  \\ & \quad \msg{getS}{\I{tid}=i\land\I{cm}=c}\seqA\msg{getC}{\I{tid}=i\land\I{cm}=c}\seqA \allA \seqA
+  \\ & \quad \msg{putC}{\I{tid}=i\land\I{cm}=c}\seqA\SNegStar{\msg{putC}{\I{cm}=c}}\seqA\msg{commit}{\I{tid}=i}\seqA\msg{writeCRsp}{\true}\seqA\allA\effR{}
+  \\
+  \eff{writeCRsp} ~:~{}
+  & \effLR{\allA}\,\Code{unit}\,\effLR{\allA}
+\end{align*}}
+\vspace{-.4cm}\par\nobreak\noindent
+Each scenario threads \(\eff{begin}/\eff{commit}\) with the same write--write gaps on the relevant account rows (e.g.\ \(\SNegStar{\msg{putC}{\I{cm}=c}}\) before commit) as in \textsf{Shopping}. For the weakened \tyName{}, we switch the MonkeyDB layer to RC as above; the SmallBank scenarios themselves are unchanged.
+
+\subsection*{P Language Benchmarks}
+The remaining models are asynchronous message-passing protocols drawn from PBench. As in \textsc{Stack} and the synchronous benchmarks above, we give a short scenario, the global property as an SRE, the operation-wise \tyName{} clauses (where futures often encode protocol order and search bias), and a note on weakening.
+
+\subsubsection*{Database}
+This model is a simplified database with APIs: \(\eff{writeReq}/\eff{writeRsp}\) and \(\eff{readReq}/\eff{readRsp}\). It must satisfy the Read-Your-Writes (RYW) policy: reads should respect the last completed write unless another write slips in between; the generator therefore chases a successful read that nevertheless returns \(y\neq x\) right after \(\msg{writeRsp}{\I{va}=x}\) and with no further \(\msg{writeRsp}{\true}\) in the gap. Thus, the global property is:
+\vspace{-.35cm}\par\nobreak{\small
+\begin{align*}
+  & \allA \seqA \msg{writeRsp}{\I{va}=x} \seqA \SNegStar{\msg{writeRsp}{\true}} \seqA
+    \msg{readRsp}{\I{va}=y \land x \neq y \land \mathit{st}} \seqA \allA
+\end{align*}}
+\vspace{-.4cm}\par\nobreak\noindent
+The \tyName{} comprises the following clauses:
+\vspace{-.35cm}\par\nobreak{\small
+\begin{align*}
+  \eff{readReq} ~:~{}
+  & x{:}\Int \sarr \effLR{\allA\seqA\msg{writeReq}{\I{va}=x}\seqA\SNegStar{\msg{writeReq}{\true}}}\,\Code{unit}\,\effLR{\msg{readRsp}{\I{va}=x\land \mathit{st}}} \interty
+  \\
+  & \effLR{\SNegStar{\msg{writeReq}{\true}}}\,\Code{unit}\,\effLR{\msg{readRsp}{\neg\mathit{st}}}
+  \\
+  \eff{writeReq} ~:~{}
+  & x{:}\Int \sarr \effLR{\allA}\,\Code{unit}\,\effLR{\msg{writeReq}{\I{va}=x}\seqA\msg{writeRsp}{\I{va}=x}}
+  \\
+  \eff{writeRsp} ~:~{}
+  & x{:}\Int \sarr \effLR{\allA}\,\urt{\Code{int}}{\I{va}=x}\,\effLR{\allA}
+  \\
+  \eff{readRsp} ~:~{}
+  & x{:}\Int \garr  s{:}\Bool \sarr \effLR{\allA}\,\urt{\Code{int}}{\I{va}=x \land \mathit{st}=s}\,\effLR{\allA}
+\end{align*}}
+\vspace{-.4cm}\par\nobreak\noindent
+The history on \(\eff{readReq}\) ties a successful read to a matching prior \(\eff{writeReq}\) (the Kleene gap excludes stray writes), which biases generation toward read-your-writes-shaped traces. The weakened \tyName{} relaxes those payload ties on \(\eff{writeRsp}\) and \(\eff{readRsp}\) by weakening the qualifier directly.
+
+\newpage
+\subsubsection*{Firewall} The firewall divides the nodes into ``internal nodes'' and ``external nodes''; external nodes cannot send messages to internal nodes until they are recorded on the ``white list'' of the firewall. To add an external node to the white list, at least one internal node must send it a message. The firewall under test has incorrect white list recording, which leads to an error described by the following global property:
+\vspace{-.35cm}\par\nobreak{\small
+\begin{align*}
+  & \SNegStarU{\msg{eExReq}{\I{node}=n}}{\msg{eFwReq}{\I{node}=n}} \seqA
+    \msg{eInReq}{\I{node}=n} \seqA \allA \seqA
+    \msg{eExRsp}{\I{node}=n \land \neg\,\mathit{stat}} \seqA \allA
+\end{align*}}
+\vspace{-.4cm}\par\nobreak\noindent
+The \tyName{} comprises the following clauses:
+\vspace{-.35cm}\par\nobreak{\small
+\begin{align*}
+  \eff{eStart} ~:~{}
+  & n{:}\mathsf{Node} \sarr \effLR{\allA}\,\Code{unit}\,\effLR{\msg{eStart}{\I{node}=n}\seqA\msg{eInReq}{\I{node}=n}}
+  \\
+  \eff{eInReq} ~:~{}
+  & n{:}\mathsf{Node} \sarr \effLR{\SNegStarUU{\msg{eExReq}{\I{node}=n}}{\msg{eInReq}{\I{node}=n}}{\msg{eFwReq}{\I{node}=n}}}\,\Code{unit}\,
+  \\&\quad \effLR{\msg{eFwReq}{\I{node}=n}}
+  \\
+  \eff{eFwReq} ~:~{}
+  & n{:}\mathsf{Node} \sarr \effLR{\SNegStar{\msg{eFwReq}{\I{node}=n}}}\,\Code{unit}\,\effLR{\msg{eExReq}{\I{node}=n}}
+  \\
+  \eff{eExReq} ~:~{}
+  & n{:}\mathsf{Node} \sarr \effLR{\allA\seqA\msg{eInReq}{\I{node}=n}\seqA\SNegStar{\msg{eInReq}{\true}}}\,\Code{unit}\,
+  \\ & \quad \effLR{\msg{eExReq}{\I{node}=n}\seqA\msg{eExRsp}{\I{node}=n\land\mathit{stat}}} \interty
+  \\
+  & n{:}\mathsf{Node} \sarr \effLR{\allA\seqA\msg{eInReq}{\neg(\I{node}=n)}\seqA\SNegStar{\msg{eInReq}{\true}}}\,\Code{unit}\,
+  \\ & \quad \effLR{\msg{eExReq}{\I{node}=n}\seqA\msg{eExRsp}{\I{node}=n\land\neg\mathit{stat}}}
+  \\
+  \eff{eExRsp} ~:~{}
+  & n{:}\mathsf{Node}\garr s{:}\Bool \sarr \effLR{\allA}\,\urt{\Code{bool}}{\mathit{stat} = s}\,\effLR{\allA}
+\end{align*}}
+\vspace{-.4cm}\par\nobreak\noindent
+Histories on \(\eff{eInReq}\) and \(\eff{eFwReq}\) rule out re-entrant forwarding noise before the next hop, sharpening the causal shape the tester must satisfy. The weakened \tyName{} merges the intersected \(\eff{eExReq}\) cases and weakens guards on those events.
+
+\subsubsection*{RingLeaderElection}
+Processes ring-elect a leader using \(\eff{eWakeup}\) and \(\eff{eNom}\), with outcomes published as \(\msg{eWon}{\mathit{ld}=\cdots}\); at most one leader value should ultimately win. The search targets two \(\eff{eWon}\) announcements that contradict each other on \(\mathit{ld}\). The global property is:
+\vspace{-.35cm}\par\nobreak{\small
+\begin{align*}
+  & \allA \seqA \msg{eWon}{\mathit{ld}=\ell} \seqA \allA \seqA
+    \msg{eWon}{\neg(\mathit{ld}=\ell)} \seqA \allA
+\end{align*}}
+\vspace{-.4cm}\par\nobreak\noindent
+The \tyName{} comprises the following clauses (\(\mathit{next}\) is axiomatized on ring nodes):
+\vspace{-.35cm}\par\nobreak{\small
+\begin{align*}
+  \eff{eWakeup} ~:~{}
+  & n{:}\mathsf{Node} \sarr \effLR{\SNegStar{\msg{eWon}{\true}}}\,\Code{unit}\,\effLR{\msg{eNom}{\I{node}=n\land\mathit{ld}=n}}
+  \\
+  \eff{eNom} ~:~{}
+  & n{:}\mathsf{Node} \garr \ell{:}\urt{\mathsf{Node}}{\ell\neq n} \sarr \effLR{\allA}\,\Code{unit}\,\effLR{\msg{eNom}{\I{node}=n\land\mathit{ld}=\ell}\seqA\msg{eWon}{\mathit{ld}=\ell}} \interty
+  \\
+  & n{:}\mathsf{Node} \garr \ell{:}\urt{\mathsf{Node}}{\ell=n} \sarr \effLR{\allA}\,\Code{unit}\,\effL{}\msg{eNom}{\I{node}=n\land\mathit{ld}=\ell}\seqA
+  \\ & \quad \msg{eNom}{\I{node}=\mathit{next}(n)\land\mathit{ld}=\ell}\effR{}
+  \\
+  \eff{eWon} ~:~{}
+  & \ell{:}\mathsf{Node} \sarr \effLR{\allA}\,\Code{unit}\,\effLR{\msg{eWon}{\mathit{ld}=\ell}}
+\end{align*}}
+\vspace{-.4cm}\par\nobreak\noindent
+The future on \(\eff{eWakeup}\) forbids any earlier \(\msg{eWon}{\true}\), steering traces toward elections that have not yet closed; that is the main search bias for this benchmark. The weakened \tyName{} drops these guard constraints on \(\eff{eWakeup}\) and \(\eff{eWon}\).
+
+\newpage
+\subsubsection*{Bankserver}
+The bank server sequences balance reads and updates around \(\eff{wdReq}\) and \(\eff{eWDRsp}\); withdrawals are meant to stay within available funds. The buggy server still reports a failed withdrawal on \(\I{ac}\) (\(\neg\mathit{status}\)) in a situation where the recorded balances should have sufficed. The global property is:
+\vspace{-.35cm}\par\nobreak{\small
+\begin{align*}
+  & \allA \seqA \msg{eWDRsp}{\I{acId}=\I{ac} \land \neg\,\mathit{status}} \seqA \allA
+\end{align*}}
+\vspace{-.4cm}\par\nobreak\noindent
+The \tyName{} comprises the following clauses (\(\mathsf{aid}/\mathsf{rid}\) are phantom account/request ids):
+\vspace{-.35cm}\par\nobreak{\small
+\begin{align*}
+  \eff{initAc} ~:~{}
+  & ac{:}\mathsf{aid}\garr ba{:}\urt{\Int}{ba>0} \sarr \effLR{\SNegStar{\msg{initAc}{\I{acId}=ac}}}\,\Code{unit}\,\effLR{\msg{initAc}{\I{acId}=ac\land\I{bal}=ba}}
+  \\
+  \eff{wdReq} ~:~{}
+  & id{:}\mathsf{rid}\garr ac{:}\mathsf{aid}\garr am{:}\urt{\Int}{am>0} \sarr \effLR{\allA}\,\Code{unit}\,
+  \\ & \quad \effLR{\msg{wdReq}{\I{rId}=id\land\I{acId}=ac\land\I{amt}=am}\seqA\msg{read}{\I{rId}=id\land\I{acId}=ac\land\I{amt}=am}}
+  \\
+  \eff{read} ~:~{}
+  & ba{:}\Int\garr id{:}\mathsf{rid}\garr am{:}\garr ac{:}\mathsf{aid} \sarr 
+  \\ & \quad \effLR{\allA\seqA\msg{initAc}{\I{acId}=ac\land\I{bal}=ba}\seqA\SNegStarU{\msg{read}{\I{acId}=ac}}{\msg{initAc}{\I{acId}=ac}}}\,\Code{unit}\,
+  \\ & \quad \effLR{\msg{read}{\I{rId}=id\land\I{amt}=am\land\I{acId}=ac}\seqA\msg{readRsp}{\I{rId}=id\land\I{amt}=am\land\I{acId}=ac\land\I{bal}=ba}}
+  \\
+  \eff{readRsp} ~:~{}
+  & id{:}\mathsf{rid}\garr am{:}\garr ac{:}\mathsf{aid}\garr ba{:}\urt{\Int}{ba>0 \land ba>am} \sarr {}
+  \\ & \quad \effL{}\SNegStarU{\msg{readRsp}{\true}}{\msg{read}{\true}}\seqA\msg{wdReq}{\I{rId}=id\land\I{acId}=ac\land\I{amt}=am}\seqA
+  \\& \quad \SNegStar{\msg{wdReq}{\true}}\effR{}\,\Code{unit}\,
+  \\ & \quad \effL{}\msg{readRsp}{\I{acId}=ac\land\I{bal}=ba}\seqA\msg{update}{\I{acId}=ac\land\I{bal}=ba-am}\seqA
+  \\&\quad \msg{eWDRsp}{\I{rId}=id\land\I{acId}=ac\land\I{bal}=ba-am\land\mathit{status}}\effR{}
+  \\
+  & id{:}\mathsf{rid}\garr am{:}\garr ac{:}\mathsf{aid}\garr ba{:}\urt{\Int}{ba>0 \land ba\le am} \sarr \effLR{\allA}\,\Code{unit}\,
+  \\ & \quad \effLR{\msg{readRsp}{\I{rId}=id\land\I{amt}=am\land\I{acId}=ac\land\I{bal}=ba}\seqA\msg{eWDRsp}{\I{rId}=id\land\I{acId}=ac\land\neg\mathit{status}}}
+  \\
+  \eff{update} ~:~{}
+  & ac{:}\mathsf{aid}\garr ba{:}\urt{\Int}{ba>0} \sarr \effLR{\allA}\,\Code{unit}\,\effLR{\msg{update}{\I{acId}=ac\land\I{bal}=ba}}
+  \\
+  \eff{eWDRsp} ~:~{}
+  & id{:}\mathsf{rid}\garr ac{:}\mathsf{aid}\garr ba{:}\Int,\; st{:}\Bool \sarr \effLR{\allA}\,\urt{\Code{unit}}{\I{rId}=id\land\I{acId}=ac\land\I{bal}=ba\land\mathit{status}=st}\,\effLR{\allA}
+\end{align*}}
+\vspace{-.4cm}\par\nobreak\noindent
+The successful branch requires \(\I{bal}>\I{amt}\) at the read response so the backend can emit \(\eff{update}\); the failing branch skips the update. The weakened \tyName{} simplifies response/update qualifiers and widens read-query intersected types.
+
+\newpage
+\subsubsection*{Simplified2pc}
+The SUT is a simplified two-phase commit client: committed state should read atomically, so after a write response commits \(x\) and no further write completes in the middle, a read response should not return \(y\neq x\). In SRE form this is a committed \(\eff{writeRsp}\), a Kleene stretch with no further successful \(\eff{writeRsp}\), a \(\eff{readRsp}\) that mismatches the written value, and a final stretch with no further \(\eff{readRsp}\) or \(\eff{writeRsp}\).
+The global property is:
+\vspace{-.35cm}\par\nobreak{\small
+\begin{align*}
+  & \allA \seqA
+    \msg{writeRsp}{\I{va}=x \land \mathit{stat}} \seqA
+    \SNegStar{\msg{writeRsp}{\mathit{stat}}} \seqA
+    \msg{readRsp}{\I{va}=y \land x \neq y} \seqA
+    \\&\quad \SNegStarU{\msg{readRsp}{\true}}{\msg{writeRsp}{\true}}
+\end{align*}}
+\vspace{-.4cm}\par\nobreak\noindent
+The \tyName{} is:
+\vspace{-.35cm}\par\nobreak{\small
+\begin{align*}
+  \eff{readReq} ~:~{}
+  & \effLR{\allA}\,\Code{unit}\,\effLR{\msg{readReq}{\true}\seqA\msg{getReq}{\true}}
+  \\
+  \eff{getReq} ~:~{}
+  & \effLR{\SNegStar{\msg{commit}{\true}}}\,\Code{unit}\,\effLR{\msg{readRsp}{\I{va}=-1}}
+  \\
+  \eff{readRsp} ~:~{}
+  & x{:}\Int \sarr \effLR{\allA}\,\urt{\Code{int}}{\I{va}=x}\,\effLR{\allA}
+  \\
+  \eff{writeReq} ~:~{}
+  & x{:}\urt{\Int}{x\ge 0} \sarr \effLR{\allA}\,\Code{unit}\,\effLR{\msg{writeReq}{\I{va}=x}\seqA\msg{putReq}{\I{va}=x}}
+  \\
+  \eff{putReq} ~:~{}
+  & x{:}\Int \sarr \effLR{\allA}\,\Code{unit}\,\effLR{\msg{putReq}{\I{va}=x}\seqA\msg{putRsp}{\I{va}=x}}
+  \\
+  \eff{putRsp} ~:~{}
+  & x{:}\Int \garr  s{:}\Bool \sarr \effLR{\allA}\,\Code{unit}\,\effLR{\msg{putRsp}{\I{va}=x\land\mathit{stat}}\seqA\msg{writeRsp}{\I{va}=x\land\mathit{stat}=s}\seqA\msg{commit}{\true}}
+  \\
+  & x{:}\Int \garr  s{:}\Bool \sarr \effLR{\allA}\,\Code{unit}\,\effLR{\msg{putRsp}{\I{va}=x\land\mathit{stat}=s}\seqA\msg{writeRsp}{\I{va}=x\land\neg\mathit{stat}}\seqA\msg{abort}{\true}}
+  \\
+  \eff{writeRsp} ~:~{}
+  & x{:}\Int \garr  s{:}\Bool \sarr \effLR{\allA}\,\urt{\Code{int}}{\I{va}=x\land\mathit{stat}=s}\,\effLR{\allA}
+  \\
+  \eff{commit} ~:~{}
+  & \effLR{\allA}\,\Code{unit}\,\effLR{\msg{commit}{\true}}
+  \\
+  \eff{abort} ~:~{}
+  & \effLR{\allA}\,\Code{unit}\,\effLR{\msg{abort}{\true}}
+\end{align*}}
+\vspace{-.4cm}\par\nobreak\noindent
+The weakened \tyName{} drops non-negative value constraints on \(\eff{writeReq}\); many \texttt{putRsp}, \texttt{writeRsp}, and \texttt{readRsp} payload tests become \texttt{true}.
+
+\subsubsection*{Heartbeat}
+The heartbeat failure detector should align ``nodes down'' announcements with actual shutdowns. Note that messages can be lost due to network issues. The system has a timeout retry limit as $3$ (i.e., $\I{trial}$). The bug class is a false alarm: \(\eff{eNotifyNodesDown}\) fires while \(\msg{eShutDown}{\true}\) never appears on either side in the exhibited pattern. The global property is:
+\vspace{-.35cm}\par\nobreak{\small
+\begin{align*}
+  & \SNegStar{\msg{eShutDown}{\true}} \seqA \msg{eNotifyNodesDown}{\true} \seqA \SNegStar{\msg{eShutDown}{\true}}
+\end{align*}}
+\vspace{-.4cm}\par\nobreak\noindent
+The \tyName{} comprises the following clauses:
+\vspace{-.35cm}\par\nobreak{\small
+\begin{align*}
+  \eff{eNotifyNodesDown} ~:~{}
+  & \effLR{\SNegStar{\msg{eNotifyNodesDown}{\true}}}\,\Code{unit}\,\effLR{\allA}
+  \\
+  \eff{eNetworkError} ~:~{}
+  & tl{:}\Int \sarr \effLR{\allA\seqA\msg{ePong}{\I{trial}=tl}\seqA\allA}\,\Code{unit}\,\effLR{\msg{ePongLost}{\I{trial}=tl}}
+  \\
+  \eff{ePing} ~:~{}
+  & tl{:}\Int \sarr \effLR{\SNegStar{\msg{eShutDown}{\true}}}\,\Code{unit}\,\effLR{\msg{ePong}{\I{trial}=tl}}
+  \\
+  \eff{eShutDown} ~:~{}
+  & \effLR{\SNegStar{\msg{eShutDown}{\true}}}\,\Code{unit}\,\effLR{\msg{eShutDown}{\true}}
+  \\
+  \eff{eStart} ~:~{}
+  & \effLR{\SNegStarTri{\msg{ePing}{\true}}{\msg{ePongLost}{\true}}{\msg{eStart}{\true}}}\,\Code{unit}\,\effLR{\msg{ePing}{\I{trial}=1}}
+  \\
+  \eff{ePong} ~:~{}
+  & tl{:}\Int \sarr \effLR{\SNegStar{\msg{ePongLost}{\I{trial}=tl}}}\,\Code{unit}\,\effLR{\allA}
+  \\
+  \eff{ePongLost} ~:~{}
+  & tl{:}\urt{\Int}{tl=1} \sarr \effLR{\SNegStar{\msg{ePongLost}{\I{trial}=tl}}}\,\Code{unit}\,\effLR{\msg{ePing}{\I{trial}=2}}
+  \\
+  & tl{:}\urt{\Int}{tl=2} \sarr \effLR{\SNegStar{\msg{ePongLost}{\I{trial}=tl}}}\,\Code{unit}\,\effLR{\msg{ePing}{\I{trial}=3}}
+  \\
+  & tl{:}\urt{\Int}{tl=3} \sarr \effLR{\allA}\,\Code{unit}\,\effLR{\msg{eNotifyNodesDown}{\true}}
+\end{align*}}
+\vspace{-.4cm}\par\nobreak\noindent
+The weakened \tyName{} keeps the trial-level structure but softens side conditions.
+
+\newpage
+\subsubsection*{Chainreplication}
+Chain-replicated storage ought to make completed writes visible to later successful reads on the same key. This chain is simplified to only have three nodes: the head node, middle node, and tail node; since the Chain Replication protocol has three different policies for these three kinds of nodes. Here a client still reads a stale value: the write on \(\I{key}=k\) finishes (\(\eff{writeRsp}\)), yet the next successful read (\(\mathit{st}\)) returns \(y\neq x\) although no further \(\msg{writeRsp}{\true}\) occurs between them. The global property is:
+\vspace{-.35cm}\par\nobreak{\small
+\begin{align*}
+  & \allA \seqA \msg{writeReq}{\I{key}=k \land \I{va}=x} \seqA
+    \SNegStar{\msg{writeRsp}{\true}} \seqA
+    \msg{readRsp}{\I{key}=k \land \I{va}=y \land y \neq x \land \mathit{st}} \seqA
+    \\&\quad \SNegStar{\msg{writeRsp}{\true}}
+\end{align*}}
+\vspace{-.4cm}\par\nobreak\noindent
+The \tyName{} comprises the following clauses (\(\mathit{mid1}/\mathit{mid2}\) axiomatize mid vs.\ tail nodes):
+\vspace{-.35cm}\par\nobreak{\small
+\begin{align*}
+  \eff{writeReq} ~:~{}
+  & k{:}\mathsf{Key}\garr x{:}\Int \sarr \effL{} \allA \effR{}\,\Code{unit}\,\effL{} \msg{writeReq}{\I{key}=k\land\I{va}=x}\seqA
+  \\& \quad \msg{writeToMid}{\I{key}=k\land\I{va}=x\land\mathit{mid1}(\I{node})} \effR{}
+  \\
+  \eff{writeToMid} ~:~{}
+  & k{:}\mathsf{Key}\garr x{:}\Int \sarr 
+  \\& \quad  n{:}\urt{\mathsf{Node}}{\mathit{mid2}(n)} \sarr \effL{} \allA \effR{}\,\urt{\Code{unit}}{\I{key}=k\land\I{va}=x\land\I{node}=n}\,
+  \\& \quad \effL{} \msg{writeToTail}{\I{key}=k\land\I{va}=x} \effR{} \interty
+  \\
+  & k{:}\mathsf{Key}\garr x{:}\Int \sarr
+  \\& \quad n{:}\urt{\mathsf{Node}}{\mathit{mid1}(n)} \sarr \effL{} \allA \effR{}\,\urt{\Code{unit}}{\I{key}=k\land\I{va}=x\land\I{node}=n}\,\
+  \\& \quad \effL{} \msg{writeToMid}{\I{key}=k\land\I{va}=x\land\I{node}=\mathit{next}(n)} \effR{}
+  \\
+  \eff{writeToTail} ~:~{}
+  & k{:}\mathsf{Key}\garr x{:}\Int \sarr \effL{} \SNegStar{\msg{crashTail}{\true}} \effR{}\,\urt{\Code{unit}}{\I{key}=k\land\I{va}=x}\,\effL{} \allA \effR{} \interty
+  \\
+  & k{:}\mathsf{Key}\garr x{:}\Int \sarr \effL{} \SNegStar{\msg{crashTail}{\true}} \effR{}\,\urt{\Code{unit}}{\I{key}=k\land\I{va}=x}\,
+  \\& \quad \effL{} \msg{writeRsp}{\I{key}=k\land\I{va}=x} \effR{}
+  \\
+  \eff{writeRsp} ~:~{}
+  & k{:}\mathsf{Key}\garr x{:}\Int \sarr \effL{} \allA \effR{}\,\urt{\Code{unit}}{\I{key}=k\land\I{va}=x}\,\effL{} \allA \effR{}
+  \\
+  \eff{readReq} ~:~{}
+  & k{:}\mathsf{Key} \sarr \effL{} \SNegStarU{\msg{crashTail}{\true}}{\msg{writeToTail}{\I{key}=k}} \effR{}\,\Code{unit}\,\effL{} \msg{readRsp}{\I{key}=k\land\neg\mathit{st}} \effR{} \interty
+  \\
+  & x{:}\Int \garr  k{:}\mathsf{Key} \sarr \effL{} \SNegStar{\msg{crashTail}{\true}}\seqA\msg{crashTail}{\true}\seqA
+  \\ & \quad \SNegStar{\msg{crashTail}{\true}}\seqA\msg{writeToMid}{\I{key}=k\land\I{va}=x\land\mathit{mid2}(\I{node})}\seqA
+  \\ & \quad \SNegStarU{\msg{crashTail}{\true}}{\msg{writeToMid}{\I{key}=k\land\I{va}=x\land\mathit{mid2}(\I{node})}} \effR{}\,\Code{unit}\,{}
+  \\ & \quad \effL{} \msg{readRsp}{\I{key}=k\land\I{va}=x\land\mathit{st}} \effR{} \interty
+  \\
+  & x{:}\Int \garr  k{:}\mathsf{Key} \sarr \effL{} \SNegStar{\msg{crashTail}{\true}}\seqA\msg{writeToMid}{\I{key}=k\land\I{va}=x\land\mathit{mid2}(\I{node})}\seqA
+  \\ & \quad \SNegStarU{\msg{crashTail}{\true}}{\msg{writeToMid}{\I{key}=k\land\mathit{mid2}(\I{node})}}\seqA\msg{crashTail}{\true}\seqA
+  \\ & \quad \SNegStarU{\msg{crashTail}{\true}}{\msg{writeToMid}{\I{key}=k\land\mathit{mid2}(\I{node})}} \effR{}\,\Code{unit}\,{}
+  \\ & \quad \effL{} \msg{readRsp}{\I{key}=k\land\I{va}=x\land\mathit{st}} \effR{} \interty
+  \\
+  & x{:}\Int \garr  k{:}\mathsf{Key} \sarr \effL{} \SNegStarU{\msg{crashTail}{\true}}{\msg{writeToMid}{\I{key}=k\land\mathit{mid2}(\I{node})}}\seqA
+  \\ & \quad \msg{crashTail}{\true}\seqA\SNegStarU{\msg{crashTail}{\true}}{\msg{writeToMid}{\I{key}=k\land\mathit{mid2}(\I{node})}} \effR{}\,\Code{unit}\,
+  \\ & \quad \effL{} \msg{readRsp}{\I{key}=k\land\neg\mathit{st}} \effR{} \interty
+  \\
+  & x{:}\Int \garr  k{:}\mathsf{Key} \sarr \effL{} \SNegStar{\msg{crashTail}{\true}}\seqA\msg{writeToTail}{\I{key}=k\land\I{va}=x}\seqA
+  \\ & \quad \SNegStarU{\msg{crashTail}{\true}}{\msg{writeToTail}{\true}} \effR{}\,\Code{unit}\,\effL{} \msg{readRsp}{\I{key}=k\land\I{va}=x\land\mathit{st}} \effR{}
+  \\
+  \eff{readRsp} ~:~{}
+  & k{:}\mathsf{Key}\garr x{:}\Int \garr  s{:}\Bool \sarr \effL{} \allA \effR{}\,\urt{\Code{int}}{\I{key}=k\land\I{va}=x\land\mathit{st}=s}\,\effL{} \allA \effR{}
+  \\
+  \eff{crashTail} ~:~{}
+  & \effL{} \allA \effR{}\,\Code{unit}\,\effL{} \allA \effR{}
+\end{align*}}
+\vspace{-.4cm}\par\nobreak\noindent
+
+The weakened \tyName{} merges intersected \(\eff{readReq}\) types into fewer success/failure skeletons.
+
+\newpage
+\subsubsection*{Paxos}
+Paxos exposes an observable learner \(\eff{eLearn}\) that ought to settle on a single replicated value. We use $*\eff{Lost}*$ to simulate the network issue as introduced in the \textsf{HeartBeat} benchmark. The stress trace lets the learner emit two learns with different payloads \(x\) and \(y\) (\(x\neq y\)). The global property is:
+\vspace{-.35cm}\par\nobreak{\small
+\begin{align*}
+  & \allA \seqA \msg{eLearn}{\I{va}=x} \seqA \allA \seqA
+    \msg{eLearn}{\I{va}=y \land x \neq y} \seqA \allA
+\end{align*}}
+\vspace{-.4cm}\par\nobreak\noindent
+The \tyName{} comprises the following clauses (\(\mathit{pr1}/\mathit{pr2}\) partition proposers and \(\mathit{acc1}/\mathit{acc2}\) partition acceptors):
+\vspace{-.35cm}\par\nobreak{\small
+\begin{align*}
+  \eff{eStart} ~:~{}
+  & p{:}\mathsf{Node}\garr x{:}\mathsf{tVal} \sarr \effL{} \allA\seqA\msg{eLostPrepReq}{\I{proposer}=p\land\mathit{acc2}(\I{acceptor})}\seqA\allA \effR{}\,
+  \\ & \quad \Code{unit}\,\effL{} \msg{ePrepReq}{\I{proposer}=p\land\mathit{acc1}(\I{acceptor})\land\I{va}=x} \effR{} \interty
+  \\
+  & p{:}\mathsf{Node}\garr x{:}\mathsf{tVal} \sarr \effL{} \allA\seqA\msg{eLostPrepReq}{\I{proposer}=p\land\mathit{acc1}(\I{acceptor})}\seqA\allA \effR{}\,
+  \\ & \quad \Code{unit}\,\effL{} \msg{ePrepReq}{\I{proposer}=p\land\mathit{acc2}(\I{acceptor})\land\I{va}=x} \effR{}
+  \\
+  \eff{eLearn} ~:~{}
+  & x{:}\mathsf{tVal} \sarr \effL{} \allA \effR{}\,\urt{\Code{unit}}{\I{va}=x}\,\effL{} \allA \effR{}
+  \\
+  \eff{eLostPrepReq} ~:~{}
+  & p{:}\mathsf{Node}\garr ac{:}\mathsf{Node} \sarr \effL{} \allA \effR{}\,\urt{\Code{unit}}{\I{proposer}=p\land\I{acceptor}=ac}\,\effL{} \allA \effR{}
+  \\
+  \eff{ePrepReq} ~:~{}
+  & p{:}\urt{\mathsf{Node}}{\mathit{pr2}(p)}\garr ac{:}\mathsf{Node}\garr x{:}\mathsf{tVal} \sarr {}
+  \\ & \quad \effL{} \SNegStarU{\msg{ePrepReq}{\I{acceptor}=ac}}{\msg{eAcReq}{\true}}\seqA
+  \\ & \quad \msg{ePrepReq}{\mathit{pr1}(\I{proposer})\land\I{acceptor}=ac}\seqA\SNegStarU{\msg{ePrepReq}{\I{acceptor}=ac}}{\msg{eAcReq}{\true}} \effR{}\,
+  \\ & \quad \urt{\Code{unit}}{\I{proposer}=p\land\I{acceptor}=ac\land\I{va}=x}\,
+  \\ & \quad \effL{} \msg{ePrepRsp}{\I{acceptor}=ac\land\I{promised}=p\land\I{va}=x} \effR{} \interty
+  \\
+  & p{:}\mathsf{Node}\garr ac{:}\mathsf{Node}\garr x{:}\mathsf{tVal} \sarr \effL{} \SNegStarU{\msg{ePrepReq}{\I{acceptor}=ac}}{\msg{eAcReq}{\true}} \effR{}\,
+  \\ & \quad \urt{\Code{unit}}{\I{proposer}=p\land\I{acceptor}=ac\land\I{va}=x}\,
+  \\ & \quad \effL{} \msg{ePrepRsp}{\I{acceptor}=ac\land\I{promised}=p\land\I{va}=x} \effR{} \interty
+  \\
+  & p{:}\mathsf{Node}\garr ac{:}\mathsf{Node}\garr x{:}\mathsf{tVal} \sarr \effL{} \allA\seqA\msg{eLostPrepRsp}{\I{acceptor}=ac\land\I{promised}=p}\seqA\allA \effR{}\,
+  \\ & \quad \urt{\Code{unit}}{\I{proposer}=p\land\I{acceptor}=ac\land\I{va}=x}\,\effL{} \allA \effR{}
+  \\
+  \eff{eLostPrepRsp} ~:~{}
+  & ac{:}\mathsf{Node}\garr p{:}\mathsf{Node} \sarr \effL{} \allA \effR{}\,\urt{\Code{unit}}{\I{acceptor}=ac\land\I{promised}=p}\,\effL{} \allA \effR{}
+  \\
+  \eff{ePrepRsp} ~:~{}
+  & ac{:}\mathsf{Node}\garr p{:}\mathsf{Node}\garr x{:}\mathsf{tVal}\garr ap{:}\mathsf{Node} \sarr 
+  \\ & \quad \effL{} \SNegStar{\msg{ePrepRsp}{\I{promised}=p}} \effR{}\,
+  \\ & \quad \urt{\Code{unit}}{\I{acceptor}=ac\land\I{promised}=p\land\I{va}=x\land\mathit{nAccepted}=ap}\,
+  \\ & \quad \effL{} \msg{eAcReq}{\I{acceptor}=ac\land\I{proposer}=p\land\I{va}=x} \effR{} \interty
+  \\
+  & ac{:}\mathsf{Node}\garr p{:}\mathsf{Node}\garr x{:}\mathsf{tVal}\garr ap{:}\mathsf{Node} \sarr 
+  \\ & \quad \effL{} \SNegStar{\msg{ePrepRsp}{\I{promised}=p}} \effR{}\,
+  \\ & \quad \urt{\Code{unit}}{\I{acceptor}=ac\land\I{promised}=p\land\I{va}=x\land\mathit{nAccepted}=ap}\,{}
+  \\ & \quad \effL{} \msg{eAcReq}{\mathit{acc1}(\I{acceptor})\land\I{proposer}=p\land\I{va}=x}\seqA
+  \\ & \quad \msg{eAcReq}{\mathit{acc2}(\I{acceptor})\land\I{proposer}=p\land\I{va}=x} \effR{} \interty
+  \\
+  & ac{:}\mathsf{Node}\garr p{:}\mathsf{Node}\garr x{:}\mathsf{tVal}\garr ap{:}\mathsf{Node} \sarr 
+  \\ & \quad \effL{} \allA\seqA\msg{eLostAcReq}{\I{acceptor}=ac\land\I{proposer}=p}\seqA\allA \effR{}\,
+  \\ & \quad \urt{\Code{unit}}{\I{acceptor}=ac\land\I{promised}=p\land\I{va}=x\land\mathit{nAccepted}=ap}\,\effL{} \allA \effR{} \interty
+  \\
+  & ac{:}\mathsf{Node}\garr p{:}\mathsf{Node}\garr x{:}\mathsf{tVal}\garr ap{:}\mathsf{Node} \sarr 
+  \\ & \quad \effL{} \SNegStar{\msg{ePrepRsp}{\I{promised}=p}} \effR{}\,
+  \\ & \quad \urt{\Code{unit}}{\I{acceptor}=ac\land\I{promised}=p\land\I{va}=x\land\mathit{nAccepted}=ap}\,
+  \\ & \quad \effL{} \msg{eAcReq}{\I{acceptor}=ac\land\I{proposer}=p\land\I{va}=x} \effR{}
+\end{align*}}
+\vspace{-.4cm}\par\nobreak\noindent
+
+\vspace{-.35cm}\par\nobreak{\small
+\begin{align*}
+\eff{eLostAcReq} ~:~{}
+  & p{:}\mathsf{Node}\garr ac{:}\mathsf{Node} \sarr \effL{} \allA \effR{}\,\urt{\Code{unit}}{\I{proposer}=p\land\I{acceptor}=ac}\,\effL{} \allA \effR{}
+  \\
+  \eff{eAcReq} ~:~{}
+  & p{:}\urt{\mathsf{Node}}{\mathit{pr2}(p)}\garr ac{:}\mathsf{Node}\garr x{:}\mathsf{tVal} \sarr {}
+  \\ & \quad \effL{} \SNegStar{\msg{eAcReq}{\I{acceptor}=ac}}\seqA\msg{eAcReq}{\mathit{pr1}(\I{proposer})\land\I{acceptor}=ac}\seqA
+  \\ & \quad \SNegStar{\msg{eAcReq}{\I{acceptor}=ac}} \effR{}\,
+  \\ & \quad \urt{\Code{unit}}{\I{proposer}=p\land\I{acceptor}=ac\land\I{va}=x}\,
+  \\ & \quad \effL{} \msg{eAcRsp}{\I{proposer}=p\land\I{acceptor}=ac\land\I{accepted}=p\land\I{va}=x} \effR{} \interty
+  \\
+  & p{:}\mathsf{Node}\garr ac{:}\mathsf{Node}\garr x{:}\mathsf{tVal} \sarr 
+  \\ & \quad \effL{} \SNegStar{\msg{eAcReq}{\I{acceptor}=ac}} \effR{}\,\urt{\Code{unit}}{\I{proposer}=p\land\I{acceptor}=ac\land\I{va}=x}\,
+  \\ & \quad \effL{} \msg{eAcRsp}{\I{proposer}=p\land\I{acceptor}=ac\land\I{accepted}=p\land\I{va}=x} \effR{} \interty
+  \\
+  & p{:}\mathsf{Node}\garr ac{:}\mathsf{Node}\garr x{:}\mathsf{tVal} \sarr 
+  \\ & \quad \effL{} \allA\seqA\msg{eLostAcRsp}{\I{proposer}=p\land\I{acceptor}=ac}\seqA\allA \effR{}\,
+  \\ & \quad \urt{\Code{unit}}{\I{proposer}=p\land\I{acceptor}=ac\land\I{va}=x}\,\effL{} \allA \effR{}
+  \\
+  \eff{eLostAcRsp} ~:~{}
+  & p{:}\mathsf{Node}\garr ac{:}\mathsf{Node} \sarr \effL{} \allA \effR{}\,\urt{\Code{unit}}{\I{proposer}=p\land\I{acceptor}=ac}\,\effL{} \allA \effR{}
+  \\
+  \eff{eAcRsp} ~:~{}
+  & p{:}\mathsf{Node}\garr ac{:}\mathsf{Node}\garr ap{:}\urt{\mathsf{Node}}{ap=p}\garr x{:}\mathsf{tVal} \sarr {}
+  \\ & \quad \effL{} \SNegStar{\msg{ePrepRsp}{\true}}\seqA\msg{eAcRsp}{\I{proposer}=p\land\I{accepted}=ap}\seqA\allA \effR{}\,
+  \\ & \quad \urt{\Code{unit}}{\I{proposer}=p\land\I{acceptor}=ac\land\I{accepted}=ap\land\I{va}=x}\,\effL{} \msg{eLearn}{\I{va}=x} \effR{} \interty
+  \\
+  & p{:}\mathsf{Node}\garr ac{:}\mathsf{Node}\garr ap{:}\urt{\mathsf{Node}}{ap=p}\garr x{:}\mathsf{tVal} \sarr 
+  \\ & \quad \effL{} \SNegStar{\msg{eAcRsp}{\I{proposer}=p\land\I{accepted}=ap}} \effR{}\,
+  \\ & \quad \urt{\Code{unit}}{\I{proposer}=p\land\I{acceptor}=ac\land\I{accepted}=ap\land\I{va}=x}\,\effL{} \msg{eLearn}{\I{va}=x} \effR{}
+\end{align*}}
+\vspace{-.4cm}\par\nobreak\noindent
+The weakened \tyName{} merges intersected prepare/accept types and turns many payload tests into \texttt{true}.
+
+\newpage
+\subsubsection*{Raft}
+This two-node Raft sketch pressures leader election under faults. Node \(n_1\) appends \(x\) and becomes leader, then \(n_2\) becomes leader while the suffix skips the usual vote traffic (\(\eff{eVoteReq}\), \(\eff{eVoteRsp}\), \(\eff{eBeLeader}\)), exposing brittle election dynamics. The global property is:
+\vspace{-.35cm}\par\nobreak{\small
+\begin{align*}
+  & \allA \seqA \msg{eAppEntry}{\I{node}=n_1 \land \I{va}=x} \seqA \allA \seqA
+    \msg{eBeLeader}{\mathit{ld}=n_1 \land n_1 \neq n_2} \seqA \allA \seqA
+  \\& \quad \msg{eBeLeader}{\mathit{ld}=n_2} \seqA
+    \SNegStarUU{\msg{eBeLeader}{\true}}{\msg{eVoteReq}{\true}}{\msg{eVoteRsp}{\true}}
+\end{align*}}
+\vspace{-.4cm}\par\nobreak\noindent
+The \tyName{} comprises the following clauses:
+\vspace{-.35cm}\par\nobreak{\small
+\begin{align*}
+  \eff{eStart} ~:~{}
+  & \effL{} \SNegStar{\msg{eShutDown}{\true}} \effR{}\,\Code{unit}\,\effL{} \allA \effR{}
+  \\
+  \eff{eClientPutRsp} ~:~{}
+  & x{:}\mathsf{tVal}\garr st{:}\Bool \sarr \effL{} \allA \effR{}\,\urt{\Code{unit}}{\I{va}=x\land\mathit{stat}=st}\,\effL{} \allA \effR{}
+  \\
+  \eff{eClientPut} ~:~{}
+  & x{:}\mathsf{tVal} \sarr \effL{} \allA \effR{}\,\Code{unit}\,\effL{} \msg{eAppEntry}{\mathit{nodeId}(\I{node})=1\land\I{va}=x}\seqA
+  \\ & \quad \msg{eAppEntry}{\mathit{nodeId}(\I{node})=2\land\I{va}=x} \effR{}
+  \\
+  \eff{eAppEntry} ~:~{}
+  & n{:}\mathsf{Node}\garr x{:}\mathsf{tVal} \sarr \effL{} \allA \effR{}\,\urt{\Code{unit}}{\I{node}=n\land\I{va}=x}\,\effL{} \allA \effR{}
+  \\
+  \eff{eShutDown} ~:~{}
+  & \effL{} \allA \effR{}\,\urt{\Code{unit}}{\true}\,\effL{} \msg{eTimeout}{\mathit{nodeId}(\I{dest})=1} \effR{}
+  \\
+  & \effL{} \allA \effR{}\,\urt{\Code{unit}}{\true}\,\effL{} \msg{eTimeout}{\mathit{nodeId}(\I{dest})=2} \effR{}
+  \\
+  \eff{eTimeout} ~:~{}
+  & d{:}\mathsf{Node} \sarr \effL{} \allA \effR{}\,\urt{\Code{unit}}{\I{dest}=d}\,\effL{} \msg{eVoteReq}{\I{src}=d\land\I{leader}=d\land\I{dest}=\mathit{next}(d)} \effR{}
+  \\
+  \eff{eVoteReq} ~:~{}
+  & s{:}\mathsf{Node}\garr d{:}\mathsf{Node}\garr ld{:}\urt{\mathsf{Node}}{ld=d} \sarr 
+  \\ & \quad \effL{} \allA \effR{}\,\urt{\Code{unit}}{\I{src}=s\land\I{dest}=d\land\I{leader}=ld}\,\effL{} \msg{eVoteRsp}{\I{src}=d\land\I{dest}=s\land\neg\mathit{stat}} \effR{} \interty
+  \\
+  & s{:}\mathsf{Node}\garr d{:}\mathsf{Node}\garr ld{:}\urt{\mathsf{Node}}{ld\neq d} \sarr 
+  \\ & \quad \effL{} \allA \effR{}\,\urt{\Code{unit}}{\I{src}=s\land\I{dest}=d\land\I{leader}=ld}\,
+  \\ & \quad \effL{} \msg{eVoteRsp}{\I{src}=d\land\I{dest}=s\land\mathit{stat}=(\mathit{nodeId}(d)<\mathit{nodeId}(ld))} \effR{}
+  \\
+  \eff{eVoteRsp} ~:~{}
+  & s{:}\mathsf{Node}\garr d{:}\urt{\mathsf{Node}}{d\neq s}\garr st{:}\Bool \sarr 
+  \\ & \quad \effL{} \allA \effR{}\,\urt{\Code{unit}}{\I{src}=s\land\I{dest}=d\land\mathit{stat}=st}\,\effL{} \msg{eBeLeader}{\mathit{ld}=d} \effR{}
+  \\
+  \eff{eBeLeader} ~:~{}
+  & ld{:}\mathsf{Node} \sarr \effL{} \allA \effR{}\,\urt{\Code{unit}}{\mathit{ld}=ld}\,\effL{} \allA \effR{}
+\end{align*}}
+\vspace{-.4cm}\par\nobreak\noindent
+The weakened \tyName{} relaxes most payloads to \texttt{true} while keeping vote-control branching.
+
+\newpage
+\subsubsection*{Anonreadatomicity} The setting of this benchmark is already explained in \autoref{sec:impl}. The global property is:
+\vspace{-.35cm}\par\nobreak{\small
+\begin{align*}
+  & \allA \seqA
+    \msg{eUpdateRsp}{\I{gid}=\I{id} \land \I{key}=k \land \I{vl}=v_1 \land v_1 \neq v_2 \land \textit{ok}(\I{status})} \seqA
+  \\&\quad \SNegStar{\msg{eUpdateRsp}{\I{gid}=\I{id} \land \I{key}=k \land \textit{ok}(\I{status})}} \seqA
+  \\&\quad \msg{eReadRsp}{\I{gid}=\I{id} \land \I{key}=k \land \I{vl}=v_2 \land v_2 \neq v_1 \land \textit{ok}(\I{status})} \seqA \allA
+\end{align*}}
+\vspace{-.4cm}\par\nobreak\noindent
+The \tyName{} is defined as:
+\vspace{-.35cm}\par\nobreak{\small
+\begin{align*}
+  \eff{eStartTxnReq} ~:~{}
+  & id{:}\mathsf{tGid} \sarr \effL{} \allA \effR{}\,\Code{unit}\,\effL{} \msg{eStartTxnRsp}{\I{gid}=id} \effR{}
+  \\
+  \eff{eStartTxnRsp} ~:~{}
+  & id{:}\mathsf{tGid} \sarr \effL{} \SNegStar{\msg{eStartTxnRsp}{\I{gid}=id}} \effR{}\,\urt{\Code{unit}}{\I{gid}=id}\,
+  \\ & \quad \effL{} \SNegStar{\msg{eStartTxnRsp}{\I{gid}=id}} \effR{}
+  \\
+  \eff{eReadReq} ~:~{}
+  & id{:}\mathsf{tGid}\garr k{:}\mathsf{Key} \sarr \effL{} \allA\seqA\msg{eStartTxnRsp}{\I{gid}=id}\seqA\allA \effR{}\,\Code{unit}\,
+  \\ & \quad \effL{} \msg{eShardReadKeyReq}{\I{gid}=id\land\I{key}=k} \effR{}
+  \\
+  \eff{eReadRsp} ~:~{}
+  & id{:}\mathsf{tGid}\garr k{:}\mathsf{Key}\garr va{:}\mathsf{tVal}\garr st{:}\mathsf{tCmdStatus} \sarr 
+  \\ & \quad \effL{} \allA \effR{}\,\urt{\Code{unit}}{\I{gid}=id\land\I{key}=k\land\I{value}=va\land\I{status}=st}\,\effL{} \allA \effR{}
+  \\
+  \eff{eUpdateReq} ~:~{}
+  & id{:}\mathsf{tGid}\garr k{:}\mathsf{Key}\garr va{:}\mathsf{tVal} \sarr 
+  \\ & \quad \effL{} \allA\seqA\msg{eStartTxnRsp}{\I{gid}=id}\seqA\allA \effR{}\,\Code{unit}\,
+  \\ & \quad \effL{} \msg{eShardUpdateKeyReq}{\I{gid}=id\land\I{key}=k\land\I{value}=va} \effR{}
+  \\
+  \eff{eUpdateRsp} ~:~{}
+  & id{:}\mathsf{tGid}\garr k{:}\mathsf{Key}\garr va{:}\mathsf{tVal}\garr st{:}\mathsf{tCmdStatus} \sarr 
+  \\ & \quad \effL{} \allA \effR{}\,\urt{\Code{unit}}{\I{gid}=id\land\I{key}=k\land\I{value}=va\land\I{status}=st}\,\effL{} \allA \effR{}
+  \\
+  \eff{eCommitTxnReq} ~:~{}
+  & id{:}\mathsf{tGid} \sarr \effL{} \allA\seqA\msg{eStartTxnRsp}{\I{gid}=id}\seqA\allA \effR{}\,\Code{unit}\,\effL{} \msg{eShardPrepReq}{\I{gid}=id} \effR{}
+  \\
+  \eff{eCommitTxnRsp} ~:~{}
+  & id{:}\mathsf{tGid}\garr txnst{:}\mathsf{tTxnStatus} \sarr \effL{} \allA \effR{}\,\urt{\Code{unit}}{\I{gid}=id\land\I{txnstatus}=txnst}\,\effL{} \allA \effR{}
+  \\
+  \eff{eRollbackTxnReq} ~:~{}
+  & id{:}\mathsf{tGid} \sarr \effL{} \allA\seqA\msg{eStartTxnRsp}{\I{gid}=id}\seqA\allA \effR{}\,\Code{unit}\
+  \\ & \quad \effL{} \msg{eShardAbortTxn}{\I{gid}=id}\seqA\msg{eCommitTxnRsp}{\I{gid}=id\land\mathit{aborted}(\I{txnstatus})} \effR{}
+  \\
+  \eff{eShardReadKeyReq} ~:~{}
+  & va{:}\mathsf{tVal}\garr id{:}\mathsf{tGid}\garr k{:}\mathsf{Key} \sarr {}
+  \\ & \quad \effL{} \allA\seqA\msg{eShardUpdateKeyReq}{\neg(\I{gid}=id)\land\I{key}=k\land\I{value}=va}\seqA\allA\seqA
+  \\ & \quad \msg{eStartTxnRsp}{\I{gid}=id}\seqA\allA \effR{}\,\urt{\Code{unit}}{\I{gid}=id\land\I{key}=k}\,
+  \\ & \quad \effL{} \msg{eShardReadKeyRsp}{\I{gid}=id\land\I{key}=k\land\I{value}=va\land\mathit{ok}(\I{status})} \effR{} \interty
+  \\
+  & va{:}\mathsf{tVal}\garr id{:}\mathsf{tGid}\garr k{:}\mathsf{Key} \sarr {}
+  \\ & \quad \effL{} \allA\seqA\msg{eStartTxnRsp}{\I{gid}=id}\seqA\allA\seqA
+  \\ & \quad \msg{eShardUpdateKeyReq}{\I{gid}=id\land\I{key}=k\land\I{value}=va}\seqA\allA \effR{}\,
+  \\ & \quad \urt{\Code{unit}}{\I{gid}=id\land\I{key}=k}\,
+  \\ & \quad \effL{} \msg{eShardReadKeyRsp}{\I{gid}=id\land\I{key}=k\land\I{value}=va\land\mathit{ok}(\I{status})} \effR{} \interty
+  \\
+  & id{:}\mathsf{tGid}\garr k{:}\mathsf{Key} \sarr \effL{} \allA\seqA\msg{eShardAbortTxn}{\I{gid}=id}\seqA\allA \effR{}\,
+  \\ & \quad \urt{\Code{unit}}{\I{gid}=id\land\I{key}=k}\,
+  \\ & \quad \effL{} \msg{eShardReadKeyRsp}{\I{gid}=id\land\I{key}=k\land\mathit{abort}(\I{status})} \effR{} 
+  \\
+  \eff{eShardReadKeyRsp} ~:~{}
+  & id{:}\mathsf{tGid}\garr k{:}\mathsf{Key}\garr va{:}\mathsf{tVal}\garr st{:}\mathsf{tCmdStatus} \sarr 
+  \\ & \quad \effL{} \allA \effR{}\,\urt{\Code{unit}}{\I{gid}=id\land\I{key}=k\land\I{value}=va\land\I{status}=st}\,
+  \\ & \quad \effL{} \msg{eReadRsp}{\I{gid}=id\land\I{key}=k\land\I{value}=va\land\I{status}=st} \effR{}
+\end{align*}}
+\vspace{-.4cm}\par\nobreak\noindent
+
+\vspace{-.35cm}\par\nobreak{\small
+\begin{align*}
+  \eff{eShardUpdateKeyReq} ~:~{}
+  & id{:}\mathsf{tGid}\garr k{:}\mathsf{Key}\garr va{:}\mathsf{tVal} \sarr 
+  \\ & \quad \effL{} \allA\seqA\msg{eStartTxnRsp}{\I{gid}=id}\seqA\allA \effR{}\,\urt{\Code{unit}}{\I{gid}=id\land\I{key}=k\land\I{value}=va}\,
+  \\ & \quad \effL{} \msg{eShardUpdateKeyRsp}{\I{gid}=id\land\I{key}=k\land\I{value}=va\land\mathit{ok}(\I{status})} \effR{}
+  \\
+  & id{:}\mathsf{tGid}\garr k{:}\mathsf{Key}\garr va{:}\mathsf{tVal} \sarr 
+  \\ & \quad \effL{} \allA\seqA\msg{eShardAbortTxn}{\I{gid}=id}\seqA\allA \effR{}\,\urt{\Code{unit}}{\I{gid}=id\land\I{key}=k\land\I{value}=va}\,
+  \\ & \quad \effL{} \msg{eShardUpdateKeyRsp}{\I{gid}=id\land\I{key}=k\land\I{value}=va\land\mathit{abort}(\I{status})} \effR{} \interty
+  \\
+  \eff{eShardUpdateKeyRsp} ~:~{}
+  & id{:}\mathsf{tGid}\garr k{:}\mathsf{Key}\garr va{:}\mathsf{tVal}\garr st{:}\mathsf{tCmdStatus} \sarr 
+  \\ & \quad \effL{} \allA \effR{}\,\urt{\Code{unit}}{\I{gid}=id\land\I{key}=k\land\I{value}=va\land\I{status}=st}\,
+  \\ & \quad \effL{} \msg{eUpdateRsp}{\I{gid}=id\land\I{key}=k\land\I{value}=va\land\I{status}=st} \effR{}
+  \\
+  \eff{eShardCommitTxn} ~:~{}
+  & id{:}\mathsf{tGid} \sarr \effL{} \allA \effR{}\,\urt{\Code{unit}}{\I{gid}=id}\,\effL{} \allA \effR{}
+  \\
+  \eff{eShardAbortTxn} ~:~{}
+  & id{:}\mathsf{tGid} \sarr \effL{} \allA \effR{}\,\urt{\Code{unit}}{\I{gid}=id}\,\effL{} \allA \effR{}
+  \\
+  \eff{eShardPrepReq} ~:~{}
+  & id{:}\mathsf{tGid} \sarr {}
+  \\ & \quad \effL{} \SNegStar{\msg{eShardPrepReq}{\I{gid}=id}}\seqA\msg{eShardAbortTxn}{\I{gid}=id}\seqA
+  \\ & \quad \SNegStar{\msg{eShardPrepReq}{\I{gid}=id}} \effR{}\,\urt{\Code{unit}}{\text{as }\msg{eShardUpdateKeyReq}{\I{gid}=id}}\, 
+  \\ & \quad \effL{} \msg{eShardPrepRsp}{\I{gid}=id\land\neg\mathit{bstatus}} \effR{}
+  \\
+  & id{:}\mathsf{tGid} \sarr {}
+  \\ & \quad \effL{} \SNegStar{\msg{eShardPrepReq}{\I{gid}=id}}\seqA\msg{eStartTxnRsp}{\I{gid}=id}\seqA
+  \\ & \quad \SNegStarU{\msg{eShardAbortTxn}{\I{gid}=id}}{\msg{eShardPrepReq}{\I{gid}=id}} \effR{}\,\urt{\Code{unit}}{\I{gid}=id}\, 
+  \\ & \quad \effL{} \msg{eShardPrepRsp}{\I{gid}=id\land\mathit{bstatus}} \effR{}
+  \\
+  \eff{eShardPrepRsp} ~:~{}
+  & id{:}\mathsf{tGid} \sarr {}
+  \\ & \quad \effL{} \allA \effR{}\,\urt{\Code{unit}}{\I{gid}=id\land\neg\mathit{bstatus}}\, 
+  \\ & \quad {\scriptsize \effL{} \msg{eCommitTxnRsp}{\I{gid}=id\allowbreak\land\mathit{aborted}(\I{txnstatus})}\seqA\allowbreak\msg{eShardAbortTxn}{\I{gid}=id} \effR{}}
+  \\
+  & id{:}\mathsf{tGid} \sarr {}
+  \\ & \quad \effL{} \allA \effR{}\,\urt{\Code{unit}}{\I{gid}=id\land\mathit{bstatus}}\, 
+  \\ & \quad {\scriptsize \effL{} \msg{eCommitTxnRsp}{\I{gid}=id\allowbreak\land\mathit{committed}(\I{txnstatus})}\seqA\allowbreak\msg{eShardCommitTxn}{\I{gid}=id} \effR{}}
+\end{align*}}
+\vspace{-.4cm}\par\nobreak\noindent
+The weakened \tyName{} turns many response/shard guards into \texttt{true} and merges intersected types of read/update shard requests.

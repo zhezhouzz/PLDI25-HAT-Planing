@@ -1,0 +1,193 @@
+\newpage
+\section{Evaluation Details}\label{sec:tech:evaluation}
+
+\autoref{tab:evaluation-detail} and \autoref{tab:evaluation-detail2}
+provide additional details about the experimental results in our
+evaluation section, including the number of local variables (\#var),
+the number of effectful operations (\#$\mykw{eff}$), the number of
+assertions (\#$\mykw{assert}$), and the number of executions for both
+random generator and manual written test generators. 
+We also present the results of all benchmarks in both OCaml and P Language with weakened specifications in \autoref{tab:evaluation-rich} and \autoref{tab:evaluation-rich-2}. Three of these benchmarks (\textsf{IFCLoad}$_{\mathsf{W}}$, \textsf{DeBruijnHO}$_{\mathsf{W}}$, and \textsf{Transaction}$_{\mathsf{W}}$) are already shown in \autoref{sec:impl}.
+
+\begin{table}[t!]
+  \renewcommand{\arraystretch}{0.8}
+  % \vspace*{-.1in}
+  \caption{\small Detailed results of table \ref{tab:evaluation}.}
+\vspace*{-.1in}
+\footnotesize
+\setlength{\tabcolsep}{3.3pt}
+\begin{tabular}{c||ccc||ccc||ccc||c|cc}
+  \toprule
+Benchmark & \#$\eff{op}$ & \multicolumn{2}{c||}{\#qualifier} & \#var &\#$\mykw{eff}$ & \#$\mykw{assert}$ & \multicolumn{3}{c||}{\scriptsize \# Num. Executions} & t$_\text{total}$(s) & \#SMT & \#refine  \\
+ &  &uHAT &goal & & & & {\scriptsize Clouseau} & {\scriptsize Random} & {\scriptsize Manual} &  &  \\
+ \midrule
+ \textsf{Stack}\cite{ZYDJ24} & $6$ & $12$ & $3$ & $12$ & $15$ & $4$ & $1.0$ & $31.9$ & - & $0.60$ & $98$ & $4$\\
+ \midrule
+ \textsf{Set}\cite{ZYDJ24} & $7$ & $22$ & $3$ & $7$ & $12$ & $4$ & $1.0$ & $22.1$ & - & $1.28$ & $255$ & $12$\\
+ \midrule
+ \textsf{Filesystem}\cite{ZYDJ24} & $7$ & $67$ & $4$ & $11$ & $13$ & $8$ & $1.3$ & $2812.1$ & - & $6.02$ & $853$ & $14$\\
+ \midrule
+ \textsf{Graph}\cite{ZYDJ24} & $6$ & $24$ & $4$ & $5$ & $16$ & $5$ & $1.0$ & {\tiny TO} & - & $16.61$ & $2114$ & $16$\\
+ \midrule
+ \textsf{NFA}\cite{ZYDJ24} & $8$ & $50$ & $4$ & $7$ & $26$ & $6$ & $1.0$ & {\tiny TO} & - & $21.85$ & $5080$ & $6$\\
+ \midrule
+ \textsf{IFCAdd}\cite{pbt-ifc} & $8$ & $37$ & $2$ & $10$ & $8$ & $6$ & $1.6$ & {\tiny TO} & $3383.4$ & $0.96$ & $154$ & $8$\\
+ \midrule
+ \textsf{IFCStore}\cite{pbt-ifc} & $8$ & $37$ & $2$ & $10$ & $8$ & $6$ & $2.8$ & {\tiny TO} & $5049.1$ & $1.02$ & $160$ & $8$\\
+ \midrule
+ \textsf{IFCLoad}\cite{pbt-ifc} & $8$ & $37$ & $2$ & $20$ & $16$ & $12$ & $15.4$ & {\tiny TO} & $11293.7$ & $5.76$ & $930$ & $18$\\
+ \midrule
+ \textsf{DeBruijnFO}\cite{CoverageType} & $10$ & $117$ & $4$ & $10$ & $18$ & $12$ & $1.5$ & {\tiny TO} & $634.0$  & $40.38$ & $4765$ & $26$\\
+ \midrule
+ \textsf{DeBruijnHO}\cite{CoverageType} & $10$ & $118$ & $4$ & $10$ & $18$ & $14$ & $1.4$ & {\tiny TO} & {\tiny TO} & $91.73$ & $9034$ & $31$\\
+ \midrule
+ \textsf{HashTable}\cite{OcamlMulticorePBT} & $13$ & $38$ & $4$ & $6$ & $6$ & $2$ & $1.0$ & {\tiny TO} & $64.8$ & $0.76$ & $57$ & $6$\\
+ \midrule
+ \textsf{Transaction} & $8$ & $45$ & $3$ & $25$ & $15$ & $12$ & $1.2$ & {\tiny TO} & - & $2.89$ & $423$ & $16$\\
+ \midrule
+ \textsf{Shopping}\cite{MonkeyDB} & $10$ & $60$ & $3$ & $31$ & $17$ & $11$ & $1.0$ & $20.0$ & {\tiny TO} & $22.10$ & $1269$ & $30$\\
+ \midrule
+ \textsf{Courseware}\cite{MonkeyDB} & $16$ & $106$ & $3$ & $34$ & $18$ & $12$ & $1.0$ & $57.5$ & {\tiny TO} & $27.71$ & $1479$ & $33$\\
+ \midrule
+ \textsf{Twitter}\cite{MonkeyDB} & $16$ & $99$ & $3$ & $46$ & $24$ & $16$ & $1.0$ & $6.3$ & {\tiny TO} & $61.96$ & $2339$ & $24$\\
+ \midrule
+ \textsf{Smallbank}\cite{MonkeyDB} & $22$ & $162$ & $3$ & $69$ & $28$ & $22$ & $1.9$ & {\tiny TO} & - & $163.55$ & $10263$ & $29$\\
+ \bottomrule
+ \end{tabular}
+\label{tab:evaluation-detail}
+\end{table}
+
+\begin{table}[t!]
+  \renewcommand{\arraystretch}{0.8}
+  % \vspace*{-.1in}
+  \caption{\small Detail results of table \ref{tab:evaluation2}.}
+\vspace*{-.1in}
+\footnotesize
+\setlength{\tabcolsep}{3.3pt}
+\begin{tabular}{c||ccc||ccc||ccc||c|cc}
+  \toprule
+Benchmark & \#$\eff{op}$ & \multicolumn{2}{c||}{\#qualifier} & \#var &\#$\mykw{eff}$ & \#$\mykw{assert}$ & \multicolumn{3}{c||}{\scriptsize \# Num. Executions} & t$_\text{total}$(s) & \#SMT & \#refine \\
+ &  &uHAT &goal & & & & {\scriptsize Clouseau} & {\scriptsize Random} & {\scriptsize Manual} &  &  \\
+ \midrule
+ {\scriptsize\textsf{Database}} & $4$ & $15$ & $3$ & $6$ & $3$$3$ & $4$ & $1.0$ & $5.6$ & - & $0.32$ & $49$ & $6$\\
+ \midrule
+{\scriptsize\textsf{Firewall}}\cite{MessageChain} & $5$ & $26$ & $4$ & $12$ & $2$$8$ & $9$ & $1.0$ & $10.0$ & - & $0.59$ & $222$ & $10$\\
+\midrule
+{\scriptsize\textsf{RingLeaderElection}}\cite{MessageChain} & $3$ & $14$ & $2$ & $12$ & $2$$6$ & $7$ & $1.0$ & $17.7$ & - & $0.83$ & $100$ & $8$\\
+\midrule
+{\scriptsize\textsf{BankServer}}\cite{DGJ+13} & $6$ & $42$ & $1$ & $15$ & $2$$3$ & $5$ & $1.0$ & $40.5$ & $2.2$ & $0.17$ & $27$ & $5$\\
+\midrule
+{\scriptsize\textsf{Simplified2PC}}\cite{DGJ+13} & $9$ & $32$ & $5$ & $7$ & $2$$6$ & $5$ & $2.1$ & $125.0$ & $5.8$ & $1.03$ & $88$ & $8$\\
+\midrule
+{\scriptsize\textsf{HeartBeat}}\cite{DGJ+13} & $7$ & $31$ & $3$ & $9$ & $4$$10$ & $9$ & $1.0$ & $70.9$ & $6.0$ & $1.10$ & $145$ & $14$\\
+\midrule
+{\scriptsize\textsf{ChainReplication}}\cite{ModP} & $7$ & $72$ & $4$ & $24$ & $4$$8$ & $9$ & $1.0$ & $588.2$ & $500.0$ & $19.24$ & $2054$ & $169$\\
+\midrule
+{\scriptsize\textsf{Paxos}}\cite{ModP} & $10$ & $110$ & $2$ & $36$ & $4$$10$ & $13$ & $1.0$ & {\tiny TO} & $666.7$ & $23.70$ & $1763$ & $77$\\
+\midrule
+{\scriptsize\textsf{Raft}} & $9$ & $39$ & $6$ & $21$ & $2$$10$ & $10$ & $1.0$ & {\tiny TO} & - & $26.84$ & $1262$ & $78$\\
+\midrule
+{\scriptsize\textsf{AnonReadAtomicity}} & $17$ & $113$ & $3$ & $37$ & $5$$11$ & $12$ & $1.0$ & $53.0$ & - & $18.35$ & $1909$ & $16$\\
+\bottomrule
+\end{tabular}
+\label{tab:evaluation-detail2}
+\end{table}
+
+\newcolumntype{P}[1]{>{\centering\arraybackslash}p{#1}}
+
+\begin{table}[t!]
+  \renewcommand{\arraystretch}{0.8}
+  % \vspace*{-.1in}
+  \caption{\small The results of the benchmarks in OCaml with weakened specifications. }
+  \vspace*{-.1in} \footnotesize
+%\multicolumn{2}{c||}{} &
+\setlength{\tabcolsep}{1.3pt}
+\begin{tabular}{c|P{4.8cm}||ccc||cc||c|ccc}
+  \toprule
+  \multicolumn{2}{c||}{Benchmark} & \#$\eff{op}$ & \multicolumn{2}{c||}{\#qualifier} & \multicolumn{2}{c||}{\scriptsize \# Num. Executions} & t$_\text{total}$(s) & \#evt & \#refine & \#SMT \\
+  \midrule
+Name & Property &   &uHAT &goal & {\scriptsize Clouseau} & {\scriptsize Baseline} &  &  \\
+\midrule
+\textsf{Stack}$_{\mathsf{W}}$\cite{ZYDJ24} & {\scriptsize Pushes and pops are correctly paired.} & $6$ & $11$ & $3$ & $1.2$ & $30.4$ & $0.92$ & $15$ & $4$ & $149$\\
+\midrule
+\textsf{Set}$_{\mathsf{W}}$\cite{ZYDJ24} & {\scriptsize Membership holds for every element inserted into the set.} & $7$ & $20$ & $3$ & $1.1$ & $30.1$ & $1.41$ & $12$ & $12$ & $265$\\
+\midrule
+\textsf{Filesystem}$_{\mathsf{W}}$\cite{ZYDJ24} & {\scriptsize A valid file path only contains non-deleted entries.} & $7$ & $47$ & $4$ & $4.3$ & $4103.0$ & $3.84$ & $10$ & $12$ & $469$\\
+\midrule
+\midrule
+\textsf{Graph}$_{\mathsf{W}}$\cite{ZYDJ24} & {\scriptsize A serialized stream of nodes and edges is re-constituted to
+  form a fully-connected graph.} & $6$ & $17$ & $4$ & $1.0$ & {\tiny Timeout} & $1.67$ & $11$ & $11$ & $233$\\
+\midrule
+\textsf{NFA}$_{\mathsf{W}}$\cite{ZYDJ24} & {\scriptsize An NFA reaches a final state for every string in the language it accepts.} & $8$ & $33$ & $4$ & $1.0$ & {\tiny Timeout} & $7.93$ & $24$ & $5$ & $1908$\\
+\midrule
+\textsf{IFCStore}$_{\mathsf{W}}$\cite{pbt-ifc} & {\scriptsize A well-behaved IFC program containing a $\Code{Store}$ command never leaks a secret.} & $8$ & $33$ & $2$ & $6.0$ & $6082.8^{\dagger}$ & $0.89$ & $8$ & $8$ & $136$\\
+\midrule
+\textsf{IFCAdd}$_{\mathsf{W}}$\cite{pbt-ifc} & {\scriptsize A well-behaved IFC program containing an $\Code{Add}$ command never leaks a secret.} & $8$ & $33$ & $2$ & $3.4$ & $6621.5^{\dagger}$ & $0.99$ & $8$ & $8$ & $136$\\
+\midrule
+\textsf{IFCLoad}$_{\mathsf{W}}$\cite{pbt-ifc} & {\scriptsize A well-behaved IFC program containing a $\Code{Load}$ command never leaks a secret.} & $8$ & $33$ & $2$ & $115.4$ & $4278.3^{\dagger}$ & $5.01$ & $16$ & $18$ & $754$\\
+\midrule
+\textsf{DeBruijnFO}$_{\mathsf{W}}$\cite{CoverageType} & {\scriptsize An STLC interpreter correctly evaluates a
+  well-typed first-order STLC program that uses a de Bruijn representation.} & $10$ & $106$ & $4$ & {\tiny Timeout} & $303.6^{\dagger}$ & $3.03$ & $7$ & $22$ & $857$\\
+\midrule
+\textsf{DeBruijnHO}$_{\mathsf{W}}$\cite{CoverageType} & {\scriptsize An STLC interpreter correctly evaluates a
+  a well-typed higher-order STLC program that uses a de Bruijn representation.} & $10$ & $107$ & $4$ & {\tiny Timeout} & {\tiny Timeout}$^{\dagger}$ & $3.32$ & $7$ & $22$ & $957$\\
+\midrule
+\midrule
+\textsf{Shopping}$_{\mathsf{W}}$\cite{MonkeyDB} & {\scriptsize All items added to a cart can be checked-out.} & $10$ & $58$ & $3$ & $1.0$ & $20.0^{\dagger}$ & $18.57$ & $17$ & $30$ & $1174$\\
+\midrule
+\textsf{HashTable}$_{\mathsf{W}}$\cite{OcamlMulticorePBT} & {\scriptsize No updates to a concurrent hashtable are ever lost.} & $13$ & $33$ & $4$ & $1.0$ & $2.5^{\dagger}$ & $0.84$ & $6$ & $6$ & $56$\\
+\midrule
+\textsf{Transaction}$_{\mathsf{W}}$ & {\scriptsize Asynchronous read operations are logically atomic.} & $8$ & $40$ & $3$ & {\tiny Timeout} & {\tiny Timeout} & $2.61$ & $15$ & $15$ & $372$\\
+\midrule
+\textsf{Courseware}$_{\mathsf{W}}$\cite{MonkeyDB} & {\scriptsize Every student enrolled in a course exists in the
+  enrollment database for that course.} & $16$ & $100$ & $3$ & $1.0$ & $57.5^{\dagger}$ & $25.54$ & $18$ & $33$ & $1374$\\
+\midrule
+\textsf{Twitter}$_{\mathsf{W}}$\cite{MonkeyDB} & {\scriptsize Posted tweets are visible to all followers.} & $16$ & $95$ & $3$ & $1.0$ & $6.3^{\dagger}$ & $27.28$ & $18$ & $33$ & $1374$\\
+\midrule
+\textsf{Smallbank}$_{\mathsf{W}}$\cite{OLTPBench} & {\scriptsize Account updates are strongly consistent.} & $22$ & $154$ & $3$ & {\tiny Timeout} & {\tiny Timeout} & $5.74$ & $14$ & $14$ & $528$\\
+\bottomrule
+\end{tabular}
+\label{tab:evaluation-rich}
+\vspace*{-.15in}
+\end{table}
+
+
+
+\begin{table}[t!]
+  \renewcommand{\arraystretch}{0.8}
+  % \vspace*{-.1in}
+  \caption{\small The results of the benchmarks in P Language with weakened specifications. }
+  \vspace*{-.1in} \footnotesize
+%\multicolumn{2}{c||}{} &
+\setlength{\tabcolsep}{1.3pt}
+\begin{tabular}{c|P{4.0cm}||ccc||cc||c|ccc}
+  \toprule
+  \multicolumn{2}{c||}{Benchmark} & \#$\eff{op}$ & \multicolumn{2}{c||}{\#qualifier} & \multicolumn{2}{c||}{\scriptsize \# Num. Executions} & t$_\text{total}$(s) & \#evt & \#refine & \#SMT \\
+  \midrule
+Name & Property &   &uHAT &goal & {\scriptsize Clouseau} & {\scriptsize Baseline} &  &  \\
+\midrule
+{\scriptsize\textsf{Database}$_{\mathsf{W}}$} & {\scriptsize The database maintains a Read-Your-Writes policy.} & $4$ & $13$ & $3$ & $1.0$ & {\tiny TO} & $0.34$ & $6$ & $6$ & $51$\\
+\midrule
+{\scriptsize\textsf{Firewall}$_{\mathsf{W}}$}\cite{MessageChain} & {\scriptsize Requests generated inside the firewall are eventually propagated to the outside.} & $5$ & $20$ & $4$ & {\tiny TO} & {\tiny TO} & $0.61$ & $6$ & $6$ & $189$\\
+\midrule
+{\scriptsize\textsf{RingLeaderElection}$_{\mathsf{W}}$}\cite{MessageChain} & {\scriptsize There is always a single unique  leader.} & $3$ & $13$ & $2$ & $2.0$ & {\tiny TO} & $0.82$ & $8$ & $8$ & $102$\\
+\midrule
+{\scriptsize\textsf{BankServer}$_{\mathsf{W}}$}\cite{DGJ+13} & {\scriptsize Withdrawals in excess of the available balance are never allowed.} & $6$ & $36$ & $1$ & $1.6$ & {\tiny TO}$^{\dagger}$ & $0.17$ & $5$ & $5$ & $27$\\
+\midrule
+{\scriptsize\textsf{Simplified2PC}$_{\mathsf{W}}$}\cite{DGJ+13} & {\scriptsize Transactions are atomic.} & $9$ & $24$ & $5$ & $2.9$ & {\tiny TO}$^{\dagger}$ & $1.05$ & $8$ & $8$ & $86$\\
+\midrule
+{\scriptsize\textsf{HeartBeat}$_{\mathsf{W}}$}\cite{DGJ+13} & {\scriptsize All available nodes are identified by a  detector.} & $7$ & $24$ & $3$ & {\tiny TO} & {\tiny TO}$^{\dagger}$ & $0.36$ & $6$ & $6$ & $41$\\
+\midrule
+{\scriptsize\textsf{ChainReplication}$_{\mathsf{W}}$}\cite{ModP} & {\scriptsize Concurrent updates are never lost.} & $7$ & $47$ & $4$ & $5.2$ & {\tiny TO}$^{\dagger}$ & $4.22$ & $11$ & $11$ & $332$\\
+\midrule
+{\scriptsize\textsf{Paxos}$_{\mathsf{W}}$}\cite{ModP} & {\scriptsize Logs are correctly replicated.} & $10$ & $85$ & $2$ & {\tiny TO} & {\tiny TO}$^{\dagger}$ & $21.83$ & $12$ & $61$ & $2046$\\
+\midrule
+{\scriptsize\textsf{Raft}$_{\mathsf{W}}$} & {\scriptsize Leader election is robust to faults.} & $9$ & $34$ & $6$ & $1.0$ & {\tiny TO} & $27.60$ & $12$ & $12$ & $989$\\
+\midrule
+\textsf{AnonReadAtomicity}$_{\mathsf{W}}$ & {\scriptsize Read Atomicity is preserved.} & $17$ & $98$ & $3$ & $1.0$ & $53.3^{\dagger}$ & $10.68$ & $12$ & $12$ & $991$\\
+\bottomrule
+\end{tabular}
+\label{tab:evaluation-rich-2}
+\vspace*{-.15in}
+\end{table}
+

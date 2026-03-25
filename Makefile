@@ -4,7 +4,7 @@ DEPS = main.tex bibliography.bib commands.sty refinementtydef.sty \
 	sections/0-intro.tex sections/1-overview.tex sections/2-language.tex \
 	sections/3-algo.tex sections/4-evaluation.tex sections/5-related.tex \
 	tech/outlines.tex tech/0-semantics.tex tech/1-typing.tex tech/2-denotation.tex \
-	tech/3-algo.tex tech/4-proof-0.tex tech/5-evaluation.tex
+	tech/3-algo.tex tech/4-proof-0.tex tech/5-explanation.tex tech/6-evaluation.tex
 
 all: clouseau.pdf clouseau-diff.pdf clouseau-sm-full.pdf
 

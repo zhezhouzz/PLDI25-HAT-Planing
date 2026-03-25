@@ -242,18 +242,7 @@ We have evaluated \name{} on a diverse corpus of programs\footnote{The
 % AnonReadAtomicity and Transaction?) and redundant (the previous
 % sentence stated that they came from several sources), so I'm
 % dropping it.
-(\textbf{Q1}).\footnote{%
-  \cbnewadding{%
-    The \tyName{}s for the $\textsc{HashTable}$ and
-    $\textsc{Courseware}$ benchmarks in \autoref{tab:evaluation} were
-    written by an undergraduate student, and those for
-    $\textsc{Smallbank}$ and $\textsc{Twitter}$ by two first-year PhD
-    students. All three students were new to our \tyName{}
-    specification language and had no knowledge of our synthesis
-    algorithm. After a couple of hands-on training sessions, each was
-    able to independently encode their knowledge about the SUT as
-    \tyName{}s, requiring only a few person-hours to complete all the
-    benchmarks. }}  Our benchmarks are grouped into four categories.
+(\textbf{Q1}). Our benchmarks are grouped into four categories.
 The first are data structure benchmarks (\textsf{Stack}, \textsf{Set},
 \textsf{Filesystem}) where the test generator probes for violations of
 structural invariants.  The second are evaluators - programs that
@@ -451,3 +440,21 @@ of its executions.
   course, since weaker specifications can lead to shorter synthesis
   times, the loss of testing efficiency may sometimes be an acceptable
   trade-off.}
+
+% \section{Discussion}\label{sec:discussion}
+
+\cbnewadding{%
+\paragraph{Discussion}
+  We would like to highlight that the cost to write \tyName{}s is relatively low. The \tyName{}s for the $\textsc{HashTable}$ and
+    $\textsc{Courseware}$ benchmarks in \autoref{tab:evaluation} were
+    written by an undergraduate student, and those for
+    $\textsc{Smallbank}$ and $\textsc{Twitter}$ by two first-year PhD
+    students. All three students were new to our \tyName{}
+    specification language and had no knowledge of our synthesis
+    algorithm. After a couple of hands-on training sessions, each was
+    able to independently encode their knowledge about the SUT as
+    \tyName{}s, requiring only a few person-hours to complete all the
+    benchmarks. }
+
+\cbnewadding{%
+One potental future work is provide better developer-facing feedback when synthesis fails. As shown in \autoref{fig:syn-gen}, our algorithm consists of a refinement loop that maintains a set of candidate generators. When synthesis fails, we provide all previous sets of candidate generators at each refinement iteration. A natural next step is integrating a refinement and debugging phase as part of the synthesizer and test execution pipeline. }

@@ -218,9 +218,9 @@ On the other hand, the $\msgAGray{popI}{m\;y}$ event in the abstract trace has i
 \vspace{-.4cm} \par\nobreak{\small %
   \begin{align*}
     &(m{:}\urt{\Int}{\vnu = 0}, n{:}\urt{\Int}{\vnu = m{+}1}, y{:}\urt{\Int}{\top}, x{:}\urt{\Int}{\vnu > y},
-    \\&\qquad\qquad\Pi_\Code{noI}^* \seqA \msgAGray{pushI}{m\;y}^\bot
+    \\&\;\Pi_\Code{noI}^* \seqA \msgAGray{pushI}{m\;y}^\bot
     \seqA \msgAGray{popI}{m\;y}^\bot \seqA \Pi_\Code{noI}^* \seqA \msgA{push}{x}^\bot \seqA \msgAGray{pushI}{n\;x}^\bot \seqA \Pi_\Code{noI}^* \seqA \msgA{pop}{x}^\top \seqA \msgAGray{popI}{n\;x}^\bot \seqA \Pi_\Code{any}^*) \tag{$\pi_\Code{stack}$}\label{prop:stackTrace}
-  \end{align*}}\vspace{-.4cm} \par\nobreak\noindent
+  \end{align*}}\vspace{-.6cm} \par\nobreak\noindent
 \end{example}
 
 \paragraph{Deriving a Generator}
@@ -285,13 +285,13 @@ number of loop iterations to ensure a completed sketch is well-typed.
         \underbrace{\Pi_\Code{noI}^*}_\text{$f$\;()}\;\;
         \underbrace{\msgA{pop}{x}\msgAGray{popI}{n\;x}}_{e_2}\;\;
         \underbrace{\Pi_\Code{noI}^*}_{e_4}
-      \\[5pt]
+      \\[1pt]
       & \underbrace{\Pi_\Code{noI}^*\msgAGray{pushI}{m\;y}\msgAGray{popI}{m\;y}\Pi_\Code{noI}^*\msgA{push}{x}\msgAGray{pushI}{n\;x}}_{e_3}\;\;
         \underbrace{\Pi_\Code{noI}^*}_{e_1}\;\;
         \underbrace{\Pi_\Code{noI}^*}_\text{$f$\;()}\;\;
         \underbrace{\msgA{pop}{x}\msgAGray{popI}{n\;x}}_{e_2}\;\;
         \underbrace{\Pi_\Code{noI}^*}_{e_4}
-    \end{align*}}\vspace{-.4cm} \par\nobreak \noindent %
+    \end{align*}}\vspace{-.3cm} \par\nobreak \noindent %
   We can then simulate unrolling the recursive call in a solution to
   each sketch by duplicating the subtraces labeled $e_1\; f\;()\;
   e_2$ a bounded number of times and checking whether they are consistent with
