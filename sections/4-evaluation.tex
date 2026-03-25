@@ -37,12 +37,12 @@ $\mykw{assert}$ statements to flag property violations.
 \cbnewadding{%
   Like other PBT setups that rely on precondition-style filtering, our
   evaluation adopts an \emph{angelic} reading of $\mykw{assume}$: when
-  the SUT or runtime rejects a candidate trace (e.g., the interpreter
-  aborts on an ill-typed fragment), we treat that run as uninformative
-  and \emph{retry} with a fresh sample rather than counting it toward a
-  found violation.  This matches how generators are typically used in
-  practice and avoids conflating specification imprecision with genuine
-  safety failures.}
+  the SUT or runtime rejects a candidate trace (e.g., when the
+  interpreter aborts on an ill-typed expression), we treat that run as
+  uninformative and \emph{retry} with a fresh sample rather than
+  counting it toward a found violation.  This matches how generators
+  are typically used in practice and avoids conflating specification
+  imprecision with genuine safety failures.}
 
 %% We evaluate our approach by integrating our synthesized controllers
 %% into the testing framework provided by P~\cite{DGJ+13,DQ17}, a
@@ -147,13 +147,13 @@ Name & Property &   &uHAT &goal & {\scriptsize Clouseau} & {\scriptsize Baseline
 \midrule
 \cbnewadding{\textsf{IFCLoad}$_{\mathsf{W}}$\cite{pbt-ifc}} & \cbnewadding{{\scriptsize \textsf{IFCLoad} without search bias (cf. \autoref{sec:overview}).}} & \cbnewadding{$8$} & \cbnewadding{$33$} & \cbnewadding{$2$} & \cbnewadding{$115.4$} & \cbnewadding{$11293.7^{\dagger}$} & \cbnewadding{$4.83$} & \cbnewadding{$16$} & \cbnewadding{$18$} & \cbnewadding{$754$}\\
 \midrule
-\textsf{DeBruijn1}\cite{CoverageType} & {\scriptsize An STLC interpreter correctly evaluates a
+\textsf{DeBruijnFO}\cite{CoverageType} & {\scriptsize An STLC interpreter correctly evaluates a
 \emph{well-typed first-order} STLC program that uses a de Bruijn representation.} & $10$ & $117$ & $4$ & $1.5$ & $634.0^{\dagger}$ & $40.38$ & $18$ & $26$ & $4765$\\
 \midrule
-\textsf{DeBruijn2}\cite{CoverageType} & {\scriptsize An STLC interpreter correctly evaluates a
+\textsf{DeBruijnHO}\cite{CoverageType} & {\scriptsize An STLC interpreter correctly evaluates a
 \emph{well-typed higher-order} STLC program that uses a de Bruijn representation.} & $10$ & $118$ & $4$ & $1.4$ & \timeout{}$^{\dagger}$ & $91.73$ & $18$ & $31$ & $9034$\\
 \midrule
-\cbnewadding{\textsf{DeBruijn2}$_{\mathsf{W}}$\cite{CoverageType}} & \cbnewadding{{\scriptsize \textsf{DeBruijn2} with \emph{untyped higher-order} programs (cf. \autoref{sec:overview}).}} & \cbnewadding{$10$} & \cbnewadding{$107$} & \cbnewadding{$4$} & \cbnewadding{\timeout{}} & \cbnewadding{\timeout{}$^{\dagger}$} & \cbnewadding{$3.23$} & \cbnewadding{$7$} & \cbnewadding{$22$} & \cbnewadding{$957$}\\
+\cbnewadding{\textsf{DeBruijnHO}$_{\mathsf{W}}$\cite{CoverageType}} & \cbnewadding{{\scriptsize \textsf{DeBruijnHO} with \emph{untyped higher-order} programs (cf. \autoref{sec:overview}).}} & \cbnewadding{$10$} & \cbnewadding{$107$} & \cbnewadding{$4$} & \cbnewadding{\timeout{}} & \cbnewadding{\timeout{}$^{\dagger}$} & \cbnewadding{$3.23$} & \cbnewadding{$7$} & \cbnewadding{$22$} & \cbnewadding{$957$}\\
 \midrule
 \midrule
 \textsf{Shopping}\cite{MonkeyDB} & {\scriptsize All items added to a cart can be checked-out.} & $10$ & $60$ & $3$ & $1.0$ & $20.0^{\dagger}$ & $22.10$ & $17$ & $30$ & $1269$\\
@@ -232,45 +232,60 @@ Name & Property &   &uHAT &goal & {\scriptsize Clouseau} & {\scriptsize Baseline
 \end{table}
 
 We have evaluated \name{} on a diverse corpus of programs\footnote{The
-  supplemental material provides detail results of our
-  experiments. % as well as a docker image that contains the \name{}
+  supplemental material includes additional details about our
+  benchmarks. % as well as a docker image that contains the \name{}
   % source code and benchmarks.
-} drawn from a
-variety of sources (described in the captions of
-\autoref{tab:evaluation} and~\autoref{tab:evaluation2}); all of the
-benchmarks except for \textsf{Database} and \textsf{Raft} were written
-by others (\textbf{Q1}).\footnote{%
+} drawn from a variety of sources (described in the captions of
+\autoref{tab:evaluation} and~\autoref{tab:evaluation2}) % ; all of the
+% benchmarks except for \textsf{Database} and \textsf{Raft} were
+% written by others BD: This statement is incomplete (what about
+% AnonReadAtomicity and Transaction?) and redundant (the previous
+% sentence stated that they came from several sources), so I'm
+% dropping it.
+(\textbf{Q1}).\footnote{%
   \cbnewadding{%
-  As anecdotal evidence in the affirmative, the \tyName{}s for the $\textsc{HashTable}$ and $\textsc{Courseware}$ benchmarks in \autoref{tab:evaluation} were written by an undergraduate student, and those for $\textsc{Smallbank}$ and $\textsc{Twitter}$ by two first-year PhD students. All three students were new to our \tyName{} specification language and had no knowledge of our synthesis algorithm. After a couple of hands-on training sessions, each was able to independently encode their knowledge about the SUT as \tyName{}s, requiring only a few person-hours to complete all the benchmarks. }}  Our benchmarks are grouped into four
-categories.  The first are data structure benchmarks (\textsf{Stack},
-\textsf{Set}, \textsf{Filesystem}) where the test generator probes for
-violations of structural invariants.  The second are evaluators -
-programs that input serialized data, transform them into an internal
-AST representation, and then interpret them; we consider evaluators
-for data structures like graphs and automata (\textsf{Graph},
+    The \tyName{}s for the $\textsc{HashTable}$ and
+    $\textsc{Courseware}$ benchmarks in \autoref{tab:evaluation} were
+    written by an undergraduate student, and those for
+    $\textsc{Smallbank}$ and $\textsc{Twitter}$ by two first-year PhD
+    students. All three students were new to our \tyName{}
+    specification language and had no knowledge of our synthesis
+    algorithm. After a couple of hands-on training sessions, each was
+    able to independently encode their knowledge about the SUT as
+    \tyName{}s, requiring only a few person-hours to complete all the
+    benchmarks. }}  Our benchmarks are grouped into four categories.
+The first are data structure benchmarks (\textsf{Stack}, \textsf{Set},
+\textsf{Filesystem}) where the test generator probes for violations of
+structural invariants.  The second are evaluators - programs that
+input serialized data, transform them into an internal AST
+representation, and then interpret them; we consider evaluators for
+data structures like graphs and automata (\textsf{Graph},
 \textsf{NFA}), information flow control machines, and simply-typed
 lambda-calculus, the latter two both described
 in~\autoref{sec:overview}.  The third are concurrent and database
 benchmarks (\textsf{Transaction}, \textsf{Shopping},
 \textsf{Courseware}, \textsf{Twitter}, \textsf{Smallbank}) that test
-properties related to consistency and synchronization. 
-Property violations in any of these categories only manifest in specific configurations
-(e.g., a violating test case for \textsf{NFA} involves constructing an
-automata containing multiple nodes with more than two outgoing edges).  We
-evaluate these three classes of benchmarks by transpiling synthesized
-generators into OCaml, leveraging its QCheck library as
-needed. The SUT for each of these benchmarks is known to be buggy; in
-all cases we use implementations either available from prior sources
-directly (if the OCaml source was available), or by directly
+properties related to consistency and synchronization.  Property
+violations in any of these categories only manifest in specific
+configurations (e.g., a violating test case for \textsf{NFA} involves
+constructing an automata containing multiple nodes with more than two
+outgoing edges).  We evaluate these three classes of benchmarks by
+transpiling synthesized generators into OCaml, leveraging its QCheck
+library as needed. The SUT for each of these benchmarks is known to be
+buggy; in all cases we use implementations either available from prior
+sources directly (if the OCaml source was available), or by directly
 translating them into OCaml.  The fourth group of benchmarks shown
 in~\autoref{tab:evaluation2} considers applications involving various
 kinds of distributed protocols; these are executed using the P runtime
 environment, by transpiling synthesized generators written in our DSL
 into P's state machine modeling language.  Here as well, the protocol
 being tested is known to be faulty from the sources they were adopted
-from. \cbnewadding{The \textsf{IFCLoad}$_{\mathsf{W}}$, \textsf{DeBruijn2}$_{\mathsf{W}}$, and \textsf{Transaction}$_{\mathsf{W}}$ benchmarks are variants of the original ones with weaker specifications; we provide
-additional discussion of these at the end of this section (\textbf{Q4}).}
-
+from. \cbnewadding{The \textsf{IFCLoad}$_{\mathsf{W}}$,
+  \textsf{DeBruijnHO}$_{\mathsf{W}}$, and
+  \textsf{Transaction}$_{\mathsf{W}}$ benchmarks are variants of other
+  benchmarks that use the weaker specifications described in
+  \autoref{sec:overview}; the end of this section discusses these
+  results in more detail (\textbf{Q4}).}
 
 %% For example, \textsc{RingLeaderElection}
 %% models a leader election algorithm.  Each message transmitted by the
@@ -309,34 +324,34 @@ $\eff{push}$ and $\eff{pop}$ effects, resulted in an erroneous
 execution every 31.9 times on average; in contrast, every execution of
 the generator(s) synthesized by \name\ manifested the bug.  Notably,
 even for benchmarks in which there is a sophisticated customized
-generator available\footnote{We used the artifacts available in their
-  publication as the baseline.} (e.g., \textsf{IFC} or \textsf{de
-  Bruijn}), \tyName{}-guided synthesis leads to significantly better
-outcomes.  We use MonkeyDB~\cite{MonkeyDB}, a mock storage system that
-can be used to find violations of database isolation properties, as
-the baseline for a number of the concurrency benchmarks.  Although it
-is specialized for this particular application class, and \name{} is
-not, evaluation results are comparable, with \name{} yielding
-generators that identify weak isolation violations modestly more
-effectively than the baseline.  Similar conclusions apply to the P
-benchmarks shown in~\autoref{tab:evaluation2}.  For simple benchmarks,
-P's default scheduler, which performs enumerative state exploration to
-construct schedules, independently of the behaviors of the actors
-under test or the target property, or handwritten ones which inject
-additional actors to control input message generation and prevent
-uninteresting message orderings (e.g. \textsf{Simplified2PC} or
-\textsf{Heartbeat}), are effective and \name{}'s performance is
-comparable to these.  As in the previous set of experiments, however,
-for more complex benchmarks (e.g., \textsf{ChainReplication},
-\textsf{Paxos}), even manual specialization to generate interesting
-test sequences is significantly less effective than \name{}'s
-trace-guided synthesis approach.  Moreover, as indicated by the
-\textsf{Raft} numbers, a random exploration procedure, without
-manually engineered guidance, is too na\"{i}ve to find a violating
-execution.  It is notable that here too, \name{}'s performance on
-these P benchmarks is competitive, and in several cases, superior to
-handcrafted P schedulers, even though \name{} has no built-in
-knowledge of P's underlying programming model.
+generator available\footnote{When these custom generators are
+  available, we use them as the baseline in our experiments.} (e.g.,
+\textsf{IFC} or \textsf{de Bruijn}), \tyName{}-guided synthesis leads
+to significantly better outcomes.  We use MonkeyDB~\cite{MonkeyDB}, a
+mock storage system that can be used to find violations of database
+isolation properties, as the baseline for a number of the concurrency
+benchmarks.  Although it is specialized for this particular
+application class, and \name{} is not, evaluation results are
+comparable, with \name{} yielding generators that identify weak
+isolation violations modestly more effectively than the baseline.
+Similar conclusions apply to the P benchmarks shown
+in~\autoref{tab:evaluation2}.  For simple benchmarks, P's default
+scheduler, which performs enumerative state exploration to construct
+schedules, independently of the behaviors of the actors under test or
+the target property, or handwritten ones which inject additional
+actors to control input message generation and prevent uninteresting
+message orderings (e.g. \textsf{Simplified2PC} or \textsf{Heartbeat}),
+are effective and \name{}'s performance is comparable to these.  As in
+the previous set of experiments, however, for more complex benchmarks
+(e.g., \textsf{ChainReplication}, \textsf{Paxos}), even manual
+specialization to generate interesting test sequences is significantly
+less effective than \name{}'s trace-guided synthesis approach.
+Moreover, as indicated by the \textsf{Raft} numbers, a random
+exploration procedure, without manually engineered guidance, is too
+na\"{i}ve to find a violating execution.  It is notable that here too,
+\name{}'s performance on these P benchmarks is competitive, and in
+several cases, superior to handcrafted P schedulers, even though
+\name{} has no built-in knowledge of P's underlying programming model.
 
 The last group of columns in both tables provide details on the cost
 of our synthesis procedure. The first column presents total synthesis
@@ -387,40 +402,52 @@ structure is enforced manually discovers the violation in 53
 executions, while \name{}'s version can uncover the violation on all
 of its executions.
 
-\cbnewadding{ \paragraph{Specification Quality Robustness} \name{}'s
-  effectiveness depends on the quality of user-supplied \tyName{}
-  specifications.  To quantify \name{}'s robustness to specification
-  quality, we ran an additional study on our OCaml and P benchmarks,
-  keeping the SUT and the global property fixed while weakening the
-  \tyName{} specifications of individual operators in the SUT.
-  \autoref{tab:evaluation} summarizes the outcomes for the three
-  motivating examples presented in~\autoref{sec:overview}\footnote{
-  Details for the full set of benchmarks are provided in the supplemental material.}.  The
-  specifications are weakened following the description in
-  \autoref{sec:overview}, for example, \textsf{IFCLoad}$_{\mathsf{W}}$ eliminates
-  the ``valid address'' constraint (i.e., $\I{isAddr}$) from the
-  original specification.  We consider such specifications
-  \emph{lower-quality} because their lack of guidance increases the
-  risk that \name{} will synthesize generators misaligned with SUT's
-  intended behavior.  Under these weaker specifications, average
-  synthesis time (t$_\text{total}$) decreases by $18.18\%$ on average,
-  and by $78.07\%$ in the extreme case
-  (\textsc{ChainReplication}). However, $26.9\%$ (7 out of 26) of the
-  benchmarks time out; the remaining benchmarks show an increasing
-  retry rate (\#Num. Executions), by $1.9\times$ on average and
-  $7.5\times$ in the extreme case (\textsc{IFCLoad}$_{\mathsf{W}}$).}
+\cbnewadding{ \paragraph{Robustness to Specification Quality} As
+  discussed in \autoref{sec:overview}, \name{}'s effectiveness depends
+  on the quality of user-supplied \tyName{} specifications.  To
+  quantify \name{}'s robustness to specification quality, we conducted
+  an additional study using variants of the benchmarks in
+  Tables~\ref{tab:evaluation} and \ref{tab:evaluation2} that keep the
+  SUT and the global property fixed while weakening the \tyName{}
+  specifications of individual operators provided by the SUT.
+  Specifications were weakened in a similar manner to the examples
+  described in \autoref{sec:overview}: the variant of the IFC
+  benchmark (\textsf{IFCLoad}$_{\mathsf{W}}$), for example, eliminates
+  the ``valid address'' constraint (i.e., $\I{isAddr}$) used in the
+  original specification. Broadly speaking, the weakened
+  specifications can be categorized as either relaxing basic
+  correctness properties of the SUT or removing search biases. Both
+  categories of specifications are \emph{lower-quality} because they
+  provide less guidance to \name{} and thus increase the risk that it
+  will synthesize generators misaligned with the SUT's intended
+  behavior.}
 
-\cbnewadding{Our ablation study reveals that weakening basic
-  correctness properties severely impacts \name{}'s effectiveness
-  (e.g., \textsf{DeBruijn2}$_{\mathsf{W}}$ generates untyped STLC programs to test an
-  interpreter with type-checking).  This is because generators
-  synthesized from such specifications yield a large number of
-  executions that are poorly matched to how the SUT is meant to be
-  exercised; obtaining an informative witness may thus require far
-  more effort or time out entirely.  Conversely, weakening search bias
-  is comparatively benign (e.g., the synthesized generator for
-  \textsf{IFCLoad}$_{\mathsf{W}}$ still finds EENI violations), primarily
-  manifesting as increased retries before a bug is found.  On the
-  other hand, because weaker specifications can lead to shorter
-  synthesis times, this loss of testing efficiency may sometimes be an
-  acceptable trade-off.}
+\cbnewadding{ \autoref{tab:evaluation} includes the results of this
+  experiment for the three examples from \autoref{sec:overview}
+  (\textsf{Transaction}$_{\mathsf{W}}$,
+  \textsf{IFCLoad}$_{\mathsf{W}}$, and
+  \textsf{DeBruijnHO}$_{\mathsf{W}}$).\footnote{ The details for the
+    full set of benchmarks are provided in the supplemental material.}
+  Under these weaker specifications, average synthesis time
+  (t$_\text{total}$) improves by $18.18\%$, and by $78.07\%$ in the
+  extreme case (\textsc{ChainReplication}). This comes at the cost of
+  decreased testing effectiveness, however: $26.9\%$ (7 out of 26) of
+  the benchmarks now time out; the remaining benchmarks show an
+  elevated retry rate (\#Num. Executions), $1.9\times$ on average, and
+  $7.5\times$ in the worst case (\textsc{IFCLoad}$_{\mathsf{W}}$). In
+  general, weakening basic correctness properties significantly
+  impacts \name{}'s effectiveness, as the resulting generators
+  regularly yield executions that do not align with the intended
+  behavior of the SUT: \textsf{DeBruijnHO}$_{\mathsf{W}}$, for
+  example, generates a large number of ``useless'' untyped STLC
+  programs that are immediately discarded by the
+  type-checker. Obtaining an informative witness from such a generator
+  may thus require generating many more inputs, and can quickly
+  exhaust the testing time budget. In contrast, weakening the search
+  bias was comparatively benign in our experiments (e.g., the
+  synthesized generator for \textsf{IFCLoad}$_{\mathsf{W}}$ still
+  finds EENI violations relatively quickly), and primarily manifested
+  in an increased number of retries before a bug was found.  Of
+  course, since weaker specifications can lead to shorter synthesis
+  times, the loss of testing efficiency may sometimes be an acceptable
+  trade-off.}

@@ -1,13 +1,17 @@
 \newpage
 \section{Evaluation Details}\label{sec:tech:evaluation}
 
-\autoref{tab:evaluation-detail} and \autoref{tab:evaluation-detail2} lists the details for the experimental results in our evaluation section, which include the number of local variables (\#var), the number of effectful operations (\#$\mykw{eff}$), the number of assertions (\#$\mykw{assert}$), and the number of executions for both random generator and manual written test generators.
-
+\autoref{tab:evaluation-detail} and \autoref{tab:evaluation-detail2}
+provide additional details about the experimental results in our
+evaluation section, including the number of local variables (\#var),
+the number of effectful operations (\#$\mykw{eff}$), the number of
+assertions (\#$\mykw{assert}$), and the number of executions for both
+random generator and manual written test generators.
 
 \begin{table}[t!]
   \renewcommand{\arraystretch}{0.8}
   % \vspace*{-.1in}
-  \caption{\small Detail results of table \ref{tab:evaluation}.}
+  \caption{\small Detailed results of table \ref{tab:evaluation}.}
 \vspace*{-.1in}
 \footnotesize
 \setlength{\tabcolsep}{3.3pt}
@@ -32,9 +36,9 @@ Benchmark & \#$\eff{op}$ & \multicolumn{2}{c||}{\#qualifier} & \#var &\#$\mykw{e
  \midrule
  \textsf{IFCLoad}\cite{pbt-ifc} & $8$ & $37$ & $2$ & $20$ & $16$ & $12$ & $15.4$ & {\tiny TO} & $11293.7$ & $5.76$ & $930$ & $18$\\
  \midrule
- \textsf{DeBruijn1}\cite{CoverageType} & $10$ & $117$ & $4$ & $10$ & $18$ & $12$ & $1.5$ & {\tiny TO} & $634.0$  & $40.38$ & $4765$ & $26$\\
+ \textsf{DeBruijnFO}\cite{CoverageType} & $10$ & $117$ & $4$ & $10$ & $18$ & $12$ & $1.5$ & {\tiny TO} & $634.0$  & $40.38$ & $4765$ & $26$\\
  \midrule
- \textsf{DeBruijn2}\cite{CoverageType} & $10$ & $118$ & $4$ & $10$ & $18$ & $14$ & $1.4$ & {\tiny TO} & {\tiny TO} & $91.73$ & $9034$ & $31$\\
+ \textsf{DeBruijnHO}\cite{CoverageType} & $10$ & $118$ & $4$ & $10$ & $18$ & $14$ & $1.4$ & {\tiny TO} & {\tiny TO} & $91.73$ & $9034$ & $31$\\
  \midrule
  \textsf{HashTable}\cite{OcamlMulticorePBT} & $13$ & $38$ & $4$ & $6$ & $6$ & $2$ & $1.0$ & {\tiny TO} & $64.8$ & $0.76$ & $57$ & $6$\\
  \midrule
@@ -121,10 +125,10 @@ Name & Property &   &uHAT &goal & {\scriptsize Clouseau} & {\scriptsize Baseline
 \midrule
 \textsf{IFCLoad}\cite{pbt-ifc} & {\scriptsize A well-behaved IFC program containing a $\Code{Load}$ command never leaks a secret.} & $8$ & $33$ & $2$ & $115.4$ & $4278.3^{\dagger}$ & $5.01$ & $16$ & $18$ & $754$\\
 \midrule
-\textsf{DeBruijn1}\cite{CoverageType} & {\scriptsize An STLC interpreter correctly evaluates a
+\textsf{DeBruijnFO}\cite{CoverageType} & {\scriptsize An STLC interpreter correctly evaluates a
   well-typed first-order STLC program that uses a de Bruijn representation.} & $10$ & $106$ & $4$ & {\tiny Timeout} & $303.6^{\dagger}$ & $3.03$ & $7$ & $22$ & $857$\\
 \midrule
-\textsf{DeBruijn2}\cite{CoverageType} & {\scriptsize An STLC interpreter correctly evaluates a
+\textsf{DeBruijnHO}\cite{CoverageType} & {\scriptsize An STLC interpreter correctly evaluates a
   a well-typed higher-order STLC program that uses a de Bruijn representation.} & $10$ & $107$ & $4$ & {\tiny Timeout} & {\tiny Timeout}$^{\dagger}$ & $3.32$ & $7$ & $22$ & $957$\\
 \midrule
 \midrule
