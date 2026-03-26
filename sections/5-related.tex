@@ -1,6 +1,5 @@
-\section{Related Work}
+\section{Related Work and Conclusions}
 \label{sec:related}
-
 \paragraph{\it Underapproximate Reasoning} A number of recently
 proposed logical frameworks provide program reasoning principles based
 on under-, rather than over-, approximate abstractions.  Incorrectness
@@ -26,7 +25,6 @@ SUT.  As a mechanism to characterize underapproximate behavior, types
 identify \emph{sufficient} effectful constraints that any test input
 sequence produced by the generator \emph{must} satisfy based on these
 specifications.
-
 \paragraph{{\it Specializing PBT Generators}}
 There has been significant prior work to make PBT implementations more
 effective, by providing tools that enable reasoning and customization
@@ -46,7 +44,6 @@ local \tyName{} specifications of the operations used by the SUT.
 Importantly, the synthesis procedure is guided by the history and
 future SREs of provided specifications to determine a semantically
 meaningful ordering of effectful actions.
-
 %% TLA+~\cite{Lam02} is a specification language based on LTL for
 %% modeling finite-state distributed systems; the correctness of these
 %% specifications are verified using the TLC explicit-state model
@@ -57,8 +54,6 @@ meaningful ordering of effectful actions.
 %% a component-based synthesis procedure, and the top-down (TLA) vs.
 %% bottom-up (\name{}) exploration mechanism, differentiates \name{}'s
 %% motivation and design from TLA+ and TLC in obvious ways.
-
-
 \paragraph{Type and Effect Systems}
 Type and effect systems that target \emph{temporal} properties on the
 sequences of effects that a program may \emph{produce} is a
@@ -77,8 +72,6 @@ interacting with opaque effectful libraries.  \tyName{}s revise
 \textsc{HAT}s by viewing them as underapproximate specifications -
 every trace accepted by the future regex in a \tyName{} is
 justified by a trace accepted by its history.
-
-
 %% \paragraph{{\it Verification}} Formally proving the correctness of
 %% distributed protocols and models has long been a topic of significant
 %% interest~\cite{KA+07,HH+15,SWT18}.  These approaches provide strong
@@ -130,17 +123,13 @@ justified by a trace accepted by its history.
 %% drive synthesis, and requires no instrumentation or \emph{a priori}
 %% enumeration of the state space to synthesize its controllers.
 
-
-\section{Conclusions}\label{sec:conc}
-
-This paper proposes trace-guided synthesis of effectful PBT
-generators.  Our key innovations are (i) the adaptation of symbolic
-regular expressions, expressed as types, that define traces of
-effectful actions that occur before and after the execution of an
-expression, as underapproximate specifications, and (ii) the synthesis
-of bespoke test generators derived from these specifications.
-Experimental results on a wide range of sequential, concurrent, and
-distributed applications, including real-world system models used in
-production, show that \name{} is significantly more effective in
-identifying test input sequences that falsify a property than the
-existing state-of-the-art.
+\paragraph{\textbf {Conclusions}}
+This paper proposes \name, a trace-guided synthesizer of effectful PBT
+generators.  Its key innovations are (i) the adaptation of SREs,
+expressed as types, that define traces of effectful actions that occur
+before and after the execution of an expression, as underapproximate
+specifications, and (ii) the synthesis of bespoke test generators
+derived from these specifications.  Experimental results on a wide
+range of applications show that \name{} is significantly more
+effective in identifying test input sequences that falsify a property
+than the existing state-of-the-art.
