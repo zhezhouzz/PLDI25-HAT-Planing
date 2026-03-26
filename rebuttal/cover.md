@@ -1,19 +1,25 @@
 ## Summary of Changes
 
-We have attached three files: (a) clouseau.pdf, the revised version of the paper; (b) clouseau-diff.pdf, which highlights major textual changes in blue (typo fixes and minor edits are not highlighted); and (c) clouseau-sm-full.pdf, which contains our supplementary material.
+We have attached three files:
+
+a. `clouseau.pdf`, the revised version of the paper;
+
+b. `clouseau-diff.pdf`, a version with the major changes highlighted in blue (minor edits and typo fixes are not highlighted); and
+
+c. clouseau-sm-full.pdf, a version that includes an appendix containing our supplementary material.
 
 The major changes are as follows:
 
-- We have clarified how Clouseau handles nondeterminism-related faulty executions in the evaluation settings of Section 5.
+- We clarify how Clouseau handles faulty executions due to non-determinism (lines 817-822).
 
-- We have further evaluated Clouseau using low-quality uHATs for all benchmarks in our study. Table 1 now includes the results for the three motivating examples introduced in Section 2 using these lower-quality uHATs. The full results for weakened specifications are presented in Table 5 and Table 6 in the Section J of supplemental materials; Section I includes the complete set of uHATs used in our evaluation.
+- We have expanded the explanations of the motivating examples in Section 2 (lines 213-216, 297-303, and 328-331).
 
-- We have added a discussion titled "Robustness to Specification Quality" at the end of Section 5, addressing Clouseau's sensitivity to the quality of uHAT specifications.
+- The overview now includes examples of weaker/stronger uHAT specifications for each of the three motivating examples (lines 250-271, 317-325, and 371-379).
 
-- We have added a discussion about the user effort required to write such specifications and about the feedback provided when synthesis fails, at the end of Section 5.
+- We have conducted an additional study of Clouseau's performance when equipped with lower-quality uHATs for all the benchmarks in our study. Table 1 now includes the results for weakened variants of the three motivating examples from the overview (page 18), and Section 5 now has a summary the results of this experiment as well as a qualitative discussion of Clouseau's sensitivity to the quality of uHAT specifications (lines 985-1010).  The full results of the experiment are included in Table 5 and Table 6 of Section J of supplemental material.
 
-- We have clarified the explanations of our motivating examples in Section 2.
+- Section 5 now includes a discussion of the user effort required to write uHATs and the feedback provided when synthesis fails (lines 1011-1021).
 
-- We have restructured the list of contributions to exclude the evaluation study as a fourth contribution.
+- The list of contributions no longer includes our evaluation as an explicit contribution.
 
 - We have corrected all typos and formatting issues identified by the reviewers.
