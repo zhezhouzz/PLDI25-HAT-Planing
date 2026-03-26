@@ -1,4 +1,4 @@
-1\section{Implementation And Evaluation}\label{sec:impl}
+\section{Implementation And Evaluation}\label{sec:impl}
 %
 We have implemented a tool based on the above approach, called
 \name{}, that synthesizes effectful test generators from user-provided
@@ -232,9 +232,9 @@ Name & Property &   &uHAT &goal & {\scriptsize Clouseau} & {\scriptsize Baseline
 
 We have evaluated \name{} on a diverse corpus of programs\footnote{The
   supplemental material includes additional details about our
-  benchmarks. % as well as a docker image that contains the \name{}
+  benchmarks.} % as well as a docker image that contains the \name{}
   % source code and benchmarks.
-} drawn from a variety of sources (described in the captions of
+drawn from a variety of sources (described in the captions of
 \autoref{tab:evaluation} and~\autoref{tab:evaluation2}) % ; all of the
 % benchmarks except for \textsf{Database} and \textsf{Raft} were
 % written by others BD: This statement is incomplete (what about
@@ -408,6 +408,7 @@ of its executions.
   provide less guidance to \name{} and thus increase the risk that it
   will synthesize generators misaligned with the SUT's intended
   behavior.}
+
 \cbnewadding{ \autoref{tab:evaluation} includes the results of this
   experiment for the three examples from \autoref{sec:overview}
   (\textsf{Transaction}$_{\mathsf{W}}$,
@@ -438,23 +439,25 @@ of its executions.
   times, the loss of testing efficiency may sometimes be an acceptable
   trade-off.}
 % \section{Discussion}\label{sec:discussion}
-\cbnewadding{%
 
-\paragraph{Discussion}
-  We have ancedotal evidence that the cost to write \tyName{}s is
+\cbnewadding{ %
+  \paragraph{Discussion}
+  We have anecdotal evidence that the cost to write \tyName{}s is
   relatively low; the \tyName{}s for the $\textsc{HashTable}$ and
   $\textsc{Courseware}$ benchmarks in \autoref{tab:evaluation} were
   written by an undergraduate student, and those for
   $\textsc{Smallbank}$ and $\textsc{Twitter}$ by two first-year PhD
-  students.  None of the students had prior exposure to the \tyName{}
-  specification language or \name's synthesis algorithm.  Nonetheless,
+  students. None of the students had prior exposure to the \tyName{}
+  specification language or \name{}'s synthesis algorithm.  Nonetheless,
   each was able to independently encode their knowledge about the SUT
   as \tyName{}s, requiring only a few person-hours to complete all the
-  benchmarks. }
-\cbnewadding{%
-  One potental area for future work is provide better developer-facing
-  feedback when synthesis fails. Because our algorithm consists of a
-  refinement loop that maintains a set of candidate generators (see
-  \autoref{fig:syn-gen}), integrating a refinement and debugging phase
-  as part of the synthesizer and test execution pipeline would be
-  a natural extension. }
+  benchmarks.}
+
+\cbnewadding{ %
+  One potential area for future work is to provide better
+  developer-facing feedback when synthesis fails. Because our
+  algorithm consists of a refinement loop that maintains a set of
+  candidate generators (see \autoref{fig:syn-gen}), integrating a
+  refinement and debugging phase as part of the synthesizer and test
+  execution pipeline would be a natural extension.
+}
