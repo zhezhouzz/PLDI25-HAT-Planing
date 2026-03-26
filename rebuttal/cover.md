@@ -16,7 +16,7 @@ The major changes are as follows (all line numbers mentioned below refer to `clo
 
 - The overview now includes examples of weaker/stronger uHAT specifications for each of the three motivating examples (lines 250-271, 317-325, and 371-379).
 
-- We have conducted an additional study of Clouseau's performance when equipped with lower-quality uHATs for all the benchmarks in our study. Table 1 now includes the results for weakened variants of the three motivating examples from the overview (page 18), and Section 5 now has a summary the results of this experiment as well as a qualitative discussion of Clouseau's sensitivity to the quality of uHAT specifications (lines 984-1009).  The full results of the experiment are included in Table 5 and Table 6 of Section J of supplemental material.
+- We have conducted an additional study of Clouseau's performance when equipped with lower-quality uHATs for all the benchmarks in our study. Table 1 now includes the results for weakened variants of the three motivating examples from the overview (page 18), and Section 5 now has a summary the results of this experiment as well as a qualitative discussion of Clouseau's sensitivity to the quality of uHAT specifications (lines 984-1009).  The full results of the experiment are included in Table 5 and Table 6 of Section J of supplemental material; the complete set of uHATs can be found in Section I.
 
 - Section 5 now includes a discussion of the user effort required to write uHATs and the feedback provided when synthesis fails (lines 1011-1021).
 
