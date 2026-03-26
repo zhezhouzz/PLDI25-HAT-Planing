@@ -89,11 +89,10 @@ Our experimental evaluation addresses four research questions:
   space to witness violations of provided safety properties than
   existing techniques?
 \item[\textbf{Q3}:] Is \name{} \emph{efficient}? Is it able to
-  synthesize meaningful generators in a reasonable amount
-  of time?
-  \cbnewadding{\item[\textbf{Q4}:] Is \name{} \emph{robust}? Is it able to
-    synthesize meaningful generators for benchmarks even when provided with weaker
-    specifications than necessary?}
+  synthesize meaningful generators reasonably quickly?
+  \cbnewadding{\item[\textbf{Q4}:] Is \name{} \emph{robust}? Is it
+    able to synthesize meaningful generators for benchmarks even when
+    provided with weaker specifications than necessary?}
 \end{itemize} %
 
 \newcolumntype{P}[1]{>{\centering\arraybackslash}p{#1}}
@@ -413,26 +412,26 @@ of its executions.
   experiment for the three examples from \autoref{sec:overview}
   (\textsf{Transaction}$_{\mathsf{W}}$,
   \textsf{IFCLoad}$_{\mathsf{W}}$, and
-  \textsf{DeBruijnHO}$_{\mathsf{W}}$).\footnote{ The details for the
-    full set of benchmarks are provided in the supplemental material.}
-  Under these weaker specifications, average synthesis time
-  (t$_\text{total}$) improves by $18.18\%$, and by $78.07\%$ in the
-  extreme case (\textsc{ChainReplication}). This comes at the cost of
-  decreased testing effectiveness, however: $26.9\%$ (7 out of 26) of
-  the benchmarks now time out; the remaining benchmarks show an
-  elevated retry rate (\#Num. Executions), $1.9\times$ on average, and
-  $7.5\times$ in the worst case (\textsc{IFCLoad}$_{\mathsf{W}}$). In
-  general, weakening basic correctness properties significantly
-  impacts \name{}'s effectiveness, as the resulting generators
-  regularly yield executions that do not align with the intended
-  behavior of the SUT: \textsf{DeBruijnHO}$_{\mathsf{W}}$, for
-  example, generates a large number of ``useless'' untyped STLC
-  programs that are immediately discarded by the
-  type-checker. Obtaining an informative witness from such a generator
-  may thus require generating many more inputs, and can quickly
-  exhaust the testing time budget. In contrast, weakening the search
-  bias was comparatively benign in our experiments (e.g., the
-  synthesized generator for \textsf{IFCLoad}$_{\mathsf{W}}$ still
+  \textsf{DeBruijnHO}$_{\mathsf{W}}$).\footnote{The experimental
+    results for the full set of benchmarks are provided in the
+    supplemental material.}  Under these weaker specifications,
+  average synthesis time (t$_\text{total}$) improves by $18.18\%$, and
+  by $78.07\%$ in the extreme case (\textsc{ChainReplication}). This
+  comes at the cost of decreased testing effectiveness, however:
+  $26.9\%$ (7 out of 26) of the benchmarks now time out; the remaining
+  benchmarks show an elevated retry rate (\#Num. Executions),
+  $1.9\times$ on average, and $7.5\times$ in the worst case
+  (\textsc{IFCLoad}$_{\mathsf{W}}$). In general, weakening basic
+  correctness properties significantly impacts \name{}'s
+  effectiveness, as the resulting generators regularly yield
+  executions that do not align with the intended behavior of the SUT:
+  \textsf{DeBruijnHO}$_{\mathsf{W}}$, for example, generates a large
+  number of ``useless'' untyped STLC programs that are immediately
+  discarded by the type-checker. Obtaining an informative witness from
+  such a generator may thus require generating many more inputs, and
+  can quickly exhaust the testing time budget. In contrast, weakening
+  the search bias was comparatively benign in our experiments (e.g.,
+  the synthesized generator for \textsf{IFCLoad}$_{\mathsf{W}}$ still
   finds EENI violations relatively quickly), and primarily manifested
   in an increased number of retries before a bug was found.  Of
   course, since weaker specifications can lead to shorter synthesis
@@ -440,6 +439,7 @@ of its executions.
   trade-off.}
 % \section{Discussion}\label{sec:discussion}
 \cbnewadding{%
+
 \paragraph{Discussion}
   We have ancedotal evidence that the cost to write \tyName{}s is
   relatively low; the \tyName{}s for the $\textsc{HashTable}$ and

@@ -300,14 +300,16 @@ number of loop iterations to ensure a completed sketch is well-typed.
   perform $\eff{pop}$ events without any $\eff{push}$ events. The
   first sketch, in contrast, is consistent with $\pi_\Code{stack}$;
   using \deriveTrace{} to synthesize generators for each $e$ yields
-  the following generator:
+  the following:
+  \vspace{-.4cm}
   \begin{minted}[fontsize = \footnotesize, escapeinside=??, xleftmargin=10pt, linenos]{ocaml}
 let rec f () = () ?$\oplus$?
     let (x: int) = int_gen () in push x; (* ?$e_1$? *)
     f ();
     let (z: int) = pop () in assert (x == z) (* ?$e_2$? *)
 in (* ?$e_3$? *) f () (* ?$e_4$? *)
-  \end{minted}
+\end{minted}
+\vspace{-.2cm}
 \end{example}
 
 \begin{theorem}[\autoref{algo:top-syn} is Sound]
