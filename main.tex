@@ -1,4 +1,4 @@
-\documentclass[acmsmall,screen,review,anonymous]{acmart}\settopmatter{printfolios=true,printccs=false,printacmref=false}
+\documentclass[acmsmall]{acmart}
 
 \setcopyright{none}
 
@@ -26,26 +26,22 @@
 %% values in them; it is your responsibility as an author to replace
 %% the commands and values with those provided to you when you
 %% complete the rights form.
-% \setcopyright{acmcopyright}
-% \copyrightyear{2018}
-% \acmYear{2018}
-% \acmDOI{XXXXXXX.XXXXXXX}
-
-
-%%
-%% These commands are for a JOURNAL article.
-% \acmJournal{JACM}
-% \acmVolume{37}
-% \acmNumber{4}
-% \acmArticle{111}
-% \acmMonth{8}
-
-%%
-%% Submission ID.
-%% Use this when submitting an article to a sponsored event. You'll
-%% receive a unique submission ID from the organizers
-%% of the event, and this ID should be used as the parameter to this command.
-%%\acmSubmissionID{123-A56-BU3}
+%%% The following is specific to  and the paper
+%%% 'Trace-Guided Synthesis of Effectful Test Generators'
+%%% by Zhe Zhou, Ankush Desai, Benjamin Delaware, and Suresh Jagannathan.
+%%%
+\setcopyright{cc}
+\setcctype{by}
+\acmDOI{10.1145/3808264}
+\acmYear{2026}
+\acmJournal{PACMPL}
+\acmVolume{10}
+\acmNumber{PLDI}
+\acmArticle{186}
+\acmMonth{6}
+\acmSubmissionID{pldi26main-p68-p}
+\received{2025-11-13}
+\received[accepted]{2026-04-03}
 
 %%
 %% For managing citations, it is recommended to use bibliography
@@ -115,35 +111,43 @@
 %%
 %% The "title" command has an optional parameter,
 %% allowing the author to define a "short title" to be used in page headers.
-% \title{Synthesizing Test Controllers from Types: Property-Guided Bug-Finding for Distributed System Models}
 \title{Trace-Guided Synthesis of Effectful Test Generators}
-%%
-%% The "author" command and its associated commands are used to define
-%% the authors and their affiliations.
-%% Of note is the shared affiliation of the first two authors, and the
-%% "authornote" and "authornotemark" commands
-%% used to denote shared contribution to the research.
+
 \author{Zhe Zhou}
-%\authornote{with author1 note}          %% \authornote is optional;
-                                        %% can be repeated if necessary
-%\orcid{nnnn-nnnn-nnnn-nnnn}             %% \orcid is optional
-\affiliation{
-  \institution{Purdue University}            %% \institution is required
-  \country{USA}                    %% \country is recommended
+\orcid{0000-0003-3900-7501}
+\affiliation{%
+  \institution{Purdue University}
+  \city{West Lafayette}
+  \country{USA}
 }
-% \email{first1.last1@inst1.edu}          %% \email is recommended
+\email{zhou956@purdue.edu}
+
+\author{Ankush Desai}
+\orcid{0000-0001-9006-0100}
+\affiliation{%
+  \institution{Snowflake}
+  \city{San Mateo}
+  \country{USA}
+}
+\email{ankushdesai@gmail.com}
 
 \author{Benjamin Delaware}
-\affiliation{
-  \institution{Purdue University}            %% \institution is required
-  \country{USA}                    %% \country is recommended
+\orcid{0000-0002-1016-6261}
+\affiliation{%
+  \institution{Purdue University}
+  \city{West Lafayette}
+  \country{USA}
 }
+\email{bendy@purdue.edu}
 
 \author{Suresh Jagannathan}
-\affiliation{
-  \institution{Purdue University}            %% \institution is required
-  \country{USA}                    %% \country is recommended
+\orcid{0000-0001-6871-2424}
+\affiliation{%
+  \institution{Purdue University}
+  \city{West Lafayette}
+  \country{USA}
 }
+\email{suresh@cs.purdue.edu}
 
 
 
@@ -155,7 +159,7 @@
 %% other information printed in the page headers. This command allows
 %% the author to define a more concise list
 %% of authors' names for this purpose.
-% \renewcommand{\shortauthors}{Trovato and Tobin, et al.}
+
 
 %%
 %% The abstract is a short summary of the work to be presented in the
@@ -184,76 +188,26 @@
 \end{abstract}
 
 
-
-
-  % Effective testing of distributed system designs is challenging.
-  % This is because the executions that lead to violations of important
-  % safety or liveness properties represent an infinitesimally small
-  % fragment of the set of all possible behaviors the system can
-  % exhibit.  In this paper, we address this challenge by proposing a
-  % technique that automatically synthesizes a \emph{test controller}---
-  % a program that guides the search for buggy executions--- tailored to
-  % the model of a distributed system-under-test (SUT) and
-  % the property whose violation we are interested in triggering.  We
-  % focus our solution on \emph{open} systems in which the test
-  % controller must govern both the construction of messages injected
-  % into the SUT by an external environment as well as the order in
-  % which messages within the SUT are sent and received.  Our
-  % approach rests on two technical innovations: first, we develop a
-  % novel trace-based refinement type system called \emph{Prophecy
-  %   Automata Types} that describes both the history of the system and
-  % its future behaviors using a symbolic variant of linear temporal
-  % logic. Second, we use these types to design a synthesis algorithm
-  % that constructs a program in a DSL tailored for expressing test
-  % controllers.  Such programs directly express faulty executions in
-  % the target system by fixing the order in which messages are
-  % communicated among actors, and the contents of messages sent from an
-  % external environment to trigger component actions.  We describe the
-  % implementation of our approach in a tool, Clouseau, and present a
-  % comprehensive evaluation on a set of diverse, non-trivial
-  % benchmarks, including a case study of an application model developed
-  % by a major cloud vendor, to justify our technique.
-
-
 %%
 %% The code below is generated by the tool at http://dl.acm.org/ccs.cfm.
 %% Please copy and paste the code instead of the example below.
 %%
-% \begin{CCSXML}
-% <ccs2012>
-%  <concept>
-%   <concept_id>10010520.10010553.10010562</concept_id>
-%   <concept_desc>Computer systems organization~Embedded systems</concept_desc>
-%   <concept_significance>500</concept_significance>
-%  </concept>
-%  <concept>
-%   <concept_id>10010520.10010575.10010755</concept_id>
-%   <concept_desc>Computer systems organization~Redundancy</concept_desc>
-%   <concept_significance>300</concept_significance>
-%  </concept>
-%  <concept>
-%   <concept_id>10010520.10010553.10010554</concept_id>
-%   <concept_desc>Computer systems organization~Robotics</concept_desc>
-%   <concept_significance>100</concept_significance>
-%  </concept>
-%  <concept>
-%   <concept_id>10003033.10003083.10003095</concept_id>
-%   <concept_desc>Networks~Network reliability</concept_desc>
-%   <concept_significance>100</concept_significance>
-%  </concept>
-% </ccs2012>
-% \end{CCSXML}
+\begin{CCSXML}
+  <ccs2012>
+     <concept>
+         <concept_id>10011007.10011074.10011099.10011102.10011103</concept_id>
+         <concept_desc>Software and its engineering~Software testing and debugging</concept_desc>
+         <concept_significance>500</concept_significance>
+         </concept>
+   </ccs2012>
+\end{CCSXML}
 
-% \ccsdesc[500]{Computer systems organization~Embedded systems}
-% \ccsdesc[300]{Computer systems organization~Redundancy}
-% \ccsdesc{Computer systems organization~Robotics}
-% \ccsdesc[100]{Networks~Network reliability}
+\ccsdesc[500]{Software and its engineering~Software testing and debugging}
 
 %%
 %% Keywords. The author(s) should pick words that accurately describe
 %% the work being presented. Separate the keywords with commas.
-%\keywords{Property-based testing, Type systems, Underapproximate
-%  reasoning}
+\keywords{property-based testing, synthesis, type systems, underapproximation}
 
 %%
 %% This command processes the author and affiliation and title
@@ -275,16 +229,21 @@
 \subfile{sections/4-evaluation}
 \subfile{sections/5-related}
 
-% \bibliographystyle{ACM-Reference-Format}
-% \bibliography{bibliography}
+\section*{Acknowledgements}
 
-% \section*{Acknowledgements}
+We thank the anonymous reviewers for their detailed comments and
+suggestions, and Prasita Mukherjee (Purdue), Zhendong Ang (NUS), Tingxuan Xia (PKU) for their helpful feedback on the artifact. This material is based upon work supported by the National Science Foundation under CCF-SHF 2321680.
+
+\section*{Data Availability}
+\label{sec:data}
+
+An artifact containing our implementation, benchmark suite, and results is publicly available on Zenodo~\cite{artifact}.
 
 %%
 %% The next two lines define the bibliography style to be used, and
 %% the bibliography file.
 
-%\bibliographystyle{ACM-Reference-Format}
+% \bibliographystyle{ACM-Reference-Format}
 \bibliographystyle{plainnat}
 % \bibliographystyle{plain}
 % \bibliographystyle{ACM-Reference-Format}

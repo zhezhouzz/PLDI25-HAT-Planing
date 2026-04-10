@@ -111,9 +111,9 @@ execution that violates read atomicity\footnote{For simplicity, we
 \vspace{-.4cm} \par\nobreak {\small %
     \begin{align*}
       & \text{\textcolor{orange}{Client 1:}}\ \msgA{write}{3};
-      & \msgA{write}{4} & \\
+      & \msgA{write}{4} & \\[-.17cm]
       & \text{\textcolor{orange}{Client 2:}} \quad \quad \quad \quad \quad \quad \msgA{readReq}{\iota_1};\msgA{readRsp}{\iota_1\;3};\msgA{readReq}{\iota_2};& &\textcolor{red}{\msgA{readRsp}{\iota_2\;4}}
-    \end{align*}}\noindent
+    \end{align*}}\vspace{-.5cm} \par\nobreak\noindent
   Here, \textcolor{orange}{Client 2} issues two consecutive asynchronous
   read operations.  A $\eff{readReq}$ event indicates that an asynchronous
   read request effect has been issued by the client on the single key managed
@@ -178,9 +178,17 @@ our DSL to support a form of \emph{interactive} test generation,
 instructing the SUT to perform effects via $\eff{opReq}$, and later
 observing the results via their $\eff{opResp}$ counterparts.  For
 instance, the test generator shown below is automatically
-\begin{wrapfigure}{r}{.4\textwidth}
+synthesized from the above \tyName{} specification and
+\ref{eqn:ReadAtomicity}. 
+The presence of the $\eff{readResp}~i$
+operation at line 6 corresponds to the last effect present in
+\ref{eqn:ReadAtomicity}.  
+The \tyName{} associated with this operation
+admits arbitrary operations between it and the matching request,
+captured by ``$\allA$'' in the specification, 
+\begin{wrapfigure}{r}{.32\textwidth}
   \vspace{-10pt}
-  \begin{minted}[fontsize = \footnotesize, escapeinside=??, xleftmargin=18pt, linenos]{ocaml}
+  \begin{minted}[fontsize = \footnotesize, escapeinside=??, xleftmargin=10pt, linenos, numbersep=4pt]{ocaml}
 let rec transaction_gen () =
   () ?$\oplus$? let x = int_gen () in
     let _ = ?$\eff{write}$? x in
@@ -191,15 +199,11 @@ let rec transaction_gen () =
   \end{minted}
   \vspace{-10pt}
 \end{wrapfigure}
-synthesized from the above \tyName{} specification and
-\ref{eqn:ReadAtomicity}.  The presence of the $\eff{readResp}~i$
-operation at line 6 corresponds to the last effect present in
-\ref{eqn:ReadAtomicity}.  The \tyName{} associated with this operation
-admits arbitrary operations between it and the matching request,
-captured by ``$\allA$'' in the specification, following the
+following the
 $\msgA{readReq}{\iota}$ event in the history trace of $\eff{readRsp}$.
 This behavior is subsumed by the recursive call to
-\Code{transaction\_gen} at line 5.  The $\eff{readReq}$ effect at line
+\Code{transaction\_gen} at line 5. 
+The $\eff{readReq}$ effect at line
 4 matches the $\msgA{readRsp}{\iota}$ event and the $\eff{write}$
 operations on line 3 are synthesized from the $\msgA{write}{v}$ event
 that precedes the $\EvtNoArgs{readReq}$ in the history trace; since $v$
@@ -227,12 +231,16 @@ the first written value) occurs.
   by the read response is \emph{some} value written before the
   read was requested: it need not be the \emph{last} value written before the corresponding request.
   The following generator is also type-safe with respect to this weaker specification:}
-  \begin{minted}[fontsize = \footnotesize, escapeinside=??, xleftmargin=18pt, linenos]{ocaml}
+  \begin{wrapfigure}{r}{.46\textwidth}
+    \vspace{-12pt}
+  \begin{minted}[fontsize = \footnotesize, escapeinside=??, xleftmargin=10pt, linenos, numbersep=4pt]{ocaml}
   let x = int_gen () in let _ = ?$\eff{write}$? x in
   let y = int_gen () in let _ = ?$\eff{write}$? y in
   let i = ?$\eff{readReq}$? in let z = ?$\eff{readResp}$? i in
   ?$\mykw{assert}$? (z == x || z == y)
   \end{minted}
+  \vspace{-12pt}
+  \end{wrapfigure}
   \cbnewadding{This generator issues two writes followed by a read,
     and asserts that the read value must be one of the two previously
     written ones. Notably, although this program is type-safe

@@ -37,14 +37,11 @@ applied to impure functional programs that, e.g., interact with
 effectful libraries.  To address this important limitation, this paper
 introduces \emph{Underapproximate Hoare Automata Types}, or
 \tyName{}s, a type abstraction for \emph{underapproximating effectful
-  computations}.  A \tyName{} type judgement has the form:
-\vspace{-.4cm} \par\nobreak {
-\[\vdash e\, :\, [H]\,t\,[F]\]
-}\noindent where $H$ and $F$ qualify type $t$ with pre- ($H$) and post-
+  computations}.  A \tyName{} type judgement has the form $\vdash e : [H]\,t\,[F]$ where $H$ and $F$ qualify type $t$ with pre- ($H$) and post-
 ($F$) conditions. Both conditions are expressed as symbolic regular
 expressions (SREs) that capture the trace of effects performed before
 and by $e$, similar to the \textsc{Hat}s proposed by
-\citet{ZYDJ24}. Unlike their overapproximate predecessors, however,
+\citet{ZYDJ24}. Unlike their overapproximate predecessors,
 \tyName{}s \emph{underapproximate} program behaviors: the judgement
 above states that for every trace of effects $\alpha$ accepted by $F$,
 there exists a trace accepted by $H$ under which $e$ \emph{must}
@@ -161,7 +158,7 @@ provided specifications when performing effects.
 % interesting inputs thus implement a novel form of angelic
 % non-determinism~\cite{BC+10} where underapproximation is used to
 % intelligently inform SUT input generation.
-\begin{wrapfigure}{l}{.6\textwidth}
+\begin{wrapfigure}{l}{.54\textwidth}
   \centering
   \includegraphics[width=0.98\linewidth]{figures/clouseau-workflow.drawio.png}
   \vspace*{-.1in}
