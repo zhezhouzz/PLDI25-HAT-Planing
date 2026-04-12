@@ -116,7 +116,8 @@
   }
 
 % \def\showappendix{true}
-\newcommand{\submissionMode}{true}
+% \newcommand{\submissionMode}{true}
+\newcommand{\originalmode}{true}
 % \newcommand{\diffmode}{true}
 
 \ifdefined\diffmode
@@ -129,6 +130,7 @@
 \newcommand{\cbed}{\cbend}
 \newcommand{\cbcontent}[1]{\textcolor{blue}{#1}}
 \newcommand{\techreport}{supplemental material\xspace}
+\newcommand{\techreportC}{Supplemental material\xspace}
 \else
 \ifdefined\submissionMode
 \newcommand{\cbnewadding}[1]{{#1}}
@@ -138,6 +140,7 @@
 \newcommand{\cbed}{}
 \newcommand{\cbcontent}[1]{{#1}}
 \newcommand{\techreport}{supplemental material\xspace}
+\newcommand{\techreportC}{Supplemental material\xspace}
 \else
 \ifdefined\originalmode
 \newcommand{\cbnewadding}[1]{{#1}}
@@ -147,6 +150,7 @@
 \newcommand{\cbed}{}
 \newcommand{\cbcontent}[1]{{#1}}
 \newcommand{\techreport}{technical report~\cite{FullVersion}\xspace }
+\newcommand{\techreportC}{Technical report~\cite{FullVersion}\xspace }
 \else
 \newcommand{\cbnewadding}[1]{{#1}}
 \newcommand{\cbremoved}[1]{}
@@ -155,6 +159,7 @@
 \newcommand{\cbed}{}
 \newcommand{\cbcontent}[1]{{#1}}
 \newcommand{\techreport}{supplemental material\xspace}
+\newcommand{\techreportC}{Supplemental material\xspace}
 \fi
 \fi
 \fi

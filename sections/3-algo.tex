@@ -164,11 +164,9 @@ $\eff{op}$ (line $7$).  Line $6$ effectively applies the
 \textsc{SubHF} rule to drop any states that are unreachable after the
 target operation; while line 4 effectively applies \textsc{TOpHis} to
 ensure the trace that precedes the target operation satisfies its
-specification. % \BD{The careful reader will notice we're using a very
-  % precise specification of an operator here... Do we need to argue why
-  % that's okay?}
-Before returning the refined trace, \refine{} checks that it
-corresponds to a meaningful test generator by filtering out any empty
+specification.
+Before returning the refined trace, \refine{} checks it
+corresponds to a meaningful test generator by filtering out empty
 traces (line $7$).
 
 \begin{example}[Abstract Trace Refinement]\label{ex:refinement-process}
@@ -243,8 +241,7 @@ given the following context and abstract trace:
   let (z: int) = pop () in assert (x == z)
 \end{minted}
 \derive{} applies a sketch-style methodology to synthesize a recursive
-generator, using \deriveTrace{} to fill in the holes of a template
-recursive function definition. It does so by associating each of the
+generator, it iteratively uses \deriveTrace{} to fill in the holes of a template recursive function definition. It does so by associating each of the
 holes in the template with a subsequence of the abstract trace,
 treating each occurence of a Kleene star in an abstract trace as a
 candidate placeholder for a recursive call. In order to ensure a

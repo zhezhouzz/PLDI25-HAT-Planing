@@ -25,7 +25,7 @@
     \langle\eff{op}{\; \overline{v}}\rangle \\
     \text{\textbf{Traces}} & \quad & \alpha ::= \quad & \emptr ~|~ m
     \;{::}\; \alpha ~|~ \alpha \listconcat \alpha
-    \\[5pt]
+    \\[4pt]
     \text{\textbf{Notations}} & \quad & e_1;e_2 \doteq \quad &
     \zlet{\_}{e_1}{e_2}  \\
     & & \hspace{-2.5cm}\zlet{x{:}t}{\sassume{\phi(x)}}{e} \doteq \quad &
@@ -33,10 +33,10 @@
     %  \mykw{let}\;\eff{op}\;\overline{v}\;\mykw{in}\;e \doteq \zgen{op}{\overline{v}}{e} \qquad\qquad
   \end{alignat*}
 }
-\vspace*{-.3in}
+\vspace*{-.2in}
 \caption{Syntax of \DSL{} expressions}
 \label{fig:term-syntax}
-\vspace*{-.2in}
+\vspace*{-.1in}
 \end{figure}
 
 We formalize our approach using a core language, \DSL{}, for
@@ -50,9 +50,8 @@ test produces appropriate responses. The syntax of \DSL{} is shown in
 effectful operations ($\primop$ and $\eff{op}$), nondeterministic
 choices ($\oplus$), recursion ($\mykw{fix}$), and $\mykw{assume}$ and
 $\mykw{assert}$ statements in the style of solver-aided
-languages~\cite{BC+10}. As we saw in \autoref{sec:overview},
-asynchronous effects can be modeled as a pair of $\eff{opReq}$ /
-$\eff{opResp}$ operations, where the former generates an id (given as
+languages~\cite{BC+10}. As seen in \autoref{sec:overview},
+asynchronous effects can be modeled as a pair of $\eff{opReq}$/$\eff{opResp}$ operations, where the former generates an id (given as
 $\iota$ in the syntax) that can then be subsequently referenced when
 performing a corresponding response operation.
 %\autoref{fig:term-syntax} defines some shorthand notations used by our
@@ -62,6 +61,7 @@ performing a corresponding response operation.
 
 \begin{wrapfigure}{r}{.5\textwidth}
   \footnotesize
+  \vspace*{-.1in}
   \begin{minipage}{.45\textwidth}
     \begin{flalign*}
     &\text{\textbf{Operator Semantics }}\
@@ -246,10 +246,10 @@ operators.
     % & \widehat{\ort{b}{\phi}} \doteq \urt{b}{\phi} \;\; \widehat{\urt{b}{\phi}} \doteq \ort{b}{\phi} \;\; \widehat{x{:}t\sarr t'} \doteq x{:}t\sarr t' \;\; \widehat{x{:}t\sarr \tau} \doteq x{:}t\sarr \tau
   \end{flalign*}}
 }
-\vspace*{-.24in}
+\vspace*{-.2in}
 \caption{\DSL{} types}
 \label{fig:type-syntax}
-\vspace*{-.2in}
+\vspace*{-.1in}
 \end{figure}
 
 The figure also gives the definition of the type aliases that
@@ -634,7 +634,7 @@ function itself has type $t$.
   The rest of program is now typed via the following judgement:
   \vspace{-.4cm} \par\nobreak {\small %
     \begin{align*}
-      &x{:}\urt{\Int}{0 < \vnu}\vdash \eff{pop} : \uhat{\msgAGray{pushI}{0\;0}\msgAGray{popI}{0\;0}\msgA{push}{x}\msgAGray{pushI}{1\;x}}{x{:}\urt{\Int}{0 < \vnu}}{\msgA{pop}{x}\msgAGray{popI}{1\;x}} &&
+      &x{:}\urt{\Int}{0 < \vnu}\vdash \eff{pop} \,{:}\, \uhat{\msgAGray{pushI}{0\;0}\msgAGray{popI}{0\;0}\msgA{push}{x}\msgAGray{pushI}{1\;x}}{x{:}\urt{\Int}{0 < \vnu}}{\msgA{pop}{x}\msgAGray{popI}{1\;x}} &&
     \end{align*}}%
   \noindent
   As before, after looking up the type of $\eff{pop}$ using

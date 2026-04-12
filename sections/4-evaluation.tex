@@ -119,8 +119,8 @@ Our experimental evaluation addresses four research questions:
     property violation. }
   \vspace*{-.1in} \footnotesize
 %\multicolumn{2}{c||}{} &
-\setlength{\tabcolsep}{0.55pt}
-\begin{tabular}{c|P{5.1cm}||ccc||cc||c|ccc}
+\setlength{\tabcolsep}{0.2pt}
+\begin{tabular}{c|P{5.0cm}||ccc||cc||c|ccc}
   \toprule
   \multicolumn{2}{c||}{Benchmark} & \#$\eff{op}$ & \multicolumn{2}{c||}{\#qualifier} & \multicolumn{2}{c||}{\scriptsize \# Num. Executions} & t$_\text{total}$(s) & \#evt & \#refine & \#SMT \\
   \midrule
@@ -231,7 +231,7 @@ Name & Property &   &uHAT &goal & {\scriptsize Clouseau} & {\scriptsize Baseline
 \end{table}
 
 We have evaluated \name{} on a diverse corpus of programs\footnote{The
-  supplemental material includes additional details about our
+\techreport{} includes additional details about our
   benchmarks.} % as well as a docker image that contains the \name{}
   % source code and benchmarks.
 drawn from a variety of sources (described in the captions of
@@ -415,7 +415,7 @@ of its executions.
   \textsf{IFCLoad}$_{\mathsf{W}}$, and
   \textsf{DeBruijnHO}$_{\mathsf{W}}$).\footnote{The experimental
     results for the full set of benchmarks are provided in the
-    supplemental material.}  Under these weaker specifications,
+    \techreport{}.}  Under these weaker specifications,
   average synthesis time (t$_\text{total}$) improves by $18.18\%$, and
   by $78.07\%$ in the extreme case (\textsc{ChainReplication}). This
   comes at the cost of decreased testing effectiveness, however:
