@@ -82,7 +82,7 @@ halts program execution if the formula $\phi$ fails to hold.
   operations must respect, but also incorporates features of the SUT
   that can help a test generator focus on interesting configurations.
   While similar observations guide the design of prior PBT
-  frameworks~\cite{pbt-ifc},\tyName{}s allow this knowledge to be
+  frameworks~\cite{pbt-ifc}, \tyName{}s allow this knowledge to be
   stated formally and compositionally. These specifications inform our
   automated synthesis procedure and ensure conformance by the
   generators it synthesizes, without the need to \emph{manually craft
@@ -323,7 +323,7 @@ implementation will fault prior to the $\eff{store}$ being executed.
 
 \cbnewadding{ To avoid synthesizing generators that produce
   uninteresting test programs, we would like the executions they
-  induce to: (1) exercise a noninterference correctness property - two
+  induce to: (1) exercise a noninterference correctness property --- two
   input programs must be indistinguishable at the low security level
   (e.g., $\textbf{push}(\texttt{L}, 1)$ and
   $\textbf{push}(\texttt{L}, 2)$ are distinguishable); (2) bias the

@@ -554,7 +554,7 @@ application rule \textsc{TEffOp} requires the arguments of an
 effectful operator to be well-typed against its parameter types; it
 records the effect as an event in the future trace along with any
 additional ghost events ($F$).  The nondeterministic choice operator
-is typed using the \textsc{TChoice} rule which merges the \tyName{}s
+is typed using the \textsc{TChoice} rule, which merges the \tyName{}s
 of the two branches.  The \textsc{TLet} rule requires the binding
 expression $e_1$ to generate the first part of its future trace $F_1$,
 with the rest of trace produced by the body expression $e_2$ under a
