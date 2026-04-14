@@ -1,10 +1,20 @@
-.PHONY: haste all clean cleanall nocite clouseau
+.PHONY: haste all clean cleanall nocite clouseau camera-ready
 
 DEPS = main.tex bibliography.bib commands.sty refinementtydef.sty \
 	sections/0-intro.tex sections/1-overview.tex sections/2-language.tex \
 	sections/3-algo.tex sections/4-evaluation.tex sections/5-related.tex \
 	tech/outlines.tex tech/0-semantics.tex tech/1-typing.tex tech/2-denotation.tex \
 	tech/3-algo.tex tech/4-proof-0.tex tech/5-explanation.tex tech/6-evaluation.tex
+
+CAMERA_READY_ROOT_FILES = main.tex bibliography.bib commands.sty \
+	refinementtydef.sty spacingtricks.sty acmart.cls ACM-Reference-Format.bst
+
+CAMERA_READY_SECTION_FILES = sections/0-intro.tex sections/1-overview.tex \
+	sections/2-language.tex sections/3-algo.tex sections/4-evaluation.tex \
+	sections/5-related.tex
+
+CAMERA_READY_FIGURE_FILES = figures/clouseau-workflow.drawio.png \
+	figures/syn-gen.drawio.png
 
 all: clouseau.pdf clouseau-diff.pdf clouseau-sm-full.pdf
 
@@ -15,6 +25,20 @@ clouseau.pdf: $(DEPS)
 	bibtex clouseau
 	pdflatex -jobname="clouseau" -shell-escape main
 	pdflatex -jobname="clouseau" -shell-escape main
+
+main.bbl: $(DEPS)
+	pdflatex -shell-escape main
+	bibtex main
+
+camera-ready: clouseau.pdf main.bbl
+	rm -rf camera-ready camera-ready-sources.zip
+	mkdir -p camera-ready/sections
+	cp $(CAMERA_READY_ROOT_FILES) camera-ready/
+	cp $(CAMERA_READY_SECTION_FILES) camera-ready/sections/
+	mkdir -p camera-ready/figures
+	cp $(CAMERA_READY_FIGURE_FILES) camera-ready/figures/
+	cp main.bbl camera-ready/
+	cd camera-ready && zip -r ../camera-ready-sources.zip . -x "*.DS_Store"
 
 clouseau-diff.pdf: $(DEPS)
 	pdflatex -jobname="clouseau-diff" -shell-escape "\def\diffmode{}\input main.tex"
